@@ -2392,7 +2392,7 @@ public void Shavit_OnRestart(int client, int track)
 		if((iIndex = GetZoneIndex(Zone_Start, track)) != -1 || (iIndex = GetZoneIndex(Zone_Start_2, track)) != -1)
 		{
 			float fCenter[3];
-			iIndex = GetZoneIndex(Zone_Start, track);//TODO
+			iIndex = (GetZoneIndex(Zone_Start, track) == -1) ? GetZoneIndex(Zone_Start_2, track) : GetZoneIndex(Zone_Start, track);
 			fCenter[0] = gV_ZoneCenter[iIndex][0];
 			fCenter[1] = gV_ZoneCenter[iIndex][1];
 			fCenter[2] = gV_MapZones[iIndex][0][2];
@@ -2413,7 +2413,7 @@ public void Shavit_OnEnd(int client, int track)
 		if((iIndex = GetZoneIndex(Zone_End, track)) != -1 || (iIndex = GetZoneIndex(Zone_End_2, track)) != -1)
 		{
 			float fCenter[3];
-			iIndex = GetZoneIndex(Zone_End, track);//TODO
+			iIndex = (GetZoneIndex(Zone_End, track) == -1) ? GetZoneIndex(Zone_End_2, track) : GetZoneIndex(Zone_End, track);
 			fCenter[0] = gV_ZoneCenter[iIndex][0];
 			fCenter[1] = gV_ZoneCenter[iIndex][1];
 			fCenter[2] = gV_MapZones[iIndex][0][2];
