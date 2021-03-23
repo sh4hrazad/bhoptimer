@@ -88,8 +88,8 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 				gF_StageTime[client] = Shavit_GetClientTime(client) - gF_StageTime[client];
 				FormatSeconds(gF_StageTime[client], sTime, 32, true);
 			}
-
-		    	FormatEx(sMessage, 255, "%T", "ZoneStageTime", client, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, num, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText);
+			
+			FormatEx(sMessage, 255, "%T", "ZoneStageTime", client, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, num, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText);
 		}
 
 		else
