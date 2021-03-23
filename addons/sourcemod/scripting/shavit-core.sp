@@ -61,8 +61,8 @@ enum struct playertimer_t
 	int iLandingTick;
 	bool bOnGround;
 	float fTimescale;
-	float fTimeOffset[2];
-	float fDistanceOffset[2];
+	float fTimeOffset[4];
+	float fDistanceOffset[4];
 	// convert to array for per zone offsets
 	int iZoneIncrement;
 	float fAvgVelocity;
@@ -177,8 +177,6 @@ char gS_DeleteMap[MAXPLAYERS+1][160];
 int gI_WipePlayerID[MAXPLAYERS+1];
 char gS_Verification[MAXPLAYERS+1][8];
 bool gB_CookiesRetrieved[MAXPLAYERS+1];
-float gF_ZoneAiraccelerate[MAXPLAYERS+1];
-float gF_ZoneSpeedLimit[MAXPLAYERS+1];
 
 // flags
 int gI_StyleFlag[STYLE_LIMIT];
@@ -319,10 +317,10 @@ public void OnPluginStart()
 	gH_StyleCookie = RegClientCookie("shavit_style", "Style cookie", CookieAccess_Protected);
 
 	// timer start
+	RegConsoleCmd("sm_s", Command_StartTimer, "Start your timer.");
 	RegConsoleCmd("sm_start", Command_StartTimer, "Start your timer.");
 	RegConsoleCmd("sm_r", Command_StartTimer, "Start your timer.");
 	RegConsoleCmd("sm_restart", Command_StartTimer, "Start your timer.");
-	RegConsoleCmd("sm_m", Command_StartTimer, "Start your timer on the main track.");
 	RegConsoleCmd("sm_main", Command_StartTimer, "Start your timer on the main track.");
 
 	RegConsoleCmd("sm_b", Command_StartTimer, "Start your timer on the bonus track.");
@@ -638,12 +636,12 @@ public Action Command_StartTimer(int client, int args)
 			track = Track_Bonus;
 		}
 	}
-	else if(StrContains(sCommand, "sm_r", false) == 0 || StrContains(sCommand, "sm_s", false) == 0)
+	else if(StrContains(sCommand, "sm_r", false) == 0)
 	{
 		track = gA_Timers[client].iTrack;
 	}
 
-	if(gCV_AllowTimerWithoutZone.BoolValue || (gB_Zones && (Shavit_ZoneExists(Zone_Start, track) || gB_KZMap)))
+	if(gCV_AllowTimerWithoutZone.BoolValue || (gB_Zones && (Shavit_ZoneExists(Zone_Start, track) || Shavit_ZoneExists(Zone_Start_2, track))))
 	{
 		if(!Shavit_StopTimer(client, false))
 		{
@@ -703,7 +701,7 @@ public Action Command_TeleportEnd(int client, int args)
 		}
 	}
 
-	if(gB_Zones && (Shavit_ZoneExists(Zone_End, track) || gB_KZMap))
+	if(gB_Zones && (Shavit_ZoneExists(Zone_End, track) || Shavit_ZoneExists(Zone_End_2, track)))
 	{
 		if(Shavit_StopTimer(client, false))
 		{
@@ -1301,7 +1299,7 @@ void ChangeClientStyle(int client, int style, bool manual)
 
 	CallOnStyleChanged(client, gA_Timers[client].iStyle, style, manual);
 
-	if(gCV_AllowTimerWithoutZone.BoolValue || (gB_Zones && (Shavit_ZoneExists(Zone_Start, gA_Timers[client].iTrack) || gB_KZMap)))
+	if(gCV_AllowTimerWithoutZone.BoolValue || (gB_Zones && (Shavit_ZoneExists(Zone_Start, gA_Timers[client].iTrack) || Shavit_ZoneExists(Zone_Start_2, gA_Timers[client].iTrack))))
 	{
 		Shavit_StopTimer(client, true);
 		Call_StartForward(gH_Forwards_OnRestart);
@@ -1344,7 +1342,7 @@ void DoJump(int client)
 	}
 
 	// TF2 doesn't use stamina
-	if(gEV_Type != Engine_TF2 && (GetStyleSettingBool(gA_Timers[client].iStyle, "easybhop")) || Shavit_InsideZone(client, Zone_Easybhop, gA_Timers[client].iTrack))
+	if(gEV_Type != Engine_TF2 && (GetStyleSettingBool(gA_Timers[client].iStyle, "easybhop")))
 	{
 		SetEntPropFloat(client, Prop_Send, "m_flStamina", 0.0);
 	}
@@ -1564,7 +1562,7 @@ public int Native_CanPause(Handle handler, int numParams)
 		iFlags |= CPR_NoTimer;
 	}
 
-	if(Shavit_InsideZone(client, Zone_Start, gA_Timers[client].iTrack))
+	if(Shavit_InsideZone(client, Zone_Start, gA_Timers[client].iTrack) || Shavit_InsideZone(client, Zone_Start_2, gA_Timers[client].iTrack))
 	{
 		iFlags |= CPR_InStartZone;
 	}
@@ -3289,43 +3287,10 @@ public void SQL_CreateUsersTable_Callback(Database db, DBResultSet results, cons
 	Call_Finish();
 }
 
-public void Shavit_OnEnterZone(int client, int type, int track, int id, int entity)
-{
-	if(type == Zone_Airaccelerate)
-	{
-		gF_ZoneAiraccelerate[client] = float(Shavit_GetZoneData(id));
-
-		UpdateAiraccelerate(client, gF_ZoneAiraccelerate[client]);
-	}
-
-	else if(type == Zone_CustomSpeedLimit)
-	{
-		gF_ZoneSpeedLimit[client] = float(Shavit_GetZoneData(id));
-	}
-}
-
-public void Shavit_OnLeaveZone(int client, int type, int track, int id, int entity)
-{
-	if(type == Zone_Airaccelerate)
-	{
-		UpdateAiraccelerate(client, GetStyleSettingFloat(gA_Timers[client].iStyle, "airaccelerate"));
-	}
-}
-
 public void PreThinkPost(int client)
 {
 	if(IsPlayerAlive(client))
 	{
-		if(!gB_Zones || !Shavit_InsideZone(client, Zone_Airaccelerate, -1))
-		{
-			sv_airaccelerate.FloatValue = GetStyleSettingFloat(gA_Timers[client].iStyle, "airaccelerate");
-		}
-
-		else
-		{
-			sv_airaccelerate.FloatValue = gF_ZoneAiraccelerate[client];
-		}
-
 		if(sv_enablebunnyhopping != null)
 		{
 			sv_enablebunnyhopping.BoolValue = GetStyleSettingBool(gA_Timers[client].iStyle, "bunnyhopping");
@@ -3617,7 +3582,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	}
 
 	int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
-	bool bInStart = Shavit_InsideZone(client, Zone_Start, gA_Timers[client].iTrack);
+	bool bInStart = (Shavit_InsideZone(client, Zone_Start, gA_Timers[client].iTrack) || Shavit_InsideZone(client, Zone_Start_2, gA_Timers[client].iTrack));
 
 	if(gA_Timers[client].bEnabled && !gA_Timers[client].bPaused)
 	{
@@ -3709,7 +3674,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	}
 
 	// key blocking
-	if(!gA_Timers[client].bCanUseAllKeys && mtMoveType != MOVETYPE_NOCLIP && mtMoveType != MOVETYPE_LADDER && !Shavit_InsideZone(client, Zone_Freestyle, -1))
+	if(!gA_Timers[client].bCanUseAllKeys && mtMoveType != MOVETYPE_NOCLIP && mtMoveType != MOVETYPE_LADDER)
 	{
 		// block E
 		if(GetStyleSettingBool(gA_Timers[client].iStyle, "block_use") && (buttons & IN_USE) > 0)
@@ -3848,7 +3813,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	{
 		gA_Timers[client].iLandingTick = tickcount;
 
-		if(gEV_Type != Engine_TF2 && GetStyleSettingBool(gA_Timers[client].iStyle, "easybhop"))
+		if(GetStyleSettingBool(gA_Timers[client].iStyle, "easybhop"))
 		{
 			SetEntPropFloat(client, Prop_Send, "m_flStamina", 0.0);
 		}
@@ -3873,33 +3838,6 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	{
 		vel[2] = 0.0;
 		buttons &= ~IN_JUMP;
-	}
-
-	// velocity limit
-	if(iGroundEntity != -1 && GetStyleSettingFloat(gA_Timers[client].iStyle, "velocity_limit") > 0.0)
-	{
-		float fSpeedLimit = GetStyleSettingFloat(gA_Timers[client].iStyle, "velocity_limit");
-
-		if(gB_Zones && Shavit_InsideZone(client, Zone_CustomSpeedLimit, -1))
-		{
-			fSpeedLimit = gF_ZoneSpeedLimit[client];
-		}
-
-		float fSpeed[3];
-		GetEntPropVector(client, Prop_Data, "m_vecVelocity", fSpeed);
-
-		float fSpeed_New = (SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0)));
-
-		if(fSpeedLimit != 0.0 && fSpeed_New > 0.0)
-		{
-			float fScale = fSpeedLimit / fSpeed_New;
-
-			if(fScale < 1.0)
-			{
-				ScaleVector(fSpeed, fScale);
-				TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed); // maybe change this to SetEntPropVector some time?
-			}
-		}
 	}
 
 	float fAngle = (angles[1] - gA_Timers[client].fLastAngle);

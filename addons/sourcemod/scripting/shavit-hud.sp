@@ -116,7 +116,6 @@ int gI_Buttons[MAXPLAYERS+1];
 float gF_ConnectTime[MAXPLAYERS+1];
 bool gB_FirstPrint[MAXPLAYERS+1];
 int gI_PreviousSpeed[MAXPLAYERS+1];
-int gI_ZoneSpeedLimit[MAXPLAYERS+1];
 
 bool gB_Late = false;
 
@@ -1000,15 +999,6 @@ int GetGradient(int start, int end, int steps)
 	return GetHex(aColorGradient);
 }
 
-public void Shavit_OnEnterZone(int client, int type, int track, int id, int entity)
-{
-	if(type == Zone_CustomSpeedLimit)
-	{
-		gI_ZoneSpeedLimit[client] = Shavit_GetZoneData(id);
-	}
-}
-
-
 int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int maxlen)
 {
 	int iLines = 0;
@@ -1180,24 +1170,6 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 
 		AddHUDLine(buffer, maxlen, sLine, iLines);
 		iLines++;
-
-		char limit[16];
-		Shavit_GetStyleSetting(data.iStyle, "velocity_limit", limit, 16);
-		if(StringToFloat(limit) > 0.0 && Shavit_InsideZone(data.iTarget, Zone_CustomSpeedLimit, -1))
-		{
-			if(gI_ZoneSpeedLimit[data.iTarget] == 0)
-			{
-				FormatEx(sLine, 128, "%T", "HudNoSpeedLimit", data.iTarget);
-			}
-
-			else
-			{
-				FormatEx(sLine, 128, "%T", "HudCustomSpeedLimit", client, gI_ZoneSpeedLimit[data.iTarget]);
-			}
-
-			AddHUDLine(buffer, maxlen, sLine, iLines);
-			iLines++;
-		}
 	}
 
 	if(data.iTimerStatus != Timer_Stopped && data.iTrack != Track_Main && (gI_HUD2Settings[client] & HUD2_TRACK) == 0)
@@ -1465,12 +1437,12 @@ void UpdateMainHUD(int client)
 
 	if(!bReplay)
 	{
-		if(Shavit_InsideZone(target, Zone_Start, -1))
+		if(Shavit_InsideZone(target, Zone_Start, -1) || Shavit_InsideZone(target, Zone_Start_2, -1))
 		{
 			iZoneHUD = ZoneHUD_Start;
 		}
 		
-		else if(Shavit_InsideZone(target, Zone_End, -1))
+		else if(Shavit_InsideZone(target, Zone_End, -1) || Shavit_InsideZone(target, Zone_End_2, -1))
 		{
 			iZoneHUD = ZoneHUD_End;
 		}
@@ -1862,7 +1834,7 @@ void UpdateKeyHint(int client)
 			char autobhop[4];
 			Shavit_GetStyleSetting(style, "autobhop", autobhop, 4);
 
-			if(!bReplay && (gI_HUDSettings[client] & HUD_SYNC) > 0 && Shavit_GetTimerStatus(target) == Timer_Running && StringToInt(sync) && (!gB_Zones || !Shavit_InsideZone(target, Zone_Start, -1)))
+			if(!bReplay && (gI_HUDSettings[client] & HUD_SYNC) > 0 && Shavit_GetTimerStatus(target) == Timer_Running && StringToInt(sync) && (!gB_Zones || !Shavit_InsideZone(target, Zone_Start, -1) || !Shavit_InsideZone(target, Zone_Start_2, -1)))
 			{
 				Format(sMessage, 256, "%s%s%T: %.01f", sMessage, (strlen(sMessage) > 0)? "\n\n":"", "HudSync", client, Shavit_GetSync(target));
 
