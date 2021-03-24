@@ -98,18 +98,12 @@ enum
 enum
 {
 	Zone_Start,
+	Zone_Start_2,
 	Zone_End,
-	Zone_Respawn,
-	Zone_Stop,
-	Zone_Slay,
-	Zone_Freestyle,
-	Zone_CustomSpeedLimit,
-	Zone_Teleport,
-	Zone_CustomSpawn,
-	Zone_Easybhop,
-	Zone_Slide,
-	Zone_Airaccelerate,
+	Zone_End_2,
 	Zone_Stage,
+	Zone_Stop,
+	Zone_Teleport,
 	ZONETYPES_SIZE
 };
 
@@ -223,8 +217,8 @@ enum struct timer_snapshot_t
 	int iTimerTrack;
 	int iMeasuredJumps;
 	int iPerfectJumps;
-	float fTimeOffset[2];
-	float fDistanceOffset[2];
+	float fTimeOffset[4];
+	float fDistanceOffset[4];
 	float fAvgVelocity;
 	float fMaxVelocity;
 }
@@ -817,7 +811,7 @@ forward void Shavit_OnEnterZone(int client, int type, int track, int id, int ent
 forward void Shavit_OnLeaveZone(int client, int type, int track, int id, int entity, int data);
 
 /**
- * Called when a player leaves a zone.
+ * Called when a player enters a stage-zone.
  *
  * @param client					Client index.
  * @param stageNumber				Stage number.
@@ -825,7 +819,18 @@ forward void Shavit_OnLeaveZone(int client, int type, int track, int id, int ent
  * @param maxlen					The buffer size of message.
  * @return							Plugin_Handled to block the timer from printing msg to the client. Plugin_Continue to let the timer print msg.
  */
-forward Action Shavit_OnStageMessage(int client, int stageNumber, char[] message, int maxlen);
+forward Action Shavit_OnEnterStage(int client, int stage);
+
+/**
+ * Called when a player leaves a stage-zone.
+ *
+ * @param client					Client index.
+ * @param stageNumber				Stage number.
+ * @param message					The stage time message that will be printed.
+ * @param maxlen					The buffer size of message.
+ * @return							Plugin_Handled to block the timer from printing msg to the client. Plugin_Continue to let the timer print msg.
+ */
+forward Action Shavit_OnLeaveStage(int client, int stage);
 
 /**
  * Called when a player gets the worst record in the server for the style.
@@ -1239,13 +1244,12 @@ native int Shavit_GetBhopStyle(int client);
 native TimerStatus Shavit_GetTimerStatus(int client);
 
 /**
- * Retrieve the zone ID for a given stage number.
- * Will return exception if stagenumber doesn't have a zone.
+ * Retrieve the stage ID for client.
  *
- * @param client					Stage number.
- * @return                          Zone ID of stage.
+ * @param client					Client index.
+ * @return                          stage ID.
  */
-native int Shavit_GetStageZone(int stage);
+native int Shavit_GetClientStage(int client);
 
 /**
  * Retrieve the amount of strafes done since the timer started.
@@ -2501,5 +2505,6 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_SetStyleSettingBool");
 	MarkNativeAsOptional("Shavit_SetStyleSettingInt");
 	MarkNativeAsOptional("Shavit_GetPlainChatrank");
+	MarkNativeAsOptional("Shavit_GetClientStage");
 }
 #endif
