@@ -18,6 +18,8 @@ bool gB_MySQL = false; */
 /* char gS_Map[160]; */
 
 int gI_LastStage[MAXPLAYERS + 1];
+float gF_EnterStageTime[MAXPLAYERS + 1];
+float gF_LeaveStageTime[MAXPLAYERS + 1];
 float gF_StageTime[MAXPLAYERS + 1];
 
 // misc cache
@@ -29,14 +31,14 @@ float gF_StageTime[MAXPLAYERS + 1];
 // chat settings
 chatstrings_t gS_ChatStrings;
 
-Handle gH_Forwards_EnterStageMessage = null;
-Handle gH_Forwards_LeaveStageMessage = null;
+Handle gH_Forwards_EnterStage = null;
+Handle gH_Forwards_LeaveStage = null;
 
 public void OnPluginStart()
 {
 	LoadTranslations("shavit-wrcp.phrases");
-	gH_Forwards_EnterStageMessage = CreateGlobalForward("Shavit_OnEnterStageMessage", ET_Event, Param_Cell, Param_Cell, Param_String, Param_Cell);
-	gH_Forwards_LeaveStageMessage = CreateGlobalForward("Shavit_OnLeaveStageMessage", ET_Event, Param_Cell, Param_Cell, Param_String, Param_Cell);
+	gH_Forwards_EnterStage = CreateGlobalForward("Shavit_OnEnterStage", ET_Event, Param_Cell, Param_Cell);
+	gH_Forwards_LeaveStage = CreateGlobalForward("Shavit_OnLeaveStage", ET_Event, Param_Cell, Param_Cell);
 }
 
 public void OnAllPluginsLoaded()
@@ -71,52 +73,14 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 
 	if(type == Zone_Stage)
 	{
-		int num = Shavit_GetClientStage(client);
-
-		char sMessage[255];
-		char sTime[32];
-
-		if(num > gI_LastStage[client] && num - gI_LastStage[client] == 1)//1--->2 2--->3 ... n--->n+1
-		{
-			if(num == 2)
-			{
-				FormatSeconds(Shavit_GetClientTime(client), sTime, 32, true);
-			}
-
-			else
-			{
-				gF_StageTime[client] = Shavit_GetClientTime(client) - gF_StageTime[client];
-				FormatSeconds(gF_StageTime[client], sTime, 32, true);
-			}
-			
-			FormatEx(sMessage, 255, "%T", "ZoneStageTime", client, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, num, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText);
-		}
-
-		else
-		{
-			FormatEx(sMessage, 255, "%T", "ZoneStageAvoidSkip", client, gS_ChatStrings.sWarning, gS_ChatStrings.sWarning);
-		}
-
-		gI_LastStage[client] = num;
+		//do stuff
+		gF_EnterStageTime[client] = Shavit_GetClientTime(client);
 
 		Action aResult = Plugin_Continue;
-		Call_StartForward(gH_Forwards_EnterStageMessage);
+		Call_StartForward(gH_Forwards_EnterStage);
 		Call_PushCell(client);
-		Call_PushCell(num);
-		Call_PushStringEx(sMessage, 255, SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
-		Call_PushCell(255);
+		Call_PushCell(Shavit_GetClientStage(client));
 		Call_Finish(aResult);
-
-		if(aResult < Plugin_Handled)
-		{
-			Shavit_PrintToChat(client, "%s", sMessage);
-
-			//total time
-			FormatSeconds(Shavit_GetClientTime(client), sTime, 32, true);
-			FormatEx(sMessage, 255, "%T", "ZoneStageEnterTotalTime", 
-			client, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText);
-			Shavit_PrintToChat(client, "%s", sMessage);
-		}
 	}
 }
 
@@ -129,29 +93,79 @@ public void Shavit_OnLeaveZone(int client, int type, int track, int id, int enti
 
 	if(type == Zone_Stage)
 	{
-		int num = Shavit_GetClientStage(client);
-
 		//do stuff
-		gF_StageTime[client] = Shavit_GetClientTime(client);
-		//TODO:prestrafe
+		gF_LeaveStageTime[client] = Shavit_GetClientTime(client);
+
+		Action aResult = Plugin_Continue;
+		Call_StartForward(gH_Forwards_LeaveStage);
+		Call_PushCell(client);
+		Call_PushCell(Shavit_GetClientStage(client));
+		Call_Finish(aResult);
+	}
+}
+
+public Action Shavit_OnEnterStage(int client, int stage)
+{
+	char sMessage[255];
+	char sTime[32];
+
+	if(stage > gI_LastStage[client] && stage - gI_LastStage[client] == 1)//1--->2 2--->3 ... n--->n+1
+	{
+		if(stage == 2)
+		{
+			gF_StageTime[client] = Shavit_GetClientTime(client);
+		}
+
+		else
+		{
+			gF_StageTime[client] = gF_EnterStageTime[client] - gF_LeaveStageTime[client];
+		}
+
+		FormatSeconds(gF_StageTime[client], sTime, 32, true);
+		FormatEx(sMessage, 255, "%T", "ZoneStageTime", client, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText);
+	}
+
+	else if(stage == gI_LastStage[client])
+	{
+		return Plugin_Continue; 
+	}
+
+	else
+	{
+		FormatEx(sMessage, 255, "%T", "ZoneStageAvoidSkip", client, gS_ChatStrings.sWarning, gS_ChatStrings.sWarning);
+	}
+
+	Shavit_PrintToChat(client, "%s", sMessage);
+	gI_LastStage[client] = stage;
+
+	//total time
+	FormatSeconds(Shavit_GetClientTime(client), sTime, 32, true);
+	FormatEx(sMessage, 255, "%T", "ZoneStageEnterTotalTime", 
+		client, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText);
+	Shavit_PrintToChat(client, "%s", sMessage);
+
+	return Plugin_Continue;
+}
+
+public Action Shavit_OnLeaveStage(int client, int stage)
+{
+	//TODO:prestrafe
+	bool onGround = false;
+	if(GetEntityFlags(client) & FL_ONGROUND)
+	{
+		onGround = true;
+	}
+
+	if(!onGround)
+	{
 		float fVelocity[3];
 		GetEntPropVector(client, Prop_Data, "m_vecVelocity", fVelocity);
 		float prespeed = SquareRoot(Pow(fVelocity[0], 2.0) + Pow(fVelocity[1], 2.0) + Pow(fVelocity[2], 2.0));
 
 		char sMessage[64];
 		FormatEx(sMessage, 255, "%T", "ZoneStagePrestrafe", client, gS_ChatStrings.sText, gS_ChatStrings.sVariable, prespeed, gS_ChatStrings.sText);
-
-		Action aResult = Plugin_Continue;
-		Call_StartForward(gH_Forwards_LeaveStageMessage);
-		Call_PushCell(client);
-		Call_PushCell(num);
-		Call_PushStringEx(sMessage, 64, SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
-		Call_PushCell(64);
-		Call_Finish(aResult);
-
-		if(aResult < Plugin_Handled)
-		{
-		    Shavit_PrintToChat(client, "%s", sMessage);
-		}
+		Shavit_PrintToChat(client, "%s", sMessage);
 	}
+
+	return Plugin_Continue;
 }
