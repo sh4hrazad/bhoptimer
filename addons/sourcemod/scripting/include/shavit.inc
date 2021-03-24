@@ -25,7 +25,7 @@
 
 #define SHAVIT_VERSION "2.7.0"
 #define STYLE_LIMIT 256
-#define MAX_ZONES 64
+#define MAX_ZONES 128
 
 // HUD
 #define HUD_NONE				0
@@ -757,6 +757,17 @@ forward void Shavit_OnDatabaseLoaded();
 forward void Shavit_OnChatConfigLoaded();
 
 /**
+ * Called when a player triggered wrcp.
+ *
+ * @param client					Client index.
+ * @param stage						stage number.
+ * @param style						style index.
+ * @param time						wrcp time.
+ * @noreturn
+ */
+forward void Shavit_OnWRCP(int client, int stage, int style, float time)
+
+/**
  * Called when a player teleports with checkpoints.
  *
  * @param client					Client index.
@@ -814,23 +825,21 @@ forward void Shavit_OnLeaveZone(int client, int type, int track, int id, int ent
  * Called when a player enters a stage-zone.
  *
  * @param client					Client index.
- * @param stageNumber				Stage number.
- * @param message					The stage time message that will be printed.
- * @param maxlen					The buffer size of message.
- * @return							Plugin_Handled to block the timer from printing msg to the client. Plugin_Continue to let the timer print msg.
+ * @param stage						Stage number.
+ * @param style						Style index.
+ * @return							Action Types.
  */
-forward Action Shavit_OnEnterStage(int client, int stage);
+forward void Shavit_OnEnterStage(int client, int stage, int style);
 
 /**
  * Called when a player leaves a stage-zone.
  *
  * @param client					Client index.
- * @param stageNumber				Stage number.
- * @param message					The stage time message that will be printed.
- * @param maxlen					The buffer size of message.
- * @return							Plugin_Handled to block the timer from printing msg to the client. Plugin_Continue to let the timer print msg.
+ * @param stage						Stage number.
+ * @param style						Style index.
+ * @return							Action Types.
  */
-forward Action Shavit_OnLeaveStage(int client, int stage);
+forward void Shavit_OnLeaveStage(int client, int stage, int style);
 
 /**
  * Called when a player gets the worst record in the server for the style.
