@@ -1,9 +1,10 @@
 "Phrases"
 {
+	/*-------------Chat-------------*/
 	"ZoneStageTime"
 	{
 		"#format"	"{1:s},{2:s},{3:d},{4:s},{5:s},{6:s}{7:s}"
-		"en"		"{1}You have reached stage {2}{3}{4} with a time of {5}{6}{7}."
+		"en"		"{1}You entered stage {2}{3}{4}. Time: {5}{6}{7}."
 	}
 	"ZoneStageAvoidSkip"
 	{
@@ -19,5 +20,38 @@
 	{
 		"#format"	"{1:s},{2:s},{3:.3f},{4:s}"
 		"en"		"{1}Prestrafe: {2}{3}{4}."
+	}
+	"OnWRCP"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:d},{6:s},{7:s},{8:.3f},{9:s}"
+		"en"		"{1}{2}{3} beat a stage record! Stage:[{4}{5}{6}] Time: {7}{8}{9}."
+	}
+	"Chat-WRCP"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:d},{6:s},{7:s},{8:.3f},{9:s}"
+		"en"		"{1}{2}{3} hold Stage [{4}{5}{6}] record! Time: {7}{8}{9}."
+	}
+	/*-------------Menu Title-------------*/
+	"WrcpMenuTitle-Style"
+	{
+		"en"		"Choose a style: "
+	}
+	"WrcpMenuTitle-Stage"
+	{
+		"en"		"Choose a stage: "
+	}
+	"WrcpMenuTitle-Maptop"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"		"{1} - Stage {2} - Top100"
+	}
+	/*-------------Menu Item-------------*/
+	"WrcpMenuItem-Stage"
+	{
+		"en"		"Stage"
+	}
+	"WrcpMenuItem-NoRecord"
+	{
+		"en"		"No Record..."
 	}
 }
