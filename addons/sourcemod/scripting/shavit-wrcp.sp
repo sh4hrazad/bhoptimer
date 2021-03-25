@@ -19,6 +19,7 @@ bool gB_MySQL = false;
 
 char gS_Map[160];
 int gI_Stages;//how many stages in a map,same variable in shavit-zone
+int gI_Steamid[100];//this is a mysql index, i dont have any better implementation
 
 int gI_LastStage[MAXPLAYERS + 1];
 float gF_EnterStageTime[MAXPLAYERS + 1];
@@ -32,6 +33,9 @@ float gF_PrStageTime[MAXPLAYERS + 1][MAX_STAGES][gI_Styles];
 int gI_StyleChoice[MAXPLAYERS + 1];
 int gI_StageChoice[MAXPLAYERS + 1];
 bool gB_Maptop[MAXPLAYERS + 1];
+bool gB_WRCPMenu[MAXPLAYERS + 1];
+bool gB_DeleteMaptop[MAXPLAYERS + 1];
+bool gB_DeleteWRCP[MAXPLAYERS + 1];
 
 // misc cache
 bool gB_Late = false;
@@ -52,7 +56,7 @@ public Plugin myinfo =
 	name = "[shavit] WRCP",
 	author = "Ciallo",
 	description = "A modified WRCP plugin for fork's surf timer.",
-	version = "0.0",
+	version = "0.1",
 	url = "https://github.com/Ciallo-Ani/surftimer"
 }
 
@@ -72,11 +76,30 @@ public void OnPluginStart()
 
 	HookEvent("player_death", Player_Death);
 
+	//wrcp
 	RegConsoleCmd("sm_wrcp", Command_WRCP, "Show WRCP menu, Select a style and a stage");
 	RegConsoleCmd("sm_wrcps", Command_WRCP, "Alias of sm_wrcp");
 	RegConsoleCmd("sm_srcp", Command_WRCP, "Alias of sm_wrcp");
 	RegConsoleCmd("sm_srcps", Command_WRCP, "Alias of sm_wrcp");
+	//maptop
 	RegConsoleCmd("sm_mtop", Command_Maptop, "Actually it's alias of sm_wrcp");
+	RegConsoleCmd("sm_maptop", Command_Maptop, "Alias of sm_mtop");
+
+	//delete
+	RegConsoleCmd("sm_delwrcp", Command_DeleteWRCP, "Delete a WRCP. Actually it's alias of sm_wrcp");
+	RegConsoleCmd("sm_delwrcps", Command_DeleteWRCP, "Alias of sm_delwrcp");
+	RegConsoleCmd("sm_delsrcp", Command_DeleteWRCP, "Alias of sm_delwrcp");
+	RegConsoleCmd("sm_delsrcps", Command_DeleteWRCP, "Alias of sm_delwrcp");
+	RegConsoleCmd("sm_deletewrcp", Command_DeleteWRCP, "Alias of sm_delwrcp");
+	RegConsoleCmd("sm_deletewrcps", Command_DeleteWRCP, "Alias of sm_delwrcp");
+	RegConsoleCmd("sm_deletesrcp", Command_DeleteWRCP, "Alias of sm_delwrcp");
+	RegConsoleCmd("sm_deletesrcps", Command_DeleteWRCP, "Alias of sm_delwrcp");
+
+	RegConsoleCmd("sm_delmtop", Command_DeleteMaptop, "Delete a stage record. Actually it's alias of sm_delwrcp");
+	RegConsoleCmd("sm_delmaptop", Command_DeleteMaptop, "Alias of sm_delmtop");
+	RegConsoleCmd("sm_deletemtop", Command_DeleteMaptop, "Alias of sm_delmtop");
+	RegConsoleCmd("sm_deletemaptop", Command_DeleteMaptop, "Alias of sm_delmtop");
+	//TODO:i dont care how many reg has, just need it if neccessary xD
 
 	RegConsoleCmd("sm_test", Command_Test, "do stuff");
 
@@ -119,17 +142,10 @@ public void OnMapStart()
 	GetMapDisplayName(gS_Map, gS_Map, 160);
 
 	gI_Stages = Shavit_GetMapStages();
-	
-	for(int i = 1; i <= gI_Stages; i++)//init
-	{
-		for(int j = 0; j < gI_Styles; j++)
-		{
-			gF_WrcpTime[i][j] = 0.0;
-			gS_WrcpName[i][j] = "N/A";
-		}
-	}
 
-	LoadWrcp();
+	Reset(gI_Stages, gI_Styles, true);
+
+	LoadWRCP();
 
 	if(gB_Late)
 	{
@@ -151,7 +167,6 @@ public void Shavit_OnStyleConfigLoaded(int styles)
 	for(int i = 0; i < styles; i++)
 	{
 		Shavit_GetStyleStrings(i, sStyleName, gS_StyleStrings[i].sStyleName, sizeof(stylestrings_t::sStyleName));
-		Shavit_GetStyleStrings(i, sHTMLColor, gS_StyleStrings[i].sHTMLColor, sizeof(stylestrings_t::sHTMLColor));
 	}
 }
 
@@ -165,9 +180,30 @@ public void Shavit_OnChatConfigLoaded()
 	Shavit_GetChatStrings(sMessageStyle, gS_ChatStrings.sStyle, sizeof(chatstrings_t::sStyle));
 }
 
+void Reset(int stage, int style, bool all = false)
+{
+	if(all)
+	{
+		for(int i = 1; i <= stage; i++)
+		{
+			for(int j = 0; j < style; j++)
+			{
+				gF_WrcpTime[i][j] = 0.0;
+				gS_WrcpName[i][j] = "N/A";
+			}
+		}
+	}
+	else
+	{
+		gF_WrcpTime[stage][style] = 0.0;
+		gS_WrcpName[stage][style] = "N/A";
+	}
+}
+
 public Action Command_Test(int client, int args)
 {
-	PrintToChat(client, "%d", Shavit_GetBhopStyle(client));
+	
+	return Plugin_Handled;
 }
 
 public Action Command_Maptop(int client, int args)
@@ -183,6 +219,30 @@ public Action Command_Maptop(int client, int args)
 	return Plugin_Handled;
 }
 
+public Action Command_DeleteMaptop(int client, int args)
+{
+	if(!IsValidClient(client))
+	{
+		return Plugin_Handled;
+	}
+
+	gB_DeleteMaptop[client] = true;
+	FakeClientCommand(client, "sm_wrcp");
+	return Plugin_Handled;
+}
+
+public Action Command_DeleteWRCP(int client, int args)
+{
+	if(!IsValidClient(client))
+	{
+		return Plugin_Handled;
+	}
+
+	gB_DeleteWRCP[client] = true;
+	FakeClientCommand(client, "sm_wrcp");
+	return Plugin_Handled;
+}
+
 public Action Command_WRCP(int client, int args)
 {
 	if(!IsValidClient(client))
@@ -190,18 +250,20 @@ public Action Command_WRCP(int client, int args)
 		return Plugin_Handled;
 	}
 
+	if(!gB_Maptop[client] && !gB_DeleteMaptop[client] && !gB_DeleteWRCP[client])
+	{
+		gB_WRCPMenu[client] = true;
+	}
+
 	Menu menu = new Menu(WRCPMenu_Handler);
 	menu.SetTitle("%T", "WrcpMenuTitle-Style", client);
 
 	for(int i = 0; i < gI_Styles; i++)
 	{
-		char sInfo[8];
-		IntToString(i, sInfo, 8);
-
 		char sDisplay[64];
 		FormatEx(sDisplay, 64, "%s", gS_StyleStrings[i].sStyleName);
 
-		menu.AddItem(sInfo, sDisplay);
+		menu.AddItem("", sDisplay);
 	}
 
 	menu.ExitButton = false;
@@ -221,13 +283,10 @@ public int WRCPMenu_Handler(Menu menu, MenuAction action, int param1, int param2
 
 		for(int i = 1; i < gI_Stages; i++)
 		{
-			char sInfo[8];
-			IntToString(i, sInfo, 8);
-
 			char sDisplay[64];
 			FormatEx(sDisplay, 64, "%T %d", "WrcpMenuItem-Stage", param1, i);
 
-			stagemenu.AddItem(sInfo, sDisplay);
+			stagemenu.AddItem("", sDisplay);
 		}
 
 		stagemenu.ExitButton = false;
@@ -254,20 +313,36 @@ public int WRCPMenu2_Handler(Menu menu, MenuAction action, int param1, int param
 		char sName[MAX_NAME_LENGTH];
 		sName = gS_WrcpName[stage][style];
 
-		if(!gB_Maptop[param1])
-		{
-			char sMessage[255];
-			FormatEx(sMessage, 255, "%T", "Chat-WRCP", param1, 
-				gS_ChatStrings.sVariable, sName, gS_ChatStrings.sText, 
-				gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, 
-				gS_ChatStrings.sVariable2, time, gS_ChatStrings.sText);
-			Shavit_PrintToChat(param1, "%s", sMessage);
-		}
-		else
+		if(gB_Maptop[param1] || gB_DeleteMaptop[param1])
 		{
 			MaptopMenu(param1, stage, style, gS_Map);
 		}
-		gB_Maptop[param1] = false;
+
+		if(gB_DeleteWRCP[param1])
+		{
+			DeleteWRCPConfirm(param1);
+		}
+
+		if(gB_WRCPMenu[param1])
+		{
+			gB_WRCPMenu[param1] = false;
+
+			char sMessage[255];
+			if(time > 0.0)
+			{
+				FormatEx(sMessage, 255, "%T", "Chat-WRCP", param1, 
+					gS_ChatStrings.sVariable, sName, gS_ChatStrings.sText, 
+					gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, 
+					gS_ChatStrings.sVariable2, time, gS_ChatStrings.sText);
+			}
+			else
+			{
+				FormatEx(sMessage, 255, "%T", "Chat-WRCP-NoRecord", param1, 
+				gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, 
+				gS_ChatStrings.sVariable, style, gS_ChatStrings.sText);
+			}
+			Shavit_PrintToChat(param1, "%s", sMessage);
+		}
 	}
 
 	else if(action == MenuAction_End)
@@ -291,9 +366,11 @@ void MaptopMenu(int client, int stage, int style, const char[] map)
 			"SELECT p1.auth, p1.time, p1.completions, p2.name FROM %sstage p1 " ...
 			"JOIN (SELECT auth, name FROM %susers) p2 " ...
 			"ON p1.auth = p2.auth " ...
-			"WHERE (stage = '%d' AND style = '%d') AND map = '%s';", 
+			"WHERE (stage = '%d' AND style = '%d') AND map = '%s' " ...
+			"ORDER BY p1.time ASC " ...
+			"LIMIT 100;", 
 			gS_MySQLPrefix, gS_MySQLPrefix, stage, style, map);
-	gH_SQL.Query(SQL_Maptop_Callback, sQuery, dp);
+	gH_SQL.Query(SQL_Maptop_Callback, sQuery, dp, DBPrio_High);
 }
 
 public void SQL_Maptop_Callback(Database db, DBResultSet results, const char[] error, any data)
@@ -318,7 +395,17 @@ public void SQL_Maptop_Callback(Database db, DBResultSet results, const char[] e
 	Menu wrcpmenu = new Menu(WRCPMenu3_Handler);
 
 	char sTitle[128];
-	FormatEx(sTitle, 128, "%T", "WrcpMenuTitle-Maptop", client, sMap, stage);
+	if(gB_Maptop[client])
+	{
+		FormatEx(sTitle, 128, "%T", "WrcpMenuTitle-Maptop", client, sMap, stage);
+		gB_Maptop[client] = false;
+	}
+	else if(gB_DeleteMaptop[client])
+	{
+		FormatEx(sTitle, 128, "%T", "DeleteMaptopMenuTitle-Maptop", client, sMap, stage);
+		gB_DeleteMaptop[client] = false;
+	}
+
 	wrcpmenu.SetTitle(sTitle);
 
 	int iCount = 0;
@@ -327,6 +414,9 @@ public void SQL_Maptop_Callback(Database db, DBResultSet results, const char[] e
 	{
 		if(++iCount <= 100)
 		{
+			// 0 - steamid (mysql delete index)
+			gI_Steamid[iCount] = results.FetchInt(0);
+
 			// 1 - time
 			float time = results.FetchFloat(1);
 			char sTime[32];
@@ -362,19 +452,155 @@ public void SQL_Maptop_Callback(Database db, DBResultSet results, const char[] e
 	wrcpmenu.Display(client, -1);
 }
 
+//delete maptop
 public int WRCPMenu3_Handler(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_Select)
 	{
-		char sInfo[16];
-		menu.GetItem(param2, sInfo, 16);//TODO
+		if(!gB_Maptop[param1])
+		{
+			int index = gI_Steamid[param2 + 1];
+			int stage = gI_StageChoice[param1];
+			int style = gI_StyleChoice[param1];
+
+			char sQuery[256];
+			FormatEx(sQuery, 256, "DELETE FROM %sstage WHERE (stage = '%d' AND style = '%d') AND (auth = '%d' AND map = '%s');", 
+					gS_MySQLPrefix, stage, style, index, gS_Map);
+
+			DataPack dp = new DataPack();
+			dp.WriteCell(GetClientSerial(param1));
+			dp.WriteCell(stage);
+			dp.WriteCell(style);
+
+			gH_SQL.Query(SQL_DeleteMaptop_Callback, sQuery, dp);
+		}
 	}
+
 	else if(action == MenuAction_End)
 	{
 		delete menu;
 	}
 
 	return 0;
+}
+
+public void SQL_DeleteMaptop_Callback(Database db, DBResultSet results, const char[] error, DataPack data)
+{
+	data.Reset();
+	int client = GetClientFromSerial(data.ReadCell());
+	int stage = data.ReadCell();
+	int style = data.ReadCell();
+
+	delete data;
+
+	if(results == null)
+	{
+		LogError("Timer (single stage record delete) SQL query failed. Reason: %s", error);
+
+		return;
+	}
+
+	LoadWRCP();
+	Reset(stage, style);
+
+	Shavit_PrintToChat(client, "%T", "StageRecordDeleteSuccessful", client, gS_ChatStrings.sText, 
+		gS_ChatStrings.sVariable, stage, gS_ChatStrings.sText, 
+		gS_ChatStrings.sVariable2, style, gS_ChatStrings.sText);
+}
+
+void DeleteWRCPConfirm(int client)
+{
+	Menu menu = new Menu(DeleteWRCPMenu_Handler);
+
+	char sTitle[64];
+	FormatEx(sTitle, 64, "%T", "DeleteWrcpMenuTitle-Confirm", client, gI_StageChoice[client], gI_StyleChoice[client]);
+	menu.SetTitle(sTitle);
+
+	menu.AddItem("", "Yes");
+	menu.AddItem("", "No");
+
+	menu.ExitButton = true;
+	menu.Display(client, -1);
+
+	gB_DeleteWRCP[client] = false;
+}
+
+public int DeleteWRCPMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		if(param2 == 0)
+		{
+			int stage = gI_StageChoice[param1];
+			int style = gI_StyleChoice[param1];
+
+			char sQuery[256];
+			FormatEx(sQuery, 256, 
+					"SELECT p1.auth, p1.time FROM %sstage p1 " ...
+					"JOIN (SELECT auth FROM %susers) p2 " ...
+					"ON p1.auth = p2.auth " ...
+					"WHERE (stage = '%d' AND style = '%d') AND map = '%s' " ...
+					"ORDER BY p1.time ASC " ...
+					"LIMIT 1;", 
+			gS_MySQLPrefix, gS_MySQLPrefix, stage, style, gS_Map);
+
+			gH_SQL.Query(SQL_DeleteWRCP_Callback, sQuery, GetClientSerial(param1), DBPrio_High);
+		}
+	}
+
+	else if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
+}
+
+public void SQL_DeleteWRCP_Callback(Database db, DBResultSet results, const char[] error, any data)
+{
+	int client = GetClientFromSerial(data);
+
+	if(results == null)
+	{
+		LogError("Timer (single WRCP delete) SQL query failed. Reason: %s", error);
+
+		return;
+	}
+
+	int stage = gI_StageChoice[client];
+	int style = gI_StyleChoice[client];
+	int index = -1;
+	if(results.FetchRow())
+	{
+		index = results.FetchInt(0);
+	}
+
+	char sQuery[256];
+	FormatEx(sQuery, 256, "DELETE FROM %sstage WHERE (stage = '%d' AND style = '%d') AND (auth = '%d' AND map = '%s');", 
+			gS_MySQLPrefix, stage, style, index, gS_Map);
+	
+	gH_SQL.Query(SQL_DeleteWRCP_Callback2, sQuery, GetClientSerial(client), DBPrio_High);
+}
+
+public void SQL_DeleteWRCP_Callback2(Database db, DBResultSet results, const char[] error, any data)
+{
+	int client = GetClientFromSerial(data);
+	int stage = gI_StageChoice[client];
+	int style = gI_StyleChoice[client];
+
+	if(results == null)
+	{
+		LogError("Timer (single WRCP delete2) SQL query failed. Reason: %s", error);
+
+		return;
+	}
+
+	LoadWRCP();
+	Reset(stage, style);
+
+	Shavit_PrintToChat(client, "%T", "WRCPDeleteSuccessful", client, gS_ChatStrings.sText, 
+		gS_ChatStrings.sVariable, stage, gS_ChatStrings.sText, 
+		gS_ChatStrings.sVariable2, style, gS_ChatStrings.sText);
 }
 
 public void Shavit_OnRestart(int client, int track)
@@ -443,8 +669,8 @@ public void Shavit_OnEnterStage(int client, int stage, int style)
 			gF_StageTime[client] = gF_EnterStageTime[client] - gF_LeaveStageTime[client];
 		}
 
-		OnWRCPCheck(client, stage - 1, style, gF_StageTime[client]);//check if wrcp,and insert or update
-		OnPrCheck(client, stage - 1, style, gF_StageTime[client]);//check if pr insert or update
+		OnWRCPCheck(client, stage - 1, style, gF_StageTime[client]);//check if wrcp, just do a forward xD
+		Insert_WRCP_PR(client, stage - 1, style, gF_StageTime[client]);//check if wrcp and pr, insert or update
 
 		FormatSeconds(gF_StageTime[client], sTime, 32, true);
 		FormatEx(sMessage, 255, "%T", "ZoneStageTime", client, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText);
@@ -504,8 +730,6 @@ void OnWRCPCheck(int client, int stage, int style, float time)
 			gS_ChatStrings.sVariable2, time, gS_ChatStrings.sText);
 		Shavit_PrintToChatAll("%s", sMessage);
 
-		InsertWRCP(client, stage, style, time);
-
 
 		Call_StartForward(gH_Forwards_OnWRCP);
 		Call_PushCell(client);
@@ -516,105 +740,10 @@ void OnWRCPCheck(int client, int stage, int style, float time)
 	}
 }
 
-void InsertWRCP(int client, int stage, int style, float time)
+void Insert_WRCP_PR(int client, int stage, int style, float time)
 {
 	char sQuery[512];
-	FormatEx(sQuery, 512, "SELECT stage FROM %swrcp WHERE (stage = '%d' AND style = '%d') AND map = '%s';", gS_MySQLPrefix, stage, style, gS_Map);
-
-	DataPack dp = new DataPack();
-	dp.WriteCell(GetClientSerial(client));
-	dp.WriteCell(stage);
-	dp.WriteCell(style);
-	dp.WriteFloat(time);
-
-	gH_SQL.Query(SQL_InsertWRCP_Callback, sQuery, dp, DBPrio_High);
-}
-
-public void SQL_InsertWRCP_Callback(Database db, DBResultSet results, const char[] error, any data)
-{
-	DataPack dp = view_as<DataPack>(data);
-	dp.Reset();
-
-	int client = GetClientFromSerial(dp.ReadCell());
-	int stage = dp.ReadCell();
-	int style = dp.ReadCell();
-	float time = dp.ReadFloat();
-	delete dp;//i really dislike this, hope someone can have a better implementation
-
-	if(results == null)
-	{
-		LogError("Insert WRCP error! Reason: %s", error);
-
-		return;
-	}
-
-	char sQuery[512];
-	if(results.FetchRow())//update
-	{
-		FormatEx(sQuery, 512, 
-			"UPDATE `wrcp` SET auth = %d, time = %f WHERE map = '%s' AND stage = '%d';", 
-			GetSteamAccountID(client), time, gS_Map, stage);
-	}
-	else//insert
-	{
-		FormatEx(sQuery, 512, 
-			"INSERT INTO `wrcp` (auth, map, time, style, stage, date) VALUES ('%d', '%s', '%f', '%d', '%d', '%d');",
-			GetSteamAccountID(client), gS_Map, time, style, stage, GetTime());
-	}
-
-	gH_SQL.Query(SQL_InsertWRCP_Callback2, sQuery, 0, DBPrio_High);
-}
-
-public void SQL_InsertWRCP_Callback2(Database db, DBResultSet results, const char[] error, any data)
-{
-	if(results == null)
-	{
-		LogError("Insert InsertWRCP2 error! Reason: %s", error);
-
-		return;
-	}
-
-	LoadWrcp();
-}
-
-void LoadWrcp()
-{
-	char sQuery[512];
-	FormatEx(sQuery, 512, 
-			"SELECT p1.auth, p1.stage, p1.style, p1.time, p2.name FROM %swrcp p1 " ...
-			"JOIN (SELECT auth, name FROM %susers) p2 " ...
-			"ON p1.auth = p2.auth " ...
-			"WHERE map = '%s';", 
-		gS_MySQLPrefix, gS_MySQLPrefix, gS_Map);
-
-	gH_SQL.Query(SQL_LoadWrcp_Callback, sQuery, 0, DBPrio_High);
-}
-
-public void SQL_LoadWrcp_Callback(Database db, DBResultSet results, const char[] error, any data)
-{
-	if(results == null)
-	{
-		LogError("Timer (LoadWrcp) SQL query failed. Reason: %s", error);
-		return;
-	}
-
-	while(results.FetchRow())
-	{
-		int stage = results.FetchInt(1);
-		int style = results.FetchInt(2);
-		float time = results.FetchFloat(3);
-		gF_WrcpTime[stage][style] = time;
-
-		char name[MAX_NAME_LENGTH];
-		results.FetchString(4, name, sizeof(name));
-		gS_WrcpName[stage][style] = name;
-	}
-}
-
-void OnPrCheck(int client, int stage, int style, float time)
-{
-	char sQuery[512];
-	FormatEx(sQuery, 512, "SELECT stage FROM %sstage WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
+	FormatEx(sQuery, 512, "SELECT completions FROM %sstage WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
 			gS_MySQLPrefix, stage, style, gS_Map, GetSteamAccountID(client));
 
 	DataPack dp = new DataPack();
@@ -623,10 +752,10 @@ void OnPrCheck(int client, int stage, int style, float time)
 	dp.WriteCell(style);
 	dp.WriteFloat(time);
 
-	gH_SQL.Query(SQL_PrCheck_Callback, sQuery, dp, DBPrio_High);
+	gH_SQL.Query(SQL_WRCP_PR_Check_Callback, sQuery, dp, DBPrio_High);
 }
 
-public void SQL_PrCheck_Callback(Database db, DBResultSet results, const char[] error, any data)
+public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const char[] error, any data)
 {
 	DataPack dp = view_as<DataPack>(data);
 	dp.Reset();
@@ -652,14 +781,14 @@ public void SQL_PrCheck_Callback(Database db, DBResultSet results, const char[] 
 		if(time < prTime || prTime == 0.0)
 		{
 			FormatEx(sQuery, 512,
-			"UPDATE `%sstage` SET time = %f, date = %d, completions = completions + 1 WHERE (stage = '%d' AND auth = '%d') AND map = '%s';", 
-			gS_MySQLPrefix, time, GetTime(), stage, GetSteamAccountID(client), gS_Map);
+			"UPDATE `%sstage` SET time = %f, date = %d, completions = completions + 1 WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
+			gS_MySQLPrefix, time, GetTime(), stage, style, gS_Map, GetSteamAccountID(client));
 		}
 		else
 		{
 			FormatEx(sQuery, 512,
-			"UPDATE `%sstage` SET completions = completions + 1 WHERE (stage = '%d' AND auth = '%d') AND map = '%s';", 
-			gS_MySQLPrefix, stage, GetSteamAccountID(client), gS_Map);
+			"UPDATE `%sstage` SET completions = completions + 1 WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
+			gS_MySQLPrefix, stage, style, gS_Map, GetSteamAccountID(client));
 		}
 	}
 	else
@@ -682,6 +811,7 @@ public void SQL_PrCheck_Callback2(Database db, DBResultSet results, const char[]
 	}
 
 	LoadPR(GetClientFromSerial(data));
+	LoadWRCP();
 }
 
 void LoadPR(int client)
@@ -721,37 +851,68 @@ public void SQL_LoadPR_Callback(Database db, DBResultSet results, const char[] e
 	}
 }
 
+void LoadWRCP()
+{
+	char sQuery[512];
+	FormatEx(sQuery, 512, 
+			"SELECT p1.auth, p1.stage, p1.style, p1.time, p2.name FROM %sstage p1 " ...
+			"JOIN (SELECT auth, name FROM %susers) p2 " ...
+			"ON p1.auth = p2.auth " ...
+			"WHERE map = '%s' " ...
+			"ORDER BY p1.time ASC;", 
+			gS_MySQLPrefix, gS_MySQLPrefix, gS_Map);
+
+	gH_SQL.Query(SQL_LoadWRCP_Callback, sQuery, 0, DBPrio_High);
+}
+
+public void SQL_LoadWRCP_Callback(Database db, DBResultSet results, const char[] error, any data)
+{
+	if(results == null)
+	{
+		LogError("Timer (LoadWRCP) SQL query failed. Reason: %s", error);
+		return;
+	}
+
+	while(results.FetchRow())
+	{
+		int stage = results.FetchInt(1);
+		int style = results.FetchInt(2);
+		float time = results.FetchFloat(3);
+		if(time < gF_WrcpTime[stage][style] || gF_WrcpTime[stage][style] == 0.0)
+		{
+			gF_WrcpTime[stage][style] = time;
+
+			char name[MAX_NAME_LENGTH];
+			results.FetchString(4, name, sizeof(name));
+			gS_WrcpName[stage][style] = name;
+		}
+	}
+}
+
 void SQL_DBConnect()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
 	gH_SQL = GetTimerDatabaseHandle();
 	gB_MySQL = IsMySQLDatabase(gH_SQL);
 
-	Transaction hTransaction = new Transaction();
-
 	char sQuery[1024];
-	FormatEx(sQuery, 1024, 
-			"CREATE TABLE IF NOT EXISTS `%swrcp` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `style` TINYINT, `stage` INT, `date` INT, PRIMARY KEY (`id`))%s;",
-			gS_MySQLPrefix, (gB_MySQL) ? " ENGINE=INNODB" : "");
-
-	hTransaction.AddQuery(sQuery);
-
 	FormatEx(sQuery, 1024, 
 			"CREATE TABLE IF NOT EXISTS `%sstage` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `style` TINYINT, `stage` INT, `date` INT, `completions` INT, PRIMARY KEY (`id`))%s;",
 			gS_MySQLPrefix, (gB_MySQL) ? " ENGINE=INNODB" : "");
 
-	hTransaction.AddQuery(sQuery);
-
-	gH_SQL.Execute(hTransaction, Trans_CreateTable_Success, Trans_CreateTable_Failed);
+	gH_SQL.Query(SQL_CreateTable_Callback, sQuery);
 }
 
-public void Trans_CreateTable_Success(Database db, any data, int numQueries, DBResultSet[] results, any[] queryData)
+public void SQL_CreateTable_Callback(Database db, DBResultSet results, const char[] error, any data)
 {
+	if(results == null)
+	{
+		LogError("Timer (wrcp module) error! 'stage' table creation failed. Reason: %s", error);
+
+		return;
+	}
+
 	gB_Connected = true;
-	OnMapStart();
-}
 
-public void Trans_CreateTable_Failed(Database db, any data, int numQueries, const char[] error, int failIndex, any[] queryData)
-{
-	LogError("Timer (wrcp module) error! table creation failed %d/%d. Reason: %s", failIndex, numQueries, error);
+	OnMapStart();
 }
