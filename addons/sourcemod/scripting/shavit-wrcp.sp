@@ -11,22 +11,23 @@
 #pragma semicolon 1
 #pragma newdecls required
 
+const int gI_Styles = 10;
+
 Database gH_SQL = null;
 bool gB_Connected = false;
 bool gB_MySQL = false;
 
 char gS_Map[160];
-int gI_Styles;
-int gI_Stages;
+int gI_Stages;//how many stages in a map,same variable in shavit-zone
 
 int gI_LastStage[MAXPLAYERS + 1];
 float gF_EnterStageTime[MAXPLAYERS + 1];
 float gF_LeaveStageTime[MAXPLAYERS + 1];
 float gF_StageTime[MAXPLAYERS + 1];
 
-float gF_WrcpTime[MAX_ZONES - 2][STYLE_LIMIT];
-char gS_WrcpName[MAX_ZONES - 2][STYLE_LIMIT][MAX_NAME_LENGTH];
-float gF_PrStageTime[MAXPLAYERS + 1][MAX_ZONES - 2][STYLE_LIMIT];
+float gF_WrcpTime[MAX_STAGES][gI_Styles];
+char gS_WrcpName[MAX_STAGES][gI_Styles][MAX_NAME_LENGTH];
+float gF_PrStageTime[MAXPLAYERS + 1][MAX_STAGES][gI_Styles];
 
 int gI_StyleChoice[MAXPLAYERS + 1];
 int gI_StageChoice[MAXPLAYERS + 1];
@@ -39,12 +40,21 @@ bool gB_Late = false;
 char gS_MySQLPrefix[32];
 
 // timer settings
-stylestrings_t gS_StyleStrings[STYLE_LIMIT];
+stylestrings_t gS_StyleStrings[gI_Styles];
 chatstrings_t gS_ChatStrings;
 
 Handle gH_Forwards_EnterStage = null;
 Handle gH_Forwards_LeaveStage = null;
 Handle gH_Forwards_OnWRCP = null;
+
+public Plugin myinfo =
+{
+	name = "[shavit] WRCP",
+	author = "Ciallo",
+	description = "A modified WRCP plugin for fork's surf timer.",
+	version = "0.0",
+	url = "https://github.com/Ciallo-Ani/surftimer"
+}
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -67,6 +77,8 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_srcp", Command_WRCP, "Alias of sm_wrcp");
 	RegConsoleCmd("sm_srcps", Command_WRCP, "Alias of sm_wrcp");
 	RegConsoleCmd("sm_mtop", Command_Maptop, "Actually it's alias of sm_wrcp");
+
+	RegConsoleCmd("sm_test", Command_Test, "do stuff");
 
 	gH_Forwards_EnterStage = CreateGlobalForward("Shavit_OnEnterStage", ET_Event, Param_Cell, Param_Cell, Param_Cell);
 	gH_Forwards_LeaveStage = CreateGlobalForward("Shavit_OnLeaveStage", ET_Event, Param_Cell, Param_Cell, Param_Cell);
@@ -91,6 +103,7 @@ public void OnClientPutInServer(int client)
 		for(int j = 0; j < gI_Styles; j++)
 		{
 			gF_PrStageTime[client][i][j] = 0.0;
+			LoadPR(client);
 		}
 	}
 }
@@ -120,7 +133,7 @@ public void OnMapStart()
 
 	if(gB_Late)
 	{
-		Shavit_OnStyleConfigLoaded(-1);
+		Shavit_OnStyleConfigLoaded(gI_Styles);
 		Shavit_OnChatConfigLoaded();
 	}
 }
@@ -135,13 +148,6 @@ public void OnAllPluginsLoaded()
 
 public void Shavit_OnStyleConfigLoaded(int styles)
 {
-	if(styles == -1)
-	{
-		styles = Shavit_GetStyleCount();
-	}
-
-	gI_Styles = styles;
-
 	for(int i = 0; i < styles; i++)
 	{
 		Shavit_GetStyleStrings(i, sStyleName, gS_StyleStrings[i].sStyleName, sizeof(stylestrings_t::sStyleName));
@@ -157,6 +163,11 @@ public void Shavit_OnChatConfigLoaded()
 	Shavit_GetChatStrings(sMessageVariable, gS_ChatStrings.sVariable, sizeof(chatstrings_t::sVariable));
 	Shavit_GetChatStrings(sMessageVariable2, gS_ChatStrings.sVariable2, sizeof(chatstrings_t::sVariable2));
 	Shavit_GetChatStrings(sMessageStyle, gS_ChatStrings.sStyle, sizeof(chatstrings_t::sStyle));
+}
+
+public Action Command_Test(int client, int args)
+{
+	PrintToChat(client, "%d", Shavit_GetBhopStyle(client));
 }
 
 public Action Command_Maptop(int client, int args)
@@ -508,7 +519,7 @@ void OnWRCPCheck(int client, int stage, int style, float time)
 void InsertWRCP(int client, int stage, int style, float time)
 {
 	char sQuery[512];
-	FormatEx(sQuery, 512, "SELECT stage FROM %swrcp WHERE stage = '%d' AND map = '%s';", gS_MySQLPrefix, stage, gS_Map);
+	FormatEx(sQuery, 512, "SELECT stage FROM %swrcp WHERE (stage = '%d' AND style = '%d') AND map = '%s';", gS_MySQLPrefix, stage, style, gS_Map);
 
 	DataPack dp = new DataPack();
 	dp.WriteCell(GetClientSerial(client));
@@ -603,7 +614,8 @@ public void SQL_LoadWrcp_Callback(Database db, DBResultSet results, const char[]
 void OnPrCheck(int client, int stage, int style, float time)
 {
 	char sQuery[512];
-	FormatEx(sQuery, 512, "SELECT stage FROM %sstage WHERE (stage = '%d' AND auth = '%d') AND map = '%s';", gS_MySQLPrefix, stage, GetSteamAccountID(client), gS_Map);
+	FormatEx(sQuery, 512, "SELECT stage FROM %sstage WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
+			gS_MySQLPrefix, stage, style, gS_Map, GetSteamAccountID(client));
 
 	DataPack dp = new DataPack();
 	dp.WriteCell(GetClientSerial(client));
