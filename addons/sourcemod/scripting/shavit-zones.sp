@@ -179,6 +179,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetZoneData", Native_GetZoneData);
 	CreateNative("Shavit_GetZoneFlags", Native_GetZoneFlags);
 	CreateNative("Shavit_GetClientStage", Native_GetClientStage);
+	CreateNative("Shavit_GetMapStages", Native_GetMapStages);
 	CreateNative("Shavit_InsideZone", Native_InsideZone);
 	CreateNative("Shavit_InsideZoneGetID", Native_InsideZoneGetID);
 	CreateNative("Shavit_IsClientCreatingZone", Native_IsClientCreatingZone);
@@ -539,6 +540,11 @@ public int Native_GetClientStage(Handle handler, int numParams)
 	return (gI_ClientCurrentStage[GetNativeCell(1)]);
 }
 
+public int Native_GetMapStages(Handle handler, int numParams)
+{
+	return gI_Stages;
+}
+
 bool LoadZonesConfig()
 {
 	char sPath[PLATFORM_MAX_PATH];
@@ -719,7 +725,7 @@ public void LoadStageZones()
 {
 	char sQuery[256];
 	FormatEx(sQuery, 256, "SELECT id, data FROM mapzones WHERE type = %i and map = '%s'", Zone_Stage, gS_Map);
-	gH_SQL.Query(SQL_GetStageZone_Callback, sQuery,0, DBPrio_High);
+	gH_SQL.Query(SQL_GetStageZone_Callback, sQuery, 0, DBPrio_High);
 }
 
 public void SQL_GetStageZone_Callback(Database db, DBResultSet results, const char[] error, any data)

@@ -64,7 +64,6 @@ enum struct loopingbot_config_t
 	bool bSpawned;
 	int iTrackMask; // only 9 bits needed for tracks
 	int aStyleMask[8]; // all 256 bits needed for enabled styles
-	//bool bActive.... or something TODO;
 	char sName[MAX_NAME_LENGTH];
 }
 
@@ -79,7 +78,8 @@ enum struct replayfile_header_t
 	int iFrameCount;
 	float fTime;
 	int iSteamID;
-	//int iPostFrames;
+	int iPostFrames;
+	float fTickrate;
 }
 
 enum struct bot_info_t
@@ -95,6 +95,7 @@ enum struct bot_info_t
 	Handle hTimer;
 	float fStartTick; // Shavit_GetReplayBotFirstFrame
 	bool bCustomFrames;
+	bool bIgnoreLimit;
 	framecache_t aCache;
 }
 
@@ -240,7 +241,9 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetReplayData", Native_GetReplayData);
 	CreateNative("Shavit_GetReplayFrames", Native_GetReplayFrames);
 	CreateNative("Shavit_GetReplayFrameCount", Native_GetReplayFrameCount);
+	CreateNative("Shavit_GetReplayBotFrameCount", Native_GetReplayBotFrameCount);
 	CreateNative("Shavit_GetReplayLength", Native_GetReplayLength);
+	CreateNative("Shavit_GetReplayBotLength", Native_GetReplayBotLength);
 	CreateNative("Shavit_GetReplayName", Native_GetReplayName);
 	CreateNative("Shavit_GetReplayStatus", Native_GetReplayStatus);
 	CreateNative("Shavit_GetReplayTime", Native_GetReplayTime);
@@ -341,7 +344,7 @@ public void OnPluginStart()
 
 	// plugin convars
 	gCV_Enabled = new Convar("shavit_replay_enabled", "1", "Enable replay bot functionality?", 0, true, 0.0, true, 1.0);
-	gCV_ReplayDelay = new Convar("shavit_replay_delay", "5.0", "Time to wait before restarting the replay after it finishes playing.", 0, true, 0.0, true, 10.0);
+	gCV_ReplayDelay = new Convar("shavit_replay_delay", "2.5", "Time to wait before restarting the replay after it finishes playing.", 0, true, 0.0, true, 10.0);
 	gCV_TimeLimit = new Convar("shavit_replay_timelimit", "7200.0", "Maximum amount of time (in seconds) to allow saving to disk.\nDefault is 7200 (2 hours)\n0 - Disabled");
 	gCV_DefaultTeam = new Convar("shavit_replay_defaultteam", "3", "Default team to make the bots join, if possible.\n2 - Terrorists/RED\n3 - Counter Terrorists/BLU", 0, true, 2.0, true, 3.0);
 	gCV_CentralBot = new Convar("shavit_replay_centralbot", "1", "Have one central bot instead of one bot per replay.\nTriggered with !replay.\nRestart the map for changes to take effect.\nThe disabled setting is not supported - use at your own risk.\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
@@ -352,7 +355,7 @@ public void OnPluginStart()
 	gCV_BotWeapon = new Convar("shavit_replay_botweapon", "", "Choose which weapon the bot will hold.\nLeave empty to use the default.\nSet to \"none\" to have none.\nExample: weapon_usp");
 	gCV_PlaybackCanStop = new Convar("shavit_replay_pbcanstop", "1", "Allow players to stop playback if they requested it?", 0, true, 0.0, true, 1.0);
 	gCV_PlaybackCooldown = new Convar("shavit_replay_pbcooldown", "10.0", "Cooldown in seconds to apply for players between each playback they request/stop.\nDoes not apply to RCON admins.", 0, true, 0.0);
-	gCV_PlaybackPreRunTime = new Convar("shavit_replay_preruntime", "1.0", "Time (in seconds) to record before a player leaves start zone. (The value should NOT be too high)", 0, true, 0.0);
+	gCV_PlaybackPreRunTime = new Convar("shavit_replay_preruntime", "1.5", "Time (in seconds) to record before a player leaves start zone. (The value should NOT be too high)", 0, true, 0.0);
 	gCV_ClearPreRun = new Convar("shavit_replay_prerun_always", "1", "Record prerun frames outside the start zone?", 0, true, 0.0, true, 1.0);
 	gCV_DynamicTimeCheap = new Convar("shavit_replay_timedifference_cheap", "0.0", "0 - Disabled\n1 - only clip the search ahead to shavit_replay_timedifference_search\n2 - only clip the search behind to players current frame\n3 - clip the search to +/- shavit_replay_timedifference_search seconds to the players current frame", 0, true, 0.0, true, 3.0);
 	gCV_DynamicTimeSearch = new Convar("shavit_replay_timedifference_search", "0.0", "Time in seconds to search the players current frame for dynamic time differences\n0 - Full Scan\nNote: Higher values will result in worse performance", 0, true, 0.0);
@@ -403,7 +406,7 @@ void KickAllReplays()
 	{
 		if (IsValidEntity(gA_BotInfo[i].iEnt))
 		{
-			KickReplay(gA_BotInfo[i], -1, false);
+			KickReplay(gA_BotInfo[i], false);
 		}
 	}
 
@@ -524,11 +527,11 @@ public void AdminMenu_DeleteReplay(Handle topmenu, TopMenuAction action, TopMenu
 	}
 }
 
-void FinishReplay(bot_info_t info, int stopper = -1)
+void FinishReplay(bot_info_t info)
 {
 	if (info.iType == Replay_Dynamic || info.iType == Replay_Prop)
 	{
-		KickReplay(info, stopper);
+		KickReplay(info);
 	}
 	else if (info.iType == Replay_Looping)
 	{
@@ -539,11 +542,11 @@ void FinishReplay(bot_info_t info, int stopper = -1)
 		if (hasFrames)
 		{
 			ClearBotInfo(info);
-			StartReplay(info, nexttrack, nextstyle, stopper, gCV_ReplayDelay.FloatValue);
+			StartReplay(info, nexttrack, nextstyle, 0, gCV_ReplayDelay.FloatValue);
 		}
 		else
 		{
-			KickReplay(info, stopper);
+			KickReplay(info);
 		}
 	}
 	else if (info.iType == Replay_Central)
@@ -566,7 +569,7 @@ void StopOrRestartBots(int style, int track, bool restart)
 			continue;
 		}
 
-		CancelReplay(gA_BotInfo[i], 0, false);
+		CancelReplay(gA_BotInfo[i], false);
 
 		if (restart)
 		{
@@ -735,7 +738,7 @@ int CreateReplay(int track, int style, float delay, int client, int bot, int typ
 		{
 			if (!ignorelimit)
 			{
-				if (gCV_DynamicBotLimit.IntValue < 1 || gI_DynamicBots >= gCV_DynamicBotLimit.IntValue)
+				if (gI_DynamicBots >= gCV_DynamicBotLimit.IntValue)
 				{
 					return 0;
 				}
@@ -748,6 +751,7 @@ int CreateReplay(int track, int style, float delay, int client, int bot, int typ
 			info.iStyle = style;
 			info.iTrack = track;
 			info.iStarterSerial = (client > 0) ? GetClientFromSerial(client) : 0;
+			info.bIgnoreLimit = ignorelimit;
 			SetupIfCustomFrames(info, cache);
 			QueueAddReplayBot(info);
 		}
@@ -768,7 +772,7 @@ int CreateReplay(int track, int style, float delay, int client, int bot, int typ
 			return 0;
 		}
 
-		CancelReplay(gA_BotInfo[index], 0, false);
+		CancelReplay(gA_BotInfo[index], false);
 		SetupIfCustomFrames(gA_BotInfo[index], cache);
 		StartReplay(gA_BotInfo[index], track, style, client, delay);
 	}
@@ -880,50 +884,67 @@ public int Native_SetReplayData(Handle handler, int numParams)
 	gI_PlayerFrames[client] = gA_PlayerFrames[client].Length;
 }
 
-public int Native_GetReplayData(Handle handler, int numParams)
+public int Native_GetReplayData(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
-	ArrayList frames = null;
+	Handle cloned = null;
 
 	if(gA_PlayerFrames[client] != null)
 	{
-		frames = gA_PlayerFrames[client].Clone();
+		ArrayList frames = gA_PlayerFrames[client].Clone();
+		frames.Resize(gI_PlayerFrames[client]);
+		cloned = CloneHandle(frames, plugin); // set the calling plugin as the handle owner
+		CloseHandle(frames);
 	}
 
-	return view_as<int>(frames);
+	return view_as<int>(cloned);
 }
 
-public int Native_GetReplayFrames(Handle handler, int numParams)
+public int Native_GetReplayFrames(Handle plugin, int numParams)
 {
 	int track = GetNativeCell(1);
 	int style = GetNativeCell(2);
-	ArrayList frames = null;
+	Handle cloned = null;
 
 	if(gA_FrameCache[style][track].aFrames != null)
 	{
-		frames = gA_FrameCache[style][track].aFrames.Clone();
+		ArrayList frames = gA_FrameCache[style][track].aFrames.Clone();
+		cloned = CloneHandle(frames, plugin); // set the calling plugin as the handle owner
+		CloseHandle(frames);
 	}
 
-	return view_as<int>(frames);
+	return view_as<int>(cloned);
 }
 
-// TODO: Add a native that'd return the frame count of a replay bot... because custom frames...
 public int Native_GetReplayFrameCount(Handle handler, int numParams)
 {
 	return gA_FrameCache[GetNativeCell(1)][GetNativeCell(2)].iFrameCount;
 }
 
-public int Native_GetClientFrameCount(Handle handler, int numParams)
+public int Native_GetReplayBotFrameCount(Handle handler, int numParams)
 {
-	return gA_PlayerFrames[GetNativeCell(1)].Length;
+	int bot = GetNativeCell(1);
+	int index = GetBotInfoIndex(bot);
+	return gA_BotInfo[index].aCache.iFrameCount;
 }
 
-// TODO: Add a native that'd return the replay length of a replay bot... because custom frames...
+public int Native_GetClientFrameCount(Handle handler, int numParams)
+{
+	return gI_PlayerFrames[GetNativeCell(1)];
+}
+
 public int Native_GetReplayLength(Handle handler, int numParams)
 {
 	int style = GetNativeCell(1);
 	int track = GetNativeCell(2);
 	return view_as<int>(GetReplayLength(style, track, gA_FrameCache[style][track]));
+}
+
+public int Native_GetReplayBotLength(Handle handler, int numParams)
+{
+	int bot = GetNativeCell(1);
+	int index = GetBotInfoIndex(bot);
+	return view_as<int>(GetReplayLength( gA_BotInfo[index].iStyle,  gA_BotInfo[index].iTrack, gA_BotInfo[index].aCache));
 }
 
 // TODO: Add a native that'd return the replay name of a replay bot... because custom frames...
@@ -1372,7 +1393,11 @@ bool LoadReplay(framecache_t cache, int style, int track, const char[] path, con
 
 	if (fFile != null)
 	{
-		if(header.iReplayVersion < 0x03 || (StrEqual(header.sMap, mapname, false) && header.iStyle == style && header.iTrack == track))
+		if (header.iReplayVersion > REPLAY_FORMAT_SUBVERSION)
+		{
+			// not going to try and read it
+		}
+		else if (header.iReplayVersion < 0x03 || (StrEqual(header.sMap, mapname, false) && header.iStyle == style && header.iTrack == track))
 		{
 			success = ReadReplayFrames(fFile, header, cache);
 		}
@@ -1522,6 +1547,12 @@ File ReadReplayHeader(const char[] path, replayfile_header_t header)
 			header.iSteamID = StringToInt(sAuthID);
 		}
 
+		if (version >= 0x05)
+		{
+			file.ReadInt32(header.iPostFrames);
+			file.ReadInt32(view_as<int>(header.fTickrate));
+		}
+
 		strcopy(header.sReplayFormat, sizeof(header.sReplayFormat), sExplodedHeader[1]);
 	}
 	else if(StrEqual(sExplodedHeader[1], REPLAY_FORMAT_V2))
@@ -1551,7 +1582,7 @@ void WriteReplayHeader(File fFile, int style, int track, float time, int steamid
 	fFile.WriteInt32(steamid);
 }
 
-void SaveReplay(int style, int track, float time, int steamid, char[] name, int preframes, ArrayList playerrecording, int timerstartframe, int timestamp, bool saveCopy, bool saveReplay, char[] sPath, int sPathLen)
+void SaveReplay(int style, int track, float time, int steamid, char[] name, int preframes, ArrayList playerrecording, int iSize, int timerstartframe, int timestamp, bool saveCopy, bool saveReplay, char[] sPath, int sPathLen)
 {
 	char sTrack[4];
 	FormatEx(sTrack, 4, "_%d", track);
@@ -1572,8 +1603,6 @@ void SaveReplay(int style, int track, float time, int steamid, char[] name, int 
 		DeleteFile(sPath);
 		fCopy = OpenFile(sPath, "wb");
 	}
-
-	int iSize = playerrecording.Length;
 
 	if (saveReplay)
 	{
@@ -2033,7 +2062,7 @@ public void OnClientDisconnect(int client)
 	if (gA_BotInfo[client].iEnt == client)
 	{
 		UpdateBotQuota(gI_ExpectedBots - 1);
-		CancelReplay(gA_BotInfo[client], 0, false);
+		CancelReplay(gA_BotInfo[client], false);
 
 		gA_BotInfo[client].iEnt = -1;
 
@@ -2053,12 +2082,12 @@ public Action Shavit_OnStart(int client)
 {
 	int iMaxPreFrames = RoundToFloor(gCV_PlaybackPreRunTime.FloatValue * gF_Tickrate / Shavit_GetStyleSettingFloat(Shavit_GetBhopStyle(client), "speed"));
 
-	gI_PlayerPrerunFrames[client] = gA_PlayerFrames[client].Length - iMaxPreFrames;
+	gI_PlayerPrerunFrames[client] = gI_PlayerFrames[client] - iMaxPreFrames;
 	if(gI_PlayerPrerunFrames[client] < 0)
 	{
 		gI_PlayerPrerunFrames[client] = 0;
 	}
-	gI_PlayerTimerStartFrames[client] = gA_PlayerFrames[client].Length;
+	gI_PlayerTimerStartFrames[client] = gI_PlayerFrames[client];
 
 	if(!gB_ClearFrame[client])
 	{
@@ -2070,7 +2099,7 @@ public Action Shavit_OnStart(int client)
 	}
 	else
 	{
-		if(gA_PlayerFrames[client].Length >= iMaxPreFrames)
+		if(gI_PlayerFrames[client] >= iMaxPreFrames)
 		{
 			gA_PlayerFrames[client].Erase(0);
 			gI_PlayerFrames[client]--;
@@ -2138,7 +2167,7 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 	ReplaceString(sName, MAX_NAME_LENGTH, "#", "?");
 
 	char sPath[PLATFORM_MAX_PATH];
-	SaveReplay(style, track, time, iSteamID, sName, gI_PlayerPrerunFrames[client], gA_PlayerFrames[client], gI_PlayerTimerStartFrames[client], timestamp, makeCopy, makeReplay, sPath, sizeof(sPath));
+	SaveReplay(style, track, time, iSteamID, sName, gI_PlayerPrerunFrames[client], gA_PlayerFrames[client], gI_PlayerFrames[client], gI_PlayerTimerStartFrames[client], timestamp, makeCopy, makeReplay, sPath, sizeof(sPath));
 
 	Call_StartForward(gH_OnReplaySaved);
 	Call_PushCell(client);
@@ -2374,8 +2403,12 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		{
 			if(gF_NextFrameTime[client] <= 0.0)
 			{
-				// TODO: better resizing than this. Probably pre-allocating two seconds worth.
-				gA_PlayerFrames[client].Resize(gI_PlayerFrames[client] + 1);
+				if (gA_PlayerFrames[client].Length <= gI_PlayerFrames[client])
+				{
+					// Add about two seconds worth of frames so we don't have to resize so often
+					gA_PlayerFrames[client].Resize(gI_PlayerFrames[client] + (RoundToCeil(gF_Tickrate) * 2));
+					//PrintToChat(client, "resizing %d -> %d", gI_PlayerFrames[client], gA_PlayerFrames[client].Length);
+				}
 
 				frame_t aFrame;
 				GetClientAbsOrigin(client, aFrame.pos);
@@ -2399,9 +2432,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 				aFrame.mt = GetEntityMoveType(client);
 				//GetEntPropVector(client, Prop_Data, "m_vecVelocity", aFrame.vel); // TODO: m_vecBaseVelocity? m_vecAbsVelocity?
 
-				// TODO: Change to pusharray
-				gA_PlayerFrames[client].SetArray(gI_PlayerFrames[client], aFrame, sizeof(frame_t));
-				gI_PlayerFrames[client]++;
+				gA_PlayerFrames[client].SetArray(gI_PlayerFrames[client]++, aFrame, sizeof(frame_t));
 
 				if(fTimescale != -1.0)
 				{
@@ -2796,15 +2827,15 @@ void OpenReplayTypeMenu(int client)
 	char sInfo[8];
 
 	FormatEx(sDisplay, sizeof(sDisplay), "%T", "Menu_Replay_Central", client);
-	IntToString(view_as<int>(Replay_Central), sInfo, sizeof(sInfo));
+	IntToString(Replay_Central, sInfo, sizeof(sInfo));
 	menu.AddItem(sInfo, sDisplay, (gCV_CentralBot.BoolValue && IsValidClient(gI_CentralBot) && gA_BotInfo[gI_CentralBot].iStatus == Replay_Idle) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 
 	FormatEx(sDisplay, sizeof(sDisplay), "%T", "Menu_Replay_Dynamic", client);
-	IntToString(view_as<int>(Replay_Dynamic), sInfo, sizeof(sInfo));
-	menu.AddItem(sInfo, sDisplay, (gCV_DynamicBotLimit.IntValue > 0 && gI_DynamicBots < gCV_DynamicBotLimit.IntValue) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+	IntToString(Replay_Dynamic, sInfo, sizeof(sInfo));
+	menu.AddItem(sInfo, sDisplay, (gI_DynamicBots < gCV_DynamicBotLimit.IntValue) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 
 	FormatEx(sDisplay, sizeof(sDisplay), "%T", "Menu_Replay_Prop", client);
-	IntToString(view_as<int>(Replay_Prop), sInfo, sizeof(sInfo));
+	IntToString(Replay_Prop, sInfo, sizeof(sInfo));
 	menu.AddItem(sInfo, sDisplay, (gCV_AllowPropBots.BoolValue) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 
 	bool canstop = false;
@@ -2844,7 +2875,8 @@ public int MenuHandler_ReplayType(Menu menu, MenuAction action, int param1, int 
 
 				if ((gA_BotInfo[index].iStatus == Replay_Start || gA_BotInfo[index].iStatus == Replay_Running) && CanStopReplay(param1, gA_BotInfo[index]))
 				{
-					FinishReplay(gA_BotInfo[index], param1);
+					Shavit_PrintToChat(param1, "%T", "CentralReplayStopped", param1);
+					FinishReplay(gA_BotInfo[index]);
 				}
 			}
 
@@ -2859,10 +2891,9 @@ public int MenuHandler_ReplayType(Menu menu, MenuAction action, int param1, int 
 		}
 
 		if ((type == Replay_Central && (!gCV_CentralBot.BoolValue || !IsValidClient(gI_CentralBot) || gA_BotInfo[gI_CentralBot].iStatus != Replay_Idle))
-		|| (type == Replay_Dynamic && (gCV_DynamicBotLimit.IntValue < 1 || gI_DynamicBots >= gCV_DynamicBotLimit.IntValue))
+		|| (type == Replay_Dynamic && (gI_DynamicBots >= gCV_DynamicBotLimit.IntValue))
 		|| (type == Replay_Prop && (!gCV_AllowPropBots.BoolValue)))
 		{
-			PrintToChat(param1, "fuck off"); // TODO
 			return 0;
 		}
 
@@ -3008,24 +3039,44 @@ public int MenuHandler_ReplayStyle(Menu menu, MenuAction action, int param1, int
 
 		if (type == Replay_Central)
 		{
-			if (IsValidClient(gI_CentralBot))
+			if (!IsValidClient(gI_CentralBot))
 			{
-				StartReplay(gA_BotInfo[gI_CentralBot], gI_MenuTrack[param1], gI_MenuStyle[param1], param1, gCV_ReplayDelay.FloatValue);
-				SetEntPropEnt(param1, Prop_Send, "m_hObserverTarget", gI_CentralBot);
+				return 0;
 			}
-			// TODO: error message if not valid
+
+			if (gA_BotInfo[gI_CentralBot].iStatus != Replay_Idle)
+			{
+				Shavit_PrintToChat(param1, "%T", "CentralReplayPlaying", param1);
+				return 0;
+			}
+
+			StartReplay(gA_BotInfo[gI_CentralBot], gI_MenuTrack[param1], gI_MenuStyle[param1], param1, gCV_ReplayDelay.FloatValue);
+			SetEntPropEnt(param1, Prop_Send, "m_hObserverTarget", gI_CentralBot);
 		}
 		else if (type == Replay_Dynamic)
 		{
+			if (gI_DynamicBots >= gCV_DynamicBotLimit.IntValue)
+			{
+				Shavit_PrintToChat(param1, "%T", "TooManyDynamicBots", param1);
+				return 0;
+			}
+
+			++gI_DynamicBots;
 			bot_info_t info;
 			info.iType = Replay_Dynamic;
 			info.iStyle = gI_MenuStyle[param1];
 			info.iTrack = gI_MenuTrack[param1];
 			info.iStarterSerial = GetClientSerial(param1);
+			info.bIgnoreLimit = false;
 			QueueAddReplayBot(info);
 		}
 		else if (type == Replay_Prop)
 		{
+			if (!gCV_AllowPropBots.BoolValue)
+			{
+				return 0;
+			}
+
 			int ent = CreateReplayProp(param1);
 
 			if (IsValidEntity(ent))
@@ -3085,6 +3136,7 @@ void ClearBotInfo(bot_info_t info)
 	delete info.hTimer;
 	info.fStartTick = -1.0;
 	info.bCustomFrames = false;
+	//info.bIgnoreLimit
 
 	info.aCache.iFrameCount = -1;
 	info.aCache.fTime = -1.0;
@@ -3156,13 +3208,8 @@ bool FindNextLoop(int &track, int &style, int config)
 	return false;
 }
 
-void CancelReplay(bot_info_t info, int client, bool update = true)
+void CancelReplay(bot_info_t info, bool update = true)
 {
-	if(client > 0)
-	{
-		Shavit_PrintToChat(client, "%T", "CentralReplayStopped", client);
-	}
-
 	int starter = GetClientFromSerial(info.iStarterSerial);
 
 	if(starter != 0)
@@ -3183,16 +3230,21 @@ void CancelReplay(bot_info_t info, int client, bool update = true)
 	}
 }
 
-void KickReplay(bot_info_t info, int stopper = -1, bool decreaseQuota = true)
+void KickReplay(bot_info_t info, bool decreaseQuota = true)
 {
 	if (info.iEnt <= 0)
 	{
 		return;
 	}
 
+	if (info.iType == Replay_Dynamic && !info.bIgnoreLimit)
+	{
+		--gI_DynamicBots;
+	}
+
 	int starter = GetClientFromSerial(info.iStarterSerial);
 
-	CancelReplay(info, stopper, false);
+	CancelReplay(info, false);
 
 	if (1 <= info.iEnt <= MaxClients)
 	{
@@ -3314,7 +3366,7 @@ float GetClosestReplayTime(int client)
 
 	int iPreFrames = gA_FrameCache[style][track].iPreFrames;
 	int iSearch = RoundToFloor(gCV_DynamicTimeSearch.FloatValue * (1.0 / GetTickInterval()));
-	int iPlayerFrames = gA_PlayerFrames[client].Length - gI_PlayerPrerunFrames[client];
+	int iPlayerFrames = gI_PlayerFrames[client] - gI_PlayerPrerunFrames[client];
 
 	int iStartFrame = iPlayerFrames - iSearch;
 	int iEndFrame = iPlayerFrames + iSearch;
