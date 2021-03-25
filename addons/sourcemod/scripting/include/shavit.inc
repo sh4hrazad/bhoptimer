@@ -1261,6 +1261,14 @@ native TimerStatus Shavit_GetTimerStatus(int client);
 native int Shavit_GetClientStage(int client);
 
 /**
+ * Retrieve the map's stage numbers.
+ *
+ * @param client					Client index.
+ * @return                          stage ID.
+ */
+native int Shavit_GetMapStages();
+
+/**
  * Retrieve the amount of strafes done since the timer started.
  * Will return 0 if timer isn't running.
  *
@@ -1579,9 +1587,17 @@ native int Shavit_GetReplayButtons(int ent);
  *
  * @param style						Style.
  * @param track						Track.
- * @noreturn
+ * @return							Frame count.
  */
 native int Shavit_GetReplayFrameCount(int style, int track);
+
+/**
+ * Retrieves a replay bot's frame count.
+ *
+ * @param bot						Replay bot entity.
+ * @return							Frame count.
+ */
+native int Shavit_GetReplayBotFrameCount(int bot);
 
 /**
  * Retrieves the replay data for the given style and track.
@@ -1605,15 +1621,23 @@ native int Shavit_GetClientFrameCount(int client);
  *
  * @param style						Style.
  * @param track						Track.
- * @noreturn
+ * @return							Replay length.
  */
 native float Shavit_GetReplayLength(int style, int track);
+
+/**
+ * Retrieves a replay bot's total length in seconds.
+ *
+ * @param bot						Replay bot entity.
+ * @return							Replay length.
+ */
+native float Shavit_GetReplayBotLength(int bot);
 
 /**
  * Retrieves an actively playing replay's time.
  *
  * @param entity					Entity index.
- * @return							The bot's time in the replay.
+ * @return							The bot's current time in the replay.
  */
 native float Shavit_GetReplayTime(int entity);
 
@@ -2515,5 +2539,6 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_SetStyleSettingInt");
 	MarkNativeAsOptional("Shavit_GetPlainChatrank");
 	MarkNativeAsOptional("Shavit_GetClientStage");
+	MarkNativeAsOptional("Shavit_GetMapStages");
 }
 #endif
