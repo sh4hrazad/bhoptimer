@@ -621,7 +621,7 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 		return;
 	}
 
-	if(type == Zone_Stage)
+	if(type == Zone_Stage || type == Zone_End || type == Zone_End_2)
 	{
 		gF_EnterStageTime[client] = Shavit_GetClientTime(client);
 
