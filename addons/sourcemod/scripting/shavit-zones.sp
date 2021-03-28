@@ -2602,6 +2602,7 @@ public void StartTouchPost(int entity, int other)
 		if(status != Timer_Stopped && !Shavit_IsPaused(other) && Shavit_GetClientTrack(other) == gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack)
 		{
 			Shavit_FinishMap(other, gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack);
+			gI_ClientCurrentStage[other]++;
 		}
 	}
 
