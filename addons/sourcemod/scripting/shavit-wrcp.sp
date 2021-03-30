@@ -107,14 +107,6 @@ public void OnPluginStart()
 	gH_Forwards_LeaveStage = CreateGlobalForward("Shavit_OnLeaveStage", ET_Event, Param_Cell, Param_Cell, Param_Cell);
 	gH_Forwards_OnWRCP = CreateGlobalForward("Shavit_OnWRCP", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
 
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(IsValidClient(i) && !IsFakeClient(i))
-		{
-			OnClientPutInServer(i);
-		}
-	}
-
 	SQL_DBConnect();
 }
 
@@ -126,9 +118,9 @@ public void OnClientPutInServer(int client)
 		for(int j = 0; j < gI_Styles; j++)
 		{
 			gF_PrStageTime[client][i][j] = 0.0;
-			LoadPR(client);
 		}
 	}
+	LoadPR(client);
 }
 
 public void OnMapStart()
@@ -536,13 +528,11 @@ public int DeleteWRCPMenu_Handler(Menu menu, MenuAction action, int param1, int 
 
 			char sQuery[256];
 			FormatEx(sQuery, 256, 
-					"SELECT p1.auth, p1.time FROM %sstage p1 " ...
-					"JOIN (SELECT auth FROM %susers) p2 " ...
-					"ON p1.auth = p2.auth " ...
+					"SELECT auth, time FROM %sstage " ...
 					"WHERE (stage = '%d' AND style = '%d') AND map = '%s' " ...
-					"ORDER BY p1.time ASC " ...
+					"ORDER BY time ASC " ...
 					"LIMIT 1;", 
-			gS_MySQLPrefix, gS_MySQLPrefix, stage, style, gS_Map);
+			gS_MySQLPrefix, stage, style, gS_Map);
 
 			gH_SQL.Query(SQL_DeleteWRCP_Callback, sQuery, GetClientSerial(param1), DBPrio_High);
 		}
@@ -755,9 +745,8 @@ void Insert_WRCP_PR(int client, int stage, int style, float time)
 	gH_SQL.Query(SQL_WRCP_PR_Check_Callback, sQuery, dp, DBPrio_High);
 }
 
-public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const char[] error, any data)
+public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const char[] error, DataPack dp)
 {
-	DataPack dp = view_as<DataPack>(data);
 	dp.Reset();
 
 	int client = GetClientFromSerial(dp.ReadCell());
@@ -818,11 +807,8 @@ void LoadPR(int client)
 {
 	char sQuery[512];
 	FormatEx(sQuery, 512, 
-			"SELECT p1.auth, p1.stage, p1.style, p1.time FROM %sstage p1 " ...
-			"JOIN (SELECT auth FROM %susers) p2 " ...
-			"ON p1.auth = p2.auth " ...
-			"WHERE map = '%s';", 
-		gS_MySQLPrefix, gS_MySQLPrefix, gS_Map);
+			"SELECT stage, style, time FROM %sstage WHERE auth = %d AND map = '%s';", 
+		gS_MySQLPrefix, GetSteamAccountID(client), gS_Map);
 
 	gH_SQL.Query(SQL_LoadPR_Callback, sQuery, GetClientSerial(client), DBPrio_High);
 }
@@ -844,9 +830,9 @@ public void SQL_LoadPR_Callback(Database db, DBResultSet results, const char[] e
 
 	while(results.FetchRow())
 	{
-		int stage = results.FetchInt(1);
-		int style = results.FetchInt(2);
-		float time = results.FetchFloat(3);
+		int stage = results.FetchInt(0);
+		int style = results.FetchInt(1);
+		float time = results.FetchFloat(2);
 		gF_PrStageTime[client][stage][style] = time;
 	}
 }
