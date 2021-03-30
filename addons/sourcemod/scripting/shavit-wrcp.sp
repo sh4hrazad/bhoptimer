@@ -365,9 +365,8 @@ void MaptopMenu(int client, int stage, int style, const char[] map)
 	gH_SQL.Query(SQL_Maptop_Callback, sQuery, dp, DBPrio_High);
 }
 
-public void SQL_Maptop_Callback(Database db, DBResultSet results, const char[] error, any data)
+public void SQL_Maptop_Callback(Database db, DBResultSet results, const char[] error, DataPack dp)
 {
-	DataPack dp = view_as<DataPack>(data);
 	dp.Reset();
 
 	int client = GetClientFromSerial(dp.ReadCell());
