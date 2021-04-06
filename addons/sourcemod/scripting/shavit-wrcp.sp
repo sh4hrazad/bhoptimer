@@ -194,7 +194,7 @@ void Reset(int stage, int style, bool all = false)
 
 public Action Command_Test(int client, int args)
 {
-	
+
 	return Plugin_Handled;
 }
 

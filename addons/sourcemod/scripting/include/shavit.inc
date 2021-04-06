@@ -26,6 +26,7 @@
 #define SHAVIT_VERSION "2.7.0"
 #define STYLE_LIMIT 256
 #define MAX_ZONES 128
+#define MAX_STAGES 64
 
 // HUD
 #define HUD_NONE				0
@@ -239,8 +240,8 @@ enum struct cp_cache_t
 	float fDuckSpeed; // m_flDuckSpeed in csgo; doesn't exist in css
 	int iFlags;
 	timer_snapshot_t aSnapshot;
-	int iTargetname;
-	int iClassname;
+	char sTargetname[64];
+	char sClassname[64];
 	ArrayList aFrames;
 	int iPreFrames;
 	int iTimerPreFrames;
@@ -249,6 +250,8 @@ enum struct cp_cache_t
 	bool bPractice;
 	int iGroundEntity;
 	int iSteamID;
+	ArrayList aEvents;
+	ArrayList aOutputWaits;
 }
 
 enum struct frame_t
@@ -273,7 +276,8 @@ enum struct framecache_t
 	int iPreFrames;
 	ArrayList aFrames;
 	// iReplayVersion >= 0x05
-	//int iPostFrames;
+	int iPostFrames;
+	float fTickrate;
 }
 
 #if defined USES_CHAT_COLORS
@@ -1716,7 +1720,7 @@ native void Shavit_OpenStatsMenu(int client, int steamid);
 
 /**
  * Retrieves the amount of #1 records a player has.
- * Requires shavit-stats.
+ * Requires shavit-rankings.
  *
  * @param client					Client index.
  * @param track						Track to retrieve WRs from. -1 to use all tracks. All bonus tracks are combined.
@@ -1728,7 +1732,7 @@ native int Shavit_GetWRCount(int client, int track = -1, int style = -1, bool us
 
 /**
  * Retrieves the number of players who hold #1 records.
- * Requires shavit-stats.
+ * Requires shavit-rankings.
  *
  * @param track						Track to retrieve WRs from. -1 to use all tracks. All bonus tracks are combined.
  * @param style						Style to retrieve WRs from. -1 to use all styles.
@@ -1739,7 +1743,7 @@ native int Shavit_GetWRHolders(int track = -1, int style = -1, bool usecvars = t
 
 /**
  * Retrieves the player's rank based on how many #1 records they hold.
- * Requires shavit-stats.
+ * Requires shavit-rankings.
  *
  * @param client					Client index.
  * @param track						Track to retrieve WRs from. -1 to use all tracks. All bonus tracks are combined.
@@ -1945,10 +1949,11 @@ native void Shavit_LoadSnapshot(int client, any[] snapshot, int size = sizeof(ti
  * To be used by save states/TAS etc.
  *
  * @param client					Client index.
- * @param data						ArrayList with proper replay data.
+ * @param data						ArrayList with proper replay data. 
+ * @param cloneHandle				False means we duplicate the frames (ArrayList.Clone). True means we just clone the handle to the frames (CloneHandle).
  * @noreturn
  */
-native void Shavit_SetReplayData(int client, ArrayList data);
+native void Shavit_SetReplayData(int client, ArrayList data, bool cloneHandle=false);
 
 /**
  * Saves a player's replay recording frames (if exists) into an ArrayList.

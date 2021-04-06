@@ -22,6 +22,7 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <convar_class>
+#include <profiler>
 
 #undef REQUIRE_PLUGIN
 #include <shavit>
@@ -31,6 +32,7 @@
 #include <cstrike>
 #include <tf2>
 #include <tf2_stocks>
+#include <closestpos>
 
 //#include <TickRateControl>
 forward void TickRate_OnTickRateChanged(float fOld, float fNew);
@@ -42,7 +44,7 @@ forward void TickRate_OnTickRateChanged(float fOld, float fNew);
 #define MAX_LOOPING_BOT_CONFIGS 24
 #define HACKY_CLIENT_IDX_PROP "m_iTeamNum" // I store the client owner idx in this for Replay_Prop. My brain is too powerful.
 
-// #define DEBUG
+#define DEBUG 0
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -217,6 +219,9 @@ TopMenuObject gH_TimerCommands = INVALID_TOPMENUOBJECT;
 Database gH_SQL = null;
 char gS_MySQLPrefix[32];
 
+bool gB_ClosestPos;
+ClosestPos gH_ClosestPos[TRACKS_SIZE][STYLE_LIMIT];
+
 public Plugin myinfo =
 {
 	name = "[shavit] Replay Bot",
@@ -285,6 +290,11 @@ public void OnAllPluginsLoaded()
 	if(LibraryExists("adminmenu") && ((gH_AdminMenu = GetAdminTopMenu()) != null))
 	{
 		OnAdminMenuReady(gH_AdminMenu);
+	}
+
+	if (LibraryExists("closestpos"))
+	{
+		gB_ClosestPos = true;
 	}
 
 	// I don't like doing this
@@ -430,6 +440,10 @@ public void OnLibraryAdded(const char[] name)
 			OnAdminMenuReady(gH_AdminMenu);
 		}
 	}
+	else if (strcmp(name, "closestpos") == 0)
+	{
+		gB_ClosestPos = true;
+	}
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -438,6 +452,10 @@ public void OnLibraryRemoved(const char[] name)
 	{
 		gH_AdminMenu = null;
 		gH_TimerCommands = INVALID_TOPMENUOBJECT;
+	}
+	else if (strcmp(name, "closestpos") == 0)
+	{
+		gB_ClosestPos = false;
 	}
 }
 
@@ -878,9 +896,20 @@ public int Native_ReloadReplays(Handle handler, int numParams)
 public int Native_SetReplayData(Handle handler, int numParams)
 {
 	int client = GetNativeCell(1);
+	ArrayList data = view_as<ArrayList>(GetNativeCell(2));
+	bool cloneHandle = view_as<bool>(GetNativeCell(3));
 
 	delete gA_PlayerFrames[client];
-	gA_PlayerFrames[client] = view_as<ArrayList>(GetNativeCell(2)).Clone();
+
+	if (cloneHandle)
+	{
+		gA_PlayerFrames[client] = view_as<ArrayList>(CloneHandle(data));
+	}
+	else
+	{
+		gA_PlayerFrames[client] = data.Clone();
+	}
+
 	gI_PlayerFrames[client] = gA_PlayerFrames[client].Length;
 }
 
@@ -1200,6 +1229,70 @@ bool LoadStyling()
 	return true;
 }
 
+void CreateAllNavFiles()
+{
+	StringMap mapList = new StringMap();
+	DirectoryListing dir = OpenDirectory("maps");
+
+	if (dir == null)
+	{
+		return;
+	}
+
+	char fileName[PLATFORM_MAX_PATH];
+	FileType type;
+
+	// Loop through maps folder.
+	// If .bsp, mark as need .nav
+	// If .nav, mark as have .nav
+	while (dir.GetNext(fileName, sizeof(fileName), type))
+	{
+		if (type != FileType_File)
+		{
+			continue;
+		}
+
+		int length = strlen(fileName);
+
+		if (length < 5 || fileName[length-4] != '.') // a.bsp
+		{
+			continue;
+		}
+
+		if (fileName[length-3] == 'b' && fileName[length-2] == 's' && fileName[length-1] == 'p')
+		{
+			fileName[length-4] = 0;
+			mapList.SetValue(fileName, false, false); // note: false for 'replace'
+		}
+		else if (fileName[length-3] == 'n' && fileName[length-2] == 'a' && fileName[length-1] == 'v')
+		{
+			fileName[length-4] = 0;
+			mapList.SetValue(fileName, true, true); // note: true for 'replace'
+		}
+	}
+
+	delete dir;
+
+	// StringMap shenanigans are used so we don't call FileExists() 2000 times
+	StringMapSnapshot snapshot = mapList.Snapshot();
+
+	for (int i = 0; i < snapshot.Length; i++)
+	{
+		snapshot.GetKey(i, fileName, sizeof(fileName));
+
+		bool hasNAV = false;
+		mapList.GetValue(fileName, hasNAV);
+
+		if (!hasNAV)
+		{
+			WriteNavMesh(fileName, true);
+		}
+	}
+
+	delete snapshot;
+	delete mapList;
+}
+
 public void OnMapStart()
 {
 	if(!LoadStyling())
@@ -1214,32 +1307,16 @@ public void OnMapStart()
 	}
 
 	GetCurrentMap(gS_Map, 160);
+	bool bWorkshopWritten = WriteNavMesh(gS_Map); // write "maps/workshop/123123123/bhop_map.nav"
 	GetMapDisplayName(gS_Map, gS_Map, 160);
+	bool bDisplayWritten = WriteNavMesh(gS_Map); // write "maps/bhop_map.nav"
 
-	char sTempMap[PLATFORM_MAX_PATH];
-	FormatEx(sTempMap, PLATFORM_MAX_PATH, "maps/%s.nav", gS_Map);
+	CreateAllNavFiles();
 
-	if(!FileExists(sTempMap))
+	if (bWorkshopWritten || bDisplayWritten)
 	{
-		File file = OpenFile(sTempMap, "wb");
-
-		if(file != null)
-		{
-			int defaultNavMesh[51] = {
-				-17958194, 16, 1, 128600, 16777217, 1, 1, 0, -1007845376, 1112014848, 1107304447, -1035468800,
-				1139638272, 1107304447, 1107304447, 1107304447, 0, 0, 0, 0, 4, -415236096, 2046820547, 2096962, 
-				65858, 0, 49786, 536822394, 33636864, 0, 12745216, -12327104, 21102623, 3, -1008254976, 1139228672,
-				1107304447, 1, 0, 0, 0, 4386816, 4386816, 4161536, 4161536, 4161536, 20938752, 16777216, 33554432, 0, 0
-			};
-			file.Write(defaultNavMesh, 51, 4);
-			int zero[1] = {0};
-			file.Write(zero, 1, 1); // defaultNavMesh is missing one byte...
-			delete file;
-		}
-
-		ForceChangeLevel(gS_Map, ".nav file generate");
-
-		return;
+		SetCommandFlags("nav_load", GetCommandFlags("nav_load") & ~FCVAR_CHEAT);
+		ServerCommand("nav_load");
 	}
 
 	KickAllReplays();
@@ -1248,6 +1325,8 @@ public void OnMapStart()
 	{
 		return;
 	}
+
+	PrecacheModel((gEV_Type == Engine_TF2)? "models/error.mdl":"models/props/cs_office/vending_machine.mdl");
 
 	if(!DirExists(gS_ReplayFolder))
 	{
@@ -1382,7 +1461,19 @@ bool DefaultLoadReplay(framecache_t cache, int style, int track)
 {
 	char sPath[PLATFORM_MAX_PATH];
 	GetReplayFilePath(style, track, gS_Map, sPath);
-	return LoadReplay(cache, style, track, sPath, gS_Map);
+
+	if (!LoadReplay(cache, style, track, sPath, gS_Map))
+	{
+		return false;
+	}
+
+	if (gB_ClosestPos)
+	{
+		delete gH_ClosestPos[track][style];
+		gH_ClosestPos[track][style] = new ClosestPos(cache.aFrames);
+	}
+
+	return true;
 }
 
 bool LoadReplay(framecache_t cache, int style, int track, const char[] path, const char[] mapname)
@@ -1949,8 +2040,10 @@ void RemoveAllWeapons(int client)
 		if ((weapon = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", i)) == -1)
 			continue;
 
-		CS_DropWeapon(client, weapon, false, true);
-		AcceptEntityInput(weapon, "Kill");
+		if (RemovePlayerItem(client, weapon))
+		{
+			AcceptEntityInput(weapon, "Kill");
+		}
 	}
 }
 
@@ -2192,6 +2285,12 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 	{
 		StopOrRestartBots(style, track, false);
 		AddReplayBots(); // add missing looping bots
+
+		if (gB_ClosestPos)
+		{
+			delete gH_ClosestPos[track][style];
+			gH_ClosestPos[track][style] = new ClosestPos(gA_FrameCache[style][track].aFrames);
+		}
 	}
 
 	ClearFrames(client);
@@ -2656,7 +2755,7 @@ public Action Command_DeleteReplay(int client, int args)
 	}
 
 	menu.ExitButton = true;
-	menu.Display(client, 300);
+	menu.Display(client, MENU_TIME_FOREVER);
 
 	return Plugin_Handled;
 }
@@ -2701,7 +2800,7 @@ public int DeleteReplay_Callback(Menu menu, MenuAction action, int param1, int p
 		}
 
 		submenu.ExitButton = true;
-		submenu.Display(param1, 300);
+		submenu.Display(param1, MENU_TIME_FOREVER);
 	}
 
 	else if(action == MenuAction_End)
@@ -2757,18 +2856,8 @@ int CreateReplayProp(int client)
 	{
 		return -1;
 	}
-	
-	char models[][] = {
-		"models/props_interiors/lightbulb02a.mdl",
-		"models/props/cs_office/vending_machine.mdl",
-		"models/props/cs_italy/bananna_bunch.mdl",
-		"models/player/t_leet.mdl",
-	};
 
-	int modelidx = 1;
-
-	PrecacheModel(models[modelidx]);
-	SetEntityModel(ent, models[modelidx]);
+	SetEntityModel(ent, (gEV_Type == Engine_TF2)? "models/error.mdl":"models/props/cs_office/vending_machine.mdl");
 
 	DispatchSpawn(ent);
 
@@ -2855,7 +2944,7 @@ void OpenReplayTypeMenu(int client)
 	menu.AddItem("stop", sDisplay, canstop ? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
 
 	menu.ExitButton = true;
-	menu.DisplayAt(client, 0, 300);
+	menu.DisplayAt(client, 0, MENU_TIME_FOREVER);
 }
 
 public int MenuHandler_ReplayType(Menu menu, MenuAction action, int param1, int param2)
@@ -2937,7 +3026,7 @@ void OpenReplayTrackMenu(int client)
 	}
 
 	menu.ExitBackButton = true;
-	menu.Display(client, 300);
+	menu.Display(client, MENU_TIME_FOREVER);
 }
 
 public int MenuHandler_ReplayTrack(Menu menu, MenuAction action, int param1, int param2)
@@ -3339,7 +3428,11 @@ public void OnGameFrame()
 	for (int client = 1; client <= MaxClients; client++)
 	{
 		// Using modtick & valid to spread out client updates across different ticks.
-		if (IsValidClient(client, true) && !IsFakeClient(client) && Shavit_GetTimerStatus(client) == Timer_Running && (++valid % gCV_DynamicTimeTick.IntValue) == modtick)
+		if (IsValidClient(client, true) && !IsFakeClient(client) && 
+			Shavit_GetTimerStatus(client) == Timer_Running && 
+			(!Shavit_InsideZone(client, Zone_Start, Shavit_GetClientTrack(client)) && 
+			!Shavit_InsideZone(client, Zone_Start_2, Shavit_GetClientTrack(client))) && 
+			(++valid % gCV_DynamicTimeTick.IntValue) == modtick)
 		{
 			gF_TimeDifference[client] = GetClosestReplayTime(client);
 		}
@@ -3368,51 +3461,73 @@ float GetClosestReplayTime(int client)
 	int iSearch = RoundToFloor(gCV_DynamicTimeSearch.FloatValue * (1.0 / GetTickInterval()));
 	int iPlayerFrames = gI_PlayerFrames[client] - gI_PlayerPrerunFrames[client];
 
-	int iStartFrame = iPlayerFrames - iSearch;
-	int iEndFrame = iPlayerFrames + iSearch;
-	
-	if(iSearch == 0)
-	{
-		iStartFrame = 0;
-		iEndFrame = iLength - 1;
-	}
-	else
-	{
-		// Check if the search behind flag is off
-		if(iStartFrame < 0 || gCV_DynamicTimeCheap.IntValue & 2 == 0)
-		{
-			iStartFrame = 0;
-		}
-		
-		// check if the search ahead flag is off
-		if(iEndFrame >= iLength || gCV_DynamicTimeCheap.IntValue & 1 == 0)
-		{
-			iEndFrame = iLength - 1;
-		}
-	}
-
-	float fReplayPos[3];
-	int iClosestFrame;
-	// Single.MaxValue
-	float fMinDist = view_as<float>(0x7f7fffff);
-
 	float fClientPos[3];
 	GetEntPropVector(client, Prop_Send, "m_vecOrigin", fClientPos);
 
-	for(int frame = iStartFrame; frame < iEndFrame; frame++)
-	{
-		gA_FrameCache[style][track].aFrames.GetArray(frame, fReplayPos, 3);
+	int iClosestFrame;
+	int iEndFrame;
 
-		float dist = GetVectorDistance(fClientPos, fReplayPos, true);
-		if(dist < fMinDist)
+#if DEBUG
+	Profiler profiler = new Profiler();
+	profiler.Start();
+#endif
+
+	if (gB_ClosestPos)
+	{
+		iClosestFrame = gH_ClosestPos[track][style].Find(fClientPos);
+		iEndFrame = iLength - 1;
+		iSearch = 0;
+	}
+	else
+	{
+		int iStartFrame = iPlayerFrames - iSearch;
+		iEndFrame = iPlayerFrames + iSearch;
+		
+		if(iSearch == 0)
 		{
-			fMinDist = dist;
-			iClosestFrame = frame;
+			iStartFrame = 0;
+			iEndFrame = iLength - 1;
+		}
+		else
+		{
+			// Check if the search behind flag is off
+			if(iStartFrame < 0 || gCV_DynamicTimeCheap.IntValue & 2 == 0)
+			{
+				iStartFrame = 0;
+			}
+			
+			// check if the search ahead flag is off
+			if(iEndFrame >= iLength || gCV_DynamicTimeCheap.IntValue & 1 == 0)
+			{
+				iEndFrame = iLength - 1;
+			}
+		}
+
+		float fReplayPos[3];
+		// Single.MaxValue
+		float fMinDist = view_as<float>(0x7f7fffff);
+
+		for(int frame = iStartFrame; frame < iEndFrame; frame++)
+		{
+			gA_FrameCache[style][track].aFrames.GetArray(frame, fReplayPos, 3);
+
+			float dist = GetVectorDistance(fClientPos, fReplayPos, true);
+			if(dist < fMinDist)
+			{
+				fMinDist = dist;
+				iClosestFrame = frame;
+			}
 		}
 	}
 
+#if DEBUG
+	profiler.Stop();
+	PrintToServer("client(%d) iClosestFrame(%fs) = %d", client, profiler.Time, iClosestFrame);
+	delete profiler;
+#endif
+
 	// out of bounds
-	if(iClosestFrame == 0 || iClosestFrame == iEndFrame)
+	if(/*iClosestFrame == 0 ||*/ iClosestFrame == iEndFrame)
 	{
 		return -1.0;
 	}
@@ -3453,4 +3568,33 @@ float GetClosestReplayTime(int client)
 	gF_VelocityDifference3D[client] = GetVectorLength(clientVel) - GetVectorLength(replayVel);
 
 	return timeDifference;
+}
+
+bool WriteNavMesh(const char[] map, bool skipExistsCheck = false)
+{
+	char sTempMap[PLATFORM_MAX_PATH];
+	FormatEx(sTempMap, PLATFORM_MAX_PATH, "maps/%s.nav", map);
+
+	if(skipExistsCheck || !FileExists(sTempMap))
+	{
+		File file = OpenFile(sTempMap, "wb");
+
+		if(file != null)
+		{
+			int defaultNavMesh[51] = {
+				-17958194, 16, 1, 128600, 16777217, 1, 1, 0, -1007845376, 1112014848, 1107304447, -1035468800,
+				1139638272, 1107304447, 1107304447, 1107304447, 0, 0, 0, 0, 4, -415236096, 2046820547, 2096962, 
+				65858, 0, 49786, 536822394, 33636864, 0, 12745216, -12327104, 21102623, 3, -1008254976, 1139228672,
+				1107304447, 1, 0, 0, 0, 4386816, 4386816, 4161536, 4161536, 4161536, 20938752, 16777216, 33554432, 0, 0
+			};
+			file.Write(defaultNavMesh, 51, 4);
+			int zero[1] = {0};
+			file.Write(zero, 1, 1); // defaultNavMesh is missing one byte...
+			delete file;
+		}
+
+		return true;
+	}
+
+	return false;
 }
