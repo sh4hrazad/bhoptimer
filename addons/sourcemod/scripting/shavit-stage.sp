@@ -3,6 +3,12 @@
  * by: Ciallo
 */
 
+#define PLUGIN_NAME           "[shavit] Stage"
+#define PLUGIN_AUTHOR         "Ciallo"
+#define PLUGIN_DESCRIPTION    "A modified Stage plugin for fork's surf timer."
+#define PLUGIN_VERSION        "0.1"
+#define PLUGIN_URL            "https://github.com/Ciallo-Ani/surftimer"
+
 #include <sourcemod>
 
 #undef REQUIRE_PLUGIN
@@ -53,12 +59,12 @@ Handle gH_Forwards_OnWRCP = null;
 
 public Plugin myinfo =
 {
-	name = "[shavit] Stage",
-	author = "Ciallo",
-	description = "A modified Stage plugin for fork's surf timer.",
-	version = "0.1",
-	url = "https://github.com/Ciallo-Ani/surftimer"
-}
+	name = PLUGIN_NAME,
+	author = PLUGIN_AUTHOR,
+	description = PLUGIN_DESCRIPTION,
+	version = PLUGIN_VERSION,
+	url = PLUGIN_URL
+};
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -72,7 +78,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
-	LoadTranslations("shavit-wrcp.phrases");
+	LoadTranslations("shavit-stage.phrases");
 
 	HookEvent("player_death", Player_Death);
 
