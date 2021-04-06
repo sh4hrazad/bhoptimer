@@ -1,5 +1,5 @@
 /*
- * shavit's Timer - wrcp
+ * shavit's Timer - stage
  * by: Ciallo
 */
 
@@ -53,7 +53,7 @@ Handle gH_Forwards_OnWRCP = null;
 
 public Plugin myinfo =
 {
-	name = "[shavit] WRCP",
+	name = "[shavit] Stage",
 	author = "Ciallo",
 	description = "A modified WRCP plugin for fork's surf timer.",
 	version = "0.1",
@@ -63,7 +63,7 @@ public Plugin myinfo =
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	// registers library, check "bool LibraryExists(const char[] name)" in order to use with other plugins
-	RegPluginLibrary("shavit-wrcp");
+	RegPluginLibrary("shavit-stage");
 
 	gB_Late = late;
 
