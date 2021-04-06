@@ -55,7 +55,7 @@ public Plugin myinfo =
 {
 	name = "[shavit] Stage",
 	author = "Ciallo",
-	description = "A modified WRCP plugin for fork's surf timer.",
+	description = "A modified Stage plugin for fork's surf timer.",
 	version = "0.1",
 	url = "https://github.com/Ciallo-Ani/surftimer"
 }
