@@ -50,7 +50,7 @@
 #define HUD_DEFAULT				(HUD_MASTER|HUD_CENTER|HUD_ZONEHUD|HUD_OBSERVE|HUD_TOPLEFT|HUD_SYNC|HUD_TIMELEFT|HUD_2DVEL|HUD_SPECTATORS)
 #define HUD_DEFAULT2			(HUD2_PERFS)
 
-#define MAX_HINT_SIZE 225
+#define MAX_HINT_SIZE 227
 
 enum ZoneHUD
 {
@@ -121,6 +121,7 @@ float gF_PreviousAngle[MAXPLAYERS+1];
 float gF_AngleDiff[MAXPLAYERS+1];
 
 bool gB_Late = false;
+char gS_HintPadding[MAX_HINT_SIZE];
 
 // hud handle
 Handle gH_HUD = null;
@@ -233,6 +234,11 @@ public void OnPluginStart()
 		..."HUD2_TOPLEFT_RANK				4096");
 
 	Convar.AutoExecConfig();
+
+	for (int i = 0; i < sizeof(gS_HintPadding) - 1; i++)
+	{
+		gS_HintPadding[i] = '\n';
+	}
 
 	// commands
 	RegConsoleCmd("sm_hud", Command_HUD, "Opens the HUD settings menu.");
@@ -1524,7 +1530,7 @@ void UpdateMainHUD(int client)
 		{
 			if(gCV_UseHUDFix.BoolValue)
 			{
-				PrintCSGOHUDText(client, "%s", sBuffer);
+				PrintCSGOHUDText(client, sBuffer);
 			}
 			else
 			{
@@ -1858,7 +1864,7 @@ void UpdateKeyHint(int client)
 			char autobhop[4];
 			Shavit_GetStyleSetting(style, "autobhop", autobhop, 4);
 
-			if(!bReplay && (gI_HUDSettings[client] & HUD_SYNC) > 0 && Shavit_GetTimerStatus(target) == Timer_Running && StringToInt(sync) && (!gB_Zones || !Shavit_InsideZone(target, Zone_Start, -1) || !Shavit_InsideZone(target, Zone_Start_2, -1)))
+			if(!bReplay && (gI_HUDSettings[client] & HUD_SYNC) > 0 && Shavit_GetTimerStatus(target) == Timer_Running && StringToInt(sync) && (!gB_Zones || (!Shavit_InsideZone(target, Zone_Start, -1) && !Shavit_InsideZone(target, Zone_Start_2, -1))))
 			{
 				Format(sMessage, 256, "%s%s%T: %.01f", sMessage, (strlen(sMessage) > 0)? "\n\n":"", "HudSync", client, Shavit_GetSync(target));
 
@@ -1988,16 +1994,10 @@ public int Native_GetHUDSettings(Handle handler, int numParams)
 	return gI_HUDSettings[client];
 }
 
-void PrintCSGOHUDText(int client, const char[] format, any ...)
+void PrintCSGOHUDText(int client, const char[] str)
 {
 	char buff[MAX_HINT_SIZE];
-	VFormat(buff, sizeof(buff), format, 3);
-	Format(buff, sizeof(buff), "</font>%s ", buff);
-	
-	for(int i = strlen(buff); i < sizeof(buff); i++)
-	{
-		buff[i] = '\n';
-	}
+	FormatEx(buff, sizeof(buff), "</font>%s%s", str, gS_HintPadding);
 	
 	Protobuf pb = view_as<Protobuf>(StartMessageOne("TextMsg", client, USERMSG_RELIABLE | USERMSG_BLOCKHOOKS));
 	pb.SetInt("msg_dst", 4);

@@ -75,7 +75,8 @@ enum
 	CPR_NoTimer = (1 << 1),
 	CPR_InStartZone = (1 << 2),
 	CPR_NotOnGround = (1 << 3),
-	CPR_Moving = (1 << 4)
+	CPR_Moving = (1 << 4),
+	CPR_Duck = (1 << 5), // quack
 };
 
 enum
@@ -229,7 +230,6 @@ enum struct cp_cache_t
 	float fPosition[3];
 	float fAngles[3];
 	float fVelocity[3];
-	float fBaseVelocity[3];
 	MoveType iMoveType;
 	float fGravity;
 	float fSpeed;
@@ -246,12 +246,12 @@ enum struct cp_cache_t
 	int iPreFrames;
 	int iTimerPreFrames;
 	bool bSegmented;
-	int iSerial;
 	bool bPractice;
 	int iGroundEntity;
 	int iSteamID;
 	ArrayList aEvents;
 	ArrayList aOutputWaits;
+	float fLadderNormal[3];
 }
 
 enum struct frame_t
@@ -417,7 +417,7 @@ stock int IPStringToAddress(const char[] ip)
 }
 
 // time formatting!
-stock void FormatSeconds(float time, char[] newtime, int newtimesize, bool precise = true)
+stock void FormatSeconds(float time, char[] newtime, int newtimesize, bool precise = true, bool nodecimal = false)
 {
 	float fTempTime = time;
 
@@ -430,7 +430,15 @@ stock void FormatSeconds(float time, char[] newtime, int newtimesize, bool preci
 	float fSeconds = (iRounded % 60) + fTempTime - iRounded;
 
 	char sSeconds[8];
-	FormatEx(sSeconds, 8, precise? "%.03f":"%.01f", fSeconds);
+	
+	if (nodecimal)
+	{
+		FormatEx(sSeconds, 8, "%d", iRounded);
+	}
+	else
+	{
+		FormatEx(sSeconds, 8, precise? "%.3f":"%.1f", fSeconds);
+	}
 
 	if(fTempTime < 60.0)
 	{
@@ -781,12 +789,12 @@ forward void Shavit_OnWRCP(int client, int stage, int style, float time)
 forward Action Shavit_OnTeleport(int client, int index);
 
 /**
- * Called when a player teleports with checkpoints.
+ * Called when a player saves a checkpoint.
  *
  * @param client					Client index.
  * @param index						Checkpoint that was saved to.
  * @param overflow					Does this checkpoint shift the rest.
- * @return							Plugin_Continue to allow teleporting, anything else to prevent.
+ * @return							Plugin_Continue to allow saving, anything else to prevent.
  */
 forward Action Shavit_OnSave(int client, int index, bool overflow);
 
