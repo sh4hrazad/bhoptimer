@@ -2693,10 +2693,16 @@ public void TouchPost(int entity, int other)
 	{
 		if(Shavit_GetClientTrack(other) == Track_Main)
 		{
+			Action result = Plugin_Continue;
 			Call_StartForward(gH_Forwards_OnStage);
 			Call_PushCell(other);
 			Call_PushCell(gA_ZoneCache[gI_EntityZone[entity]].iZoneData);
-			Call_Finish();//TODO: doesn't need to turn it to 'Action' if unneccessary
+			Call_Finish(result);
+
+			if(result != Plugin_Continue)
+			{
+				return;
+			}
 		}
 	}
 }
