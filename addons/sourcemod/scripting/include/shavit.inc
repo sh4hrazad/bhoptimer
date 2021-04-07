@@ -587,6 +587,16 @@ forward void Shavit_OnTimeIncrementPost(int client, float time, stylesettings_t 
 forward Action Shavit_OnStart(int client, int track);
 
 /**
+ * Called when player is in stage zone.
+ * (WARNING: Will be called every tick when the player stands at the stage zone!)
+ *
+ * @param client					Client index.
+ * @param stage						Current stage number that client stands.
+ * @noreturn
+ */
+forward void Shavit_OnStage(int client, int stage);
+
+/**
  * Called when a player uses the restart command.
  *
  * @param client					Client index.

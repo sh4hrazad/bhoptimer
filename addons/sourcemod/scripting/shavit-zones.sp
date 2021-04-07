@@ -162,6 +162,7 @@ chatstrings_t gS_ChatStrings;
 // forwards
 Handle gH_Forwards_EnterZone = null;
 Handle gH_Forwards_LeaveZone = null;
+Handle gH_Forwards_OnStage = null;
 
 
 public Plugin myinfo =
@@ -241,6 +242,7 @@ public void OnPluginStart()
 	// forwards
 	gH_Forwards_EnterZone = CreateGlobalForward("Shavit_OnEnterZone", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
 	gH_Forwards_LeaveZone = CreateGlobalForward("Shavit_OnLeaveZone", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
+	gH_Forwards_OnStage = CreateGlobalForward("Shavit_OnStage", ET_Event, Param_Cell, Param_Cell);
 
 	// cvars and stuff
 	gCV_Interval = new Convar("shavit_zones_interval", "1.0", "Interval between each time a mapzone is being drawn to the players.", 0, true, 0.5, true, 5.0);
@@ -2602,7 +2604,7 @@ public void StartTouchPost(int entity, int other)
 		if(status != Timer_Stopped && !Shavit_IsPaused(other) && Shavit_GetClientTrack(other) == gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack)
 		{
 			Shavit_FinishMap(other, gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack);
-			gI_ClientCurrentStage[other]++;
+			gI_ClientCurrentStage[other]++;//a hack that record the last stage's time
 		}
 	}
 
@@ -2684,6 +2686,17 @@ public void TouchPost(int entity, int other)
 		{
 			Shavit_StopTimer(other);
 			Shavit_PrintToChat(other, "%T", "ZoneStopEnter", other, gS_ChatStrings.sWarning, gS_ChatStrings.sVariable2, gS_ChatStrings.sWarning);
+		}
+	}
+
+	else if(type == Zone_Stage)
+	{
+		if(Shavit_GetClientTrack(other) == Track_Main)
+		{
+			Call_StartForward(gH_Forwards_OnStage);
+			Call_PushCell(other);
+			Call_PushCell(gA_ZoneCache[gI_EntityZone[entity]].iZoneData);
+			Call_Finish();//TODO: doesn't need to turn it to 'Action' if unneccessary
 		}
 	}
 }
