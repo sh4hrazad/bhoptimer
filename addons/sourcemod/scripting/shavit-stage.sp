@@ -611,7 +611,7 @@ public void Player_Death(Event event, const char[] name, bool dontBroadcast)
 
 public void Shavit_OnEnterZone(int client, int type, int track, int id, int entity, int data)
 {
-	if(!IsValidClient(client) || IsFakeClient(client) || track != Track_Main || Shavit_GetTimerStatus(client) == Timer_Stopped)
+	if(!IsValidClient(client) || IsFakeClient(client) || track != Track_Main)
 	{
 		return;
 	}
@@ -630,7 +630,7 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 
 public void Shavit_OnLeaveZone(int client, int type, int track, int id, int entity, int data)
 {
-	if(!IsValidClient(client) || IsFakeClient(client) || track != Track_Main || Shavit_GetTimerStatus(client) == Timer_Stopped)
+	if(!IsValidClient(client) || IsFakeClient(client) || track != Track_Main)
 	{
 		return;
 	}
