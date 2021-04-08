@@ -223,6 +223,7 @@ enum struct timer_snapshot_t
 	float fDistanceOffset[4];
 	float fAvgVelocity;
 	float fMaxVelocity;
+	float fTimescale;
 }
 
 enum struct cp_cache_t
@@ -430,10 +431,10 @@ stock void FormatSeconds(float time, char[] newtime, int newtimesize, bool preci
 	float fSeconds = (iRounded % 60) + fTempTime - iRounded;
 
 	char sSeconds[8];
-	
+
 	if (nodecimal)
 	{
-		FormatEx(sSeconds, 8, "%d", iRounded);
+		FormatEx(sSeconds, 8, "%d", iRounded % 60);
 	}
 	else
 	{
@@ -592,7 +593,7 @@ forward Action Shavit_OnStart(int client, int track);
  * (WARNING: Will be called every tick when the player stands at the stage zone!)
  *
  * @param client					Client index.
- * @param stage						Current stage number that client stands.
+ * @param stage 					Current stage number that client stands.
  * @noreturn
  */
 forward Action Shavit_OnStage(int client, int stage);
@@ -1968,7 +1969,7 @@ native void Shavit_LoadSnapshot(int client, any[] snapshot, int size = sizeof(ti
  * To be used by save states/TAS etc.
  *
  * @param client					Client index.
- * @param data						ArrayList with proper replay data. 
+ * @param data						ArrayList with proper replay data.
  * @param cloneHandle				False means we duplicate the frames (ArrayList.Clone). True means we just clone the handle to the frames (CloneHandle).
  * @noreturn
  */
@@ -2562,6 +2563,14 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_SetStyleSettingBool");
 	MarkNativeAsOptional("Shavit_SetStyleSettingInt");
 	MarkNativeAsOptional("Shavit_GetPlainChatrank");
+	MarkNativeAsOptional("Shavit_GetClosestReplayVelocityDifference");
+	MarkNativeAsOptional("Shavit_IsReplayEntity");
+	MarkNativeAsOptional("Shavit_GetReplayButtons");
+	MarkNativeAsOptional("Shavit_GetClosestReplayStyle");
+	MarkNativeAsOptional("Shavit_SetClosestReplayStyle");
+	MarkNativeAsOptional("Shavit_GetReplayBotFrameCount");
+	MarkNativeAsOptional("Shavit_StartReplayFromFrameCache");
+	MarkNativeAsOptional("Shavit_StartReplayFromFile");
 	MarkNativeAsOptional("Shavit_GetClientStage");
 	MarkNativeAsOptional("Shavit_GetMapStages");
 }

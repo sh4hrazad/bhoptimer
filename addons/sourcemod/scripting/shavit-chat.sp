@@ -1416,13 +1416,13 @@ void FormatChat(int client, char[] buffer, int size)
 
 		FormatEx(temp, 32, "%0.f", Shavit_GetPoints(client));
 		ReplaceString(buffer, size, "{pts}", temp);
+
+		FormatEx(temp, 32, "%d", Shavit_GetWRHolderRank(client));
+		ReplaceString(buffer, size, "{wrrank}", temp);
+
+		FormatEx(temp, 32, "%d", Shavit_GetWRCount(client));
+		ReplaceString(buffer, size, "{wrs}", temp);
 	}
-
-	FormatEx(temp, 32, "%d", Shavit_GetWRHolderRank(client));
-	ReplaceString(buffer, size, "{wrrank}", temp);
-
-	FormatEx(temp, 32, "%d", Shavit_GetWRCount(client));
-	ReplaceString(buffer, size, "{wrs}", temp);
 
 	GetClientName(client, temp, 32);
 	ReplaceString(buffer, size, "{name}", temp);
@@ -1552,7 +1552,7 @@ public void SQL_GetChat_Callback(Database db, DBResultSet results, const char[] 
 	{
 		gB_CCAccess[client] = view_as<bool>(results.FetchInt(4));
 
-		if (!gB_CCAccess[client])
+		if (!HasCustomChat(client))
 		{
 			return;
 		}

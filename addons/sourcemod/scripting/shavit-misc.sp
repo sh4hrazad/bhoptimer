@@ -72,6 +72,7 @@ int gI_LastShot[MAXPLAYERS+1];
 ArrayList gA_Advertisements = null;
 int gI_AdvertisementsCycle = 0;
 char gS_CurrentMap[192];
+char gS_PreviousMap[PLATFORM_MAX_PATH];
 int gI_Style[MAXPLAYERS+1];
 Function gH_AfterWarningMenu[MAXPLAYERS+1];
 bool gB_ClosedKZCP[MAXPLAYERS+1];
@@ -528,6 +529,23 @@ public void OnMapStart()
 	GetCurrentMap(gS_CurrentMap, 192);
 	GetMapDisplayName(gS_CurrentMap, gS_CurrentMap, 192);
 
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		ResetCheckpoints(i);
+	}
+
+	if (!StrEqual(gS_CurrentMap, gS_PreviousMap, false))
+	{
+		int iLength = gA_PersistentData.Length;
+
+		for(int i = iLength - 1; i >= 0; i--)
+		{
+			persistent_data_t aData;
+			gA_PersistentData.GetArray(i, aData);
+			DeletePersistentData(i, aData);
+		}
+	}
+
 	if(gCV_CreateSpawnPoints.IntValue > 0)
 	{
 		int iEntity = -1;
@@ -570,19 +588,7 @@ public void OnMapStart()
 
 public void OnMapEnd()
 {
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		ResetCheckpoints(i);
-	}
-
-	int iLength = gA_PersistentData.Length;
-
-	for(int i = iLength - 1; i >= 0; i--)
-	{
-		persistent_data_t aData;
-		gA_PersistentData.GetArray(i, aData);
-		DeletePersistentData(i, aData);
-	}
+	strcopy(gS_PreviousMap, sizeof(gS_PreviousMap), gS_CurrentMap);
 }
 
 bool LoadAdvertisementsConfig()
@@ -1307,14 +1313,7 @@ void PersistData(int client, bool disconnected)
 	int iIndex = FindPersistentData(client, aData);
 	FillPersistentData(client, aData, disconnected);
 
-	if (disconnected)
-	{
-		gB_SaveStates[client] = false;
-	}
-	else
-	{
-		gB_SaveStates[client] = true;
-	}
+	gB_SaveStates[client] = true;
 
 	if (iIndex == -1)
 	{
@@ -1367,7 +1366,11 @@ void LoadPersistentData(int serial)
 		delete gA_Checkpoints[client];
 		gI_CurrentCheckpoint[client] = aData.iCurrentCheckpoint;
 		gA_Checkpoints[client] = aData.aCheckpoints;
-		OpenCheckpointsMenu(client);
+		
+		if (gA_Checkpoints[client].Length > 0)
+		{
+			OpenCheckpointsMenu(client);
+		}
 	}
 
 	gB_SaveStates[client] = false;
@@ -1484,6 +1487,11 @@ public void OnPreThink(int client)
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
 {
+	if (!IsValidClient(client))
+	{
+		return Plugin_Continue;
+	}
+
 	if(IsChatTrigger() && gCV_HideChatCommands.BoolValue)
 	{
 		// hide commands
@@ -1787,7 +1795,13 @@ void SetWeaponAmmo(int client, int weapon, bool setClip1)
 
 	if (gCV_WeaponCommands.IntValue >= 3 && setClip1)
 	{
-		int amount = GetEntProp(weapon, Prop_Send, "m_iClip1") + (GetEntProp(weapon, Prop_Send, "m_bBurstMode") ? 3 : 1);
+		int amount = GetEntProp(weapon, Prop_Send, "m_iClip1") + 1;
+
+		if (HasEntProp(weapon, Prop_Send, "m_bBurstMode") && GetEntProp(weapon, Prop_Send, "m_bBurstMode"))
+		{
+			amount += 2;
+		}
+
 		SetEntProp(weapon, Prop_Data, "m_iClip1", amount);
 	}
 }
@@ -2364,6 +2378,9 @@ void SaveCheckpointCache(int target, cp_cache_t cpcache, bool isPersistentData)
 		snapshot.fServerTime = GetEngineTime();
 		snapshot.iSHSWCombination = -1;
 		snapshot.iTimerTrack = Shavit_GetReplayBotTrack(target);
+		snapshot.fTimescale = Shavit_GetStyleSettingFloat(snapshot.bsStyle, "timescale");
+		cpcache.fSpeed = snapshot.fTimescale;
+		ScaleVector(cpcache.fVelocity, 1 / cpcache.fSpeed);
 	}
 	else
 	{

@@ -341,17 +341,6 @@ public void OnPluginStart()
 		}
 	}
 
-	// late load
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		ClearBotInfo(gA_BotInfo[i]);
-
-		if(IsValidClient(i) && !IsFakeClient(i))
-		{
-			OnClientPutInServer(i);
-		}
-	}
-
 	// plugin convars
 	gCV_Enabled = new Convar("shavit_replay_enabled", "1", "Enable replay bot functionality?", 0, true, 0.0, true, 1.0);
 	gCV_ReplayDelay = new Convar("shavit_replay_delay", "2.5", "Time to wait before restarting the replay after it finishes playing.", 0, true, 0.0, true, 10.0);
@@ -374,11 +363,22 @@ public void OnPluginStart()
 	IntToString(RoundToFloor(1.0 / GetTickInterval() / 10), tenth, sizeof(tenth));
 	gCV_DynamicTimeTick = new Convar("shavit_replay_timedifference_tick", tenth, "How often (in ticks) should the time difference update.\nYou should probably keep this around 0.1s worth of ticks.\nThe maximum value is your tickrate.", 0, true, 1.0, true, (1.0 / GetTickInterval()));
 
+	Convar.AutoExecConfig();
+
+	// late load
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		ClearBotInfo(gA_BotInfo[i]);
+
+		if(IsValidClient(i) && !IsFakeClient(i))
+		{
+			OnClientPutInServer(i);
+		}
+	}
+
 	gCV_CentralBot.AddChangeHook(OnConVarChanged);
 	gCV_DynamicBotLimit.AddChangeHook(OnConVarChanged);
 	gCV_AllowPropBots.AddChangeHook(OnConVarChanged);
-
-	Convar.AutoExecConfig();
 
 	// hooks
 	HookEvent("player_spawn", Player_Event, EventHookMode_Pre);
@@ -1503,7 +1503,7 @@ bool ReadReplayFrames(File file, replayfile_header_t header, framecache_t cache)
 {
 	int cells = 6;
 
-	if (header.iReplayVersion >= 0x04)
+	if (header.iReplayVersion > 0x01)
 	{
 		cells = 8;
 	}
@@ -1673,6 +1673,7 @@ void WriteReplayHeader(File fFile, int style, int track, float time, int steamid
 	fFile.WriteInt32(steamid);
 }
 
+//TODO: WRCP
 void SaveReplay(int style, int track, float time, int steamid, char[] name, int preframes, ArrayList playerrecording, int iSize, int timerstartframe, int timestamp, bool saveCopy, bool saveReplay, char[] sPath, int sPathLen)
 {
 	char sTrack[4];
@@ -1712,7 +1713,7 @@ void SaveReplay(int style, int track, float time, int steamid, char[] name, int 
 	any aWriteData[sizeof(frame_t) * FRAMES_PER_WRITE];
 	int iFramesWritten = 0;
 
-	for(int i = preframes; i < iSize; i++)
+	for(int i = preframes; i < iSize; i++)//very core code
 	{
 		playerrecording.GetArray(i, aFrameData, sizeof(frame_t));
 	
@@ -1750,11 +1751,11 @@ void SaveReplay(int style, int track, float time, int steamid, char[] name, int 
 		return;
 	}
 
-	gA_FrameCache[style][track].iFrameCount = iSize - preframes;
+	gA_FrameCache[style][track].iFrameCount = iSize - preframes;//total - prestart
 	gA_FrameCache[style][track].fTime = time;
 	gA_FrameCache[style][track].bNewFormat = true;
 	strcopy(gA_FrameCache[style][track].sReplayName, MAX_NAME_LENGTH, name);
-	gA_FrameCache[style][track].iPreFrames = timerstartframe - preframes;
+	gA_FrameCache[style][track].iPreFrames = timerstartframe - preframes;//this value must above zero
 }
 
 bool DeleteReplay(int style, int track, int accountid, const char[] mapname)
@@ -2483,7 +2484,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 			return ReplayRunCmd(gA_BotInfo[client], buttons, impulse, vel);
 		}
 	}
-	else if(ReplayEnabled(Shavit_GetBhopStyle(client)) && Shavit_GetTimerStatus(client) == Timer_Running)//core code
+	else if(ReplayEnabled(Shavit_GetBhopStyle(client)) && Shavit_GetTimerStatus(client) == Timer_Running)
 	{
 		if((gI_PlayerFrames[client] / gF_Tickrate) > gCV_TimeLimit.FloatValue)
 		{
@@ -3430,8 +3431,7 @@ public void OnGameFrame()
 		// Using modtick & valid to spread out client updates across different ticks.
 		if (IsValidClient(client, true) && !IsFakeClient(client) && 
 			Shavit_GetTimerStatus(client) == Timer_Running && 
-			(!Shavit_InsideZone(client, Zone_Start, Shavit_GetClientTrack(client)) && 
-			!Shavit_InsideZone(client, Zone_Start_2, Shavit_GetClientTrack(client))) && 
+			(!Shavit_InsideZone(client, Zone_Start, Shavit_GetClientTrack(client)) && !Shavit_InsideZone(client, Zone_Start_2, Shavit_GetClientTrack(client))) && 
 			(++valid % gCV_DynamicTimeTick.IntValue) == modtick)
 		{
 			gF_TimeDifference[client] = GetClosestReplayTime(client);

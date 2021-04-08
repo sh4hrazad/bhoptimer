@@ -17,7 +17,8 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-const int gI_Styles = 10;
+#define gI_Styles 10
+#define gS_None "N/A"
 
 Database gH_SQL = null;
 bool gB_Connected = false;
@@ -187,14 +188,14 @@ void Reset(int stage, int style, bool all = false)
 			for(int j = 0; j < style; j++)
 			{
 				gF_WrcpTime[i][j] = 0.0;
-				gS_WrcpName[i][j] = "N/A";
+				strcopy(gS_WrcpName[i][j], 16, gS_None);
 			}
 		}
 	}
 	else
 	{
 		gF_WrcpTime[stage][style] = 0.0;
-		gS_WrcpName[stage][style] = "N/A";
+		strcopy(gS_WrcpName[stage][style], 16, gS_None);
 	}
 }
 
@@ -309,7 +310,7 @@ public int WRCPMenu2_Handler(Menu menu, MenuAction action, int param1, int param
 		int style = gI_StyleChoice[param1];
 		float time = gF_WrcpTime[stage][style];
 		char sName[MAX_NAME_LENGTH];
-		sName = gS_WrcpName[stage][style];
+		strcopy(sName, MAX_NAME_LENGTH, gS_WrcpName[stage][style]);
 
 		if(gB_Maptop[param1] || gB_DeleteMaptop[param1])
 		{
@@ -873,9 +874,7 @@ public void SQL_LoadWRCP_Callback(Database db, DBResultSet results, const char[]
 		{
 			gF_WrcpTime[stage][style] = time;
 
-			char name[MAX_NAME_LENGTH];
-			results.FetchString(4, name, sizeof(name));
-			gS_WrcpName[stage][style] = name;
+			results.FetchString(4, gS_WrcpName[stage][style], MAX_NAME_LENGTH);
 		}
 	}
 }
