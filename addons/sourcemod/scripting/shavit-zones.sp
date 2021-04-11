@@ -1739,7 +1739,7 @@ public bool TraceFilter_World(int entity, int contentsMask)
 	return (entity == 0);
 }
 
-public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float vel[3], float angles[3], TimerStatus status, int track, int style, stylesettings_t stylesettings)
+public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float vel[3], float angles[3], TimerStatus status, int track, int style)
 {
 	if(gI_MapStep[client] > 0 && gI_MapStep[client] != 3)
 	{
@@ -2149,7 +2149,9 @@ public Action Timer_DrawEverything(Handle Timer)
 		iCycle = 0;
 	}
 
-	for(int i = iCycle; i < gI_MapZones; i++)
+	int iDrawn = 0;
+
+	for(int i = iCycle; i < gI_MapZones; i++, iCycle++)
 	{
 		if(gA_ZoneCache[i].bZoneInitialized)
 		{
@@ -2166,12 +2168,13 @@ public Action Timer_DrawEverything(Handle Timer)
 						gV_ZoneCenter[i],
 						gA_ZoneSettings[type][track].iBeam,
 						gA_ZoneSettings[type][track].iHalo);
+				++iDrawn;
 			}
-		}
 
-		if(++iCycle % iMaxZonesPerFrame == 0)
-		{
-			return Plugin_Continue;
+			if(++iDrawn % iMaxZonesPerFrame == 0)
+			{
+				return Plugin_Continue;
+			}
 		}
 	}
 

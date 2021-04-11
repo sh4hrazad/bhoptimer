@@ -23,6 +23,7 @@
 #include <sdkhooks>
 #include <convar_class>
 #include <profiler>
+#include <dhooks>
 
 #undef REQUIRE_PLUGIN
 #include <shavit>
@@ -110,8 +111,7 @@ enum
 // custom cvar settings
 char gS_ForcedCvars[][][] =
 {
-	{ "bot_quota", "{expected_bots}" },
-	{ "tf_bot_quota", "{expected_bots}" },
+	{ "bot_quota", "0" },
 	{ "bot_stop", "1" },
 	{ "bot_quota_mode", "normal" },
 	{ "tf_bot_quota_mode", "normal" },
@@ -162,21 +162,23 @@ Handle gH_OnReplaySaved = null;
 // server specific
 float gF_Tickrate = 0.0;
 char gS_Map[160];
-int gI_ExpectedBots = 0;
 
 // replay bot stuff
 int gI_CentralBot = -1;
 loopingbot_config_t gA_LoopingBotConfig[MAX_LOOPING_BOT_CONFIGS];
-ArrayList gA_BotEvents = null; // shitty fifo pipe
 int gI_DynamicBots = 0;
 // Replay_Prop: index with starter/watcher
 // Replay_ANYTHINGELSE: index with fakeclient index
 bot_info_t gA_BotInfo[MAXPLAYERS+1];
-bool gB_KickedShouldDecreaseQuota[MAXPLAYERS+1];
+
+// hooks and sdkcall stuff
+Handle gH_BotAddCommand = INVALID_HANDLE;
+DynamicDetour gH_MaintainBotQuota = null;
+int gI_WEAPONTYPE_UNKNOWN = 123123123;
+int gI_LatestClient = -1;
 
 // how do i call this
 bool gB_HideNameChange = false;
-//bool gB_DontCallTimer = false;
 bool gB_HijackFrame[MAXPLAYERS+1];
 float gF_HijackedAngles[MAXPLAYERS+1][2];
 
@@ -198,8 +200,8 @@ Convar gCV_ClearPreRun = null;
 Convar gCV_DynamicTimeSearch = null;
 Convar gCV_DynamicTimeCheap = null;
 Convar gCV_DynamicTimeTick = null;
-ConVar gCV_EnableDynamicTimeDifference = null;
-ConVar gCV_BotQuota = null;
+Convar gCV_EnableDynamicTimeDifference = null;
+ConVar sv_duplicate_playernames_ok = null;
 
 // timer settings
 int gI_Styles = 0;
@@ -296,9 +298,6 @@ public void OnAllPluginsLoaded()
 	{
 		gB_ClosestPos = true;
 	}
-
-	// I don't like doing this
-	gCV_EnableDynamicTimeDifference = FindConVar("shavit_hud_timedifference");
 }
 
 public void OnPluginStart()
@@ -317,10 +316,12 @@ public void OnPluginStart()
 	gEV_Type = GetEngineVersion();
 	gF_Tickrate = (1.0 / GetTickInterval());
 
-	gCV_BotQuota = FindConVar((gEV_Type != Engine_TF2)? "bot_quota":"tf_bot_quota");
-	gCV_BotQuota.Flags &= ~FCVAR_NOTIFY;
 	FindConVar("bot_stop").Flags &= ~FCVAR_CHEAT;
-	gA_BotEvents = new ArrayList(sizeof(bot_info_t));
+	sv_duplicate_playernames_ok = FindConVar("sv_duplicate_playernames_ok");
+	if (sv_duplicate_playernames_ok != null)
+	{
+		sv_duplicate_playernames_ok.Flags &= ~FCVAR_REPLICATED;
+	}
 
 	for(int i = 0; i < sizeof(gS_ForcedCvars); i++)
 	{
@@ -328,15 +329,7 @@ public void OnPluginStart()
 
 		if(hCvar != null)
 		{
-			if(StrEqual(gS_ForcedCvars[i][1], "{expected_bots}"))
-			{
-				UpdateBotQuota(0);
-			}
-			else
-			{
-				hCvar.SetString(gS_ForcedCvars[i][1]);
-			}
-
+			hCvar.SetString(gS_ForcedCvars[i][1]);
 			hCvar.AddChangeHook(OnForcedConVarChanged);
 		}
 	}
@@ -358,6 +351,7 @@ public void OnPluginStart()
 	gCV_ClearPreRun = new Convar("shavit_replay_prerun_always", "1", "Record prerun frames outside the start zone?", 0, true, 0.0, true, 1.0);
 	gCV_DynamicTimeCheap = new Convar("shavit_replay_timedifference_cheap", "0.0", "0 - Disabled\n1 - only clip the search ahead to shavit_replay_timedifference_search\n2 - only clip the search behind to players current frame\n3 - clip the search to +/- shavit_replay_timedifference_search seconds to the players current frame", 0, true, 0.0, true, 3.0);
 	gCV_DynamicTimeSearch = new Convar("shavit_replay_timedifference_search", "0.0", "Time in seconds to search the players current frame for dynamic time differences\n0 - Full Scan\nNote: Higher values will result in worse performance", 0, true, 0.0);
+	gCV_EnableDynamicTimeDifference = new Convar("shavit_replay_timedifference", "0", "Enabled dynamic time/velocity differences for the hud", 0, true, 0.0, true, 1.0);
 
 	char tenth[6];
 	IntToString(RoundToFloor(1.0 / GetTickInterval() / 10), tenth, sizeof(tenth));
@@ -365,11 +359,11 @@ public void OnPluginStart()
 
 	Convar.AutoExecConfig();
 
-	// late load
 	for(int i = 1; i <= MaxClients; i++)
 	{
 		ClearBotInfo(gA_BotInfo[i]);
 
+		// late load
 		if(IsValidClient(i) && !IsFakeClient(i))
 		{
 			OnClientPutInServer(i);
@@ -403,6 +397,82 @@ public void OnPluginStart()
 	// database
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
 	gH_SQL = GetTimerDatabaseHandle();
+
+	LoadDHooks();
+}
+
+void LoadDHooks()
+{
+	GameData gamedata = new GameData("shavit.games");
+
+	if (gamedata == null)
+	{
+		SetFailState("Failed to load shavit gamedata");
+	}
+
+	StartPrepSDKCall(SDKCall_Static);
+
+	if (gEV_Type == Engine_TF2)
+	{
+		if (!PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "NextBotCreatePlayerBot<CTFBot>"))
+		{
+			SetFailState("Failed to get CCSBotManager::BotAddCommand");
+		}
+
+		PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);       // const char *name
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);   // bool bReportFakeClient
+		PrepSDKCall_SetReturnInfo(SDKType_CBasePlayer, SDKPass_Pointer); // CTFBot*
+
+		if (!(gH_BotAddCommand = EndPrepSDKCall()))
+		{
+			SetFailState("Unable to prepare SDKCall for NextBotCreatePlayerBot<CTFBot>");
+		}
+	}
+	else
+	{
+		if (!PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CCSBotManager::BotAddCommand"))
+		{
+			SetFailState("Failed to get CCSBotManager::BotAddCommand");
+		}
+
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // int team
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // bool isFromConsole
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // const char *profileName
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // CSWeaponType weaponType
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // BotDifficultyType difficulty
+		PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // bool
+
+		if (!(gH_BotAddCommand = EndPrepSDKCall()))
+		{
+			SetFailState("Unable to prepare SDKCall for CCSBotManager::BotAddCommand");
+		}
+	}
+
+	Address addr = gamedata.GetAddress("BotManager::MaintainBotQuota");
+	if (!addr)
+	{
+		SetFailState("Failed to get address for BotManager::MaintainBotQuota");
+	}
+
+	if ((gI_WEAPONTYPE_UNKNOWN = gamedata.GetOffset("WEAPONTYPE_UNKNOWN")) == -1)
+	{
+		SetFailState("Failed to get WEAPONTYPE_UNKNOWN");
+	}
+
+	if (!(gH_MaintainBotQuota = DHookCreateDetour(addr, CallConv_THISCALL, ReturnType_Void, ThisPointer_Address)))
+	{
+		SetFailState("Failed to create detour for BotManager::MaintainBotQuota");
+	}
+
+	gH_MaintainBotQuota.Enable(Hook_Pre, Detour_MaintainBotQuota);
+
+	delete gamedata;
+}
+
+// Stops bot_quota from doing anything.
+MRESReturn Detour_MaintainBotQuota(int pThis)
+{
+	return MRES_Supercede;
 }
 
 public void OnPluginEnd()
@@ -416,19 +486,9 @@ void KickAllReplays()
 	{
 		if (IsValidEntity(gA_BotInfo[i].iEnt))
 		{
-			KickReplay(gA_BotInfo[i], false);
+			KickReplay(gA_BotInfo[i]);
 		}
 	}
-
-	while (gA_BotEvents.Length > 0)
-	{
-		bot_info_t info;
-		gA_BotEvents.GetArray(0, info);
-		gA_BotEvents.Erase(0);
-		ClearBotInfo(info);
-	}
-
-	UpdateBotQuota(0);
 }
 
 public void OnLibraryAdded(const char[] name)
@@ -464,11 +524,6 @@ public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] n
 	OnMapStart();
 }
 
-void UpdateBotQuota(int quota)
-{
-	gCV_BotQuota.IntValue = gI_ExpectedBots = ((quota < 0) ? 0 : quota);
-}
-
 public void OnForcedConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	char sName[32];
@@ -478,11 +533,7 @@ public void OnForcedConVarChanged(ConVar convar, const char[] oldValue, const ch
 	{
 		if(StrEqual(sName, gS_ForcedCvars[i][0]))
 		{
-			if(StrEqual(gS_ForcedCvars[i][1], "{expected_bots}"))
-			{
-				convar.IntValue = gI_ExpectedBots;
-			}
-			else if(!StrEqual(newValue, gS_ForcedCvars[i][1]))
+			if(!StrEqual(newValue, gS_ForcedCvars[i][1]))
 			{
 				convar.SetString(gS_ForcedCvars[i][1]);
 			}
@@ -547,6 +598,8 @@ public void AdminMenu_DeleteReplay(Handle topmenu, TopMenuAction action, TopMenu
 
 void FinishReplay(bot_info_t info)
 {
+	int starter = GetClientFromSerial(info.iStarterSerial);
+
 	if (info.iType == Replay_Dynamic || info.iType == Replay_Prop)
 	{
 		KickReplay(info);
@@ -575,6 +628,11 @@ void FinishReplay(bot_info_t info)
 		}
 
 		ClearBotInfo(info);
+	}
+
+	if (starter > 0)
+	{
+		gA_BotInfo[starter].iEnt = -1;
 	}
 }
 
@@ -655,14 +713,14 @@ public int Native_GetReplayBotIndex(Handle handler, int numParams)
 	int track = GetNativeCell(1);
 	int style = GetNativeCell(2);
 
-	if ((track == -1 || style == -1) && gI_CentralBot > 0)
+	if (track == -1 && style == -1 && gI_CentralBot > 0)
 	{
 		return gI_CentralBot;
 	}
 
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if (gA_BotInfo[i].iEnt >= 1)
+		if (IsValidEntity(gA_BotInfo[i].iEnt) && gA_BotInfo[i].iType != Replay_Prop)
 		{
 			if ((track == -1 || gA_BotInfo[i].iTrack == track) && (style == -1 || gA_BotInfo[i].iStyle == style))
 			{
@@ -706,6 +764,14 @@ void StartReplay(bot_info_t info, int track, int style, int starter, float delay
 
 	TeleportToStart(info);
 	UpdateReplayClient(info.iEnt);
+
+	if (starter > 0 && info.iType != Replay_Prop)
+	{
+		gA_BotInfo[starter].iEnt = info.iEnt;
+		// Timer is used because the bot's name is missing and profile pic random if using RequestFrame...
+		// I really have no idea. Even delaying by 5 frames wasn't enough. Broken game.
+		CreateTimer(0.2, Timer_SpectateMyBot, GetClientSerial(info.iEnt), TIMER_FLAG_NO_MAPCHANGE);
+	}
 }
 
 public int Native_IsReplayEntity(Handle handler, int numParams)
@@ -726,11 +792,16 @@ void SetupIfCustomFrames(bot_info_t info, framecache_t cache)
 	}
 }
 
-int CreateReplay(int track, int style, float delay, int client, int bot, int type, bool ignorelimit, framecache_t cache)
+int CreateReplayEntity(int track, int style, float delay, int client, int bot, int type, bool ignorelimit, framecache_t cache, int loopingConfig)
 {
-	if(cache.iFrameCount == 0)
+	if (client > 0 && IsValidEntity(gA_BotInfo[client].iEnt))
 	{
 		return 0;
+	}
+
+	if (delay == -1.0)
+	{
+		delay = gCV_ReplayDelay.FloatValue;
 	}
 
 	if (bot == -1)
@@ -750,35 +821,47 @@ int CreateReplay(int track, int style, float delay, int client, int bot, int typ
 			}
 
 			SetupIfCustomFrames(gA_BotInfo[client], cache);
-			StartReplay(gA_BotInfo[client], gI_MenuTrack[client], gI_MenuStyle[client], client, gCV_ReplayDelay.FloatValue);
+			StartReplay(gA_BotInfo[client], gI_MenuTrack[client], gI_MenuStyle[client], client, delay);
 		}
-		else if (type == Replay_Dynamic)
+		else
 		{
-			if (!ignorelimit)
+			if (type == Replay_Dynamic)
 			{
-				if (gI_DynamicBots >= gCV_DynamicBotLimit.IntValue)
+				if (!ignorelimit && gI_DynamicBots >= gCV_DynamicBotLimit.IntValue)
 				{
 					return 0;
 				}
-
-				++gI_DynamicBots;
 			}
 
 			bot_info_t info;
-			info.iType = Replay_Dynamic;
+			info.iType = type;
 			info.iStyle = style;
 			info.iTrack = track;
-			info.iStarterSerial = (client > 0) ? GetClientFromSerial(client) : 0;
+			info.iStarterSerial = (client > 0) ? GetClientSerial(client) : 0;
 			info.bIgnoreLimit = ignorelimit;
+			info.iLoopingConfig = loopingConfig;
 			SetupIfCustomFrames(info, cache);
-			QueueAddReplayBot(info);
+			bot = CreateReplayBot(info);
+
+			if (bot != 0)
+			{
+				if (client > 0)
+				{
+					gA_BotInfo[client].iEnt = bot;
+				}
+
+				if (type == Replay_Dynamic && !ignorelimit)
+				{
+					++gI_DynamicBots;
+				}
+			}
 		}
 	}
 	else
 	{
 		int index = GetBotInfoIndex(bot);
 
-		if (index == 0)
+		if (index < 1)
 		{
 			return 0;
 		}
@@ -795,7 +878,7 @@ int CreateReplay(int track, int style, float delay, int client, int bot, int typ
 		StartReplay(gA_BotInfo[index], track, style, client, delay);
 	}
 
-	return 1;
+	return bot;
 }
 
 public int Native_StartReplay(Handle handler, int numParams)
@@ -809,7 +892,7 @@ public int Native_StartReplay(Handle handler, int numParams)
 	bool ignorelimit = view_as<bool>(GetNativeCell(7));
 
 	framecache_t cache; // null cache
-	return CreateReplay(track, style, delay, client, bot, type, ignorelimit, cache);
+	return CreateReplayEntity(track, style, delay, client, bot, type, ignorelimit, cache, 0);
 }
 
 public int Native_StartReplayFromFrameCache(Handle handler, int numParams)
@@ -831,7 +914,7 @@ public int Native_StartReplayFromFrameCache(Handle handler, int numParams)
 	framecache_t cache;
 	GetNativeArray(8, cache, sizeof(cache));
 
-	return CreateReplay(track, style, delay, client, bot, type, ignorelimit, cache);
+	return CreateReplayEntity(track, style, delay, client, bot, type, ignorelimit, cache, 0);
 }
 
 public int Native_StartReplayFromFile(Handle handler, int numParams)
@@ -854,7 +937,7 @@ public int Native_StartReplayFromFile(Handle handler, int numParams)
 		return 0;
 	}
 
-	return CreateReplay(track, style, delay, client, bot, type, ignorelimit, cache);
+	return CreateReplayEntity(track, style, delay, client, bot, type, ignorelimit, cache, 0);
 }
 
 public int Native_ReloadReplay(Handle handler, int numParams)
@@ -1098,6 +1181,11 @@ public int Native_SetTimerFrame(Handle handler, int numParams)
 
 public int Native_GetClosestReplayTime(Handle plugin, int numParams)
 {
+	if (!gCV_EnableDynamicTimeDifference.BoolValue)
+	{
+		return view_as<int>(-1.0);
+	}
+
 	int client = GetNativeCell(1);
 	return view_as<int>(gF_TimeDifference[client]);
 }
@@ -1371,7 +1459,8 @@ public void OnMapStart()
 		Call_Finish();
 	}
 
-	AddReplayBots();
+	// Timer because sometimes a few bots don't spawn
+	CreateTimer(0.2, Timer_AddReplayBots, 0, TIMER_FLAG_NO_MAPCHANGE);
 
 	CreateTimer(3.0, Cron, INVALID_HANDLE, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
@@ -1403,10 +1492,72 @@ public void Shavit_OnStyleChanged(int client, int oldstyle, int newstyle, int tr
 	gI_TimeDifferenceStyle[client] = newstyle;
 }
 
-void QueueAddReplayBot(bot_info_t info)
+int InternalCreateReplayBot()
 {
-	gA_BotEvents.PushArray(info);
-	UpdateBotQuota(gI_ExpectedBots + 1);
+	gI_LatestClient = -1;
+
+	if (gEV_Type == Engine_TF2)
+	{
+		/*int bot =*/ SDKCall(
+			gH_BotAddCommand,
+			"replaybot", // name
+			true // bReportFakeClient
+		);
+	}
+	else
+	{
+		/*int ret =*/ SDKCall(
+			gH_BotAddCommand,
+			gCV_DefaultTeam.IntValue,  // team
+			false,                     // isFromConsole
+			0,                         // profileName       // unused
+			gI_WEAPONTYPE_UNKNOWN,     // CSWeaponType      // WEAPONTYPE_UNKNOWN
+			0                          // BotDifficultyType // unused
+		);
+
+		//bool success = (0xFF & ret) != 0;
+	}
+
+	return gI_LatestClient;
+}
+
+int CreateReplayBot(bot_info_t info)
+{
+	int bot = InternalCreateReplayBot();
+
+	if (bot <= 0)
+	{
+		ClearBotInfo(info);
+		return -1;
+	}
+
+	gA_BotInfo[bot] = info;
+	gA_BotInfo[bot].iEnt = bot;
+
+	if (info.iType == Replay_Central)
+	{
+		gI_CentralBot = bot;
+		ClearBotInfo(gA_BotInfo[bot]);
+	}
+	else
+	{
+		StartReplay(gA_BotInfo[bot], gA_BotInfo[bot].iTrack, gA_BotInfo[bot].iStyle, GetClientFromSerial(info.iStarterSerial), gCV_ReplayDelay.FloatValue);
+	}
+
+	gA_BotInfo[GetClientFromSerial(info.iStarterSerial)].iEnt = bot;
+
+	if (info.iType == Replay_Looping)
+	{
+		gA_LoopingBotConfig[info.iLoopingConfig].bSpawned = true;
+	}
+
+	return bot;
+}
+
+Action Timer_AddReplayBots(Handle timer, any data)
+{
+	AddReplayBots();
+	return Plugin_Stop;
 }
 
 void AddReplayBots()
@@ -1416,12 +1567,20 @@ void AddReplayBots()
 		return;
 	}
 
+	framecache_t cache; // NULL cache
+
 	// Load central bot if enabled...
 	if (gCV_CentralBot.BoolValue && gI_CentralBot <= 0)
 	{
-		bot_info_t info;
-		info.iType = Replay_Central;
-		QueueAddReplayBot(info);
+		int bot = CreateReplayEntity(0, 0, -1.0, 0, -1, Replay_Central, false, cache, 0);
+
+		if (bot == 0)
+		{
+			LogError("Failed to create central replay bot (client count %d)", GetClientCount());
+			return;
+		}
+
+		UpdateReplayClient(bot);
 	}
 
 	// Load all bots from looping config...
@@ -1441,12 +1600,13 @@ void AddReplayBots()
 			continue;
 		}
 
-		bot_info_t info;
-		info.iType = Replay_Looping;
-		info.iLoopingConfig = i;
-		info.iStyle = style;
-		info.iTrack = track;
-		QueueAddReplayBot(info);
+		int bot = CreateReplayEntity(track, style, -1.0, 0, -1, Replay_Looping, false, cache, i);
+
+		if (bot == 0)
+		{
+			LogError("Failed to create looping bot %d (client count %d)", i, GetClientCount());
+			return;
+		}
 	}
 }
 
@@ -1673,7 +1833,6 @@ void WriteReplayHeader(File fFile, int style, int track, float time, int steamid
 	fFile.WriteInt32(steamid);
 }
 
-//TODO: WRCP
 void SaveReplay(int style, int track, float time, int steamid, char[] name, int preframes, ArrayList playerrecording, int iSize, int timerstartframe, int timestamp, bool saveCopy, bool saveReplay, char[] sPath, int sPathLen)
 {
 	char sTrack[4];
@@ -1713,7 +1872,7 @@ void SaveReplay(int style, int track, float time, int steamid, char[] name, int 
 	any aWriteData[sizeof(frame_t) * FRAMES_PER_WRITE];
 	int iFramesWritten = 0;
 
-	for(int i = preframes; i < iSize; i++)//very core code
+	for(int i = preframes; i < iSize; i++)
 	{
 		playerrecording.GetArray(i, aFrameData, sizeof(frame_t));
 	
@@ -1751,11 +1910,11 @@ void SaveReplay(int style, int track, float time, int steamid, char[] name, int 
 		return;
 	}
 
-	gA_FrameCache[style][track].iFrameCount = iSize - preframes;//total - prestart
+	gA_FrameCache[style][track].iFrameCount = iSize - preframes;
 	gA_FrameCache[style][track].fTime = time;
 	gA_FrameCache[style][track].bNewFormat = true;
 	strcopy(gA_FrameCache[style][track].sReplayName, MAX_NAME_LENGTH, name);
-	gA_FrameCache[style][track].iPreFrames = timerstartframe - preframes;//this value must above zero
+	gA_FrameCache[style][track].iPreFrames = timerstartframe - preframes;
 }
 
 bool DeleteReplay(int style, int track, int accountid, const char[] mapname)
@@ -1829,12 +1988,12 @@ void ForceObserveProp(int client)
 
 public void OnClientPutInServer(int client)
 {
+	gI_LatestClient = client;
+
 	if(IsClientSourceTV(client))
 	{
 		return;
 	}
-
-	gB_KickedShouldDecreaseQuota[client] = false;
 
 	if(!IsFakeClient(client))
 	{
@@ -1845,42 +2004,9 @@ public void OnClientPutInServer(int client)
 		SDKHook(client, SDKHook_PostThink, ForceObserveProp);
 
 		// The server kicks all the bots when it's hibernating... so let's add them back in...
-		if (GetClientCount() <= 1 && gI_ExpectedBots <= 0)
+		if (GetClientCount() <= 1)
 		{
-			AddReplayBots();
-		}
-	}
-	else if (gA_BotEvents.Length > 0)
-	{
-		bot_info_t info;
-		gA_BotEvents.GetArray(0, info);
-		gA_BotEvents.Erase(0);
-
-		gA_BotInfo[client] = info;
-		gA_BotInfo[client].iEnt = client;
-
-		if (info.iType == Replay_Central)
-		{
-			gI_CentralBot = client;
-			ClearBotInfo(gA_BotInfo[client]);
-		}
-		else
-		{
-			StartReplay(gA_BotInfo[client], gA_BotInfo[client].iTrack, gA_BotInfo[client].iStyle, GetClientFromSerial(info.iStarterSerial), gCV_ReplayDelay.FloatValue);
-		}
-
-		// Used to make the bot fucking spawn.....
-		RequestFrame(DelayedUpdateReplayClient, GetClientSerial(client));
-
-		if (info.iType == Replay_Dynamic)
-		{
-			// TODO: Add link to bot in gA_BotInfo[starter].iEnt...
-			// Dead bots can't be spectated... so let's use this to spectate them when they spawn...
-			RequestFrame(SpectateMyDynamicBot, GetClientSerial(client));
-		}
-		else if (info.iType == Replay_Looping)
-		{
-			gA_LoopingBotConfig[info.iLoopingConfig].bSpawned = true;
+			CreateTimer(0.2, Timer_AddReplayBots, 0, TIMER_FLAG_NO_MAPCHANGE);
 		}
 	}
 }
@@ -1984,8 +2110,20 @@ void UpdateBotScoreboard(int client)
 		FormatStyle(gS_ReplayStrings.sUnloaded, style, central, track, sName, idle, gA_BotInfo[client].aCache, type);
 	}
 
+	int sv_duplicate_playernames_ok_original;
+	if (sv_duplicate_playernames_ok != null)
+	{
+		sv_duplicate_playernames_ok_original = sv_duplicate_playernames_ok.IntValue;
+		sv_duplicate_playernames_ok.IntValue = 1;
+	}
+
 	gB_HideNameChange = true;
 	SetClientName(client, sName);
+
+	if (sv_duplicate_playernames_ok != null)
+	{
+		sv_duplicate_playernames_ok.IntValue = sv_duplicate_playernames_ok_original;
+	}
 
 	int iScore = (iFrameCount > 0 || client == gI_CentralBot)? 2000:-2000;
 
@@ -2001,20 +2139,18 @@ void UpdateBotScoreboard(int client)
 	SetEntProp(client, Prop_Data, "m_iDeaths", 0);
 }
 
-void SpectateMyDynamicBot(int serial)
+Action Timer_SpectateMyBot(Handle timer, any data)
+{
+	SpectateMyBot(data);
+	return Plugin_Stop;
+}
+
+void SpectateMyBot(int serial)
 {
 	int bot = GetClientFromSerial(serial);
 
 	if (bot == 0)
 	{
-		return;
-	}
-
-	if (!IsPlayerAlive(bot))
-	{
-		// Uhh.... recursion lmao....
-		// The bot doesn't like to respawn immediately and it's really annoying
-		RequestFrame(SpectateMyDynamicBot, GetClientSerial(bot));
 		return;
 	}
 
@@ -2026,11 +2162,6 @@ void SpectateMyDynamicBot(int serial)
 	}
 
 	SetEntPropEnt(starter, Prop_Send, "m_hObserverTarget", bot);
-}
-
-void DelayedUpdateReplayClient(int serial)
-{
-	UpdateReplayClient(GetClientFromSerial(serial));
 }
 
 void RemoveAllWeapons(int client)
@@ -2139,23 +2270,16 @@ public void OnClientDisconnect(int client)
 	{
 		RequestFrame(ClearFrames, client);
 
-		if (gA_BotInfo[client].iEnt >= 1) // Remove Replay_Prop's
+		if (IsValidEntity(gA_BotInfo[client].iEnt))
 		{
-			KickReplay(gA_BotInfo[client]);
+			KickReplay(gA_BotInfo[GetBotInfoIndex(gA_BotInfo[client].iEnt)]);
 		}
 
 		return;
 	}
 
-	if (gB_KickedShouldDecreaseQuota[client])
-	{
-		UpdateBotQuota(gI_ExpectedBots - 1);
-		return;
-	}
-
 	if (gA_BotInfo[client].iEnt == client)
 	{
-		UpdateBotQuota(gI_ExpectedBots - 1);
 		CancelReplay(gA_BotInfo[client], false);
 
 		gA_BotInfo[client].iEnt = -1;
@@ -2164,11 +2288,11 @@ public void OnClientDisconnect(int client)
 		{
 			gA_LoopingBotConfig[gA_BotInfo[client].iLoopingConfig].bSpawned = false;
 		}
+	}
 
-		if (gI_CentralBot == client)
-		{
-			gI_CentralBot = -1;
-		}
+	if (gI_CentralBot == client)
+	{
+		gI_CentralBot = -1;
 	}
 }
 
@@ -2530,7 +2654,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 				aFrame.buttons = buttons;
 				aFrame.flags = GetEntityFlags(client);
 				aFrame.mt = GetEntityMoveType(client);
-				//GetEntPropVector(client, Prop_Data, "m_vecVelocity", aFrame.vel); // TODO: m_vecBaseVelocity? m_vecAbsVelocity?
+				//GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", aFrame.vel);
 
 				gA_PlayerFrames[client].SetArray(gI_PlayerFrames[client]++, aFrame, sizeof(frame_t));
 
@@ -2610,7 +2734,9 @@ public Action BotEvents(Event event, const char[] name, bool dontBroadcast)
 		return Plugin_Continue;
 	}
 
-	if(event.GetBool("bot"))
+	int client = GetClientOfUserId(event.GetInt("userid"));
+
+	if(event.GetBool("bot") || !client || IsFakeClient(client))
 	{
 		event.BroadcastDisabled = true;
 		return Plugin_Changed;
@@ -2846,7 +2972,7 @@ public int DeleteConfirmation_Callback(Menu menu, MenuAction action, int param1,
 
 int CreateReplayProp(int client)
 {
-	if (gA_BotInfo[client].iEnt >= 1)
+	if (IsValidEntity(gA_BotInfo[client].iEnt))
 	{
 		return -1;
 	}
@@ -2915,18 +3041,19 @@ void OpenReplayTypeMenu(int client)
 
 	char sDisplay[64];
 	char sInfo[8];
+	bool alreadyHaveBot = IsValidEntity(gA_BotInfo[client].iEnt);
 
 	FormatEx(sDisplay, sizeof(sDisplay), "%T", "Menu_Replay_Central", client);
 	IntToString(Replay_Central, sInfo, sizeof(sInfo));
-	menu.AddItem(sInfo, sDisplay, (gCV_CentralBot.BoolValue && IsValidClient(gI_CentralBot) && gA_BotInfo[gI_CentralBot].iStatus == Replay_Idle) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+	menu.AddItem(sInfo, sDisplay, (gCV_CentralBot.BoolValue && IsValidClient(gI_CentralBot) && gA_BotInfo[gI_CentralBot].iStatus == Replay_Idle && !alreadyHaveBot) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 
 	FormatEx(sDisplay, sizeof(sDisplay), "%T", "Menu_Replay_Dynamic", client);
 	IntToString(Replay_Dynamic, sInfo, sizeof(sInfo));
-	menu.AddItem(sInfo, sDisplay, (gI_DynamicBots < gCV_DynamicBotLimit.IntValue) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+	menu.AddItem(sInfo, sDisplay, (gI_DynamicBots < gCV_DynamicBotLimit.IntValue && !alreadyHaveBot) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 
 	FormatEx(sDisplay, sizeof(sDisplay), "%T", "Menu_Replay_Prop", client);
 	IntToString(Replay_Prop, sInfo, sizeof(sInfo));
-	menu.AddItem(sInfo, sDisplay, (gCV_AllowPropBots.BoolValue) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+	menu.AddItem(sInfo, sDisplay, (gCV_AllowPropBots.BoolValue && !alreadyHaveBot) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 
 	bool canstop = false;
 	int target = GetSpectatorTarget(client);
@@ -2982,7 +3109,8 @@ public int MenuHandler_ReplayType(Menu menu, MenuAction action, int param1, int 
 
 		if ((type == Replay_Central && (!gCV_CentralBot.BoolValue || !IsValidClient(gI_CentralBot) || gA_BotInfo[gI_CentralBot].iStatus != Replay_Idle))
 		|| (type == Replay_Dynamic && (gI_DynamicBots >= gCV_DynamicBotLimit.IntValue))
-		|| (type == Replay_Prop && (!gCV_AllowPropBots.BoolValue)))
+		|| (type == Replay_Prop && (!gCV_AllowPropBots.BoolValue))
+		|| IsValidEntity(gA_BotInfo[param1].iEnt))
 		{
 			return 0;
 		}
@@ -3117,7 +3245,7 @@ public int MenuHandler_ReplayStyle(Menu menu, MenuAction action, int param1, int
 
 		int style = StringToInt(sInfo);
 
-		if(style < 0 || style >= gI_Styles || !ReplayEnabled(style) || gA_FrameCache[style][gI_MenuTrack[param1]].iFrameCount == 0)
+		if(style < 0 || style >= gI_Styles || !ReplayEnabled(style) || gA_FrameCache[style][gI_MenuTrack[param1]].iFrameCount == 0 || IsValidEntity(gA_BotInfo[param1].iEnt))
 		{
 			return 0;
 		}
@@ -3126,6 +3254,8 @@ public int MenuHandler_ReplayStyle(Menu menu, MenuAction action, int param1, int
 		int type = gI_MenuType[param1];
 
 		FinishReplay(gA_BotInfo[param1]);
+
+		int bot = -1;
 
 		if (type == Replay_Central)
 		{
@@ -3140,8 +3270,7 @@ public int MenuHandler_ReplayStyle(Menu menu, MenuAction action, int param1, int
 				return 0;
 			}
 
-			StartReplay(gA_BotInfo[gI_CentralBot], gI_MenuTrack[param1], gI_MenuStyle[param1], param1, gCV_ReplayDelay.FloatValue);
-			SetEntPropEnt(param1, Prop_Send, "m_hObserverTarget", gI_CentralBot);
+			bot = gI_CentralBot;
 		}
 		else if (type == Replay_Dynamic)
 		{
@@ -3150,15 +3279,6 @@ public int MenuHandler_ReplayStyle(Menu menu, MenuAction action, int param1, int
 				Shavit_PrintToChat(param1, "%T", "TooManyDynamicBots", param1);
 				return 0;
 			}
-
-			++gI_DynamicBots;
-			bot_info_t info;
-			info.iType = Replay_Dynamic;
-			info.iStyle = gI_MenuStyle[param1];
-			info.iTrack = gI_MenuTrack[param1];
-			info.iStarterSerial = GetClientSerial(param1);
-			info.bIgnoreLimit = false;
-			QueueAddReplayBot(info);
 		}
 		else if (type == Replay_Prop)
 		{
@@ -3166,13 +3286,15 @@ public int MenuHandler_ReplayStyle(Menu menu, MenuAction action, int param1, int
 			{
 				return 0;
 			}
+		}
 
-			int ent = CreateReplayProp(param1);
+		framecache_t cache; // NULL cache
+		bot = CreateReplayEntity(gI_MenuTrack[param1], gI_MenuStyle[param1], gCV_ReplayDelay.FloatValue, param1, bot, type, false, cache, 0);
 
-			if (IsValidEntity(ent))
-			{
-				StartReplay(gA_BotInfo[param1], gI_MenuTrack[param1], gI_MenuStyle[param1], param1, gCV_ReplayDelay.FloatValue);
-			}
+		if (bot == 0)
+		{
+			Shavit_PrintToChat(param1, "%T", "FailedToCreateReplay", param1);
+			return 0;
 		}
 	}
 	else if(action == MenuAction_Cancel && param2 == MenuCancel_ExitBack)
@@ -3305,6 +3427,7 @@ void CancelReplay(bot_info_t info, bool update = true)
 	if(starter != 0)
 	{
 		gF_LastInteraction[starter] = GetEngineTime();
+		gA_BotInfo[starter].iEnt = -1;
 	}
 
 	if (update)
@@ -3320,7 +3443,7 @@ void CancelReplay(bot_info_t info, bool update = true)
 	}
 }
 
-void KickReplay(bot_info_t info, bool decreaseQuota = true)
+void KickReplay(bot_info_t info)
 {
 	if (info.iEnt <= 0)
 	{
@@ -3332,14 +3455,9 @@ void KickReplay(bot_info_t info, bool decreaseQuota = true)
 		--gI_DynamicBots;
 	}
 
-	int starter = GetClientFromSerial(info.iStarterSerial);
-
-	CancelReplay(info, false);
-
 	if (1 <= info.iEnt <= MaxClients)
 	{
 		KickClient(info.iEnt);
-		gB_KickedShouldDecreaseQuota[info.iEnt] = decreaseQuota;
 
 		if (info.iType == Replay_Looping)
 		{
@@ -3348,6 +3466,8 @@ void KickReplay(bot_info_t info, bool decreaseQuota = true)
 	}
 	else // Replay_Prop
 	{
+		int starter = GetClientFromSerial(info.iStarterSerial);
+
 		if (starter != 0)
 		{
 			// Unset target so we don't get hud errors in the single frame the prop is still alive...
@@ -3356,6 +3476,8 @@ void KickReplay(bot_info_t info, bool decreaseQuota = true)
 
 		AcceptEntityInput(info.iEnt, "Kill");
 	}
+
+	CancelReplay(info, false);
 
 	info.iEnt = -1;
 	info.iType = -1;
@@ -3418,7 +3540,7 @@ public void OnGameFrame()
 		*/
 	}
 
-	if (!gCV_EnableDynamicTimeDifference || !gCV_EnableDynamicTimeDifference.BoolValue)
+	if (!gCV_EnableDynamicTimeDifference.BoolValue)
 	{
 		return;
 	}
@@ -3554,7 +3676,7 @@ float GetClosestReplayTime(int client)
 	}
 
 	float clientVel[3];
-	GetEntPropVector(client, Prop_Data, "m_vecVelocity", clientVel); // TODO: m_vecBaseVelocity? m_vecAbsVelocity?
+	GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", clientVel);
 
 	float fReplayPrevPos[3], fReplayClosestPos[3];
 	gA_FrameCache[style][track].aFrames.GetArray(iClosestFrame, fReplayClosestPos, 3);
