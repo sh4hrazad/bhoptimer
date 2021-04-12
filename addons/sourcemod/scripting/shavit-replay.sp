@@ -176,6 +176,7 @@ Handle gH_BotAddCommand = INVALID_HANDLE;
 DynamicDetour gH_MaintainBotQuota = null;
 int gI_WEAPONTYPE_UNKNOWN = 123123123;
 int gI_LatestClient = -1;
+bool gB_BotAddCommand_ThisCall = false;
 
 // how do i call this
 bool gB_HideNameChange = false;
@@ -399,6 +400,8 @@ public void OnPluginStart()
 	gH_SQL = GetTimerDatabaseHandle();
 
 	LoadDHooks();
+
+	CreateAllNavFiles();
 }
 
 void LoadDHooks()
@@ -410,13 +413,15 @@ void LoadDHooks()
 		SetFailState("Failed to load shavit gamedata");
 	}
 
-	StartPrepSDKCall(SDKCall_Static);
+	gB_BotAddCommand_ThisCall = view_as<bool>(gamedata.GetOffset("BotAddCommand_ThisCall"));
+
+	StartPrepSDKCall(gB_BotAddCommand_ThisCall ? SDKCall_Raw : SDKCall_Static);
 
 	if (gEV_Type == Engine_TF2)
 	{
 		if (!PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "NextBotCreatePlayerBot<CTFBot>"))
 		{
-			SetFailState("Failed to get CCSBotManager::BotAddCommand");
+			SetFailState("Failed to get NextBotCreatePlayerBot<CTFBot>");
 		}
 
 		PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);       // const char *name
@@ -999,14 +1004,19 @@ public int Native_SetReplayData(Handle handler, int numParams)
 public int Native_GetReplayData(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
+	bool cloneHandle = view_as<bool>(GetNativeCell(2));
 	Handle cloned = null;
 
 	if(gA_PlayerFrames[client] != null)
 	{
-		ArrayList frames = gA_PlayerFrames[client].Clone();
+		ArrayList frames = cloneHandle ? gA_PlayerFrames[client] : gA_PlayerFrames[client].Clone();
 		frames.Resize(gI_PlayerFrames[client]);
 		cloned = CloneHandle(frames, plugin); // set the calling plugin as the handle owner
-		CloseHandle(frames);
+
+		if (!cloneHandle)
+		{
+			CloseHandle(frames);
+		}
 	}
 
 	return view_as<int>(cloned);
@@ -1399,8 +1409,7 @@ public void OnMapStart()
 	GetMapDisplayName(gS_Map, gS_Map, 160);
 	bool bDisplayWritten = WriteNavMesh(gS_Map); // write "maps/bhop_map.nav"
 
-	CreateAllNavFiles();
-
+	// Likely won't run unless this is a workshop map since CreateAllNavFiles() is ran in OnPluginStart()
 	if (bWorkshopWritten || bDisplayWritten)
 	{
 		SetCommandFlags("nav_load", GetCommandFlags("nav_load") & ~FCVAR_CHEAT);
@@ -1506,14 +1515,29 @@ int InternalCreateReplayBot()
 	}
 	else
 	{
-		/*int ret =*/ SDKCall(
-			gH_BotAddCommand,
-			gCV_DefaultTeam.IntValue,  // team
-			false,                     // isFromConsole
-			0,                         // profileName       // unused
-			gI_WEAPONTYPE_UNKNOWN,     // CSWeaponType      // WEAPONTYPE_UNKNOWN
-			0                          // BotDifficultyType // unused
-		);
+		if (gB_BotAddCommand_ThisCall)
+		{
+			/*int ret =*/ SDKCall(
+				gH_BotAddCommand,
+				0x10000,                   // thisptr           // unused
+				gCV_DefaultTeam.IntValue,  // team
+				false,                     // isFromConsole
+				0,                         // profileName       // unused
+				gI_WEAPONTYPE_UNKNOWN,     // CSWeaponType      // WEAPONTYPE_UNKNOWN
+				0                          // BotDifficultyType // unused
+			);
+		}
+		else
+		{
+			/*int ret =*/ SDKCall(
+				gH_BotAddCommand,
+				gCV_DefaultTeam.IntValue,  // team
+				false,                     // isFromConsole
+				0,                         // profileName       // unused
+				gI_WEAPONTYPE_UNKNOWN,     // CSWeaponType      // WEAPONTYPE_UNKNOWN
+				0                          // BotDifficultyType // unused
+			);
+		}
 
 		//bool success = (0xFF & ret) != 0;
 	}
@@ -2268,11 +2292,18 @@ public void OnClientDisconnect(int client)
 
 	if(!IsFakeClient(client))
 	{
-		RequestFrame(ClearFrames, client);
-
 		if (IsValidEntity(gA_BotInfo[client].iEnt))
 		{
-			KickReplay(gA_BotInfo[GetBotInfoIndex(gA_BotInfo[client].iEnt)]);
+			int index = GetBotInfoIndex(gA_BotInfo[client].iEnt);
+
+			if (gA_BotInfo[index].iType == Replay_Central)
+			{
+				CancelReplay(gA_BotInfo[index]);
+			}
+			else
+			{
+				KickReplay(gA_BotInfo[index]);
+			}
 		}
 
 		return;
@@ -2294,6 +2325,13 @@ public void OnClientDisconnect(int client)
 	{
 		gI_CentralBot = -1;
 	}
+}
+
+public void OnClientDisconnect_Post(int client)
+{
+	// This runs after shavit-misc has cloned the handle
+	//ClearFrames(client);
+	delete gA_PlayerFrames[client];
 }
 
 public Action Shavit_OnStart(int client)
@@ -2720,10 +2758,19 @@ public void Player_Event(Event event, const char[] name, bool dontBroadcast)
 	{
 		event.BroadcastDisabled = true;
 	}
-	else
+	else if (IsValidEntity(gA_BotInfo[client].iEnt))
 	{
 		// Here to kill Replay_Prop s when the watcher/starter respawns.
-		KickReplay(gA_BotInfo[client]);
+		int index = GetBotInfoIndex(gA_BotInfo[client].iEnt);
+
+		if (gA_BotInfo[index].iType == Replay_Central)
+		{
+			//CancelReplay(gA_BotInfo[index]); // TODO: Is this worth doing? Might be a bit annoying until rewind/ff is added...
+		}
+		else
+		{
+			KickReplay(gA_BotInfo[index]);
+		}
 	}
 }
 
@@ -3703,7 +3750,7 @@ bool WriteNavMesh(const char[] map, bool skipExistsCheck = false)
 
 		if(file != null)
 		{
-			int defaultNavMesh[51] = {
+			static int defaultNavMesh[51] = {
 				-17958194, 16, 1, 128600, 16777217, 1, 1, 0, -1007845376, 1112014848, 1107304447, -1035468800,
 				1139638272, 1107304447, 1107304447, 1107304447, 0, 0, 0, 0, 4, -415236096, 2046820547, 2096962, 
 				65858, 0, 49786, 536822394, 33636864, 0, 12745216, -12327104, 21102623, 3, -1008254976, 1139228672,
