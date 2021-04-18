@@ -43,6 +43,7 @@ bool gB_WRCPMenu[MAXPLAYERS + 1];
 bool gB_DeleteMaptop[MAXPLAYERS + 1];
 bool gB_DeleteWRCP[MAXPLAYERS + 1];
 bool gB_InStageZone[MAXPLAYERS + 1];
+bool gB_TimerSetting[MAXPLAYERS + 1];
 
 // misc cache
 bool gB_Late = false;
@@ -70,6 +71,7 @@ public Plugin myinfo =
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	CreateNative("Shavit_GetClientStageTime", Native_GetClientStageTime);
+	CreateNative("Shavit_SetClientStageTime", Native_SetClientStageTime);
 	// registers library, check "bool LibraryExists(const char[] name)" in order to use with other plugins
 	RegPluginLibrary("shavit-stage");
 
@@ -614,7 +616,7 @@ public void Player_Death(Event event, const char[] name, bool dontBroadcast)
 
 public void Shavit_OnProcessMovementPost(int client)
 {
-	if(!gB_InStageZone[client])
+	if(!gB_InStageZone[client] && !gB_TimerSetting[client])
 	{
 		gF_StageTime[client] = GetGameTime() - gF_LeaveStageTime[client];
 	}
@@ -622,19 +624,23 @@ public void Shavit_OnProcessMovementPost(int client)
 
 public Action Shavit_OnStart(int client)
 {
-	gB_InStageZone[client] = true;
-	gF_StageTime[client] = 0.0;
+	ResetTimer(client);
 }
 
 public Action Shavit_OnStage(int client)
 {
-	gB_InStageZone[client] = true;
-	gF_StageTime[client] = 0.0;
+	ResetTimer(client);
 }
 
 public Action Shavit_OnEndZone(int client)
 {
+	ResetTimer(client);
+}
+
+void ResetTimer(int client)
+{
 	gB_InStageZone[client] = true;
+	gB_TimerSetting[client] = false;
 	gF_StageTime[client] = 0.0;
 }
 
@@ -908,6 +914,12 @@ public void SQL_LoadWRCP_Callback(Database db, DBResultSet results, const char[]
 public int Native_GetClientStageTime(Handle handler, int numParams)
 {
 	return view_as<int>(gF_StageTime[GetNativeCell(1)]);
+}
+
+public int Native_SetClientStageTime(Handle handler, int numParams)
+{
+	gF_StageTime[GetNativeCell(1)] = view_as<float>(GetNativeCell(2));
+	gB_TimerSetting[GetNativeCell(1)] = true;
 }
 
 void SQL_DBConnect()

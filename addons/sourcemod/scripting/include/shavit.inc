@@ -2310,6 +2310,8 @@ native void Shavit_DeleteWR(int style, int track, const char[] map, int accounti
 
 native float Shavit_GetClientStageTime(int client);
 
+native void Shavit_SetClientStageTime(int client, float time = 0.0);
+
 // same as Shavit_PrintToChat() but loops through the whole server
 // code stolen from the base halflife.inc file
 stock void Shavit_PrintToChatAll(const char[] format, any ...)
@@ -2470,5 +2472,6 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetClientStage");
 	MarkNativeAsOptional("Shavit_GetMapStages");
 	MarkNativeAsOptional("Shavit_GetClientStageTime");
+	MarkNativeAsOptional("Shavit_SetClientStageTime");
 }
 #endif
