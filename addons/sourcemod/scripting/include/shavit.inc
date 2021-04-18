@@ -552,6 +552,15 @@ forward Action Shavit_OnStart(int client, int track);
 forward Action Shavit_OnStage(int client, int stage);
 
 /**
+ * Called when player is in end zone.
+ * (WARNING: Will be called every tick when the player stands at the stage zone!)
+ *
+ * @param client					Client index.
+ * @noreturn
+ */
+forward Action Shavit_OnEndZone(int client);
+
+/**
  * Called when a player uses the restart command.
  *
  * @param client					Client index.
@@ -2299,6 +2308,8 @@ native void Shavit_GetPlainChatrank(int client, char[] buf, int buflen, bool inc
  */
 native void Shavit_DeleteWR(int style, int track, const char[] map, int accountid, int recordid, bool delete_sql, bool update_cache);
 
+native float Shavit_GetClientStageTime(int client);
+
 // same as Shavit_PrintToChat() but loops through the whole server
 // code stolen from the base halflife.inc file
 stock void Shavit_PrintToChatAll(const char[] format, any ...)
@@ -2458,5 +2469,6 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_StartReplayFromFile");
 	MarkNativeAsOptional("Shavit_GetClientStage");
 	MarkNativeAsOptional("Shavit_GetMapStages");
+	MarkNativeAsOptional("Shavit_GetClientStageTime");
 }
 #endif

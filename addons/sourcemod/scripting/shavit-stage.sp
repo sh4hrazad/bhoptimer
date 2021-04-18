@@ -29,7 +29,6 @@ int gI_Stages;//how many stages in a map,same variable in shavit-zone
 int gI_Steamid[100];//this is a mysql index, i dont have any better implementation
 
 int gI_LastStage[MAXPLAYERS + 1];
-float gF_EnterStageTime[MAXPLAYERS + 1];
 float gF_LeaveStageTime[MAXPLAYERS + 1];
 float gF_StageTime[MAXPLAYERS + 1];
 
@@ -43,6 +42,7 @@ bool gB_Maptop[MAXPLAYERS + 1];
 bool gB_WRCPMenu[MAXPLAYERS + 1];
 bool gB_DeleteMaptop[MAXPLAYERS + 1];
 bool gB_DeleteWRCP[MAXPLAYERS + 1];
+bool gB_InStageZone[MAXPLAYERS + 1];
 
 // misc cache
 bool gB_Late = false;
@@ -69,6 +69,7 @@ public Plugin myinfo =
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
+	CreateNative("Shavit_GetClientStageTime", Native_GetClientStageTime);
 	// registers library, check "bool LibraryExists(const char[] name)" in order to use with other plugins
 	RegPluginLibrary("shavit-stage");
 
@@ -187,14 +188,14 @@ void Reset(int stage, int style, bool all = false)
 		{
 			for(int j = 0; j < style; j++)
 			{
-				gF_WrcpTime[i][j] = 0.0;
+				gF_WrcpTime[i][j] = -1.0;
 				strcopy(gS_WrcpName[i][j], 16, gS_None);
 			}
 		}
 	}
 	else
 	{
-		gF_WrcpTime[stage][style] = 0.0;
+		gF_WrcpTime[stage][style] = -1.0;
 		strcopy(gS_WrcpName[stage][style], 16, gS_None);
 	}
 }
@@ -601,6 +602,7 @@ public void SQL_DeleteWRCP_Callback2(Database db, DBResultSet results, const cha
 
 public void Shavit_OnRestart(int client, int track)
 {
+	gF_StageTime[client] = 0.0;
 	gI_LastStage[client] = 1;
 }
 
@@ -610,112 +612,136 @@ public void Player_Death(Event event, const char[] name, bool dontBroadcast)
 	gI_LastStage[client] = 1;
 }
 
+public void Shavit_OnProcessMovementPost(int client)
+{
+	if(!gB_InStageZone[client])
+	{
+		gF_StageTime[client] = GetGameTime() - gF_LeaveStageTime[client];
+	}
+}
+
+public Action Shavit_OnStart(int client)
+{
+	gB_InStageZone[client] = true;
+	gF_StageTime[client] = 0.0;
+}
+
+public Action Shavit_OnStage(int client)
+{
+	gB_InStageZone[client] = true;
+	gF_StageTime[client] = 0.0;
+}
+
+public Action Shavit_OnEndZone(int client)
+{
+	gB_InStageZone[client] = true;
+	gF_StageTime[client] = 0.0;
+}
+
 public void Shavit_OnEnterZone(int client, int type, int track, int id, int entity, int data)
 {
-	if(!IsValidClient(client) || IsFakeClient(client) || track != Track_Main)
+	if(track != Track_Main)
 	{
 		return;
 	}
 
-	if(type == Zone_Stage || type == Zone_End || type == Zone_End_2)
+	if(type == Zone_Stage || type == Zone_Start || type == Zone_Start_2 || type == Zone_End || type == Zone_End_2)
 	{
-		gF_EnterStageTime[client] = Shavit_GetClientTime(client);
+		int stage = Shavit_GetClientStage(client);
+		int style = Shavit_GetBhopStyle(client);
 
 		Call_StartForward(gH_Forwards_EnterStage);
 		Call_PushCell(client);
-		Call_PushCell(Shavit_GetClientStage(client));
-		Call_PushCell(Shavit_GetBhopStyle(client));
+		Call_PushCell(stage);
+		Call_PushCell(style);
 		Call_Finish();
+
+		if(gF_StageTime[client] > 0.0)
+		{
+			char sMessage[255];
+			char sTime[32];
+
+			if(stage > gI_LastStage[client] && stage - gI_LastStage[client] == 1)//1--->2 2--->3 ... n--->n+1
+			{
+				if(stage == 2)
+				{
+					gF_StageTime[client] = Shavit_GetClientTime(client);//pretend that i'm getting a accurent time
+				}
+
+				OnWRCPCheck(client, stage - 1, style, gF_StageTime[client]);//check if wrcp
+				Insert_WRCP_PR(client, stage - 1, style, gF_StageTime[client]);//check if wrcp and pr, insert or update
+
+				FormatSeconds(gF_StageTime[client], sTime, 32, true);
+				FormatEx(sMessage, 255, "%T", "ZoneStageTime", client, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText);
+			}
+
+			else
+			{
+				if(stage - gI_LastStage[client] <= 0)
+				{
+					return;
+				}
+
+				FormatEx(sMessage, 255, "%T", "ZoneStageAvoidSkip", client, gS_ChatStrings.sWarning, gS_ChatStrings.sWarning);
+			}
+
+			Shavit_PrintToChat(client, "%s", sMessage);
+
+			//total time
+			FormatSeconds(Shavit_GetClientTime(client), sTime, 32, true);
+			FormatEx(sMessage, 255, "%T", "ZoneStageEnterTotalTime", 
+				client, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText);
+			Shavit_PrintToChat(client, "%s", sMessage);
+		}
+
+		gI_LastStage[client] = stage;
 	}
 }
 
 public void Shavit_OnLeaveZone(int client, int type, int track, int id, int entity, int data)
 {
-	if(!IsValidClient(client) || IsFakeClient(client) || track != Track_Main)
+	if(track != Track_Main)
 	{
 		return;
 	}
 
-	if(type == Zone_Stage)
+	if(type == Zone_Stage || type == Zone_Start || type == Zone_Start_2)
 	{
-		gF_LeaveStageTime[client] = Shavit_GetClientTime(client);
+		gB_InStageZone[client] = false;
+		gF_LeaveStageTime[client] = GetGameTime();
+
+		int stage = Shavit_GetClientStage(client);
+		int style = Shavit_GetBhopStyle(client);
 
 		Call_StartForward(gH_Forwards_LeaveStage);
 		Call_PushCell(client);
-		Call_PushCell(Shavit_GetClientStage(client));
-		Call_PushCell(Shavit_GetBhopStyle(client));
+		Call_PushCell(stage);
+		Call_PushCell(style);
 		Call_Finish();
-	}
-}
 
-public void Shavit_OnEnterStage(int client, int stage, int style)
-{
-	char sMessage[255];
-	char sTime[32];
-
-	if(stage > gI_LastStage[client] && stage - gI_LastStage[client] == 1)//1--->2 2--->3 ... n--->n+1
-	{
-		if(stage == 2)
+		/* //TODO:prestrafe
+		bool onGround = false;
+		if(GetEntityFlags(client) & FL_ONGROUND)
 		{
-			gF_StageTime[client] = Shavit_GetClientTime(client);
+			onGround = true;
 		}
 
-		else
+		if(!onGround)
 		{
-			gF_StageTime[client] = gF_EnterStageTime[client] - gF_LeaveStageTime[client];
-		}
+			float fVelocity[3];
+			GetEntPropVector(client, Prop_Data, "m_vecVelocity", fVelocity);
+			float prespeed = SquareRoot(Pow(fVelocity[0], 2.0) + Pow(fVelocity[1], 2.0) + Pow(fVelocity[2], 2.0));
 
-		OnWRCPCheck(client, stage - 1, style, gF_StageTime[client]);//check if wrcp, just do a forward xD
-		Insert_WRCP_PR(client, stage - 1, style, gF_StageTime[client]);//check if wrcp and pr, insert or update
-
-		FormatSeconds(gF_StageTime[client], sTime, 32, true);
-		FormatEx(sMessage, 255, "%T", "ZoneStageTime", client, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText);
-	}
-
-	else if(stage == gI_LastStage[client])
-	{
-		return;
-	}
-
-	else
-	{
-		FormatEx(sMessage, 255, "%T", "ZoneStageAvoidSkip", client, gS_ChatStrings.sWarning, gS_ChatStrings.sWarning);
-	}
-
-	Shavit_PrintToChat(client, "%s", sMessage);
-	gI_LastStage[client] = stage;
-
-	//total time
-	FormatSeconds(Shavit_GetClientTime(client), sTime, 32, true);
-	FormatEx(sMessage, 255, "%T", "ZoneStageEnterTotalTime", 
-		client, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText);
-	Shavit_PrintToChat(client, "%s", sMessage);
-}
-
-public void Shavit_OnLeaveStage(int client, int stage, int style)
-{
-	//TODO:prestrafe
-	bool onGround = false;
-	if(GetEntityFlags(client) & FL_ONGROUND)
-	{
-		onGround = true;
-	}
-
-	if(!onGround)
-	{
-		float fVelocity[3];
-		GetEntPropVector(client, Prop_Data, "m_vecVelocity", fVelocity);
-		float prespeed = SquareRoot(Pow(fVelocity[0], 2.0) + Pow(fVelocity[1], 2.0) + Pow(fVelocity[2], 2.0));
-
-		char sMessage[64];
-		FormatEx(sMessage, 255, "%T", "ZoneStagePrestrafe", client, gS_ChatStrings.sText, gS_ChatStrings.sVariable, prespeed, gS_ChatStrings.sText);
-		Shavit_PrintToChat(client, "%s", sMessage);
+			char sMessage[64];
+			FormatEx(sMessage, 255, "%T", "ZoneStagePrestrafe", client, gS_ChatStrings.sText, gS_ChatStrings.sVariable, prespeed, gS_ChatStrings.sText);
+			Shavit_PrintToChat(client, "%s", sMessage);
+		} */
 	}
 }
 
 void OnWRCPCheck(int client, int stage, int style, float time)
 {
-	if(gF_StageTime[client] < gF_WrcpTime[stage][style] || gF_WrcpTime[stage][style] == 0.0)//check if wrcp
+	if(gF_StageTime[client] < gF_WrcpTime[stage][style] || gF_WrcpTime[stage][style] == -1.0)//check if wrcp
 	{
 		char sMessage[255];
 		char sName[MAX_NAME_LENGTH];
@@ -870,13 +896,18 @@ public void SQL_LoadWRCP_Callback(Database db, DBResultSet results, const char[]
 		int stage = results.FetchInt(1);
 		int style = results.FetchInt(2);
 		float time = results.FetchFloat(3);
-		if(time < gF_WrcpTime[stage][style] || gF_WrcpTime[stage][style] == 0.0)
+		if(time < gF_WrcpTime[stage][style] || gF_WrcpTime[stage][style] == -1.0)
 		{
 			gF_WrcpTime[stage][style] = time;
 
 			results.FetchString(4, gS_WrcpName[stage][style], MAX_NAME_LENGTH);
 		}
 	}
+}
+
+public int Native_GetClientStageTime(Handle handler, int numParams)
+{
+	return view_as<int>(gF_StageTime[GetNativeCell(1)]);
 }
 
 void SQL_DBConnect()

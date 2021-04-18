@@ -181,9 +181,6 @@ bool gB_CookiesRetrieved[MAXPLAYERS+1];
 int gI_StyleFlag[STYLE_LIMIT];
 char gS_StyleOverride[STYLE_LIMIT][32];
 
-// kz support
-bool gB_KZMap = false;
-
 public Plugin myinfo =
 {
 	name = "[shavit] Core",
@@ -219,12 +216,10 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetDistanceOffset", Native_GetTimeOffsetDistance);
 	CreateNative("Shavit_GetTimerStatus", Native_GetTimerStatus);
 	CreateNative("Shavit_HasStyleAccess", Native_HasStyleAccess);
-	CreateNative("Shavit_IsKZMap", Native_IsKZMap);
 	CreateNative("Shavit_IsPaused", Native_IsPaused);
 	CreateNative("Shavit_IsPracticeMode", Native_IsPracticeMode);
 	CreateNative("Shavit_LoadSnapshot", Native_LoadSnapshot);
 	CreateNative("Shavit_LogMessage", Native_LogMessage);
-	CreateNative("Shavit_MarkKZMap", Native_MarkKZMap);
 	CreateNative("Shavit_PauseTimer", Native_PauseTimer);
 	CreateNative("Shavit_PrintToChat", Native_PrintToChat);
 	CreateNative("Shavit_RestartTimer", Native_RestartTimer);
@@ -579,11 +574,6 @@ public void OnMapStart()
 	{
 		SetFailState("Could not load the chat messages configuration file. Make sure it exists (addons/sourcemod/configs/shavit-messages.cfg) and follows the proper syntax!");
 	}
-}
-
-public void OnMapEnd()
-{
-	gB_KZMap = false;
 }
 
 public Action Command_StartTimer(int client, int args)
@@ -1488,11 +1478,6 @@ public int Native_HasStyleAccess(Handle handler, int numParams)
 	return CheckCommandAccess(GetNativeCell(1), (strlen(gS_StyleOverride[style]) > 0)? gS_StyleOverride[style]:"<none>", gI_StyleFlag[style]);
 }
 
-public int Native_IsKZMap(Handle handler, int numParams)
-{
-	return view_as<bool>(gB_KZMap);
-}
-
 public int Native_StartTimer(Handle handler, int numParams)
 {
 	StartTimer(GetNativeCell(1), GetNativeCell(2));
@@ -2048,11 +2033,6 @@ public int Native_LogMessage(Handle plugin, int numParams)
 	FormatNativeString(0, 1, 2, 300, iWritten, sBuffer);
 
 	LogToFileEx(gS_LogPath, "[%s] %s", sPlugin, sBuffer);
-}
-
-public int Native_MarkKZMap(Handle handler, int numParams)
-{
-	gB_KZMap = true;
 }
 
 public int Native_GetClientTimescale(Handle handler, int numParams)
@@ -2617,7 +2597,6 @@ public SMCResult OnStyleEnterSection(SMCParser smc, const char[] name, bool opt_
 
 	gSM_StyleKeys[gI_CurrentParserIndex].SetString("inaccessible", "0");
 	gSM_StyleKeys[gI_CurrentParserIndex].SetString("enabled", "1");
-	gSM_StyleKeys[gI_CurrentParserIndex].SetString("kzcheckpoints", "0");
 	gSM_StyleKeys[gI_CurrentParserIndex].SetString("force_groundkeys", "0");
 
 	gI_OrderedStyles[gI_CurrentParserIndex] = gI_CurrentParserIndex;
