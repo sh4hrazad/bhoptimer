@@ -240,9 +240,13 @@ Convar gCV_BotWeapon = null;
 Convar gCV_PlaybackCanStop = null;
 Convar gCV_PlaybackCooldown = null;
 Convar gCV_PlaybackPreRunTime = null;
+Convar gCV_PlaybackPreRunTime_Stage = null;
 Convar gCV_PlaybackPostRunTime = null;
+Convar gCV_PlaybackPostRunTime_Stage = null;
 Convar gCV_ClearPreRun = null;
+Convar gCV_ClearPreRun_Stage = null;
 Convar gCV_RecordPostRun = null;
+Convar gCV_RecordPostRun_Stage = null;
 Convar gCV_DynamicTimeSearch = null;
 Convar gCV_DynamicTimeCheap = null;
 Convar gCV_DynamicTimeTick = null;
@@ -275,6 +279,13 @@ bool gB_makeCopy;
 bool gB_isTooLong;
 bool gB_isBestReplay;
 bool gB_HasFinished[MAXPLAYERS+1];
+bool gB_HasFinished_Stage[MAXPLAYERS+1];
+
+ArrayList gA_PlayerFrames_Stage[MAXPLAYERS+1];
+int gI_PlayerFrames_Stage[MAXPLAYERS+1];
+float gF_NextFrameTime_Stage[MAXPLAYERS+1];
+float gI_PlayerPrerunFrames_Stage[MAXPLAYERS+1];
+float gI_PlayerTimerStartFrames_Stage[MAXPLAYERS+1];
 
 public Plugin myinfo =
 {
@@ -400,9 +411,13 @@ public void OnPluginStart()
 	gCV_PlaybackCanStop = new Convar("shavit_replay_pbcanstop", "1", "Allow players to stop playback if they requested it?", 0, true, 0.0, true, 1.0);
 	gCV_PlaybackCooldown = new Convar("shavit_replay_pbcooldown", "10.0", "Cooldown in seconds to apply for players between each playback they request/stop.\nDoes not apply to RCON admins.", 0, true, 0.0);
 	gCV_PlaybackPreRunTime = new Convar("shavit_replay_preruntime", "1.5", "Time (in seconds) to record before a player leaves start zone. (The value should NOT be too high)", 0, true, 0.0);
+	gCV_PlaybackPreRunTime_Stage = new Convar("shavit_replay_preruntime_stage", "1.5", "Time (in seconds) to record before a player leaves stage zone. (The value should NOT be too high)", 0, true, 0.0);
 	gCV_PlaybackPostRunTime = new Convar("shavit_replay_postruntime", "1.5", "Time (in seconds) to record after a player finishes their run. (The value should NOT be too high)", 0, true, 0.0);
+	gCV_PlaybackPostRunTime_Stage = new Convar("shavit_replay_postruntime_stage", "1.5", "Time (in seconds) to record after a player finishes their stage run. (The value should NOT be too high)", 0, true, 0.0);
 	gCV_ClearPreRun = new Convar("shavit_replay_prerun_always", "1", "Record prerun frames outside the start zone?", 0, true, 0.0, true, 1.0);
+	gCV_ClearPreRun_Stage = new Convar("shavit_replay_prerun_stage_always", "1", "Record prerun frames outside the stage zone?", 0, true, 0.0, true, 1.0);
 	gCV_RecordPostRun = new Convar("shavit_replay_postrun_always", "1", "Record postrun frames after a player finishes their run?", 0, true, 0.0, true, 1.0);
+	gCV_RecordPostRun_Stage = new Convar("shavit_replay_postrun_stage_always", "1", "Record postrun frames after a player finishes their stage run?", 0, true, 0.0, true, 1.0);
 	gCV_DynamicTimeCheap = new Convar("shavit_replay_timedifference_cheap", "0.0", "0 - Disabled\n1 - only clip the search ahead to shavit_replay_timedifference_search\n2 - only clip the search behind to players current frame\n3 - clip the search to +/- shavit_replay_timedifference_search seconds to the players current frame", 0, true, 0.0, true, 3.0);
 	gCV_DynamicTimeSearch = new Convar("shavit_replay_timedifference_search", "0.0", "Time in seconds to search the players current frame for dynamic time differences\n0 - Full Scan\nNote: Higher values will result in worse performance", 0, true, 0.0);
 	gCV_EnableDynamicTimeDifference = new Convar("shavit_replay_timedifference", "0", "Enabled dynamic time/velocity differences for the hud", 0, true, 0.0, true, 1.0);
@@ -2519,6 +2534,42 @@ public Action Shavit_OnStart(int client)
 	return Plugin_Continue;
 }
 
+public Action Shavit_OnStage(int client)
+{
+	if(gB_HasFinished_Stage[client])// Prevent players from messing up the data if they get a record and immediately teleport to stage zone
+	{
+		return Plugin_Handled;
+	}
+
+	int iMaxPreFrames = RoundToFloor(gCV_PlaybackPreRunTime_Stage.FloatValue * gF_Tickrate / Shavit_GetStyleSettingFloat(Shavit_GetBhopStyle(client), "speed"));
+
+	gI_PlayerPrerunFrames_Stage[client] = gI_PlayerFrames_Stage[client] - iMaxPreFrames;
+	if(gI_PlayerPrerunFrames_Stage[client] < 0)
+	{
+		gI_PlayerPrerunFrames_Stage[client] = 0;
+	}
+	gI_PlayerTimerStartFrames_Stage[client] = gI_PlayerFrames_Stage[client];
+
+	if(!gB_ClearFrame_Stage[client])
+	{
+		if(!gCV_ClearPreRun_Stage.BoolValue)
+		{
+			ClearFrames_Stage(client);
+		}
+		gB_ClearFrame_Stage[client] = true;
+	}
+	else
+	{
+		if(gI_PlayerFrames_Stage[client] >= iMaxPreFrames)
+		{
+			gA_PlayerFrames_Stage[client].Erase(0);
+			gI_PlayerFrames_Stage[client]--;
+		}
+	}
+
+	return Plugin_Continue;
+}
+
 public bool Shavit_OnStopPre(int client, int track)
 {
 	if(gB_HasFinished[client])
@@ -3048,6 +3099,16 @@ void ClearFrames(int client)
 	gF_NextFrameTime[client] = 0.0;
 	gI_PlayerPrerunFrames[client] = 0;
 	gI_PlayerTimerStartFrames[client] = 0;
+}
+
+void ClearFrames_Stage(int client)
+{
+	delete gA_PlayerFrames_Stage[client];
+	gA_PlayerFrames_Stage[client] = new ArrayList(sizeof(frame_t));
+	gI_PlayerFrames_Stage[client] = 0;
+	gF_NextFrameTime_Stage[client] = 0.0;
+	gI_PlayerPrerunFrames_Stage[client] = 0;
+	gI_PlayerTimerStartFrames_Stage[client] = 0;
 }
 
 public void Shavit_OnWRDeleted(int style, int id, int track, int accountid, const char[] mapname)
