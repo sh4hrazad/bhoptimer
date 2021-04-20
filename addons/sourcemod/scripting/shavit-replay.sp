@@ -1768,7 +1768,14 @@ int CreateReplayBot(bot_info_t info)
 	}
 	else
 	{
-		StartReplay(gA_BotInfo[bot], gA_BotInfo[bot].iTrack, gA_BotInfo[bot].iStyle, GetClientFromSerial(info.iStarterSerial), gCV_ReplayDelay.FloatValue);
+		if(gA_BotInfo[bot].iStage == 0)
+		{
+			StartReplay(gA_BotInfo[bot], gA_BotInfo[bot].iTrack, gA_BotInfo[bot].iStyle, GetClientFromSerial(info.iStarterSerial), gCV_ReplayDelay.FloatValue);
+		}
+		else
+		{
+			StartReplay(gA_BotInfo[bot], 0, gA_BotInfo[bot].iStyle, GetClientFromSerial(info.iStarterSerial), gCV_ReplayDelay.FloatValue, gA_BotInfo[bot].iStage);
+		}
 	}
 
 	gA_BotInfo[GetClientFromSerial(info.iStarterSerial)].iEnt = bot;
