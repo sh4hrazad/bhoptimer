@@ -76,6 +76,7 @@ enum struct replayfile_header_t
 	int iReplayVersion;
 	char sMap[PLATFORM_MAX_PATH];
 	int iStyle;
+	int iStage;
 	int iTrack;
 	int iPreFrames;
 	int iFrameCount;
@@ -88,6 +89,7 @@ enum struct replayfile_header_t
 enum struct bot_info_t
 {
 	int iEnt;
+	int iStage; // Shavit_GetReplayBotStage
 	int iStyle; // Shavit_GetReplayBotStyle
 	int iStatus; // Shavit_GetReplayStatus
 	int iType; // Shavit_GetReplayBotType
@@ -105,6 +107,7 @@ enum struct bot_info_t
 enum struct player_info_t
 {
 	int iStyle;
+	int iStage;
 	int iTrack; 
 	float fTime;
 	int iSteamID;
@@ -171,6 +174,7 @@ bool gB_Linux;
 char gS_ReplayFolder[PLATFORM_MAX_PATH];
 
 framecache_t gA_FrameCache[STYLE_LIMIT][TRACKS_SIZE];
+framecache_t gA_FrameCache_Stage[STYLE_LIMIT][MAX_STAGES];
 
 bool gB_Button[MAXPLAYERS+1];
 int gI_PlayerFrames[MAXPLAYERS+1];
@@ -211,6 +215,7 @@ int gI_DynamicBots = 0;
 // Replay_ANYTHINGELSE: index with fakeclient index
 bot_info_t gA_BotInfo[MAXPLAYERS+1];
 player_info_t gA_PlayerInfo[MAXPLAYERS+1];
+player_info_t gA_PlayerInfo_Stage[MAXPLAYERS+1];
 
 // hooks and sdkcall stuff
 Handle gH_BotAddCommand = INVALID_HANDLE;
@@ -247,6 +252,10 @@ Convar gCV_DynamicTimeSearch = null;
 Convar gCV_DynamicTimeCheap = null;
 Convar gCV_DynamicTimeTick = null;
 Convar gCV_EnableDynamicTimeDifference = null;
+Convar gCV_PlaybackPreRunTime_Stage = null;
+Convar gCV_PlaybackPostRunTime_Stage = null;
+Convar gCV_ClearPreRun_Stage = null;
+Convar gCV_RecordPostRun_Stage = null;
 ConVar sv_duplicate_playernames_ok = null;
 
 // timer settings
@@ -275,6 +284,16 @@ bool gB_makeCopy;
 bool gB_isTooLong;
 bool gB_isBestReplay;
 bool gB_HasFinished[MAXPLAYERS+1];
+bool gB_HasFinished_Stage[MAXPLAYERS+1];
+
+ArrayList gA_PlayerFrames_Stage[MAXPLAYERS+1];
+int gI_PlayerFrames_Stage[MAXPLAYERS+1];
+float gF_NextFrameTime_Stage[MAXPLAYERS+1];
+int gI_PlayerPrerunFrames_Stage[MAXPLAYERS+1];
+int gI_PlayerTimerStartFrames_Stage[MAXPLAYERS+1];
+int gI_EndTicksRecorded_Stage[MAXPLAYERS+1];
+bool gB_ClearFrame_Stage[MAXPLAYERS+1];
+int gI_MenuStage[MAXPLAYERS+1];
 
 public Plugin myinfo =
 {
@@ -292,6 +311,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetClientFrameCount", Native_GetClientFrameCount);
 	CreateNative("Shavit_GetReplayBotFirstFrame", Native_GetReplayBotFirstFrame);
 	CreateNative("Shavit_GetReplayBotIndex", Native_GetReplayBotIndex);
+	CreateNative("Shavit_GetReplayBotStage", Native_GetReplayBotStage);
 	CreateNative("Shavit_GetReplayBotStyle", Native_GetReplayBotStyle);
 	CreateNative("Shavit_GetReplayBotTrack", Native_GetReplayBotTrack);
 	CreateNative("Shavit_GetReplayBotType", Native_GetReplayBotType);
@@ -400,9 +420,13 @@ public void OnPluginStart()
 	gCV_PlaybackCanStop = new Convar("shavit_replay_pbcanstop", "1", "Allow players to stop playback if they requested it?", 0, true, 0.0, true, 1.0);
 	gCV_PlaybackCooldown = new Convar("shavit_replay_pbcooldown", "10.0", "Cooldown in seconds to apply for players between each playback they request/stop.\nDoes not apply to RCON admins.", 0, true, 0.0);
 	gCV_PlaybackPreRunTime = new Convar("shavit_replay_preruntime", "1.5", "Time (in seconds) to record before a player leaves start zone. (The value should NOT be too high)", 0, true, 0.0);
+	gCV_PlaybackPreRunTime_Stage = new Convar("shavit_replay_preruntime_stage", "1.5", "Time (in seconds) to record before a player leaves stage zone. (The value should NOT be too high)", 0, true, 0.0);
 	gCV_PlaybackPostRunTime = new Convar("shavit_replay_postruntime", "1.5", "Time (in seconds) to record after a player finishes their run. (The value should NOT be too high)", 0, true, 0.0);
+	gCV_PlaybackPostRunTime_Stage = new Convar("shavit_replay_postruntime_stage", "1.5", "Time (in seconds) to record after a player finishes their stage run. (The value should NOT be too high)", 0, true, 0.0);
 	gCV_ClearPreRun = new Convar("shavit_replay_prerun_always", "1", "Record prerun frames outside the start zone?", 0, true, 0.0, true, 1.0);
+	gCV_ClearPreRun_Stage = new Convar("shavit_replay_prerun_stage_always", "1", "Record prerun frames outside the stage zone?", 0, true, 0.0, true, 1.0);
 	gCV_RecordPostRun = new Convar("shavit_replay_postrun_always", "1", "Record postrun frames after a player finishes their run?", 0, true, 0.0, true, 1.0);
+	gCV_RecordPostRun_Stage = new Convar("shavit_replay_postrun_stage_always", "1", "Record postrun frames after a player finishes their stage run?", 0, true, 0.0, true, 1.0);
 	gCV_DynamicTimeCheap = new Convar("shavit_replay_timedifference_cheap", "0.0", "0 - Disabled\n1 - only clip the search ahead to shavit_replay_timedifference_search\n2 - only clip the search behind to players current frame\n3 - clip the search to +/- shavit_replay_timedifference_search seconds to the players current frame", 0, true, 0.0, true, 3.0);
 	gCV_DynamicTimeSearch = new Convar("shavit_replay_timedifference_search", "0.0", "Time in seconds to search the players current frame for dynamic time differences\n0 - Full Scan\nNote: Higher values will result in worse performance", 0, true, 0.0);
 	gCV_EnableDynamicTimeDifference = new Convar("shavit_replay_timedifference", "0", "Enabled dynamic time/velocity differences for the hud", 0, true, 0.0, true, 1.0);
@@ -447,6 +471,7 @@ public void OnPluginStart()
 	// commands
 	RegAdminCmd("sm_deletereplay", Command_DeleteReplay, ADMFLAG_RCON, "Open replay deletion menu.");
 	RegConsoleCmd("sm_replay", Command_Replay, "Opens the central bot menu. For admins: 'sm_replay stop' to stop the playback.");
+	RegConsoleCmd("sm_test", Command_Test);
 
 	// database
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
@@ -718,20 +743,39 @@ void FinishReplay(bot_info_t info)
 	}
 }
 
-void StopOrRestartBots(int style, int track, bool restart)
+void StopOrRestartBots(int style, int track, bool restart, int stage = 0)
 {
+	bool bStage = (stage == 0) ? false : true;
+
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if (gA_BotInfo[i].iEnt <= 0 || gA_BotInfo[i].iTrack != track || gA_BotInfo[i].iStyle != style || gA_BotInfo[i].bCustomFrames)
+		if(!bStage)
 		{
-			continue;
+			if (gA_BotInfo[i].iEnt <= 0 || gA_BotInfo[i].iTrack != track || gA_BotInfo[i].iStyle != style || gA_BotInfo[i].bCustomFrames)
+			{
+				continue;
+			}
+		}
+		else
+		{
+			if (gA_BotInfo[i].iEnt <= 0 || gA_BotInfo[i].iTrack != 0 || gA_BotInfo[i].iStyle != style || gA_BotInfo[i].iStage != stage || gA_BotInfo[i].bCustomFrames)
+			{
+				continue;
+			}
 		}
 
 		CancelReplay(gA_BotInfo[i], false);
 
 		if (restart)
 		{
-			StartReplay(gA_BotInfo[i], track, style, GetClientFromSerial(gA_BotInfo[i].iStarterSerial), gCV_ReplayDelay.FloatValue);
+			if(!bStage)
+			{
+				StartReplay(gA_BotInfo[i], track, style, GetClientFromSerial(gA_BotInfo[i].iStarterSerial), gCV_ReplayDelay.FloatValue);
+			}
+			else
+			{
+				StartReplay(gA_BotInfo[i], 0, style, GetClientFromSerial(gA_BotInfo[i].iStarterSerial), gCV_ReplayDelay.FloatValue, stage);
+			}
 		}
 		else
 		{
@@ -740,30 +784,65 @@ void StopOrRestartBots(int style, int track, bool restart)
 	}
 }
 
-bool UnloadReplay(int style, int track, bool reload, bool restart, const char[] path = "")
+bool UnloadReplay(int style, int track, bool reload, bool restart, const char[] path = "", int stage = 0)
 {
-	delete gA_FrameCache[style][track].aFrames;
-	gA_FrameCache[style][track].iFrameCount = 0;
-	gA_FrameCache[style][track].fTime = 0.0;
-	gA_FrameCache[style][track].bNewFormat = true;
-	strcopy(gA_FrameCache[style][track].sReplayName, MAX_NAME_LENGTH, "invalid");
-	gA_FrameCache[style][track].iPreFrames = 0;
+	bool bStage = (stage == 0) ? false : true;
+
+	if(!bStage)
+	{
+		delete gA_FrameCache[style][track].aFrames;
+		gA_FrameCache[style][track].iFrameCount = 0;
+		gA_FrameCache[style][track].fTime = 0.0;
+		gA_FrameCache[style][track].bNewFormat = true;
+		strcopy(gA_FrameCache[style][track].sReplayName, MAX_NAME_LENGTH, "invalid");
+		gA_FrameCache[style][track].iPreFrames = 0;
+	}
+	else
+	{
+		delete gA_FrameCache_Stage[style][stage].aFrames;
+		gA_FrameCache_Stage[style][stage].iFrameCount = 0;
+		gA_FrameCache_Stage[style][stage].fTime = 0.0;
+		gA_FrameCache_Stage[style][stage].bNewFormat = true;
+		strcopy(gA_FrameCache_Stage[style][stage].sReplayName, MAX_NAME_LENGTH, "invalid");
+		gA_FrameCache_Stage[style][stage].iPreFrames = 0;
+	}
 
 	bool loaded = false;
 
 	if (reload)
 	{
-		if(strlen(path) > 0)
+		if(!bStage)
 		{
-			loaded = LoadReplay(gA_FrameCache[style][track], style, track, path, gS_Map);
+			if(strlen(path) > 0)
+			{
+				loaded = LoadReplay(gA_FrameCache[style][track], style, track, path, gS_Map);
+			}
+			else
+			{
+				loaded = DefaultLoadReplay(gA_FrameCache[style][track], style, track);
+			}
 		}
 		else
 		{
-			loaded = DefaultLoadReplay(gA_FrameCache[style][track], style, track);
+			if(strlen(path) > 0)
+			{
+				loaded = LoadReplay(gA_FrameCache_Stage[style][stage], style, 0, path, gS_Map);
+			}
+			else
+			{
+				loaded = DefaultLoadReplay(gA_FrameCache_Stage[style][stage], style, 0);
+			}
 		}
 	}
 
-	StopOrRestartBots(style, track, restart);
+	if(!bStage)
+	{
+		StopOrRestartBots(style, track, restart);
+	}
+	else
+	{
+		StopOrRestartBots(style, 0, restart, stage);
+	}
 
 	return loaded;
 }
@@ -821,7 +900,7 @@ public int Native_IsReplayDataLoaded(Handle handler, int numParams)
 	return view_as<int>(ReplayEnabled(style) && gA_FrameCache[style][track].iFrameCount > 0);
 }
 
-void StartReplay(bot_info_t info, int track, int style, int starter, float delay)
+void StartReplay(bot_info_t info, int track, int style, int starter, float delay, int stage = 0)
 {
 	if (starter > 0)
 	{
@@ -830,6 +909,7 @@ void StartReplay(bot_info_t info, int track, int style, int starter, float delay
 
 	//info.iEnt;
 	info.iStyle = style;
+	info.iStage = stage;
 	info.iStatus = Replay_Start;
 	//info.iType
 	info.iTrack = track;
@@ -840,8 +920,18 @@ void StartReplay(bot_info_t info, int track, int style, int starter, float delay
 
 	if (!info.bCustomFrames)
 	{
-		info.aCache = gA_FrameCache[style][track];
-		info.aCache.aFrames = view_as<ArrayList>(CloneHandle(info.aCache.aFrames));
+		bool bStage = (stage == 0) ? false : true;
+
+		if(!bStage)
+		{
+			info.aCache = gA_FrameCache[style][track];
+			info.aCache.aFrames = view_as<ArrayList>(CloneHandle(info.aCache.aFrames));
+		}
+		else
+		{
+			info.aCache = gA_FrameCache_Stage[style][stage];
+			info.aCache.aFrames = view_as<ArrayList>(CloneHandle(info.aCache.aFrames));
+		}
 	}
 
 	TeleportToStart(info);
@@ -874,12 +964,14 @@ void SetupIfCustomFrames(bot_info_t info, framecache_t cache)
 	}
 }
 
-int CreateReplayEntity(int track, int style, float delay, int client, int bot, int type, bool ignorelimit, framecache_t cache, int loopingConfig)
+int CreateReplayEntity(int track, int style, float delay, int client, int bot, int type, bool ignorelimit, framecache_t cache, int loopingConfig, int stage = 0)
 {
 	if (client > 0 && gA_BotInfo[client].iEnt > 0)
 	{
 		return 0;
 	}
+
+	bool bStage = (stage == 0) ? false : true;
 
 	if (delay == -1.0)
 	{
@@ -903,7 +995,15 @@ int CreateReplayEntity(int track, int style, float delay, int client, int bot, i
 			}
 
 			SetupIfCustomFrames(gA_BotInfo[client], cache);
-			StartReplay(gA_BotInfo[client], gI_MenuTrack[client], gI_MenuStyle[client], client, delay);
+
+			if(!bStage)
+			{
+				StartReplay(gA_BotInfo[client], gI_MenuTrack[client], gI_MenuStyle[client], client, delay);
+			}
+			else
+			{
+				StartReplay(gA_BotInfo[client], 0, gI_MenuStyle[client], client, delay, stage);
+			}
 		}
 		else
 		{
@@ -918,6 +1018,7 @@ int CreateReplayEntity(int track, int style, float delay, int client, int bot, i
 			bot_info_t info;
 			info.iType = type;
 			info.iStyle = style;
+			info.iStage = stage;
 			info.iTrack = track;
 			info.iStarterSerial = (client > 0) ? GetClientSerial(client) : 0;
 			info.bIgnoreLimit = ignorelimit;
@@ -957,7 +1058,15 @@ int CreateReplayEntity(int track, int style, float delay, int client, int bot, i
 
 		CancelReplay(gA_BotInfo[index], false);
 		SetupIfCustomFrames(gA_BotInfo[index], cache);
-		StartReplay(gA_BotInfo[index], track, style, client, delay);
+
+		if(!bStage)
+		{
+			StartReplay(gA_BotInfo[index], track, style, client, delay);
+		}
+		else
+		{
+			StartReplay(gA_BotInfo[index], 0, style, client, delay, stage);
+		}
 	}
 
 	return bot;
@@ -1170,6 +1279,11 @@ public int Native_HijackAngles(Handle handler, int numParams)
 	gB_HijackFrame[client] = true;
 	gF_HijackedAngles[client][0] = view_as<float>(GetNativeCell(2));
 	gF_HijackedAngles[client][1] = view_as<float>(GetNativeCell(3));
+}
+
+public int Native_GetReplayBotStage(Handle handler, int numParams)
+{
+	return gA_BotInfo[GetBotInfoIndex(GetNativeCell(1))].iStage;
 }
 
 public int Native_GetReplayBotStyle(Handle handler, int numParams)
@@ -1541,6 +1655,18 @@ public void OnMapStart()
 			DefaultLoadReplay(gA_FrameCache[i][j], i, j);
 		}
 
+		for(int j = 1; j <= Shavit_GetMapStages(); j++)
+		{
+			delete gA_FrameCache_Stage[i][j].aFrames;
+			gA_FrameCache_Stage[i][j].iFrameCount = 0;
+			gA_FrameCache_Stage[i][j].fTime = 0.0;
+			gA_FrameCache_Stage[i][j].bNewFormat = true;
+			strcopy(gA_FrameCache_Stage[i][j].sReplayName, MAX_NAME_LENGTH, "invalid");
+			gA_FrameCache_Stage[i][j].iPreFrames = 0;
+
+			DefaultLoadReplay(gA_FrameCache_Stage[i][j], i, 0, j);
+		}
+
 		Call_StartForward(gH_OnReplaysLoaded);
 		Call_Finish();
 	}
@@ -1711,37 +1837,62 @@ void AddReplayBots()
 	}
 }
 
-void GetReplayFilePath(int style, int track, const char[] mapname, char sPath[PLATFORM_MAX_PATH])
+void GetReplayFilePath(int style, int track, const char[] mapname, char sPath[PLATFORM_MAX_PATH], int stage = 0)
 {
+	bool bStage = (stage == 0) ? false : true;
+
 	char sTrack[4];
 	FormatEx(sTrack, 4, "_%d", track);
-	FormatEx(sPath, PLATFORM_MAX_PATH, "%s/%d/%s%s.replay", gS_ReplayFolder, style, mapname, (track > 0)? sTrack:"");
+
+	if(!bStage)
+	{
+		FormatEx(sPath, PLATFORM_MAX_PATH, "%s/%d/%s%s.replay", gS_ReplayFolder, style, mapname, (track > 0)? sTrack:"");
+	}
+	else
+	{
+		FormatEx(sPath, PLATFORM_MAX_PATH, "%s/%d/%s_stage_%d.replay", gS_ReplayFolder, style, mapname, stage);
+	}
 }
 
-bool DefaultLoadReplay(framecache_t cache, int style, int track)
+bool DefaultLoadReplay(framecache_t cache, int style, int track, int stage = 0)
 {
+	bool bStage = (stage == 0) ? false : true;
+
 	char sPath[PLATFORM_MAX_PATH];
-	GetReplayFilePath(style, track, gS_Map, sPath);
-
-	if (!LoadReplay(cache, style, track, sPath, gS_Map))
+	if(!bStage)
 	{
-		return false;
+		GetReplayFilePath(style, track, gS_Map, sPath);
+
+		if (!LoadReplay(cache, style, track, sPath, gS_Map))
+		{
+			return false;
+		}
+
+		if (gB_ClosestPos)
+		{
+			delete gH_ClosestPos[track][style];
+			gH_ClosestPos[track][style] = new ClosestPos(cache.aFrames);
+		}
 	}
-
-	if (gB_ClosestPos)
+	else
 	{
-		delete gH_ClosestPos[track][style];
-		gH_ClosestPos[track][style] = new ClosestPos(cache.aFrames);
+		GetReplayFilePath(style, 0, gS_Map, sPath, stage);
+
+		if (!LoadReplay(cache, style, 0, sPath, gS_Map, stage))
+		{
+			return false;
+		}
 	}
 
 	return true;
 }
 
-bool LoadReplay(framecache_t cache, int style, int track, const char[] path, const char[] mapname)
+bool LoadReplay(framecache_t cache, int style, int track, const char[] path, const char[] mapname, int stage = 0)
 {
 	bool success = false;
+	bool bStage = (stage == 0) ? false : true;
 	replayfile_header_t header;
-	File fFile = ReadReplayHeader(path, header);
+	File fFile = (!bStage) ? ReadReplayHeader(path, header) : ReadReplayHeader(path, header, stage);
 
 	if (fFile != null)
 	{
@@ -1749,9 +1900,13 @@ bool LoadReplay(framecache_t cache, int style, int track, const char[] path, con
 		{
 			// not going to try and read it
 		}
-		else if (header.iReplayVersion < 0x03 || (StrEqual(header.sMap, mapname, false) && header.iStyle == style && header.iTrack == track))
+		else if ((header.iReplayVersion < 0x03 || (StrEqual(header.sMap, mapname, false) && header.iStyle == style && header.iTrack == track)) && !bStage)
 		{
 			success = ReadReplayFrames(fFile, header, cache);
+		}
+		else if (header.iReplayVersion < 0x03 || (StrEqual(header.sMap, mapname, false) && header.iStyle == style && header.iTrack == 0 && header.iStage == stage))
+		{
+			success = ReadReplayFrames(fFile, header, cache, stage);
 		}
 
 		delete fFile;
@@ -1760,7 +1915,7 @@ bool LoadReplay(framecache_t cache, int style, int track, const char[] path, con
 	return success;
 }
 
-bool ReadReplayFrames(File file, replayfile_header_t header, framecache_t cache)
+bool ReadReplayFrames(File file, replayfile_header_t header, framecache_t cache, int stage = 0)
 {
 	int cells = 6;
 
@@ -1818,9 +1973,12 @@ bool ReadReplayFrames(File file, replayfile_header_t header, framecache_t cache)
 			char sQuery[192];
 			FormatEx(sQuery, 192, "SELECT name FROM %susers WHERE auth = %d;", gS_MySQLPrefix, header.iSteamID);
 
+			bool bStage = (stage == 0) ? false : true;
+
 			DataPack hPack = new DataPack();
 			hPack.WriteCell(header.iStyle);
-			hPack.WriteCell(header.iTrack);
+			hPack.WriteCell((!bStage)?header.iTrack:header.iStage);
+			hPack.WriteCell(stage);//check
 
 			gH_SQL.Query(SQL_GetUserName_Callback, sQuery, hPack, DBPrio_High);
 		}
@@ -1835,7 +1993,7 @@ bool ReadReplayFrames(File file, replayfile_header_t header, framecache_t cache)
 	return true;
 }
 
-File ReadReplayHeader(const char[] path, replayfile_header_t header)
+File ReadReplayHeader(const char[] path, replayfile_header_t header, int stage = 0)
 {
 	if (!FileExists(path))
 	{
@@ -1848,6 +2006,8 @@ File ReadReplayHeader(const char[] path, replayfile_header_t header)
 	{
 		return null;
 	}
+
+	bool bStage = (stage == 0) ? false : true;
 
 	char sHeader[64];
 
@@ -1872,7 +2032,7 @@ File ReadReplayHeader(const char[] path, replayfile_header_t header)
 		{
 			file.ReadString(header.sMap, PLATFORM_MAX_PATH);
 			file.ReadUint8(header.iStyle);
-			file.ReadUint8(header.iTrack);
+			(!bStage) ? file.ReadUint8(header.iTrack) : file.ReadUint8(header.iStage);
 			
 			file.ReadInt32(header.iPreFrames);
 
@@ -1920,13 +2080,14 @@ File ReadReplayHeader(const char[] path, replayfile_header_t header)
 	return file;
 }
 
-void WriteReplayHeader(File fFile, int style, int track, float time, int steamid, int preframes, int timerstartframe, int iSize)
+void WriteReplayHeader(File fFile, int style, int track, float time, int steamid, int preframes, int timerstartframe, int iSize, int stage = 0)
 {
+	bool bStage = (stage == 0) ? false : true;
 	fFile.WriteLine("%d:" ... REPLAY_FORMAT_FINAL, REPLAY_FORMAT_SUBVERSION);
 
 	fFile.WriteString(gS_Map, true);
 	fFile.WriteInt8(style);
-	fFile.WriteInt8(track);
+	fFile.WriteInt8((!bStage)?track:stage);
 	fFile.WriteInt32(timerstartframe - preframes);
 
 	fFile.WriteInt32(iSize - preframes);
@@ -1989,7 +2150,31 @@ void SaveReplayPre(int client)
 	ClearFrames(client);
 }
 
-void SaveReplay(int style, int track, float time, int steamid, char[] name, int preframes, ArrayList playerrecording, int iSize, int timerstartframe, int timestamp, bool saveCopy, bool saveReplay, char[] sPath, int sPathLen)
+void SaveReplayPre_Stage(int client)
+{
+	char sPath[PLATFORM_MAX_PATH];
+	SaveReplay(gA_PlayerInfo_Stage[client].iStyle, 
+				0, 
+				gA_PlayerInfo_Stage[client].fTime, 
+				gA_PlayerInfo_Stage[client].iSteamID, 
+				gA_PlayerInfo_Stage[client].sName, 
+				gI_PlayerPrerunFrames_Stage[client], 
+				gA_PlayerFrames_Stage[client], 
+				gI_PlayerFrames_Stage[client], 
+				gI_PlayerTimerStartFrames_Stage[client], 
+				gA_PlayerInfo_Stage[client].iTimestamp, 
+				false, 
+				false, 
+				sPath, 
+				sizeof(sPath), 
+				false, 
+				true, 
+				gA_PlayerInfo_Stage[client].iStage);
+
+	ClearFrames_Stage(client);
+}
+
+void SaveReplay(int style, int track, float time, int steamid, char[] name, int preframes, ArrayList playerrecording, int iSize, int timerstartframe, int timestamp, bool saveCopy, bool saveReplay, char[] sPath, int sPathLen, bool saveCopy_Stage = false, bool saveReplay_Stage = false, int stage = 0)
 {
 	char sTrack[4];
 	FormatEx(sTrack, 4, "_%d", track);
@@ -2011,6 +2196,13 @@ void SaveReplay(int style, int track, float time, int steamid, char[] name, int 
 		fCopy = OpenFile(sPath, "wb");
 	}
 
+	if (saveReplay_Stage)
+	{
+		FormatEx(sPath, sPathLen, "%s/%d/%s_stage_%d.replay", gS_ReplayFolder, style, gS_Map, stage);
+		DeleteFile(sPath);
+		fWR = OpenFile(sPath, "wb");
+	}
+
 	if (saveReplay)
 	{
 		WriteReplayHeader(fWR, style, track, time, steamid, preframes, timerstartframe, iSize);
@@ -2022,6 +2214,14 @@ void SaveReplay(int style, int track, float time, int steamid, char[] name, int 
 	if (saveCopy)
 	{
 		WriteReplayHeader(fCopy, style, track, time, steamid, preframes, timerstartframe, iSize);
+	}
+
+	if (saveReplay_Stage)
+	{
+		WriteReplayHeader(fWR, style, 0, time, steamid, preframes, timerstartframe, iSize, stage);
+
+		delete gA_FrameCache_Stage[style][stage].aFrames;
+		gA_FrameCache_Stage[style][stage].aFrames = new ArrayList(sizeof(frame_t), iSize-preframes);
 	}
 
 	any aFrameData[sizeof(frame_t)];
@@ -2037,6 +2237,11 @@ void SaveReplay(int style, int track, float time, int steamid, char[] name, int 
 			gA_FrameCache[style][track].aFrames.SetArray(i-preframes, aFrameData);
 		}
 
+		if (saveReplay_Stage)
+		{
+			gA_FrameCache_Stage[style][stage].aFrames.SetArray(i-preframes, aFrameData);
+		}
+
 		for(int j = 0; j < sizeof(frame_t); j++)
 		{
 			aWriteData[(sizeof(frame_t) * iFramesWritten) + j] = aFrameData[j];
@@ -2044,12 +2249,12 @@ void SaveReplay(int style, int track, float time, int steamid, char[] name, int 
 
 		if(++iFramesWritten == FRAMES_PER_WRITE || i == iSize - 1)
 		{
-			if (saveReplay)
+			if (saveReplay || saveReplay_Stage)
 			{
 				fWR.Write(aWriteData, sizeof(frame_t) * iFramesWritten, 4);
 			}
 
-			if (saveCopy)
+			if (saveCopy || saveCopy_Stage)
 			{
 				fCopy.Write(aWriteData, sizeof(frame_t) * iFramesWritten, 4);
 			}
@@ -2061,22 +2266,43 @@ void SaveReplay(int style, int track, float time, int steamid, char[] name, int 
 	delete fWR;
 	delete fCopy;
 
-	if (!saveReplay)
+	if (!saveReplay && !saveReplay_Stage)
 	{
 		return;
 	}
 
-	gA_FrameCache[style][track].iFrameCount = iSize - preframes;
-	gA_FrameCache[style][track].fTime = time;
-	gA_FrameCache[style][track].bNewFormat = true;
-	strcopy(gA_FrameCache[style][track].sReplayName, MAX_NAME_LENGTH, name);
-	gA_FrameCache[style][track].iPreFrames = timerstartframe - preframes;
+	if(saveReplay)
+	{
+		gA_FrameCache[style][track].iFrameCount = iSize - preframes;
+		gA_FrameCache[style][track].fTime = time;
+		gA_FrameCache[style][track].bNewFormat = true;
+		strcopy(gA_FrameCache[style][track].sReplayName, MAX_NAME_LENGTH, name);
+		gA_FrameCache[style][track].iPreFrames = timerstartframe - preframes;
+	}
+
+	if(saveReplay_Stage)
+	{
+		gA_FrameCache_Stage[style][stage].iFrameCount = iSize - preframes;
+		gA_FrameCache_Stage[style][stage].fTime = time;
+		gA_FrameCache_Stage[style][stage].bNewFormat = true;
+		strcopy(gA_FrameCache_Stage[style][stage].sReplayName, MAX_NAME_LENGTH, name);
+		gA_FrameCache_Stage[style][stage].iPreFrames = timerstartframe - preframes;
+	}
 }
 
-bool DeleteReplay(int style, int track, int accountid, const char[] mapname)
+bool DeleteReplay(int style, int track, int accountid, const char[] mapname, int stage = 0)
 {
+	bool bStage = (stage == 0) ? false : true;
+
 	char sPath[PLATFORM_MAX_PATH];
-	GetReplayFilePath(style, track, mapname, sPath);
+	if(!bStage)
+	{
+		GetReplayFilePath(style, track, mapname, sPath);
+	}
+	else
+	{
+		GetReplayFilePath(style, 0, mapname, sPath, stage);
+	}
 
 	if(!FileExists(sPath))
 	{
@@ -2086,7 +2312,7 @@ bool DeleteReplay(int style, int track, int accountid, const char[] mapname)
 	if(accountid != 0)
 	{
 		replayfile_header_t header;
-		File file = ReadReplayHeader(sPath, header);
+		File file = (!bStage) ? ReadReplayHeader(sPath, header) : ReadReplayHeader(sPath, header, stage);
 
 		if (file == null)
 		{
@@ -2108,7 +2334,14 @@ bool DeleteReplay(int style, int track, int accountid, const char[] mapname)
 
 	if(StrEqual(mapname, gS_Map))
 	{
-		UnloadReplay(style, track, false, false);
+		if(!bStage)
+		{
+			UnloadReplay(style, track, false, false);
+		}
+		else
+		{
+			UnloadReplay(style, 0, false, false, "", stage);
+		}
 	}
 
 	return true;
@@ -2118,7 +2351,8 @@ public void SQL_GetUserName_Callback(Database db, DBResultSet results, const cha
 {
 	data.Reset();
 	int style = data.ReadCell();
-	int track = data.ReadCell();
+	int trackOrstage = data.ReadCell();
+	bool bStage = (data.ReadCell() == 0) ? false : true;
 	delete data;
 
 	if(results == null)
@@ -2130,7 +2364,7 @@ public void SQL_GetUserName_Callback(Database db, DBResultSet results, const cha
 
 	if(results.FetchRow())
 	{
-		results.FetchString(0, gA_FrameCache[style][track].sReplayName, MAX_NAME_LENGTH);
+		results.FetchString(0, (!bStage)?gA_FrameCache[style][trackOrstage].sReplayName:gA_FrameCache_Stage[style][trackOrstage].sReplayName, MAX_NAME_LENGTH);
 	}
 }
 
@@ -2241,6 +2475,7 @@ void FormatStyle(const char[] source, int style, bool central, int track, char d
 void UpdateBotScoreboard(int client)
 {
 	int track = gA_BotInfo[client].iTrack;
+	/* int stage = gA_BotInfo[client].iStage; */
 	int style = gA_BotInfo[client].iStyle;
 	int type = gA_BotInfo[client].iType;
 	int iFrameCount = gA_BotInfo[client].aCache.iFrameCount;
@@ -2463,6 +2698,7 @@ public void OnClientDisconnect_Post(int client)
 {
 	// This runs after shavit-misc has cloned the handle
 	delete gA_PlayerFrames[client];
+	delete gA_PlayerFrames_Stage[client];
 }
 
 public void OnEntityDestroyed(int entity)
@@ -2490,14 +2726,26 @@ public Action Shavit_OnStart(int client)
 		return Plugin_Handled;
 	}
 
+	if(gB_HasFinished_Stage[client])// Prevent players from messing up the data if they get a record and immediately teleport to start zone
+	{
+		return Plugin_Handled;
+	}
+
 	int iMaxPreFrames = RoundToFloor(gCV_PlaybackPreRunTime.FloatValue * gF_Tickrate / Shavit_GetStyleSettingFloat(Shavit_GetBhopStyle(client), "speed"));
+	int iMaxPreFrames_Stage = RoundToFloor(gCV_PlaybackPreRunTime_Stage.FloatValue * gF_Tickrate / Shavit_GetStyleSettingFloat(Shavit_GetBhopStyle(client), "speed"));
 
 	gI_PlayerPrerunFrames[client] = gI_PlayerFrames[client] - iMaxPreFrames;
+	gI_PlayerPrerunFrames_Stage[client] = gI_PlayerFrames_Stage[client] - iMaxPreFrames_Stage;
 	if(gI_PlayerPrerunFrames[client] < 0)
 	{
 		gI_PlayerPrerunFrames[client] = 0;
 	}
+	if(gI_PlayerPrerunFrames_Stage[client] < 0)
+	{
+		gI_PlayerPrerunFrames_Stage[client] = 0;
+	}
 	gI_PlayerTimerStartFrames[client] = gI_PlayerFrames[client];
+	gI_PlayerTimerStartFrames_Stage[client] = gI_PlayerFrames_Stage[client];
 
 	if(!gB_ClearFrame[client])
 	{
@@ -2516,6 +2764,59 @@ public Action Shavit_OnStart(int client)
 		}
 	}
 
+	if(!gB_ClearFrame_Stage[client])
+	{
+		if(!gCV_ClearPreRun_Stage.BoolValue)
+		{
+			ClearFrames_Stage(client);
+		}
+		gB_ClearFrame_Stage[client] = true;
+	}
+	else
+	{
+		if(gI_PlayerFrames_Stage[client] >= iMaxPreFrames_Stage)
+		{
+			gA_PlayerFrames_Stage[client].Erase(0);
+			gI_PlayerFrames_Stage[client]--;
+		}
+	}
+
+	return Plugin_Continue;
+}
+
+public Action Shavit_OnStage(int client)
+{
+	if(gB_HasFinished_Stage[client])// Prevent players from messing up the data if they get a record and immediately teleport to stage zone
+	{
+		return Plugin_Handled;
+	}
+
+	int iMaxPreFrames = RoundToFloor(gCV_PlaybackPreRunTime_Stage.FloatValue * gF_Tickrate / Shavit_GetStyleSettingFloat(Shavit_GetBhopStyle(client), "speed"));
+
+	gI_PlayerPrerunFrames_Stage[client] = gI_PlayerFrames_Stage[client] - iMaxPreFrames;
+	if(gI_PlayerPrerunFrames_Stage[client] < 0)
+	{
+		gI_PlayerPrerunFrames_Stage[client] = 0;
+	}
+	gI_PlayerTimerStartFrames_Stage[client] = gI_PlayerFrames_Stage[client];
+
+	if(!gB_ClearFrame_Stage[client])
+	{
+		if(!gCV_ClearPreRun_Stage.BoolValue)
+		{
+			ClearFrames_Stage(client);
+		}
+		gB_ClearFrame_Stage[client] = true;
+	}
+	else
+	{
+		if(gI_PlayerFrames_Stage[client] >= iMaxPreFrames)
+		{
+			gA_PlayerFrames_Stage[client].Erase(0);
+			gI_PlayerFrames_Stage[client]--;
+		}
+	}
+
 	return Plugin_Continue;
 }
 
@@ -2526,12 +2827,20 @@ public bool Shavit_OnStopPre(int client, int track)
 		gB_HasFinished[client] = false;
 		SaveReplayPre(client);
 	}
+
+	if(gB_HasFinished_Stage[client])
+    {
+		gB_HasFinished_Stage[client] = false;
+		SaveReplayPre_Stage(client);
+	}
 }
 
 public void Shavit_OnStop(int client)
 {
 	gB_HasFinished[client] = false;
+	gB_HasFinished_Stage[client] = false;
 	ClearFrames(client);
+	ClearFrames_Stage(client);
 }
 
 public void Shavit_OnLeaveZone(int client, int type, int track, int id, int entity)
@@ -2539,6 +2848,17 @@ public void Shavit_OnLeaveZone(int client, int type, int track, int id, int enti
 	if(type == Zone_Start || type == Zone_Start_2)
 	{
 		gB_ClearFrame[client] = false;
+		gB_ClearFrame_Stage[client] = false;
+	}
+
+	if(type == Zone_Stage)
+	{
+		gB_ClearFrame_Stage[client] = false;
+		if(gB_HasFinished_Stage[client])
+		{
+			gB_HasFinished_Stage[client] = false;
+			SaveReplayPre_Stage(client);
+		}
 	}
 }
 
@@ -2606,6 +2926,28 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 	gB_isBestReplay = isBestReplay;
 	gB_makeCopy = makeCopy;
 	gB_makeReplay = makeReplay;
+}
+
+public void Shavit_OnWRCP(int client, int stage, int style, int steamid, float time, const char[] mapname)
+{
+	if(Shavit_IsPracticeMode(client) || !gCV_Enabled.BoolValue || gI_PlayerFrames_Stage[client] == 0)
+	{
+		return;
+	}
+
+	char sName[MAX_NAME_LENGTH];
+	GetClientName(client, sName, MAX_NAME_LENGTH);
+	ReplaceString(sName, MAX_NAME_LENGTH, "#", "?");
+
+	gB_HasFinished_Stage[client] = true;
+	gI_EndTicksRecorded_Stage[client] = 0;
+
+	gA_PlayerInfo_Stage[client].iStyle = style;
+	gA_PlayerInfo_Stage[client].iStage = stage;
+	gA_PlayerInfo_Stage[client].iTrack = 0;
+	gA_PlayerInfo_Stage[client].fTime = time;
+	gA_PlayerInfo_Stage[client].iSteamID = steamid;
+	strcopy(gA_PlayerInfo_Stage[client].sName, MAX_NAME_LENGTH, sName);
 }
 
 void ApplyFlags(int &flags1, int flags2, int flag)
@@ -2828,7 +3170,22 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 			}
 		}
 
-		if((gI_PlayerFrames[client] / gF_Tickrate) > gCV_TimeLimit.FloatValue)
+		if(gB_HasFinished_Stage[client])
+        {
+			if(!gCV_RecordPostRun_Stage.BoolValue)//don't record postrun tick
+			{
+				gB_HasFinished_Stage[client] = false;
+				SaveReplayPre_Stage(client);
+			}
+
+			else if(gI_EndTicksRecorded_Stage[client]++ >= RoundToFloor(gCV_PlaybackPostRunTime_Stage.FloatValue * gF_Tickrate / Shavit_GetStyleSettingFloat(Shavit_GetBhopStyle(client), "speed")))
+            {
+				gB_HasFinished_Stage[client] = false;
+				SaveReplayPre_Stage(client);
+			}
+		}
+
+		if((gI_PlayerFrames[client] / gF_Tickrate) > gCV_TimeLimit.FloatValue || (gI_PlayerFrames_Stage[client] / gF_Tickrate) > gCV_TimeLimit.FloatValue)
 		{
 			// in case of bad timing
 			if(gB_HijackFrame[client])
@@ -2850,6 +3207,11 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					// Add about two seconds worth of frames so we don't have to resize so often
 					gA_PlayerFrames[client].Resize(gI_PlayerFrames[client] + (RoundToCeil(gF_Tickrate) * 2));
 					//PrintToChat(client, "resizing %d -> %d", gI_PlayerFrames[client], gA_PlayerFrames[client].Length);
+				}
+
+				if (gA_PlayerFrames_Stage[client].Length <= gI_PlayerFrames_Stage[client])
+				{
+					gA_PlayerFrames_Stage[client].Resize(gI_PlayerFrames_Stage[client] + (RoundToCeil(gF_Tickrate) * 2));
 				}
 
 				frame_t aFrame;
@@ -2875,6 +3237,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 				//GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", aFrame.vel);
 
 				gA_PlayerFrames[client].SetArray(gI_PlayerFrames[client]++, aFrame, sizeof(frame_t));
+				gA_PlayerFrames_Stage[client].SetArray(gI_PlayerFrames_Stage[client]++, aFrame, sizeof(frame_t));
 
 				if(fTimescale != -1.0)
 				{
@@ -2959,8 +3322,14 @@ public void Player_Event(Event event, const char[] name, bool dontBroadcast)
 			gB_HasFinished[client] = false;
 			SaveReplayPre(client);
 		}
+		if(gB_HasFinished_Stage[client])
+		{
+			gB_HasFinished_Stage[client] = false;
+			SaveReplayPre_Stage(client);
+		}
 
 		gB_HasFinished[client] = false;
+		gB_HasFinished_Stage[client] = false;
 	}
 }
 
@@ -3050,9 +3419,24 @@ void ClearFrames(int client)
 	gI_PlayerTimerStartFrames[client] = 0;
 }
 
+void ClearFrames_Stage(int client)
+{
+	delete gA_PlayerFrames_Stage[client];
+	gA_PlayerFrames_Stage[client] = new ArrayList(sizeof(frame_t));
+	gI_PlayerFrames_Stage[client] = 0;
+	gF_NextFrameTime_Stage[client] = 0.0;
+	gI_PlayerPrerunFrames_Stage[client] = 0;
+	gI_PlayerTimerStartFrames_Stage[client] = 0;
+}
+
 public void Shavit_OnWRDeleted(int style, int id, int track, int accountid, const char[] mapname)
 {
 	DeleteReplay(style, track, accountid, mapname);
+}
+
+public void Shavit_OnWRCPDeleted(int stage, int style, int steamid, const char[] mapname)
+{
+	DeleteReplay(style, 0, steamid, mapname, stage);
 }
 
 public Action Command_DeleteReplay(int client, int args)
@@ -3248,6 +3632,13 @@ int CreateReplayProp(int client)
 	return ent;
 }
 
+public Action Command_Test(int client, int args)
+{
+	PrintToChatAll("gI_MenuStage[param1] is %d", gI_MenuStage[client]);
+
+	return Plugin_Handled;
+}
+
 public Action Command_Replay(int client, int args)
 {
 	if (!IsValidClient(client) || !gCV_Enabled.BoolValue || !(gCV_CentralBot.BoolValue || gCV_AllowPropBots.BoolValue || gCV_DynamicBotLimit.IntValue > 0))
@@ -3391,6 +3782,42 @@ void OpenReplayTrackMenu(int client)
 		menu.AddItem(sInfo, sTrack, (records)? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
 	}
 
+	/* for(int i = 0; i < TRACKS_SIZE; i++)
+	{
+		bool records = false;
+
+		for(int j = 1; j <= Shavit_GetMapStages(); j++)
+		{
+			if(gA_FrameCache_Stage[j][i].iFrameCount > 0)
+			{
+				records = true;
+
+				continue;
+			}
+		}
+
+		char sInfo[8];
+		IntToString(i, sInfo, 8);
+
+		char sStage[32];
+		FormatEx(sStage, 32, "Stage %d", j);
+
+		menu.AddItem(sInfo, sStage, (records)? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+	} */
+	for(int i = 1; i <= Shavit_GetMapStages(); i++)
+	{
+		if(gA_FrameCache_Stage[0][i].iFrameCount > 0)
+		{
+			char sInfo[8];
+			IntToString(i, sInfo, 8);
+
+			char sStage[32];
+			FormatEx(sStage, 32, "Stage %d", i);
+			
+			menu.AddItem(sInfo, sStage);
+		}
+	}
+
 	menu.ExitBackButton = true;
 	menu.Display(client, MENU_TIME_FOREVER);
 }
@@ -3401,14 +3828,20 @@ public int MenuHandler_ReplayTrack(Menu menu, MenuAction action, int param1, int
 	{
 		char sInfo[8];
 		menu.GetItem(param2, sInfo, 8);
-		int track = StringToInt(sInfo);
+		/* int track = StringToInt(sInfo);
 
 		// avoid an exploit
 		if(track >= 0 && track < TRACKS_SIZE)
 		{
 			gI_MenuTrack[param1] = track;
 			OpenReplayStyleMenu(param1, track);
-		}
+		} */
+		/* else
+		{ */
+		gI_MenuStage[param1] = (param2 - TRACKS_SIZE) + 1;
+		PrintToChatAll("gI_MenuStage[param1] is %d", gI_MenuStage[param1]);
+		OpenReplayStyleMenu(param1, 0, gI_MenuStage[param1]);
+		/* } */
 	}
 	else if(action == MenuAction_Cancel && param2 == MenuCancel_ExitBack)
 	{
@@ -3422,10 +3855,12 @@ public int MenuHandler_ReplayTrack(Menu menu, MenuAction action, int param1, int
 	return 0;
 }
 
-void OpenReplayStyleMenu(int client, int track)
+void OpenReplayStyleMenu(int client, int track, int stage = 0)
 {
 	char sTrack[32];
 	GetTrackName(client, track, sTrack, 32);
+
+	bool bStage = (stage == 0) ? false : true;
 
 	Menu menu = new Menu(MenuHandler_ReplayStyle);
 	menu.SetTitle("%T (%s)\n ", "CentralReplayTitle", client, sTrack);
@@ -3445,23 +3880,46 @@ void OpenReplayStyleMenu(int client, int track)
 		char sInfo[8];
 		IntToString(iStyle, sInfo, 8);
 
-		float time = GetReplayLength(iStyle, track, gA_FrameCache[iStyle][track]);
-
-		char sDisplay[64];
-
-		if(time > 0.0)
+		if(!bStage)
 		{
-			char sTime[32];
-			FormatSeconds(time, sTime, 32, false);
+			float time = GetReplayLength(iStyle, track, gA_FrameCache[iStyle][track]);
 
-			FormatEx(sDisplay, 64, "%s - %s", gS_StyleStrings[iStyle].sStyleName, sTime);
+			char sDisplay[64];
+
+			if(time > 0.0)
+			{
+				char sTime[32];
+				FormatSeconds(time, sTime, 32, false);
+
+				FormatEx(sDisplay, 64, "%s - %s", gS_StyleStrings[iStyle].sStyleName, sTime);
+			}
+			else
+			{
+				strcopy(sDisplay, 64, gS_StyleStrings[iStyle].sStyleName);
+			}
+
+			menu.AddItem(sInfo, sDisplay, (gA_FrameCache[iStyle][track].iFrameCount > 0)? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
 		}
 		else
 		{
-			strcopy(sDisplay, 64, gS_StyleStrings[iStyle].sStyleName);
-		}
+			float time = GetReplayLength(iStyle, 0, gA_FrameCache_Stage[iStyle][stage]);
 
-		menu.AddItem(sInfo, sDisplay, (gA_FrameCache[iStyle][track].iFrameCount > 0)? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+			char sDisplay[64];
+
+			if(time > 0.0)
+			{
+				char sTime[32];
+				FormatSeconds(time, sTime, 32, false);
+
+				FormatEx(sDisplay, 64, "%s - %s", gS_StyleStrings[iStyle].sStyleName, sTime);
+			}
+			else
+			{
+				strcopy(sDisplay, 64, gS_StyleStrings[iStyle].sStyleName);
+			}
+
+			menu.AddItem(sInfo, sDisplay, (gA_FrameCache_Stage[iStyle][stage].iFrameCount > 0)? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+		}
 	}
 
 	if(menu.ItemCount == 0)
@@ -3481,10 +3939,21 @@ public int MenuHandler_ReplayStyle(Menu menu, MenuAction action, int param1, int
 		menu.GetItem(param2, sInfo, 16);
 
 		int style = StringToInt(sInfo);
+		bool bStage = (gI_MenuStage[param1] == 0) ? false : true;
 
-		if(style < 0 || style >= gI_Styles || !ReplayEnabled(style) || gA_FrameCache[style][gI_MenuTrack[param1]].iFrameCount == 0 || gA_BotInfo[param1].iEnt > 0)
+		if(!bStage)
 		{
-			return 0;
+			if(style < 0 || style >= gI_Styles || !ReplayEnabled(style) || gA_FrameCache[style][gI_MenuTrack[param1]].iFrameCount == 0 || gA_BotInfo[param1].iEnt > 0)
+			{
+				return 0;
+			}
+		}
+		else
+		{
+			if(style < 0 || style >= gI_Styles || !ReplayEnabled(style) || gA_FrameCache_Stage[style][gI_MenuStage[param1]].iFrameCount == 0 || gA_BotInfo[param1].iEnt > 0)
+			{
+				return 0;
+			}
 		}
 
 		gI_MenuStyle[param1] = style;
@@ -3526,7 +3995,14 @@ public int MenuHandler_ReplayStyle(Menu menu, MenuAction action, int param1, int
 		}
 
 		framecache_t cache; // NULL cache
-		bot = CreateReplayEntity(gI_MenuTrack[param1], gI_MenuStyle[param1], gCV_ReplayDelay.FloatValue, param1, bot, type, false, cache, 0);
+		if(!bStage)
+		{
+			bot = CreateReplayEntity(gI_MenuTrack[param1], gI_MenuStyle[param1], gCV_ReplayDelay.FloatValue, param1, bot, type, false, cache, 0);
+		}
+		else
+		{
+			bot = CreateReplayEntity(0, gI_MenuStyle[param1], gCV_ReplayDelay.FloatValue, param1, bot, type, false, cache, 0, gI_MenuStage[param1]);
+		}
 
 		if (bot == 0)
 		{
