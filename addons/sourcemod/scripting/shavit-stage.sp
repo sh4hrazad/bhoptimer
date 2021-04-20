@@ -25,7 +25,6 @@ bool gB_Connected = false;
 bool gB_MySQL = false;
 
 char gS_Map[160];
-int gI_Stages;//how many stages in a map,same variable in shavit-zone
 int gI_Steamid[100];//this is a mysql index, i dont have any better implementation
 
 int gI_LastStage[MAXPLAYERS + 1];
@@ -125,7 +124,7 @@ public void OnPluginStart()
 public void OnClientPutInServer(int client)
 {
 	gI_LastStage[client] = 1;
-	for(int i = 1; i <= gI_Stages; i++)//init
+	for(int i = 1; i <= Shavit_GetMapStages(); i++)//init
 	{
 		for(int j = 0; j < gI_Styles; j++)
 		{
@@ -145,11 +144,7 @@ public void OnMapStart()
 	GetCurrentMap(gS_Map, 160);
 	GetMapDisplayName(gS_Map, gS_Map, 160);
 
-	gI_Stages = Shavit_GetMapStages();
-
-	Reset(gI_Stages, gI_Styles, true);
-
-	LoadWRCP();
+	Reset(Shavit_GetMapStages(), gI_Styles, true);
 
 	if(gB_Late)
 	{
@@ -202,6 +197,8 @@ void Reset(int stage, int style, bool all = false)
 		gF_WrcpTime[stage][style] = -1.0;
 		strcopy(gS_WrcpName[stage][style], 16, gS_None);
 	}
+
+	LoadWRCP();
 }
 
 public Action Command_Test(int client, int args)
@@ -285,7 +282,7 @@ public int WRCPMenu_Handler(Menu menu, MenuAction action, int param1, int param2
 		Menu stagemenu = new Menu(WRCPMenu2_Handler);
 		stagemenu.SetTitle("%T", "WrcpMenuTitle-Stage", param1);
 
-		for(int i = 1; i <= gI_Stages; i++)
+		for(int i = 1; i <= Shavit_GetMapStages(); i++)
 		{
 			char sDisplay[64];
 			FormatEx(sDisplay, 64, "%T %d", "WrcpMenuItem-Stage", param1, i);
