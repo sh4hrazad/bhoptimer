@@ -58,6 +58,7 @@ chatstrings_t gS_ChatStrings;
 Handle gH_Forwards_EnterStage = null;
 Handle gH_Forwards_LeaveStage = null;
 Handle gH_Forwards_OnWRCP = null;
+Handle gH_Forwards_OnWRCPDeleted = null;
 
 public Plugin myinfo =
 {
@@ -115,7 +116,8 @@ public void OnPluginStart()
 
 	gH_Forwards_EnterStage = CreateGlobalForward("Shavit_OnEnterStage", ET_Event, Param_Cell, Param_Cell, Param_Cell);
 	gH_Forwards_LeaveStage = CreateGlobalForward("Shavit_OnLeaveStage", ET_Event, Param_Cell, Param_Cell, Param_Cell);
-	gH_Forwards_OnWRCP = CreateGlobalForward("Shavit_OnWRCP", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
+	gH_Forwards_OnWRCP = CreateGlobalForward("Shavit_OnWRCP", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_String);
+	gH_Forwards_OnWRCPDeleted = CreateGlobalForward("Shavit_OnWRCPDeleted", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_String);
 
 	SQL_DBConnect();
 }
@@ -283,7 +285,7 @@ public int WRCPMenu_Handler(Menu menu, MenuAction action, int param1, int param2
 		Menu stagemenu = new Menu(WRCPMenu2_Handler);
 		stagemenu.SetTitle("%T", "WrcpMenuTitle-Stage", param1);
 
-		for(int i = 1; i < gI_Stages; i++)
+		for(int i = 1; i <= gI_Stages; i++)
 		{
 			char sDisplay[64];
 			FormatEx(sDisplay, 64, "%T %d", "WrcpMenuItem-Stage", param1, i);
@@ -574,16 +576,27 @@ public void SQL_DeleteWRCP_Callback(Database db, DBResultSet results, const char
 		index = results.FetchInt(0);
 	}
 
+	DataPack dp = new DataPack();
+	dp.WriteCell(GetClientSerial(client));
+	dp.WriteCell(index);
+
+
 	char sQuery[256];
 	FormatEx(sQuery, 256, "DELETE FROM %sstage WHERE (stage = '%d' AND style = '%d') AND (auth = '%d' AND map = '%s');", 
 			gS_MySQLPrefix, stage, style, index, gS_Map);
 	
-	gH_SQL.Query(SQL_DeleteWRCP_Callback2, sQuery, GetClientSerial(client), DBPrio_High);
+	gH_SQL.Query(SQL_DeleteWRCP_Callback2, sQuery, dp, DBPrio_High);
 }
 
-public void SQL_DeleteWRCP_Callback2(Database db, DBResultSet results, const char[] error, any data)
+public void SQL_DeleteWRCP_Callback2(Database db, DBResultSet results, const char[] error, DataPack dp)
 {
-	int client = GetClientFromSerial(data);
+	dp.Reset();
+
+	int client = GetClientFromSerial(dp.ReadCell());
+	int steamid = dp.ReadCell();
+
+	delete dp;
+
 	int stage = gI_StageChoice[client];
 	int style = gI_StyleChoice[client];
 
@@ -596,6 +609,13 @@ public void SQL_DeleteWRCP_Callback2(Database db, DBResultSet results, const cha
 
 	LoadWRCP();
 	Reset(stage, style);
+
+	Call_StartForward(gH_Forwards_OnWRCPDeleted);
+	Call_PushCell(stage);
+	Call_PushCell(style);
+	Call_PushCell(steamid);
+	Call_PushString(gS_Map);
+	Call_Finish();
 
 	Shavit_PrintToChat(client, "%T", "WRCPDeleteSuccessful", client, gS_ChatStrings.sText, 
 		gS_ChatStrings.sVariable, stage, gS_ChatStrings.sText, 
@@ -763,7 +783,9 @@ void OnWRCPCheck(int client, int stage, int style, float time)
 		Call_PushCell(client);
 		Call_PushCell(stage);
 		Call_PushCell(style);
+		Call_PushCell(GetSteamAccountID(client));
 		Call_PushFloat(time);
+		Call_PushString(gS_Map);
 		Call_Finish();
 	}
 }
