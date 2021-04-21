@@ -297,6 +297,10 @@ int gI_MenuStage[MAXPLAYERS+1];
 bool gB_MenuBonus[MAXPLAYERS+1];
 bool gB_MenuStage[MAXPLAYERS+1];
 
+bool gB_AddReplayBots = false;
+bool gB_MainBotAdd = false;
+bool gB_StageBotAdd = false;
+
 public Plugin myinfo =
 {
 	name = "[shavit] Replay Bot",
@@ -715,18 +719,43 @@ void FinishReplay(bot_info_t info)
 	}
 	else if (info.iType == Replay_Looping)
 	{
-		int nexttrack = info.iTrack;
-		int nextstyle = info.iStyle;
-		bool hasFrames = FindNextLoop(nexttrack, nextstyle, info.iLoopingConfig);
-
-		if (hasFrames)
+		if(info.iStage == 0)
 		{
-			ClearBotInfo(info);
-			StartReplay(info, nexttrack, nextstyle, 0, gCV_ReplayDelay.FloatValue);
+			while(++info.iTrack < TRACKS_SIZE)
+			{
+				if(gA_FrameCache[0][info.iTrack].iFrameCount > 0)
+				{
+					StartReplay(info, info.iTrack, 0, 0, gCV_ReplayDelay.FloatValue);
+					break;
+				}
+			}
+
+			if(info.iTrack == TRACKS_SIZE)
+			{
+				info.iTrack = -1;
+				FinishReplay(info);
+			}
 		}
 		else
 		{
-			KickReplay(info);
+			while(++info.iStage <= Shavit_GetMapStages() + 1)
+			{
+				if(gA_FrameCache_Stage[0][info.iStage].iFrameCount > 0)
+				{
+					StartReplay(info, 0, 0, 0, gCV_ReplayDelay.FloatValue, info.iStage);
+					break;
+				}
+
+				if(info.iStage >= Shavit_GetMapStages())
+				{
+					info.iStage = 1;
+					if(gA_FrameCache_Stage[0][info.iStage].iFrameCount > 0)
+					{
+						StartReplay(info, 0, 0, 0, gCV_ReplayDelay.FloatValue, info.iStage);
+						break;
+					}
+				}
+			}
 		}
 	}
 	else if (info.iType == Replay_Central)
@@ -1679,9 +1708,18 @@ public void OnMapStart()
 	}
 
 	// Timer because sometimes a few bots don't spawn
-	CreateTimer(0.2, Timer_AddReplayBots, 0, TIMER_FLAG_NO_MAPCHANGE);
+	if(!gB_AddReplayBots)
+	{
+		gB_AddReplayBots = true;
+		CreateTimer(0.2, Timer_AddReplayBots, 0, TIMER_FLAG_NO_MAPCHANGE);
+	}
 
 	CreateTimer(3.0, Cron, INVALID_HANDLE, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public void OnMapEnd()
+{
+	gB_AddReplayBots = false;
 }
 
 public void Shavit_OnStyleConfigLoaded(int styles)
@@ -1787,11 +1825,6 @@ int CreateReplayBot(bot_info_t info)
 
 	gA_BotInfo[GetClientFromSerial(info.iStarterSerial)].iEnt = bot;
 
-	if (info.iType == Replay_Looping)
-	{
-		gA_LoopingBotConfig[info.iLoopingConfig].bSpawned = true;
-	}
-
 	return bot;
 }
 
@@ -1824,29 +1857,23 @@ void AddReplayBots()
 		UpdateReplayClient(bot);
 	}
 
-	// Load all bots from looping config...
-	for (int i = 0; i < MAX_LOOPING_BOT_CONFIGS; i++)
+	for(int i = 0; i < TRACKS_SIZE; i++)
 	{
-		if (!gA_LoopingBotConfig[i].bEnabled || gA_LoopingBotConfig[i].bSpawned)
+		if(gA_FrameCache[0][i].iFrameCount > 0)
 		{
-			continue;
+			CreateReplayEntity(i, 0, -1.0, 0, -1, Replay_Looping, false, cache, 0, 0);//mainBot
+			gB_MainBotAdd = true;
+			break;
 		}
+	}
 
-		int track = -1;
-		int style = -1;
-		bool hasFrames = FindNextLoop(track, style, i);
-
-		if (!hasFrames)
+	for(int i = 1; i <= Shavit_GetMapStages(); i++)
+	{
+		if(gA_FrameCache_Stage[0][i].iFrameCount > 0)
 		{
-			continue;
-		}
-
-		int bot = CreateReplayEntity(track, style, -1.0, 0, -1, Replay_Looping, false, cache, i);
-
-		if (bot == 0)
-		{
-			LogError("Failed to create looping bot %d (client count %d)", i, GetClientCount());
-			return;
+			CreateReplayEntity(0, 0, -1.0, 0, -1, Replay_Looping, false, cache, 0, i);//stageBot
+			gB_StageBotAdd = true;
+			break;
 		}
 	}
 }
@@ -2149,11 +2176,16 @@ void SaveReplayPre(int client)
 	int style = gA_PlayerInfo[client].iStyle;
 	int track = gA_PlayerInfo[client].iTrack;
 
+	if(!gB_MainBotAdd)
+	{
+		framecache_t cache;
+		CreateReplayEntity(track, 0, -1.0, 0, -1, Replay_Looping, false, cache, 0);//mainBot
+	}
+
+	StopOrRestartBots(style, track, false);
+
 	if(gB_makeCopy && ReplayEnabled(style))
 	{
-		StopOrRestartBots(style, track, false);
-		AddReplayBots(); // add missing looping bots
-
 		if (gB_ClosestPos)
 		{
 			delete gH_ClosestPos[track][style];
@@ -2184,6 +2216,14 @@ void SaveReplayPre_Stage(int client)
 				false, 
 				true, 
 				gA_PlayerInfo_Stage[client].iStage);
+
+	if(!gB_StageBotAdd)
+	{
+		framecache_t cache;
+		CreateReplayEntity(0, 0, -1.0, 0, -1, Replay_Looping, false, cache, 0, gA_PlayerInfo_Stage[client].iStage);//stageBot
+	}
+
+	StopOrRestartBots(0, 0, false, gA_PlayerInfo_Stage[client].iStage);
 
 	ClearFrames_Stage(client);
 }
@@ -4131,6 +4171,7 @@ void ClearBotInfo(bot_info_t info)
 {
 	//info.iEnt
 	info.iStyle = -1;
+	info.iStage = -1;
 	info.iStatus = Replay_Idle;
 	//info.iType
 	info.iTrack = -1;
@@ -4149,67 +4190,6 @@ void ClearBotInfo(bot_info_t info)
 	info.aCache.sReplayName = "";
 	info.aCache.iPreFrames = -1;
 	delete info.aCache.aFrames;
-}
-
-int GetNextBit(int start, int[] mask, int max)
-{
-	for (int i = start+1; i < max; i++)
-	{
-		if ((mask[i / 32] & (1 << (i % 32))) != 0)
-		{
-			return i;
-		}
-	}
-
-	for (int i = 0; i < start; i++)
-	{
-		if ((mask[i / 32] & (1 << (i % 32))) != 0)
-		{
-			return i;
-		}
-	}
-
-	return start;
-}
-
-// Need to find the next style/track in the loop that have frames.
-bool FindNextLoop(int &track, int &style, int config)
-{
-	int originalTrack = track;
-	int originalStyle = style;
-	int aTrackMask[1];
-	aTrackMask[0] = gA_LoopingBotConfig[config].iTrackMask;
-
-	// This for loop is just so we don't infinite loop....
-	for (int i = 0; i < (TRACKS_SIZE*gI_Styles); i++)
-	{
-		int nextstyle = GetNextBit(style, gA_LoopingBotConfig[config].aStyleMask, gI_Styles);
-
-		if (nextstyle <= style || track == -1)
-		{
-			track = GetNextBit(track, aTrackMask, TRACKS_SIZE);
-		}
-
-		if (track == -1)
-		{
-			return false;
-		}
-
-		style = nextstyle;
-		bool hasFrames = (gA_FrameCache[style][track].iFrameCount > 0);
-
-		if (track == originalTrack && style == originalStyle)
-		{
-			return hasFrames;
-		}
-
-		if (hasFrames)
-		{
-			return true;
-		}
-	}
-
-	return false;
 }
 
 void CancelReplay(bot_info_t info, bool update = true)
