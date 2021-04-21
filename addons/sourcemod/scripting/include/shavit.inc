@@ -748,10 +748,12 @@ forward void Shavit_OnChatConfigLoaded();
  * @param client					Client index.
  * @param stage						stage number.
  * @param style						style index.
- * @param time						wrcp time.
+ * @param steamid					WRCP steamid.
+ * @param time						WRCP time.
+ * @param mapname					Current mapname.
  * @noreturn
  */
-forward void Shavit_OnWRCP(int client, int stage, int style, float time)
+forward void Shavit_OnWRCP(int client, int stage, int style, int steamid, float time, const char[] mapname);
 
 /**
  * Called when a player teleports with checkpoints.
@@ -1054,6 +1056,17 @@ forward void Shavit_OnProcessMovement(int client);
 forward void Shavit_OnProcessMovementPost(int client);
 
 /**
+ * Called After the server deleted WRCP.
+ *
+ * @param stage						WRCP stage.
+ * @param style						WRCP style.
+ * @param steamid					WRCP steamid.
+ * @param mapname					WRCP map's name.
+ * @noreturn
+ */
+forward void Shavit_OnWRCPDeleted(int stage, int style, int steamid, const char[] mapname);
+
+/**
  * Returns bhoptimer's database handle.
  * Call within Shavit_OnDatabaseLoaded. Safety is not guaranteed anywhere else!
  *
@@ -1219,8 +1232,7 @@ native int Shavit_GetClientStage(int client);
 /**
  * Retrieve the map's stage numbers.
  *
- * @param client					Client index.
- * @return                          stage ID.
+ * @return                          stage numbers.
  */
 native int Shavit_GetMapStages();
 
@@ -1466,6 +1478,14 @@ native float Shavit_GetReplayBotFirstFrame(int entity);
  * @return							Client index for the replay bot. -1 if not found.
  */
 native int Shavit_GetReplayBotIndex(int track, int style);
+
+/**
+ * Retrieve the stage being played by the replay bot.
+ *
+ * @param entity					Entity index.
+ * @return							Stage being played by the replay bot. -1 if the replay bot is idle.
+ */
+native int Shavit_GetReplayBotStage(int entity);
 
 /**
  * Retrieve the style being played by the replay bot.
@@ -1947,7 +1967,7 @@ native int Shavit_StartReplayFromFile(int style, int track, float delay, int cli
  * @param path						Path to the replay file. Use `BuildPath(Path_SM, ...)` to generate one. Leave as empty to use default.
  * @return							Was the replay loaded?
  */ 
-native bool Shavit_ReloadReplay(int style, int track, bool restart, char[] path = "");
+native bool Shavit_ReloadReplay(int style, int track, bool restart, char[] path = "", int stage = 0);
 
 /**
  * Reloads all of the replays for the map.
@@ -1957,6 +1977,13 @@ native bool Shavit_ReloadReplay(int style, int track, bool restart, char[] path 
  * @return							Amount of loaded replays.
  */
 native int Shavit_ReloadReplays(bool restart);
+
+/**
+ * Reloads all of the stage replays for the map.
+ *
+ * @noreturn							
+ */
+native void Shavit_ReloadAllReplays();
 
 /**
  * Gets time from replay frame that is closest to client.
@@ -2312,6 +2339,8 @@ native float Shavit_GetClientStageTime(int client);
 
 native void Shavit_SetClientStageTime(int client, float time = 0.0);
 
+native void Shavit_ReloadWRCPs();
+
 // same as Shavit_PrintToChat() but loops through the whole server
 // code stolen from the base halflife.inc file
 stock void Shavit_PrintToChatAll(const char[] format, any ...)
@@ -2373,6 +2402,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetClientFrameCount");
 	MarkNativeAsOptional("Shavit_GetReplayBotFirstFrame");
 	MarkNativeAsOptional("Shavit_GetReplayBotIndex");
+	MarkNativeAsOptional("Shavit_GetReplayBotStage");
 	MarkNativeAsOptional("Shavit_GetReplayBotStyle");
 	MarkNativeAsOptional("Shavit_GetReplayBotTrack");
 	MarkNativeAsOptional("Shavit_GetReplayBotType");
@@ -2473,5 +2503,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetMapStages");
 	MarkNativeAsOptional("Shavit_GetClientStageTime");
 	MarkNativeAsOptional("Shavit_SetClientStageTime");
+	MarkNativeAsOptional("Shavit_ReloadAllReplays");
+	MarkNativeAsOptional("Shavit_ReloadWRCPs")
 }
 #endif
