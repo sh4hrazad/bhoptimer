@@ -2744,7 +2744,7 @@ public void OnEntityDestroyed(int entity)
 
 public Action Shavit_OnStart(int client)
 {
-	/* if(gB_HasFinished[client])// Prevent players from messing up the data if they get a record and immediately teleport to start zone
+	if(gB_HasFinished[client])// Prevent players from messing up the data if they get a record and immediately teleport to start zone
 	{
 		return Plugin_Handled;
 	}
@@ -2752,7 +2752,7 @@ public Action Shavit_OnStart(int client)
 	if(gB_HasFinished_Stage[client])// Prevent players from messing up the data if they get a record and immediately teleport to start zone
 	{
 		return Plugin_Handled;
-	} */
+	}
 
 	int iMaxPreFrames = RoundToFloor(gCV_PlaybackPreRunTime.FloatValue * gF_Tickrate / Shavit_GetStyleSettingFloat(Shavit_GetBhopStyle(client), "speed"));
 	int iMaxPreFrames_Stage = RoundToFloor(gCV_PlaybackPreRunTime_Stage.FloatValue * gF_Tickrate / Shavit_GetStyleSettingFloat(Shavit_GetBhopStyle(client), "speed"));
