@@ -746,6 +746,9 @@ public void SQL_GetStageZone_Callback(Database db, DBResultSet results, const ch
 	{
 		gI_Stages = results.RowCount + 1;
 	}
+
+	Shavit_ReloadAllReplays();
+	Shavit_ReloadWRCPs();
 }
 
 public void OnMapEnd()
@@ -1027,6 +1030,7 @@ public Action Command_Stages(int client, int args)
 			if(gA_ZoneCache[i].bZoneInitialized && gA_ZoneCache[i].iZoneType == Zone_Stage && gA_ZoneCache[i].iZoneData == iStage)
 			{
 				Shavit_StopTimer(client);
+				Shavit_SetClientStageTime(client, 0.0);
 				if(!EmptyVector(gV_Destinations[i]))
 				{
 					TeleportEntity(client, gV_Destinations[i], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
@@ -1078,6 +1082,7 @@ public int MenuHandler_SelectStage(Menu menu, MenuAction action, int param1, int
 		int iIndex = StringToInt(sInfo);
 		
 		Shavit_StopTimer(param1);
+		Shavit_SetClientStageTime(param1, 0.0);
 
 		if(!EmptyVector(gV_Destinations[iIndex]))
 		{
@@ -2615,8 +2620,8 @@ public void StartTouchPost(int entity, int other)
 		{
 			Shavit_FinishMap(other, gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack);
 		}
-		
-		gI_ClientCurrentStage[other]++;//a hack that record the last stage's time
+
+		gI_ClientCurrentStage[other] = gI_Stages + 1;//a hack that record the last stage's time
 	}
 
 	else if(type == Zone_Stage)

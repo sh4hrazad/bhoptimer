@@ -294,6 +294,8 @@ int gI_PlayerTimerStartFrames_Stage[MAXPLAYERS+1];
 int gI_EndTicksRecorded_Stage[MAXPLAYERS+1];
 bool gB_ClearFrame_Stage[MAXPLAYERS+1];
 int gI_MenuStage[MAXPLAYERS+1];
+bool gB_MenuBonus[MAXPLAYERS+1];
+bool gB_MenuStage[MAXPLAYERS+1];
 
 public Plugin myinfo =
 {
@@ -344,6 +346,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetClosestReplayVelocityDifference", Native_GetClosestReplayVelocityDifference);
 	CreateNative("Shavit_StartReplayFromFrameCache", Native_StartReplayFromFrameCache);
 	CreateNative("Shavit_StartReplayFromFile", Native_StartReplayFromFile);
+	CreateNative("Shavit_ReloadAllReplays", Native_ReloadAllReplays);
 
 	// registers library, check "bool LibraryExists(const char[] name)" in order to use with other plugins
 	RegPluginLibrary("shavit-replay");
@@ -1165,6 +1168,11 @@ public int Native_ReloadReplays(Handle handler, int numParams)
 	}
 
 	return loaded;
+}
+
+public int Native_ReloadAllReplays(Handle handler, int numParams)
+{
+	OnMapStart();
 }
 
 public int Native_SetReplayData(Handle handler, int numParams)
@@ -2371,7 +2379,14 @@ public void SQL_GetUserName_Callback(Database db, DBResultSet results, const cha
 
 	if(results.FetchRow())
 	{
-		results.FetchString(0, (!bStage)?gA_FrameCache[style][trackOrstage].sReplayName:gA_FrameCache_Stage[style][trackOrstage].sReplayName, MAX_NAME_LENGTH);
+		if(!bStage)
+		{
+			results.FetchString(0, gA_FrameCache[style][trackOrstage].sReplayName, MAX_NAME_LENGTH);
+		}
+		else
+		{
+			results.FetchString(0, gA_FrameCache_Stage[style][trackOrstage].sReplayName, MAX_NAME_LENGTH);
+		}
 	}
 }
 
@@ -2397,6 +2412,7 @@ public void OnClientPutInServer(int client)
 		gA_BotInfo[client].iEnt = -1;
 		ClearBotInfo(gA_BotInfo[client]);
 		ClearFrames(client);
+		ClearFrames_Stage(client);
 
 		SDKHook(client, SDKHook_PostThink, ForceObserveProp);
 
@@ -2728,7 +2744,7 @@ public void OnEntityDestroyed(int entity)
 
 public Action Shavit_OnStart(int client)
 {
-	if(gB_HasFinished[client])// Prevent players from messing up the data if they get a record and immediately teleport to start zone
+	/* if(gB_HasFinished[client])// Prevent players from messing up the data if they get a record and immediately teleport to start zone
 	{
 		return Plugin_Handled;
 	}
@@ -2736,7 +2752,7 @@ public Action Shavit_OnStart(int client)
 	if(gB_HasFinished_Stage[client])// Prevent players from messing up the data if they get a record and immediately teleport to start zone
 	{
 		return Plugin_Handled;
-	}
+	} */
 
 	int iMaxPreFrames = RoundToFloor(gCV_PlaybackPreRunTime.FloatValue * gF_Tickrate / Shavit_GetStyleSettingFloat(Shavit_GetBhopStyle(client), "speed"));
 	int iMaxPreFrames_Stage = RoundToFloor(gCV_PlaybackPreRunTime_Stage.FloatValue * gF_Tickrate / Shavit_GetStyleSettingFloat(Shavit_GetBhopStyle(client), "speed"));
@@ -3763,67 +3779,22 @@ public int MenuHandler_ReplayType(Menu menu, MenuAction action, int param1, int 
 
 void OpenReplayTrackMenu(int client)
 {
+	gB_MenuBonus[client] = false;
+	gB_MenuStage[client] = false;
+
 	Menu menu = new Menu(MenuHandler_ReplayTrack);
 	menu.SetTitle("%T\n ", "CentralReplayTrack", client);
 
-	for(int i = 0; i < TRACKS_SIZE; i++)
-	{
-		bool records = false;
+	char sItem[16];
 
-		for(int j = 0; j < gI_Styles; j++)
-		{
-			if(gA_FrameCache[j][i].iFrameCount > 0)
-			{
-				records = true;
+	FormatEx(sItem, 16, "Main Replay");
+	menu.AddItem("", sItem);
 
-				continue;
-			}
-		}
+	FormatEx(sItem, 16, "Bonuses Replay");
+	menu.AddItem("", sItem);
 
-		char sInfo[8];
-		IntToString(i, sInfo, 8);
-
-		char sTrack[32];
-		GetTrackName(client, i, sTrack, 32);
-
-		menu.AddItem(sInfo, sTrack, (records)? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
-	}
-
-	/* for(int i = 0; i < TRACKS_SIZE; i++)
-	{
-		bool records = false;
-
-		for(int j = 1; j <= Shavit_GetMapStages(); j++)
-		{
-			if(gA_FrameCache_Stage[j][i].iFrameCount > 0)
-			{
-				records = true;
-
-				continue;
-			}
-		}
-
-		char sInfo[8];
-		IntToString(i, sInfo, 8);
-
-		char sStage[32];
-		FormatEx(sStage, 32, "Stage %d", j);
-
-		menu.AddItem(sInfo, sStage, (records)? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
-	} */
-	for(int i = 1; i <= Shavit_GetMapStages(); i++)
-	{
-		if(gA_FrameCache_Stage[0][i].iFrameCount > 0)
-		{
-			char sInfo[8];
-			IntToString(i, sInfo, 8);
-
-			char sStage[32];
-			FormatEx(sStage, 32, "Stage %d", i);
-			
-			menu.AddItem(sInfo, sStage);
-		}
-	}
+	FormatEx(sItem, 16, "Stages Replay");
+	menu.AddItem("", sItem);
 
 	menu.ExitBackButton = true;
 	menu.Display(client, MENU_TIME_FOREVER);
@@ -3833,22 +3804,74 @@ public int MenuHandler_ReplayTrack(Menu menu, MenuAction action, int param1, int
 {
 	if(action == MenuAction_Select)
 	{
-		char sInfo[8];
-		menu.GetItem(param2, sInfo, 8);
-		/* int track = StringToInt(sInfo);
+		Menu submenu = new Menu(MenuHandler_ReplayTrack2);
 
-		// avoid an exploit
-		if(track >= 0 && track < TRACKS_SIZE)
+		switch(param2)
 		{
-			gI_MenuTrack[param1] = track;
-			OpenReplayStyleMenu(param1, track);
-		} */
-		/* else
-		{ */
-		gI_MenuStage[param1] = (param2 - TRACKS_SIZE) + 1;
-		PrintToChatAll("gI_MenuStage[param1] is %d", gI_MenuStage[param1]);
-		OpenReplayStyleMenu(param1, 0, gI_MenuStage[param1]);
-		/* } */
+			case 0:
+			{
+				delete submenu;
+
+				gI_MenuTrack[param1] = 0;
+				gI_MenuStage[param1] = 0;
+				OpenReplayStyleMenu(param1, gI_MenuTrack[param1]);
+			}
+			case 1:
+			{
+				submenu.SetTitle("%T\n ", "CentralReplayTrack", param1);
+				
+				for(int i = 1; i < TRACKS_SIZE; i++)
+				{
+					bool records = false;
+
+					for(int j = 0; j < gI_Styles; j++)
+					{
+						if(gA_FrameCache[j][i].iFrameCount > 0)
+						{
+							records = true;
+
+							continue;
+						}
+					}
+
+					char sInfo[8];
+					IntToString(i, sInfo, 8);
+
+					char sTrack[32];
+					GetTrackName(param1, i, sTrack, 32);
+
+					submenu.AddItem(sInfo, sTrack, (records)? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+				}
+
+				gB_MenuBonus[param1] = true;
+
+				submenu.ExitBackButton = true;
+				submenu.Display(param1, MENU_TIME_FOREVER);
+			}
+			case 2:
+			{
+				submenu.SetTitle("Stage Select", param1);
+
+				for(int i = 1; i <= Shavit_GetMapStages(); i++)
+				{
+					if(gA_FrameCache_Stage[0][i].iFrameCount > 0)
+					{
+						char sInfo[8];
+						IntToString(i, sInfo, 8);
+
+						char sStage[32];
+						FormatEx(sStage, 32, "Stage %d", i);
+						
+						submenu.AddItem(sInfo, sStage);
+					}
+				}
+
+				gB_MenuStage[param1] = true;
+
+				submenu.ExitBackButton = true;
+				submenu.Display(param1, MENU_TIME_FOREVER);
+			}
+		}
 	}
 	else if(action == MenuAction_Cancel && param2 == MenuCancel_ExitBack)
 	{
@@ -3859,6 +3882,34 @@ public int MenuHandler_ReplayTrack(Menu menu, MenuAction action, int param1, int
 		delete menu;
 	}
 
+	return 0;
+}
+
+public int MenuHandler_ReplayTrack2(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		if(gB_MenuBonus[param1])
+		{
+			gI_MenuTrack[param1] = param2 + 1;
+			gI_MenuStage[param1] = 0;
+			OpenReplayStyleMenu(param1, gI_MenuTrack[param1]);
+		}
+		else if(gB_MenuStage[param1])
+		{
+			gI_MenuStage[param1] = param2 + 1;
+			OpenReplayStyleMenu(param1, 0, gI_MenuStage[param1]);
+		}
+	}
+	else if(action == MenuAction_Cancel && param2 == MenuCancel_ExitBack)
+	{
+		OpenReplayTrackMenu(param1);
+	}
+	else if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+	
 	return 0;
 }
 
@@ -4437,3 +4488,4 @@ bool WriteNavMesh(const char[] map, bool skipExistsCheck = false)
 
 	return false;
 }
+

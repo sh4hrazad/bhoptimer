@@ -72,6 +72,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 {
 	CreateNative("Shavit_GetClientStageTime", Native_GetClientStageTime);
 	CreateNative("Shavit_SetClientStageTime", Native_SetClientStageTime);
+	CreateNative("Shavit_ReloadWRCPs", Native_ReloadWRCPs);
 	// registers library, check "bool LibraryExists(const char[] name)" in order to use with other plugins
 	RegPluginLibrary("shavit-stage");
 
@@ -939,6 +940,11 @@ public int Native_SetClientStageTime(Handle handler, int numParams)
 {
 	gF_StageTime[GetNativeCell(1)] = view_as<float>(GetNativeCell(2));
 	gB_TimerSetting[GetNativeCell(1)] = true;
+}
+
+public int Native_ReloadWRCPs(Handle handler, int numParams)
+{
+	OnMapStart();
 }
 
 void SQL_DBConnect()
