@@ -474,7 +474,6 @@ public void OnPluginStart()
 	// commands
 	RegAdminCmd("sm_deletereplay", Command_DeleteReplay, ADMFLAG_RCON, "Open replay deletion menu.");
 	RegConsoleCmd("sm_replay", Command_Replay, "Opens the central bot menu. For admins: 'sm_replay stop' to stop the playback.");
-	RegConsoleCmd("sm_test", Command_Test);
 
 	// database
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
@@ -2447,7 +2446,7 @@ public Action HookTriggers(int entity, int other)
 	return Plugin_Continue;
 }
 
-void FormatStyle(const char[] source, int style, bool central, int track, char dest[MAX_NAME_LENGTH], bool idle, framecache_t aCache, int type)
+void FormatStyle(const char[] source, int style, bool central, int track, char dest[MAX_NAME_LENGTH], bool idle, framecache_t aCache, int type, int stage = 0)
 {
 	char sTime[16];
 	char sName[MAX_NAME_LENGTH];
@@ -2467,7 +2466,15 @@ void FormatStyle(const char[] source, int style, bool central, int track, char d
 	{
 		FormatSeconds(GetReplayLength(style, track, aCache), sTime, 16);
 		GetReplayName(style, track, sName, sizeof(sName));
-		ReplaceString(temp, sizeof(temp), "{style}", gS_StyleStrings[style].sStyleName);
+
+		if(style == 0)
+		{
+			ReplaceString(temp, sizeof(temp), "{style} ", "");
+		}
+		else
+		{
+			ReplaceString(temp, sizeof(temp), "{style}", gS_StyleStrings[style].sStyleName);
+		}
 	}
 
 	char sType[32];
@@ -2490,7 +2497,28 @@ void FormatStyle(const char[] source, int style, bool central, int track, char d
 
 	char sTrack[32];
 	GetTrackName(LANG_SERVER, track, sTrack, 32);
-	ReplaceString(temp, sizeof(temp), "{track}", sTrack);
+
+	if(track == 0)
+	{
+		ReplaceString(temp, sizeof(temp), "{track} ", "");
+	}
+	else
+	{
+		ReplaceString(sTrack, sizeof(sTrack), "Bonus ", "WRB #");
+		ReplaceString(temp, sizeof(temp), "{track}", sTrack);
+	}
+
+	char sStage[32];
+	FormatEx(sStage, 32, "WRCP #%d", stage);
+
+	if(stage == 0)
+	{
+		ReplaceString(temp, sizeof(temp), "{stage} ", "");
+	}
+	else
+	{
+		ReplaceString(temp, sizeof(temp), "{stage}", sStage);
+	}
 
 	strcopy(dest, MAX_NAME_LENGTH, temp);
 }
@@ -2498,7 +2526,7 @@ void FormatStyle(const char[] source, int style, bool central, int track, char d
 void UpdateBotScoreboard(int client)
 {
 	int track = gA_BotInfo[client].iTrack;
-	/* int stage = gA_BotInfo[client].iStage; */
+	int stage = gA_BotInfo[client].iStage;
 	int style = gA_BotInfo[client].iStyle;
 	int type = gA_BotInfo[client].iType;
 	int iFrameCount = gA_BotInfo[client].aCache.iFrameCount;
@@ -2517,11 +2545,11 @@ void UpdateBotScoreboard(int client)
 	
 	if(central || iFrameCount > 0)
 	{
-		FormatStyle(idle ? gS_ReplayStrings.sCentralName : gS_ReplayStrings.sNameStyle, style, central, track, sName, idle, gA_BotInfo[client].aCache, type);
+		FormatStyle(idle ? gS_ReplayStrings.sCentralName : gS_ReplayStrings.sNameStyle, style, central, track, sName, idle, gA_BotInfo[client].aCache, type, stage);
 	}
 	else
 	{
-		FormatStyle(gS_ReplayStrings.sUnloaded, style, central, track, sName, idle, gA_BotInfo[client].aCache, type);
+		FormatStyle(gS_ReplayStrings.sUnloaded, style, central, track, sName, idle, gA_BotInfo[client].aCache, type, stage);
 	}
 
 	int sv_duplicate_playernames_ok_original;
@@ -3653,13 +3681,6 @@ int CreateReplayProp(int client)
 	ClearBotInfo(gA_BotInfo[client]);
 
 	return ent;
-}
-
-public Action Command_Test(int client, int args)
-{
-	PrintToChatAll("gI_MenuStage[param1] is %d", gI_MenuStage[client]);
-
-	return Plugin_Handled;
 }
 
 public Action Command_Replay(int client, int args)
