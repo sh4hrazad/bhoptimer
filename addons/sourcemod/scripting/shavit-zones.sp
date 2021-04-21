@@ -1118,7 +1118,7 @@ public Action Command_Zones(int client, int args)
 	}
 
 	Reset(client);
-	LoadStageZones();
+	//LoadStageZones();
 
 	Menu menu = new Menu(MenuHandler_SelectZoneTrack);
 	menu.SetTitle("%T", "ZoneMenuTrack", client);

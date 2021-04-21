@@ -24,6 +24,7 @@ Database gH_SQL = null;
 bool gB_Connected = false;
 bool gB_MySQL = false;
 bool gB_StagesInited = false;
+bool gB_LinearMap = false;
 
 char gS_Map[160];
 int gI_Steamid[100];//this is a mysql index, i dont have any better implementation
@@ -139,11 +140,16 @@ public void OnPluginStart()
 
 public void OnClientPutInServer(int client)
 {
+	if(gB_LinearMap)
+	{
+		return;
+	}
+
 	gI_LastStage[client] = 1;
 
 	for(int j = 0; j < gI_Styles; j++)
 	{
-		gA_PrStageTime[client][j].Resize(Shavit_GetMapStages() + 1);
+		gA_PrStageTime[client][j].Resize(Shavit_GetMapStages() + 2);
 	}
 
 	for(int i = 1; i <= Shavit_GetMapStages(); i++)//init
@@ -158,6 +164,11 @@ public void OnClientPutInServer(int client)
 
 public void OnClientDisconnect(int client)
 {
+	if(gB_LinearMap)
+	{
+		return;
+	}
+	
 	for(int j = 0; j < gI_Styles; j++)
 	{
 		gA_PrStageTime[client][j].Clear();
@@ -176,14 +187,18 @@ public void OnMapStart()
 		return;
 	}
 
+	if(Shavit_GetMapStages() == 1)
+	{
+		gB_LinearMap = true;
+		return;
+	}
+
+	gB_LinearMap = false;
+
 	GetCurrentMap(gS_Map, 160);
 	GetMapDisplayName(gS_Map, gS_Map, 160);
 
-	for(int j = 0; j < gI_Styles; j++)
-	{
-		gA_WrcpTime[j].Resize(Shavit_GetMapStages() + 1);
-		gA_WrcpName[j].Resize(Shavit_GetMapStages() + 1);
-	}
+	initArraylist();
 
 	Reset(Shavit_GetMapStages(), gI_Styles, true);
 
@@ -192,6 +207,8 @@ public void OnMapStart()
 		Shavit_OnStyleConfigLoaded(gI_Styles);
 		Shavit_OnChatConfigLoaded();
 	}
+
+	gB_StagesInited = false;
 }
 
 public void OnMapEnd()
@@ -201,7 +218,7 @@ public void OnMapEnd()
 		gA_WrcpTime[j].Clear();
 		gA_WrcpName[j].Clear();
 	}
-	
+
 	gB_StagesInited = false;
 }
 
@@ -229,6 +246,15 @@ public void Shavit_OnChatConfigLoaded()
 	Shavit_GetChatStrings(sMessageVariable, gS_ChatStrings.sVariable, sizeof(chatstrings_t::sVariable));
 	Shavit_GetChatStrings(sMessageVariable2, gS_ChatStrings.sVariable2, sizeof(chatstrings_t::sVariable2));
 	Shavit_GetChatStrings(sMessageStyle, gS_ChatStrings.sStyle, sizeof(chatstrings_t::sStyle));
+}
+
+void initArraylist()
+{
+	for(int j = 0; j < gI_Styles; j++)
+	{
+		gA_WrcpTime[j].Resize(Shavit_GetMapStages() + 2);
+		gA_WrcpName[j].Resize(Shavit_GetMapStages() + 2);
+	}
 }
 
 void Reset(int stage, int style, bool all = false)
@@ -306,6 +332,13 @@ public Action Command_WRCP(int client, int args)
 	if(!gB_Maptop[client] && !gB_DeleteMaptop[client] && !gB_DeleteWRCP[client])
 	{
 		gB_WRCPMenu[client] = true;
+	}
+
+	if(Shavit_GetMapStages() == 1)
+	{
+		Shavit_PrintToChat(client, "This is a linear map");
+
+		return Plugin_Handled;
 	}
 
 	Menu menu = new Menu(WRCPMenu_Handler);
