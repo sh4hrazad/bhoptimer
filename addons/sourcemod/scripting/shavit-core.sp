@@ -622,6 +622,8 @@ public Action Command_StartTimer(int client, int args)
 	}
 	else if(StrContains(sCommand, "sm_r", false) == 0)
 	{
+		gA_Timers[client].iTrack = 0;
+		
 		track = gA_Timers[client].iTrack;
 	}
 

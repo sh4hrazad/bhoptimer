@@ -75,6 +75,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetClientStageTime", Native_GetClientStageTime);
 	CreateNative("Shavit_SetClientStageTime", Native_SetClientStageTime);
 	CreateNative("Shavit_ReloadWRCPs", Native_ReloadWRCPs);
+	CreateNative("Shavit_GetWRCPName", Native_GetWRCPName);
 	// registers library, check "bool LibraryExists(const char[] name)" in order to use with other plugins
 	RegPluginLibrary("shavit-stage");
 
@@ -1035,6 +1036,13 @@ public int Native_ReloadWRCPs(Handle handler, int numParams)
 {
 	gB_StagesInited = true;
 	OnMapStart();
+}
+
+public int Native_GetWRCPName(Handle handler, int numParams)
+{
+	char sBuffer[MAX_NAME_LENGTH];
+	gA_WrcpName[GetNativeCell(1)].GetString(GetNativeCell(4), sBuffer, GetNativeCell(3));
+	SetNativeString(2, sBuffer, GetNativeCell(3));
 }
 
 void SQL_DBConnect()

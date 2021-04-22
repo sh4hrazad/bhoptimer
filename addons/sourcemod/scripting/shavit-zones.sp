@@ -747,7 +747,7 @@ public void SQL_GetStageZone_Callback(Database db, DBResultSet results, const ch
 		gI_Stages = results.RowCount + 1;
 	}
 
-	Shavit_ReloadAllReplays();
+	//Shavit_ReloadAllReplays();
 	Shavit_ReloadWRCPs();
 }
 

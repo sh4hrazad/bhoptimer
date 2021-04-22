@@ -1302,6 +1302,17 @@ native void Shavit_GetWRRecordID(int style, int &recordid, int track);
 native void Shavit_GetWRName(int style, char[] wrname, int wrmaxlength, int track);
 
 /**
+ * Saves the WRCP's player name on the map on a variable.
+ *
+ * @param style						Style to get the WRCP for.
+ * @param wrcpname					Reference to the name variable.
+ * @param wrcpmaxlength				Max length for the string.
+ * @param stage						WRCP stage.
+ * @noreturn
+ */
+native void Shavit_GetWRCPName(int style, char[] wrcpname, int wrcpmaxlength, int stage);
+
+/**
  * Retrieves the best time of a player.
  *
  * @param client					Client index.
@@ -1967,7 +1978,7 @@ native int Shavit_StartReplayFromFile(int style, int track, float delay, int cli
  * @param path						Path to the replay file. Use `BuildPath(Path_SM, ...)` to generate one. Leave as empty to use default.
  * @return							Was the replay loaded?
  */ 
-native bool Shavit_ReloadReplay(int style, int track, bool restart, char[] path = "", int stage = 0);
+native bool Shavit_ReloadReplay(int style, int track, bool restart, char[] path = "");
 
 /**
  * Reloads all of the replays for the map.
@@ -2504,6 +2515,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetClientStageTime");
 	MarkNativeAsOptional("Shavit_SetClientStageTime");
 	MarkNativeAsOptional("Shavit_ReloadAllReplays");
-	MarkNativeAsOptional("Shavit_ReloadWRCPs")
+	MarkNativeAsOptional("Shavit_ReloadWRCPs");
+	MarkNativeAsOptional("Shavit_GetWRCPName");
 }
 #endif
