@@ -113,6 +113,7 @@ float gV_WallSnap[MAXPLAYERS+1][3];
 bool gB_Button[MAXPLAYERS+1];
 bool gB_InsideZone[MAXPLAYERS+1][ZONETYPES_SIZE][TRACKS_SIZE];
 bool gB_InsideZoneID[MAXPLAYERS+1][MAX_ZONES];
+int gI_InsideZoneIndex[MAXPLAYERS+1];
 int gI_ZoneTrack[MAXPLAYERS+1];
 int gI_ZoneDatabaseID[MAXPLAYERS+1];
 
@@ -124,6 +125,7 @@ float gV_MapZones[MAX_ZONES][2][3];
 float gV_MapZones_Visual[MAX_ZONES][8][3];
 float gV_Destinations[MAX_ZONES][3];
 float gV_ZoneCenter[MAX_ZONES][3];
+float gV_ZoneCenter_Angle[MAX_ZONES][3];
 int gI_EntityZone[4096];
 bool gB_ZonesCreated = false;
 int gI_Stages; // how many stages in a map
@@ -164,7 +166,6 @@ Handle gH_Forwards_EnterZone = null;
 Handle gH_Forwards_LeaveZone = null;
 Handle gH_Forwards_OnStage = null;
 Handle gH_Forwards_OnEndZone = null;
-
 
 public Plugin myinfo =
 {
@@ -226,15 +227,11 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_stages", Command_Stages, "Opens the stage menu. Usage: sm_stages [stage #]");
 	RegConsoleCmd("sm_stage", Command_Stages, "Opens the stage menu. Usage: sm_stage [stage #]");
 
-	RegConsoleCmd("sm_test", Command_Test);
+	RegConsoleCmd("sm_back", Command_Back, "Go back to the current stage zone.");
+	RegConsoleCmd("sm_teleport", Command_Back, "Go back to the current stage zone. Alias of sm_back");
 
-	for (int i = 0; i <= 9; i++)
-	{
-		char cmd[10], helptext[50];
-		FormatEx(cmd, sizeof(cmd), "sm_s%d", i);
-		FormatEx(helptext, sizeof(helptext), "Go to stage %d", i);
-		RegConsoleCmd(cmd, Command_Stages, helptext);
-	}
+	RegConsoleCmd("sm_test", Command_Test);
+	RegConsoleCmd("sm_test2", Command_Test_2);
 
 	// events
 	HookEvent("round_start", Round_Start);
@@ -693,6 +690,43 @@ void LoadZoneSettings()
 	}
 }
 
+void InitTeleDestinations()
+{
+	int iEnt = -1;
+
+	ArrayList gA_TeleDestination = new ArrayList();
+
+	while ((iEnt = FindEntityByClassname(iEnt, "info_teleport_destination")) != -1)
+	{
+		gA_TeleDestination.Push(iEnt);
+	}
+
+	for(int i = 0; i < gI_MapZones; i++)
+	{
+		for(int j = 0; j < gA_TeleDestination.Length; j++)
+		{
+			int entity = gA_TeleDestination.Get(j);
+
+			if(IsEntityInsideZone(entity, gV_MapZones_Visual[i]))
+			{
+				float origin[3];
+				GetEntPropVector(entity, Prop_Send, "m_vecOrigin", origin);
+				gV_ZoneCenter[i][0] = origin[0];
+				gV_ZoneCenter[i][1] = origin[1];
+				gV_ZoneCenter[i][2] = origin[2];
+
+				float ang[3];
+				GetEntPropVector(iEnt, Prop_Send, "m_angRotation", ang);
+				gV_ZoneCenter_Angle[i][0] = ang[0];
+				gV_ZoneCenter_Angle[i][1] = ang[1];
+				gV_ZoneCenter_Angle[i][2] = ang[2];
+
+				break;
+			}
+		}
+	}
+}
+
 public void OnMapStart()
 {
 	if(!gB_Connected)
@@ -709,6 +743,8 @@ public void OnMapStart()
 	LoadStageZones();
 	
 	LoadZoneSettings();
+
+	InitTeleDestinations();
 	
 	PrecacheModel("models/props/cs_office/vending_machine.mdl");
 
@@ -990,7 +1026,40 @@ public Action Command_ReloadZoneSettings(int client, int args)
 
 public Action Command_Test(int client, int args)
 {
-	//TODO
+	OnMapStart();
+	return Plugin_Handled;
+}
+
+public Action Command_Test_2(int client, int args)
+{
+	PrintToChatAll("gI_ClientCurrentStage[client] = %d", gI_ClientCurrentStage[client]);
+	return Plugin_Handled;
+}
+
+public Action Command_Back(int client, int args)
+{
+	if(!IsValidClient(client))
+	{
+		return Plugin_Handled;
+	}
+
+	if(!IsPlayerAlive(client))
+	{
+		Shavit_PrintToChat(client, "%T", "StageCommandAlive", client, gS_ChatStrings.sVariable2, gS_ChatStrings.sText);
+
+		return Plugin_Handled;
+	}
+
+	if(!EmptyVector(gV_Destinations[gI_InsideZoneIndex[client]]))
+	{
+		TeleportEntity(client, gV_Destinations[gI_InsideZoneIndex[client]], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+	}
+
+	else
+	{
+		TeleportEntity(client, gV_ZoneCenter[gI_InsideZoneIndex[client]], gV_ZoneCenter_Angle[gI_InsideZoneIndex[client]], view_as<float>({0.0, 0.0, 0.0}));
+	}
+
 	return Plugin_Handled;
 }
 
@@ -2492,7 +2561,7 @@ float Abs(float input)
 	return input;
 }
 
-public void CreateZoneEntities()
+void CreateZoneEntities()
 {
 	if(gB_ZonesCreated)
 	{
@@ -2631,6 +2700,7 @@ public void StartTouchPost(int entity, int other)
 
 	gB_InsideZone[other][gA_ZoneCache[gI_EntityZone[entity]].iZoneType][gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack] = true;
 	gB_InsideZoneID[other][gI_EntityZone[entity]] = true;
+	gI_InsideZoneIndex[other] = gI_EntityZone[entity];
 
 	Call_StartForward(gH_Forwards_EnterZone);
 	Call_PushCell(other);
@@ -2734,4 +2804,22 @@ public void TouchPost(int entity, int other)
 			return;
 		}
 	}
+}
+
+bool IsEntityInsideZone(int entity, float point[8][3])
+{
+    float entityPos[3];
+    
+    GetEntPropVector(entity, Prop_Send, "m_vecOrigin", entityPos);
+    entityPos[2] += 5.0;
+    
+    for(int i = 0; i < 3; i++)
+    {
+        if((point[0][i] >= entityPos[i]) == (point[7][i] >= entityPos[i]))
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
