@@ -231,7 +231,6 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_teleport", Command_Back, "Go back to the current stage zone. Alias of sm_back");
 
 	RegConsoleCmd("sm_test", Command_Test);
-	RegConsoleCmd("sm_test2", Command_Test_2);
 
 	// events
 	HookEvent("round_start", Round_Start);
@@ -1026,13 +1025,7 @@ public Action Command_ReloadZoneSettings(int client, int args)
 
 public Action Command_Test(int client, int args)
 {
-	OnMapStart();
-	return Plugin_Handled;
-}
-
-public Action Command_Test_2(int client, int args)
-{
-	PrintToChatAll("gI_ClientCurrentStage[client] = %d", gI_ClientCurrentStage[client]);
+	
 	return Plugin_Handled;
 }
 
@@ -2806,6 +2799,7 @@ public void TouchPost(int entity, int other)
 	}
 }
 
+// Reference: https://forums.alliedmods.net/showpost.php?p=2007420&postcount=1
 bool IsEntityInsideZone(int entity, float point[8][3])
 {
     float entityPos[3];
