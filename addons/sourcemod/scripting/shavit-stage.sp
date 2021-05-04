@@ -27,7 +27,7 @@ bool gB_StagesInited = false;
 bool gB_LinearMap = false;
 
 char gS_Map[160];
-int gI_Steamid[100];//this is a mysql index, i dont have any better implementation
+int gI_Steamid[101];//this is a mysql index, i dont have any better implementation
 
 int gI_LastStage[MAXPLAYERS + 1];
 float gF_LeaveStageTime[MAXPLAYERS + 1];
