@@ -1416,7 +1416,7 @@ void FormatChat(int client, char[] buffer, int size)
 
 		FormatEx(temp, 32, "%0.f", Shavit_GetPoints(client));
 		ReplaceString(buffer, size, "{pts}", temp);
-
+		
 		FormatEx(temp, 32, "%d", Shavit_GetWRHolderRank(client));
 		ReplaceString(buffer, size, "{wrrank}", temp);
 

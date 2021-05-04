@@ -212,7 +212,6 @@ DynamicDetour gH_MaintainBotQuota = null;
 int gI_WEAPONTYPE_UNKNOWN = 123123123;
 int gI_LatestClient = -1;
 int g_iLastReplayFlags[MAXPLAYERS + 1];
-bool gB_BotAddCommand_ThisCall = false;
 
 // how do i call this
 bool gB_HideNameChange = false;
@@ -377,7 +376,7 @@ public void OnPluginStart()
 	gH_OnReplaysLoaded = CreateGlobalForward("Shavit_OnReplaysLoaded", ET_Event);
 	gH_ShouldSaveReplayCopy = CreateGlobalForward("Shavit_ShouldSaveReplayCopy", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
 	gH_OnReplaySaved = CreateGlobalForward("Shavit_OnReplaySaved", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_String);
-
+	
 	// game specific
 	gEV_Type = GetEngineVersion();
 	gF_Tickrate = (1.0 / GetTickInterval());
@@ -484,9 +483,9 @@ void LoadDHooks()
 		SetFailState("Failed to load shavit gamedata");
 	}
 
-	gB_BotAddCommand_ThisCall = view_as<bool>(gamedata.GetOffset("BotAddCommand_ThisCall"));
+	gB_Linux = (gamedata.GetOffset("OS") == 2);
 
-	StartPrepSDKCall(gB_BotAddCommand_ThisCall ? SDKCall_Raw : SDKCall_Static);
+	StartPrepSDKCall(gB_Linux ? SDKCall_Raw : SDKCall_Static);
 
 	if (gEV_Type == Engine_TF2)
 	{
@@ -524,29 +523,25 @@ void LoadDHooks()
 		}
 	}
 
-	Address addr = gamedata.GetAddress("BotManager::MaintainBotQuota");
-	if (!addr)
-	{
-		SetFailState("Failed to get address for BotManager::MaintainBotQuota");
-	}
-
 	if ((gI_WEAPONTYPE_UNKNOWN = gamedata.GetOffset("WEAPONTYPE_UNKNOWN")) == -1)
 	{
 		SetFailState("Failed to get WEAPONTYPE_UNKNOWN");
 	}
 
-	if (!(gH_MaintainBotQuota = DHookCreateDetour(addr, CallConv_THISCALL, ReturnType_Void, ThisPointer_Address)))
+	if (!(gH_MaintainBotQuota = DHookCreateDetour(Address_Null, CallConv_THISCALL, ReturnType_Void, ThisPointer_Address)))
 	{
 		SetFailState("Failed to create detour for BotManager::MaintainBotQuota");
 	}
 
+	if (!DHookSetFromConf(gH_MaintainBotQuota, gamedata, SDKConf_Signature, "BotManager::MaintainBotQuota"))
+	{
+		SetFailState("Failed to get address for BotManager::MaintainBotQuota");
+	}
+
 	gH_MaintainBotQuota.Enable(Hook_Pre, Detour_MaintainBotQuota);
 	
-	int os = gamedata.GetOffset("OS");
-	
-	if(os == 2)
+	if(gB_Linux)
 	{
-		gB_Linux = true;
 		StartPrepSDKCall(SDKCall_Static);
 	}
 	else
@@ -1732,7 +1727,7 @@ int InternalCreateReplayBot()
 	}
 	else
 	{
-		if (gB_BotAddCommand_ThisCall)
+		if (gB_Linux)
 		{
 			/*int ret =*/ SDKCall(
 				gH_BotAddCommand,
@@ -4200,6 +4195,7 @@ void KickReplay(bot_info_t info)
 	{
 		KickClient(info.iEnt);
 	}
+	
 	else // Replay_Prop
 	{
 		int starter = GetClientFromSerial(info.iStarterSerial);
@@ -4473,4 +4469,3 @@ bool WriteNavMesh(const char[] map, bool skipExistsCheck = false)
 
 	return false;
 }
-

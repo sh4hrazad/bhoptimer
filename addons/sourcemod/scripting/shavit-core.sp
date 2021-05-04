@@ -35,6 +35,8 @@
 
 #define DEBUG 0
 
+#define EFL_CHECK_UNTOUCH (1<<24)
+
 enum struct playertimer_t
 {
 	bool bEnabled;
@@ -73,8 +75,9 @@ enum struct playertimer_t
 EngineVersion gEV_Type = Engine_Unknown;
 bool gB_Protobuf = false;
 
-// used for hooking player_speedmod's AcceptInput
-DynamicHook gH_AcceptInput;
+// hook stuff
+DynamicHook gH_AcceptInput; // used for hooking player_speedmod's AcceptInput
+Handle gH_PhysicsCheckForEntityUntouch;
 
 // database handle
 Database gH_SQL = null;
@@ -468,6 +471,13 @@ void LoadDHooks()
 	DHookAddParam(processMovementPost, HookParamType_CBaseEntity);
 	DHookAddParam(processMovementPost, HookParamType_ObjectPtr);
 	DHookRaw(processMovementPost, true, IGameMovement);
+
+	StartPrepSDKCall(SDKCall_Entity);
+	if(!PrepSDKCall_SetFromConf(gamedataConf, SDKConf_Signature, "PhysicsCheckForEntityUntouch"))
+	{
+		SetFailState("Failed to get PhysicsCheckForEntityUntouch");
+	}
+	gH_PhysicsCheckForEntityUntouch = EndPrepSDKCall();
 
 	delete CreateInterface;
 	delete gamedataConf;
@@ -1004,21 +1014,9 @@ void DeleteUserData(int client, const int iSteamID)
 
 	if(gB_WR)
 	{
-		if(gB_MySQL)
-		{
-			FormatEx(sQuery, 512,
-				"SELECT p1.id, p1.style, p1.track, p1.map FROM %splayertimes p1 " ...
-					"JOIN (SELECT map, style, track, MIN(time) time FROM %splayertimes GROUP BY map, style, track) p2 " ...
-					"ON p1.style = p2.style AND p1.track = p2.track AND p1.time = p2.time " ...
-					"WHERE p1.auth = %d;",
-				gS_MySQLPrefix, gS_MySQLPrefix, iSteamID);
-		}
-		else
-		{
-			FormatEx(sQuery, 512,
-				"SELECT p.id, p.style, p.track, p.map FROM %splayertimes p JOIN(SELECT style, MIN(time) time, map, track FROM %splayertimes GROUP BY map, style, track) s ON p.style = s.style AND p.time = s.time AND p.map = s.map AND s.track = p.track GROUP BY p.map, p.style, p.track WHERE p.auth = %d;",
-				gS_MySQLPrefix, gS_MySQLPrefix, iSteamID);
-		}
+		FormatEx(sQuery, sizeof(sQuery),
+			"SELECT id, style, track, map FROM %swrs WHERE auth = %d;",
+			gS_MySQLPrefix, iSteamID);
 
 		gH_SQL.Query(SQL_DeleteUserData_GetRecords_Callback, sQuery, hPack, DBPrio_High);
 	}
@@ -3269,9 +3267,22 @@ public MRESReturn DHook_AcceptInput_player_speedmod(int pThis, DHookReturn hRetu
 	return MRES_Supercede;
 }
 
+bool GetCheckUntouch(int client)
+{
+	int flags = GetEntProp(client, Prop_Data, "m_iEFlags");
+	return (flags & EFL_CHECK_UNTOUCH) != 0;
+}
+
 public MRESReturn DHook_ProcessMovement(Handle hParams)
 {
 	int client = DHookGetParam(hParams, 1);
+
+	// Causes client to do zone touching in movement instead of server frames.
+	// From https://github.com/rumourA/End-Touch-Fix
+	if(GetCheckUntouch(client))
+	{
+		SDKCall(gH_PhysicsCheckForEntityUntouch, client);
+	}
 
 	Call_StartForward(gH_Forwards_OnProcessMovement);
 	Call_PushCell(client);

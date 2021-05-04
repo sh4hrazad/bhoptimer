@@ -130,6 +130,7 @@ Convar gCV_StopTimerWarning = null;
 Convar gCV_WRMessages = null;
 Convar gCV_BhopSounds = null;
 Convar gCV_RestrictNoclip = null;
+Convar gCV_BotFootsteps = null;
 
 // external cvars
 ConVar sv_disable_immunity_alpha = null;
@@ -149,6 +150,7 @@ Handle gH_Forwards_OnCheckpointMenuSelect = null;
 
 // dhooks
 Handle gH_GetPlayerMaxSpeed = null;
+DynamicHook gH_UpdateStepSound = null;
 DynamicHook gH_IsSpawnPointValid = null;
 
 // modules
@@ -321,6 +323,7 @@ public void OnPluginStart()
 	gCV_WRMessages = new Convar("shavit_misc_wrmessages", "3", "How many \"NEW <style> WR!!!\" messages to print?\n0 - Disabled", 0,  true, 0.0, true, 100.0);
 	gCV_BhopSounds = new Convar("shavit_misc_bhopsounds", "1", "Should bhop (landing and jumping) sounds be muted?\n0 - Disabled\n1 - Blocked while !hide is enabled\n2 - Always blocked", 0,  true, 0.0, true, 2.0);
 	gCV_RestrictNoclip = new Convar("shavit_misc_restrictnoclip", "0", "Should noclip be be restricted\n0 - Disabled\n1 - No vertical velocity while in noclip in start zone\n2 - No noclip in start zone", 0, true, 0.0, true, 2.0);
+	gCV_BotFootsteps = new Convar("shavit_misc_botfootsteps", "1", "Enable footstep sounds for replay bots. Only works if shavit_misc_bhopsounds is less than 2.", 0, true, 0.0, true, 1.0);
 
 	gCV_HideRadar.AddChangeHook(OnConVarChanged);
 	Convar.AutoExecConfig();
@@ -351,6 +354,18 @@ public void OnPluginStart()
 				else
 				{
 					SetFailState("Couldn't get the offset for \"CCSPlayer::GetPlayerMaxSpeed\" - make sure your gamedata is updated!");
+				}
+
+				if ((iOffset = GameConfGetOffset(hGameData, "CBasePlayer::UpdateStepSound")) != -1)
+				{
+					gH_UpdateStepSound = new DynamicHook(iOffset, HookType_Entity, ReturnType_Void, ThisPointer_CBaseEntity);
+					gH_UpdateStepSound.AddParam(HookParamType_ObjectPtr);
+					gH_UpdateStepSound.AddParam(HookParamType_VectorPtr);
+					gH_UpdateStepSound.AddParam(HookParamType_VectorPtr);
+				}
+				else
+				{
+					LogError("Couldn't get the offset for \"CBasePlayer::UpdateStepSound\" - make sure your gamedata is updated!");
 				}
 
 				if ((iOffset = GameConfGetOffset(hGameData, "CGameRules::IsSpawnPointValid")) != -1)
@@ -828,16 +843,42 @@ public Action Command_Radio(int client, const char[] command, int args)
 	return Plugin_Continue;
 }
 
-public MRESReturn CCSPlayer__GetPlayerMaxSpeed(int pThis, Handle hReturn)
+public MRESReturn CCSPlayer__GetPlayerMaxSpeed(int pThis, DHookReturn hReturn)
 {
 	if(!gCV_StaticPrestrafe.BoolValue || !IsValidClient(pThis, true))
 	{
 		return MRES_Ignored;
 	}
 
-	DHookSetReturn(hReturn, Shavit_GetStyleSettingFloat(gI_Style[pThis], "runspeed"));
+	hReturn.Value = Shavit_GetStyleSettingFloat(gI_Style[pThis], "runspeed");
 
 	return MRES_Override;
+}
+
+// Remove flags from replay bots that cause CBasePlayer::UpdateStepSound to return without playing a footstep.
+public MRESReturn Hook_UpdateStepSound_Pre(int pThis, DHookParam hParams)
+{
+	if (GetEntityMoveType(pThis) == MOVETYPE_NOCLIP)
+	{
+		SetEntityMoveType(pThis, MOVETYPE_WALK);
+	}
+
+	SetEntityFlags(pThis, GetEntityFlags(pThis) & ~FL_ATCONTROLS);
+
+	return MRES_Ignored;
+}
+
+// Readd flags to replay bots now that CBasePlayer::UpdateStepSound is done.
+public MRESReturn Hook_UpdateStepSound_Post(int pThis, DHookParam hParams)
+{
+	if (GetEntityMoveType(pThis) == MOVETYPE_WALK)
+	{
+		SetEntityMoveType(pThis, MOVETYPE_NOCLIP);
+	}
+
+	SetEntityFlags(pThis, GetEntityFlags(pThis) | FL_ATCONTROLS);
+
+	return MRES_Ignored;
 }
 
 public Action Timer_Cron(Handle timer)
@@ -1188,6 +1229,11 @@ public void OnClientPutInServer(int client)
 
 	if(IsFakeClient(client))
 	{
+		if (gCV_BotFootsteps.BoolValue && gH_UpdateStepSound != null)
+		{
+			gH_UpdateStepSound.HookEntity(Hook_Pre,  client, Hook_UpdateStepSound_Pre);
+			gH_UpdateStepSound.HookEntity(Hook_Post, client, Hook_UpdateStepSound_Post);
+		}
 		return;
 	}
 
@@ -1301,6 +1347,7 @@ void PersistData(int client, bool disconnected)
 {
 	if(!IsClientInGame(client) ||
 		(!IsPlayerAlive(client) && !disconnected) ||
+		(!IsPlayerAlive(client) && disconnected && !gB_SaveStates[client]) ||
 		GetSteamAccountID(client) == 0 ||
 		//Shavit_GetTimerStatus(client) == Timer_Stopped ||
 		(!gCV_RestoreStates.BoolValue && !disconnected) ||
@@ -2270,6 +2317,23 @@ bool SaveCheckpoint(int client)
 
 	if (IsFakeClient(target))
 	{
+		if((GetEntityFlags(client) & FL_ONGROUND) == 0 || client != target)
+		{
+			Shavit_PrintToChat(client, "%T", "CommandSaveCPKZInvalid", client);
+
+			return false;
+		}
+
+		if(Shavit_InsideZone(client, Zone_Start, -1))
+		{
+			Shavit_PrintToChat(client, "%T", "CommandAliveSpectate", client, gS_ChatStrings.sVariable, gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
+			
+			return false;
+		}
+	}
+
+	if (IsFakeClient(target))
+	{
 		int style = Shavit_GetReplayBotStyle(target);
 		int track = Shavit_GetReplayBotTrack(target);
 
@@ -2839,7 +2903,7 @@ void ClearClientEventsFrame(int serial)
 {
 	int client = GetClientFromSerial(serial);
 
-	if (client > 0)
+	if (client > 0 && gB_Eventqueuefix)
 	{
 		ClearClientEvents(client);
 	}
@@ -3291,6 +3355,28 @@ public Action WorldDecal(const char[] te_name, const Players[], int numClients, 
 
 public Action NormalSound(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 {
+	if (gEV_Type != Engine_CSGO && IsValidClient(entity) && IsFakeClient(entity) && StrContains(sample, "footsteps/") != -1)
+	{
+		numClients = 0;
+
+		if (gCV_BhopSounds.IntValue < 2)
+		{
+			// The server removes recipients that are in the PVS because CS:S generates the footsteps clientside.
+			// UpdateStepSound clientside bails because of MOVETYPE_NOCLIP though.
+			// So fuck it, add all the clients xd.
+			// Alternatively and preferably you'd patch out the RemoveRecipientsByPVS call in PlayStepSound.
+			for (int i = 1; i <= MaxClients; i++)
+			{
+				if (IsValidClient(i) && (!gB_Hide[i] || GetSpectatorTarget(i) == entity))
+				{
+					clients[numClients++] = i;
+				}
+			}
+		}
+
+		return Plugin_Changed;
+	}
+
 	if(!gCV_BhopSounds.BoolValue)
 	{
 		return Plugin_Continue;
