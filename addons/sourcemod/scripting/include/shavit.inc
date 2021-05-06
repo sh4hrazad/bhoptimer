@@ -384,13 +384,14 @@ stock void FormatSeconds(float time, char[] newtime, int newtimesize, bool preci
 	}
 
 	int iRounded = RoundToFloor(fTempTime);
-	float fSeconds = (iRounded % 60) + fTempTime - iRounded;
+	int iSeconds = (iRounded % 60);
+	float fSeconds = iSeconds + fTempTime - iRounded;
 
 	char sSeconds[8];
 
 	if (nodecimal)
 	{
-		FormatEx(sSeconds, 8, "%d", iRounded % 60);
+		FormatEx(sSeconds, 8, "%d", iSeconds);
 	}
 	else
 	{
@@ -402,7 +403,6 @@ stock void FormatSeconds(float time, char[] newtime, int newtimesize, bool preci
 		strcopy(newtime, newtimesize, sSeconds);
 		FormatEx(newtime, newtimesize, "%s%s", (time < 0.0) ? "-":"", sSeconds);
 	}
-
 	else
 	{
 		int iMinutes = (iRounded / 60);
@@ -411,11 +411,10 @@ stock void FormatSeconds(float time, char[] newtime, int newtimesize, bool preci
 		{
 			FormatEx(newtime, newtimesize, "%s%d:%s%s", (time < 0.0)? "-":"", iMinutes, (fSeconds < 10)? "0":"", sSeconds);
 		}
-
 		else
 		{
+			int iHours = (iMinutes / 60);
 			iMinutes %= 60;
-			int iHours = (iRounded / 3600);
 
 			FormatEx(newtime, newtimesize, "%s%d:%s%d:%s%s", (time < 0.0)? "-":"", iHours, (iMinutes < 10)? "0":"", iMinutes, (fSeconds < 10)? "0":"", sSeconds);
 		}
@@ -2033,7 +2032,6 @@ native float Shavit_GetClosestReplayVelocityDifference(int client, bool threeD);
 /**
  * Use this native to stop the click sound that plays upon chat messages.
  * Call it before each Shavit_PrintToChat().
- * Shavit_PrintToChatAll() is not guaranteed to disable the sound from playing.
  *
  * @noreturn
  */
@@ -2107,6 +2105,16 @@ native int Shavit_CanPause(int client);
  * @return							PrintToChat()
  */
 native int Shavit_PrintToChat(int client, const char[] format, any ...);
+
+/**
+ * Use this native when printing anything in chat if it's related to the timer.
+ * This native will auto-assign colors and a chat prefix.
+ *
+ * @param format					Formatting rules.
+ * @param any						Variable number of format parameters.
+ * @noreturn
+ */
+native void Shavit_PrintToChatAll(const char[] format, any ...);
 
 /**
  * Logs an entry to bhoptimer's log file.
@@ -2352,23 +2360,6 @@ native void Shavit_SetClientStageTime(int client, float time = 0.0);
 
 native void Shavit_ReloadWRCPs();
 
-// same as Shavit_PrintToChat() but loops through the whole server
-// code stolen from the base halflife.inc file
-stock void Shavit_PrintToChatAll(const char[] format, any ...)
-{
-	char buffer[300];
-
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(IsClientInGame(i))
-		{
-			SetGlobalTransTarget(i);
-			VFormat(buffer, 300, format, 2);
-			Shavit_PrintToChat(i, "%s", buffer);
-		}
-	}
-}
-
 public SharedPlugin __pl_shavit =
 {
 	name = "shavit",
@@ -2460,6 +2451,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_OpenStatsMenu");
 	MarkNativeAsOptional("Shavit_PauseTimer");
 	MarkNativeAsOptional("Shavit_PrintToChat");
+	MarkNativeAsOptional("Shavit_PrintToChatAll");
 	MarkNativeAsOptional("Shavit_Rankings_DeleteMap");
 	MarkNativeAsOptional("Shavit_ReloadLeaderboards");
 	MarkNativeAsOptional("Shavit_ReloadReplay");

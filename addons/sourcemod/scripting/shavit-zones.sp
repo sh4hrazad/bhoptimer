@@ -117,6 +117,7 @@ bool gB_InsideZoneID[MAXPLAYERS+1][MAX_ZONES];
 int gI_InsideZoneIndex[MAXPLAYERS+1];
 int gI_ZoneTrack[MAXPLAYERS+1];
 int gI_ZoneDatabaseID[MAXPLAYERS+1];
+int gI_ZoneID[MAXPLAYERS+1];
 
 // zone cache
 zone_settings_t gA_ZoneSettings[ZONETYPES_SIZE][TRACKS_SIZE];
@@ -1546,6 +1547,7 @@ public int MenuHandler_ZoneEdit(Menu menu, MenuAction action, int param1, int pa
 				gI_ZoneDatabaseID[param1] = gA_ZoneCache[id].iDatabaseID;
 				gI_ZoneFlags[param1] = gA_ZoneCache[id].iZoneFlags;
 				gI_ZoneData[param1] = gA_ZoneCache[id].iZoneData;//stageid change start here
+				gI_ZoneID[param1] = id;
 
 				// to stop the original zone from drawing
 				gA_ZoneCache[id].bZoneInitialized = false;
@@ -1830,6 +1832,7 @@ void Reset(int client)
 	gI_ZoneDatabaseID[client] = -1;
 	gB_WaitingForChatInput[client] = false;
 	strcopy(gS_ZoneHookname[client], 128, "NONE");
+	gI_ZoneID[client] = -1;
 
 	for(int i = 0; i < 3; i++)
 	{
@@ -2339,6 +2342,12 @@ public int ZoneAdjuster_Handler(Menu menu, MenuAction action, int param1, int pa
 
 		else if(StrEqual(sInfo, "cancel"))
 		{
+			if (gI_ZoneID[param1] != -1)
+			{
+				// reenable original zone
+				gA_ZoneCache[gI_ZoneID[param1]].bZoneInitialized = true;
+			}
+
 			Reset(param1);
 		}
 
