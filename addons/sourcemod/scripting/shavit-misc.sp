@@ -209,6 +209,8 @@ public void OnPluginStart()
 
 	sv_disable_immunity_alpha = FindConVar("sv_disable_immunity_alpha");
 
+	RegConsoleCmd("sm_test", Command_Test);
+
 	// spectator list
 	RegConsoleCmd("sm_specs", Command_Specs, "Show a list of spectators.");
 	RegConsoleCmd("sm_spectators", Command_Specs, "Show a list of spectators.");
@@ -287,7 +289,7 @@ public void OnPluginStart()
 
 	// cvars and stuff
 	gCV_GodMode = new Convar("shavit_misc_godmode", "3", "Enable godmode for players?\n0 - Disabled\n1 - Only prevent fall/world damage.\n2 - Only prevent damage from other players.\n3 - Full godmode.", 0, true, 0.0, true, 3.0);
-	gCV_PreSpeed = new Convar("shavit_misc_prespeed", "2", "Stop prespeeding in the start zone?\n0 - Disabled, fully allow prespeeding.\n1 - Limit relatively to prestrafelimit.\n2 - Block bunnyhopping in startzone.\n3 - Limit to prestrafelimit and block bunnyhopping.\n4 - Limit to prestrafelimit but allow prespeeding. Combine with shavit_core_nozaxisspeed 1 for SourceCode timer's behavior.\n5 - Limit horizontal speed to prestrafe but allow prespeeding.", 0, true, 0.0, true, 5.0);
+	gCV_PreSpeed = new Convar("shavit_misc_prespeed", "6", "Stop prespeeding in the start zone?\n0 - Disabled, fully allow prespeeding.\n1 - Limit relatively to prestrafelimit.\n2 - Block bunnyhopping in startzone.\n3 - Limit to prestrafelimit and block bunnyhopping.\n4 - Limit to prestrafelimit but allow prespeeding. Combine with shavit_core_nozaxisspeed 1 for SourceCode timer's behavior.\n5 - Limit horizontal speed to prestrafe but allow prespeeding.\n6 - SurfHeaven Limitspeed", 0, true, 0.0, true, 6.0);
 	gCV_HideTeamChanges = new Convar("shavit_misc_hideteamchanges", "1", "Hide team changes in chat?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_RespawnOnTeam = new Convar("shavit_misc_respawnonteam", "1", "Respawn whenever a player joins a team?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_RespawnOnRestart = new Convar("shavit_misc_respawnonrestart", "1", "Respawn a dead player if they use the timer restart command?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
@@ -1135,6 +1137,8 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 {
 	bool bNoclip = (GetEntityMoveType(client) == MOVETYPE_NOCLIP);
 	bool bInStart = (Shavit_InsideZone(client, Zone_Start, track) || Shavit_InsideZone(client, Zone_Start_2, track));
+	bool bInStage = Shavit_InsideZone(client, Zone_Stage, track);
+	static bool bInZone;
 
 	// i will not be adding a setting to toggle this off
 	if(bNoclip)
@@ -1162,7 +1166,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 	int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
 
 	// prespeed
-	if(!bNoclip && Shavit_GetStyleSettingInt(gI_Style[client], "prespeed") == 0 && bInStart)
+	if(!bNoclip && Shavit_GetStyleSettingInt(gI_Style[client], "prespeed") == 0 && (bInStart || bInStage))
 	{
 		if((gCV_PreSpeed.IntValue == 2 || gCV_PreSpeed.IntValue == 3) && gI_GroundEntity[client] == -1 && iGroundEntity != -1 && (buttons & IN_JUMP) > 0)
 		{
@@ -1174,7 +1178,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 			return Plugin_Continue;
 		}
 
-		if(gCV_PreSpeed.IntValue == 1 || gCV_PreSpeed.IntValue >= 3)
+		if(gCV_PreSpeed.IntValue == 1 || (gCV_PreSpeed.IntValue >= 3 && gCV_PreSpeed.IntValue <= 5))
 		{
 			float fSpeed[3];
 			GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
@@ -1209,9 +1213,48 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 
 			TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed);
 		}
+		
+		if(gCV_PreSpeed.IntValue == 6)
+		{
+			// surfheaven prespeed
+			// limit speed since 2 jumps
+			// iGroundEntity == 0 ---> onGround
+			// iGroundEntity == -1 ---> onAir
+			static int iJumps = 0;
+			float fSpeed[3];
+			GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
+			float fSpeedXY = SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0));
+
+			if(!bInZone)
+			{
+				ScaleVector(fSpeed, 0.1);
+				TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed);
+			}
+
+			if(gI_GroundEntity[client] == 0 && iGroundEntity == -1)// 起跳 starts jump
+			{
+				if(++iJumps >= 2)
+				{
+					float fScale = 260.0 / fSpeedXY;
+
+					if(fScale < 1.0)
+					{
+						fSpeed[0] *= fScale;
+						fSpeed[1] *= fScale;
+						TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed);
+					}
+				}
+			}
+
+			else if(gI_GroundEntity[client] == 0 && iGroundEntity == 0)// 不跳 not jumping
+			{
+				iJumps = 0;
+			}
+		}
 	}
 
 	gI_GroundEntity[client] = iGroundEntity;
+	bInZone = view_as<bool>(bInStart || bInStage);
 
 	return Plugin_Continue;
 }
@@ -2818,6 +2861,13 @@ public Action CommandListener_Noclip(int client, const char[] command, int args)
 	{
 		SetEntityMoveType(client, MOVETYPE_WALK);
 	}
+
+	return Plugin_Handled;
+}
+
+public Action Command_Test(int client, int args)
+{
+	Shavit_PrintToChat(client, "gI_GroundEntity[client] ---> %d", gI_GroundEntity[client]);
 
 	return Plugin_Handled;
 }
