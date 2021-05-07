@@ -23,8 +23,6 @@
 Database gH_SQL = null;
 bool gB_Connected = false;
 bool gB_MySQL = false;
-bool gB_StagesInited = false;
-bool gB_LinearMap = false;
 
 char gS_Map[160];
 int gI_Steamid[101];//this is a mysql index, i dont have any better implementation
@@ -33,9 +31,9 @@ int gI_LastStage[MAXPLAYERS + 1];
 float gF_LeaveStageTime[MAXPLAYERS + 1];
 float gF_StageTime[MAXPLAYERS + 1];
 
-ArrayList gA_WrcpTime[gI_Styles];
-ArrayList gA_WrcpName[gI_Styles];
-ArrayList gA_PrStageTime[MAXPLAYERS + 1][gI_Styles];
+float gF_WrcpTime[MAX_STAGES][gI_Styles];
+char gS_WrcpName[MAX_STAGES][gI_Styles][MAX_NAME_LENGTH];
+float gF_PrStageTime[MAXPLAYERS + 1][MAX_STAGES][gI_Styles];
 
 int gI_StyleChoice[MAXPLAYERS + 1];
 int gI_StageChoice[MAXPLAYERS + 1];
@@ -122,58 +120,20 @@ public void OnPluginStart()
 	gH_Forwards_OnWRCP = CreateGlobalForward("Shavit_OnWRCP", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_String);
 	gH_Forwards_OnWRCPDeleted = CreateGlobalForward("Shavit_OnWRCPDeleted", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_String);
 
-	for(int i = 0; i < gI_Styles; i++)
-	{
-		gA_WrcpTime[i] = new ArrayList(MAX_STAGES);
-		gA_WrcpName[i] = new ArrayList(MAX_STAGES);
-	}
-
-	for(int i = 1; i <= MAXPLAYERS; i++)
-	{
-		for(int j = 0; j < gI_Styles; j++)
-		{
-			gA_PrStageTime[i][j] = new ArrayList(MAX_STAGES);
-		}
-	}
-
 	SQL_DBConnect();
 }
 
 public void OnClientPutInServer(int client)
 {
-	if(gB_LinearMap)
-	{
-		return;
-	}
-
 	gI_LastStage[client] = 1;
-
-	for(int j = 0; j < gI_Styles; j++)
-	{
-		gA_PrStageTime[client][j].Resize(Shavit_GetMapStages() + 2);
-	}
-
 	for(int i = 1; i <= Shavit_GetMapStages(); i++)//init
 	{
 		for(int j = 0; j < gI_Styles; j++)
 		{
-			gA_PrStageTime[client][j].Set(i, 0.0);
+			gF_PrStageTime[client][i][j] = 0.0;
 		}
 	}
 	LoadPR(client);
-}
-
-public void OnClientDisconnect(int client)
-{
-	if(gB_LinearMap)
-	{
-		return;
-	}
-	
-	for(int j = 0; j < gI_Styles; j++)
-	{
-		gA_PrStageTime[client][j].Clear();
-	}
 }
 
 public void OnMapStart()
@@ -183,23 +143,8 @@ public void OnMapStart()
 		return;
 	}
 
-	if(!gB_StagesInited)
-	{
-		return;
-	}
-
-	if(Shavit_GetMapStages() == 1)
-	{
-		gB_LinearMap = true;
-		return;
-	}
-
-	gB_LinearMap = false;
-
 	GetCurrentMap(gS_Map, 160);
 	GetMapDisplayName(gS_Map, gS_Map, 160);
-
-	initArraylist();
 
 	Reset(Shavit_GetMapStages(), gI_Styles, true);
 
@@ -208,19 +153,6 @@ public void OnMapStart()
 		Shavit_OnStyleConfigLoaded(gI_Styles);
 		Shavit_OnChatConfigLoaded();
 	}
-
-	gB_StagesInited = false;
-}
-
-public void OnMapEnd()
-{
-	for(int j = 0; j < gI_Styles; j++)
-	{
-		gA_WrcpTime[j].Clear();
-		gA_WrcpName[j].Clear();
-	}
-
-	gB_StagesInited = false;
 }
 
 public void OnAllPluginsLoaded()
@@ -249,15 +181,6 @@ public void Shavit_OnChatConfigLoaded()
 	Shavit_GetChatStrings(sMessageStyle, gS_ChatStrings.sStyle, sizeof(chatstrings_t::sStyle));
 }
 
-void initArraylist()
-{
-	for(int j = 0; j < gI_Styles; j++)
-	{
-		gA_WrcpTime[j].Resize(Shavit_GetMapStages() + 2);
-		gA_WrcpName[j].Resize(Shavit_GetMapStages() + 2);
-	}
-}
-
 void Reset(int stage, int style, bool all = false)
 {
 	if(all)
@@ -266,15 +189,15 @@ void Reset(int stage, int style, bool all = false)
 		{
 			for(int j = 0; j < style; j++)
 			{
-				gA_WrcpTime[j].Set(i, -1.0);
-				gA_WrcpName[j].SetString(i, gS_None);
+				gF_WrcpTime[i][j] = -1.0;
+				strcopy(gS_WrcpName[i][j], 16, gS_None);
 			}
 		}
 	}
 	else
 	{
-		gA_WrcpTime[style].Set(stage, -1.0);
-		gA_WrcpName[style].SetString(stage, gS_None);
+		gF_WrcpTime[stage][style] = -1.0;
+		strcopy(gS_WrcpName[stage][style], 16, gS_None);
 	}
 
 	LoadWRCP();
@@ -335,13 +258,6 @@ public Action Command_WRCP(int client, int args)
 		gB_WRCPMenu[client] = true;
 	}
 
-	if(Shavit_GetMapStages() == 1)
-	{
-		Shavit_PrintToChat(client, "This is a linear map");
-
-		return Plugin_Handled;
-	}
-
 	Menu menu = new Menu(WRCPMenu_Handler);
 	menu.SetTitle("%T", "WrcpMenuTitle-Style", client);
 
@@ -396,9 +312,9 @@ public int WRCPMenu2_Handler(Menu menu, MenuAction action, int param1, int param
 		
 		int stage = gI_StageChoice[param1];
 		int style = gI_StyleChoice[param1];
-		float time = gA_WrcpTime[style].Get(stage);
+		float time = gF_WrcpTime[stage][style];
 		char sName[MAX_NAME_LENGTH];
-		gA_WrcpName[style].GetString(stage, sName, MAX_NAME_LENGTH);
+		strcopy(sName, MAX_NAME_LENGTH, gS_WrcpName[stage][style]);
 
 		if(gB_Maptop[param1] || gB_DeleteMaptop[param1])
 		{
@@ -509,8 +425,7 @@ public void SQL_Maptop_Callback(Database db, DBResultSet results, const char[] e
 			FormatSeconds(time, sTime, 32, true);
 
 			// compareTime
-			float wrcpTime = gA_WrcpTime[style].Get(stage);
-			float compareTime = time - wrcpTime;
+			float compareTime = time - gF_WrcpTime[stage][style];
 			char sCompareTime[32];
 			FormatSeconds(compareTime, sCompareTime, 32, true);
 
@@ -851,8 +766,7 @@ public void Shavit_OnLeaveZone(int client, int type, int track, int id, int enti
 
 void OnWRCPCheck(int client, int stage, int style, float time)
 {
-	float wrcpTime = gA_WrcpTime[style].Get(stage);
-	if(gF_StageTime[client] < wrcpTime || wrcpTime == -1.0)//check if wrcp
+	if(gF_StageTime[client] < gF_WrcpTime[stage][style] || gF_WrcpTime[stage][style] == -1.0)//check if wrcp
 	{
 		char sMessage[255];
 		char sName[MAX_NAME_LENGTH];
@@ -911,7 +825,7 @@ public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const c
 
 	if(results.FetchRow())
 	{
-		float prTime = gA_PrStageTime[client][style].Get(stage);
+		float prTime = gF_PrStageTime[client][stage][style];
 		if(time < prTime || prTime == 0.0)
 		{
 			FormatEx(sQuery, 512,
@@ -978,7 +892,7 @@ public void SQL_LoadPR_Callback(Database db, DBResultSet results, const char[] e
 		int stage = results.FetchInt(0);
 		int style = results.FetchInt(1);
 		float time = results.FetchFloat(2);
-		gA_PrStageTime[client][style].Set(stage, time);
+		gF_PrStageTime[client][stage][style] = time;
 	}
 }
 
@@ -1009,14 +923,11 @@ public void SQL_LoadWRCP_Callback(Database db, DBResultSet results, const char[]
 		int stage = results.FetchInt(1);
 		int style = results.FetchInt(2);
 		float time = results.FetchFloat(3);
-		float wrcpTime = gA_WrcpTime[style].Get(stage);
-		if(time < wrcpTime || wrcpTime == -1.0)
+		if(time < gF_WrcpTime[stage][style] || gF_WrcpTime[stage][style] == -1.0)
 		{
-			gA_WrcpTime[style].Set(stage, time);
+			gF_WrcpTime[stage][style] = time;
 
-			char sName[MAX_NAME_LENGTH];
-			results.FetchString(4, sName, MAX_NAME_LENGTH);
-			gA_WrcpName[style].SetString(stage, sName);
+			results.FetchString(4, gS_WrcpName[stage][style], MAX_NAME_LENGTH);
 		}
 	}
 }
@@ -1034,15 +945,12 @@ public int Native_SetClientStageTime(Handle handler, int numParams)
 
 public int Native_ReloadWRCPs(Handle handler, int numParams)
 {
-	gB_StagesInited = true;
 	OnMapStart();
 }
 
 public int Native_GetWRCPName(Handle handler, int numParams)
 {
-	char sBuffer[MAX_NAME_LENGTH];
-	gA_WrcpName[GetNativeCell(1)].GetString(GetNativeCell(4), sBuffer, GetNativeCell(3));
-	SetNativeString(2, sBuffer, GetNativeCell(3));
+	SetNativeString(2, gS_WrcpName[GetNativeCell(4)][GetNativeCell(1)], GetNativeCell(3));
 }
 
 void SQL_DBConnect()
