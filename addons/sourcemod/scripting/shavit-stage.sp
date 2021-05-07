@@ -231,17 +231,17 @@ public Action Command_WRCP(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(gB_LinearMap)
-	{
-		Shavit_PrintToChat(client, "This is a linear map");
-
-		return Plugin_Handled;
-	}
-
 	gB_DeleteWRCP[client] = false;
 
 	if(args == 0)
 	{
+		if(gB_LinearMap)
+		{
+			Shavit_PrintToChat(client, "This is a linear map");
+
+			return Plugin_Handled;
+		}
+
 		OpenWRCPMenu(client, gS_Map);
 	}
 
@@ -262,17 +262,17 @@ public Action Command_DeleteWRCP(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(gB_LinearMap)
-	{
-		Shavit_PrintToChat(client, "This is a linear map");
-
-		return Plugin_Handled;
-	}
-
 	gB_DeleteWRCP[client] = true;
 
 	if(args == 0)
 	{
+		if(gB_LinearMap)
+		{
+			Shavit_PrintToChat(client, "This is a linear map");
+
+			return Plugin_Handled;
+		}
+
 		OpenWRCPMenu(client, gS_Map);
 	}
 
@@ -310,18 +310,7 @@ public int WRCPMenu_Handler(Menu menu, MenuAction action, int param1, int param2
 	{
 		gI_StyleChoice[param1] = param2;
 
-		Menu stagemenu = new Menu(WRCPMenu2_Handler);
-		stagemenu.SetTitle("%T", "WrcpMenuTitle-Stage", param1);
-
-		for(int i = 1; i <= Shavit_GetMapStages(); i++)
-		{
-			char sDisplay[64];
-			FormatEx(sDisplay, 64, "%T %d", "WrcpMenuItem-Stage", param1, i);
-
-			stagemenu.AddItem("", sDisplay);
-		}
-
-		stagemenu.Display(param1, -1);
+		WRCP_StageMenu(param1);
 	}
 
 	else if(action == MenuAction_End)
@@ -330,6 +319,23 @@ public int WRCPMenu_Handler(Menu menu, MenuAction action, int param1, int param2
 	}
 
 	return 0;
+}
+
+void WRCP_StageMenu(int client)
+{
+	Menu stagemenu = new Menu(WRCPMenu2_Handler);
+	stagemenu.SetTitle("%T", "WrcpMenuTitle-Stage", client);
+
+	for(int i = 1; i <= Shavit_GetMapStages(); i++)
+	{
+		char sDisplay[64];
+		FormatEx(sDisplay, 64, "%T %d", "WrcpMenuItem-Stage", client, i);
+
+		stagemenu.AddItem("", sDisplay);
+	}
+
+	stagemenu.ExitBackButton = true;
+	stagemenu.Display(client, -1);
 }
 
 public int WRCPMenu2_Handler(Menu menu, MenuAction action, int param1, int param2)
@@ -369,6 +375,11 @@ public int WRCPMenu2_Handler(Menu menu, MenuAction action, int param1, int param
 		}
 	}
 
+	else if(action == MenuAction_Cancel)
+	{
+		OpenWRCPMenu(param1, gS_MapChoice[param1]);
+	}
+
 	else if(action == MenuAction_End)
 	{
 		delete menu;
@@ -388,7 +399,7 @@ void DeleteWRCPConfirm(int client)
 	menu.AddItem("", "Yes");
 	menu.AddItem("", "No");
 
-	menu.ExitButton = true;
+	menu.ExitBackButton = true;
 	menu.Display(client, -1);
 }
 
@@ -411,6 +422,11 @@ public int DeleteWRCPMenu_Handler(Menu menu, MenuAction action, int param1, int 
 
 			gH_SQL.Query(SQL_DeleteWRCP_Callback, sQuery, GetClientSerial(param1), DBPrio_High);
 		}
+	}
+
+	else if(action == MenuAction_Cancel)
+	{
+		WRCP_StageMenu(param1);
 	}
 
 	else if(action == MenuAction_End)
@@ -492,17 +508,17 @@ public Action Command_Maptop(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(gB_LinearMap)
-	{
-		Shavit_PrintToChat(client, "This is a linear map");
-
-		return Plugin_Handled;
-	}
-
 	gB_DeleteMaptop[client] = false;
 
 	if(args == 0)
 	{
+		if(gB_LinearMap)
+		{
+			Shavit_PrintToChat(client, "This is a linear map");
+
+			return Plugin_Handled;
+		}
+
 		OpenMaptopMenu(client, gS_Map);
 	}
 
@@ -523,17 +539,17 @@ public Action Command_DeleteMaptop(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(gB_LinearMap)
-	{
-		Shavit_PrintToChat(client, "This is a linear map");
-
-		return Plugin_Handled;
-	}
-
 	gB_DeleteMaptop[client] = true;
 
 	if(args == 0)
 	{
+		if(gB_LinearMap)
+		{
+			Shavit_PrintToChat(client, "This is a linear map");
+
+			return Plugin_Handled;
+		}
+		
 		OpenMaptopMenu(client, gS_Map);
 	}
 
@@ -571,18 +587,7 @@ public int MaptopMenu_Handler(Menu menu, MenuAction action, int param1, int para
 	{
 		gI_StyleChoice[param1] = param2;
 
-		Menu stagemenu = new Menu(MaptopMenu2_Handler);
-		stagemenu.SetTitle("%T", "WrcpMenuTitle-Stage", param1);
-
-		for(int i = 1; i <= Shavit_GetMapStages(); i++)
-		{
-			char sDisplay[64];
-			FormatEx(sDisplay, 64, "%T %d", "WrcpMenuItem-Stage", param1, i);
-
-			stagemenu.AddItem("", sDisplay);
-		}
-
-		stagemenu.Display(param1, -1);
+		Maptop_StageMenu(param1);
 	}
 
 	else if(action == MenuAction_End)
@@ -591,6 +596,23 @@ public int MaptopMenu_Handler(Menu menu, MenuAction action, int param1, int para
 	}
 
 	return 0;
+}
+
+void Maptop_StageMenu(int client)
+{
+	Menu stagemenu = new Menu(MaptopMenu2_Handler);
+	stagemenu.SetTitle("%T", "WrcpMenuTitle-Stage", client);
+
+	for(int i = 1; i <= Shavit_GetMapStages(); i++)
+	{
+		char sDisplay[64];
+		FormatEx(sDisplay, 64, "%T %d", "WrcpMenuItem-Stage", client, i);
+
+		stagemenu.AddItem("", sDisplay);
+	}
+
+	stagemenu.ExitBackButton = true;
+	stagemenu.Display(client, -1);
 }
 
 public int MaptopMenu2_Handler(Menu menu, MenuAction action, int param1, int param2)
@@ -618,6 +640,11 @@ public int MaptopMenu2_Handler(Menu menu, MenuAction action, int param1, int par
 				"LIMIT 100;", 
 				gS_MySQLPrefix, gS_MySQLPrefix, stage, style, gS_MapChoice[param1]);
 		gH_SQL.Query(SQL_Maptop_Callback, sQuery, dp, DBPrio_High);
+	}
+
+	else if(action == MenuAction_Cancel)
+	{
+		OpenMaptopMenu(param1, gS_MapChoice[param1]);
 	}
 
 	else if(action == MenuAction_End)
@@ -700,6 +727,7 @@ public void SQL_Maptop_Callback(Database db, DBResultSet results, const char[] e
 		maptopmenu.AddItem("-1", sNoRecords, ITEMDRAW_DISABLED);
 	}
 
+	maptopmenu.ExitBackButton = true;
 	maptopmenu.Display(client, -1);
 }
 
@@ -730,6 +758,11 @@ public int MaptopMenu3_Handler(Menu menu, MenuAction action, int param1, int par
 		{
 			return 0;//do stuff here
 		}
+	}
+
+	else if(action == MenuAction_Cancel)
+	{
+		Maptop_StageMenu(param1);
 	}
 
 	else if(action == MenuAction_End)
