@@ -2071,6 +2071,20 @@ native int Shavit_GetMapTier(const char[] map);
 native StringMap Shavit_GetMapTiers();
 
 /**
+ * Detect current map if limitting stage speed.
+ *
+ * @return							Boolean. 0 if no limit.
+ */
+native bool Shavit_GetMapLimitspeed();
+
+/**
+ * Get current map's maxvelocity.
+ *
+ * @return							Current map's maxvelocity.
+ */
+native float Shavit_GetMapMaxvelocity();
+
+/**
  * Retrieves style access for a player.
  *
  * @param client					Client index.
@@ -2393,6 +2407,8 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetHUDSettings");
 	MarkNativeAsOptional("Shavit_GetMapTier");
 	MarkNativeAsOptional("Shavit_GetMapTiers");
+	MarkNativeAsOptional("Shavit_GetMapLimitspeed");
+	MarkNativeAsOptional("Shavit_GetMapMaxvelocity");
 	MarkNativeAsOptional("Shavit_GetOrderedStyles");
 	MarkNativeAsOptional("Shavit_GetPerfectJumps");
 	MarkNativeAsOptional("Shavit_GetPoints");

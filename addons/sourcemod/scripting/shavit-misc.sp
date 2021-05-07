@@ -1138,6 +1138,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 	bool bNoclip = (GetEntityMoveType(client) == MOVETYPE_NOCLIP);
 	bool bInStart = (Shavit_InsideZone(client, Zone_Start, track) || Shavit_InsideZone(client, Zone_Start_2, track));
 	bool bInStage = Shavit_InsideZone(client, Zone_Stage, track);
+	bool bLimitpre = Shavit_GetMapLimitspeed();
 	static bool bInZone;
 
 	// i will not be adding a setting to toggle this off
@@ -1220,6 +1221,12 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 			// limit speed since 2 jumps
 			// iGroundEntity == 0 ---> onGround
 			// iGroundEntity == -1 ---> onAir
+
+			if(bInStage && !bLimitpre)// do not limit all stages' speed
+			{
+				return Plugin_Continue;
+			}
+
 			static int iJumps = 0;
 			float fSpeed[3];
 			GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
