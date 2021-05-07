@@ -1584,9 +1584,10 @@ native int Shavit_GetClientFrameCount(int client);
  *
  * @param style						Style.
  * @param track						Track.
+ * @param stage						Stage. Default 0 means Main bot.
  * @return							Replay length.
  */
-native float Shavit_GetReplayLength(int style, int track);
+native float Shavit_GetReplayLength(int style, int track, int stage = 0);
 
 /**
  * Retrieves a replay bot's total length in seconds.
@@ -2403,6 +2404,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetClientPB");
 	MarkNativeAsOptional("Shavit_GetClientTime");
 	MarkNativeAsOptional("Shavit_GetClientTrack");
+	MarkNativeAsOptional("Shavit_GetClientStage");
 	MarkNativeAsOptional("Shavit_GetDatabase");
 	MarkNativeAsOptional("Shavit_GetHUDSettings");
 	MarkNativeAsOptional("Shavit_GetMapTier");
@@ -2518,7 +2520,6 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetReplayBotFrameCount");
 	MarkNativeAsOptional("Shavit_StartReplayFromFrameCache");
 	MarkNativeAsOptional("Shavit_StartReplayFromFile");
-	MarkNativeAsOptional("Shavit_GetClientStage");
 	MarkNativeAsOptional("Shavit_GetMapStages");
 	MarkNativeAsOptional("Shavit_GetClientStageTime");
 	MarkNativeAsOptional("Shavit_SetClientStageTime");

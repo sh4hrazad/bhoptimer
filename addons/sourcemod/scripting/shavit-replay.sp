@@ -1305,7 +1305,9 @@ public int Native_GetReplayLength(Handle handler, int numParams)
 {
 	int style = GetNativeCell(1);
 	int track = GetNativeCell(2);
-	return view_as<int>(GetReplayLength(style, track, gA_FrameCache[style][track]));
+	int stage = GetNativeCell(3);
+	bool bStage = view_as<bool>(stage);
+	return view_as<int>(GetReplayLength(style, track, !bStage?gA_FrameCache[style][track]:gA_FrameCache_Stage[style][stage]));
 }
 
 public int Native_GetReplayBotLength(Handle handler, int numParams)

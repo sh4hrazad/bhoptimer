@@ -66,6 +66,7 @@ enum struct huddata_t
 	int iSpeed;
 	int iStyle;
 	int iTrack;
+	int iStage;
 	int iJumps;
 	int iStrafes;
 	int iRank;
@@ -1230,6 +1231,11 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 				GetTrackName(client, data.iTrack, sTrack, 32);
 				Format(sTrack, 32, "(%s) ", sTrack);
 			}
+			
+			if(data.iStage > 0)
+			{
+				Format(sTrack, 32, "(WRCP #%d) ", data.iStage);
+			}
 
 			FormatEx(sLine, 128, "<u><span color='#%s'>%s %s%T</span></u> <span color='#DB88C2'>%s</span>", gS_StyleStrings[data.iStyle].sHTMLColor, gS_StyleStrings[data.iStyle].sStyleName, sTrack, "ReplayText", client, sPlayerName);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
@@ -1457,6 +1463,7 @@ void UpdateMainHUD(int client)
 	ZoneHUD iZoneHUD = ZoneHUD_None;
 	int iReplayStyle = 0;
 	int iReplayTrack = 0;
+	int iReplayStage = 0;
 	float fReplayTime = 0.0;
 	float fReplayLength = 0.0;
 
@@ -1476,11 +1483,12 @@ void UpdateMainHUD(int client)
 	{
 		iReplayStyle = Shavit_GetReplayBotStyle(target);
 		iReplayTrack = Shavit_GetReplayBotTrack(target);
+		iReplayStage = Shavit_GetReplayBotStage(target);
 
 		if(iReplayStyle != -1)
 		{
 			fReplayTime = Shavit_GetReplayTime(target);
-			fReplayLength = Shavit_GetReplayLength(iReplayStyle, iReplayTrack);
+			fReplayLength = Shavit_GetReplayLength(iReplayStyle, iReplayTrack, iReplayStage);
 
 			float fSpeed2 = Shavit_GetStyleSettingFloat(iReplayStyle, "speed");
 
@@ -1497,6 +1505,7 @@ void UpdateMainHUD(int client)
 	huddata.iZoneHUD = iZoneHUD;
 	huddata.iStyle = (bReplay)? iReplayStyle:Shavit_GetBhopStyle(target);
 	huddata.iTrack = (bReplay)? iReplayTrack:Shavit_GetClientTrack(target);
+	huddata.iStage = (bReplay)? iReplayStage:Shavit_GetClientStage(target);
 	huddata.fTime = (bReplay)? fReplayTime:Shavit_GetClientTime(target);
 	huddata.iJumps = (bReplay)? 0:Shavit_GetClientJumps(target);
 	huddata.iStrafes = (bReplay)? 0:Shavit_GetStrafeCount(target);
