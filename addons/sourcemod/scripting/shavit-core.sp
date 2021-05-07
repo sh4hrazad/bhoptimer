@@ -158,7 +158,6 @@ bool gB_StyleCookies = true;
 char gS_MySQLPrefix[32];
 
 // server side
-ConVar sv_airaccelerate = null;
 ConVar sv_autobunnyhopping = null;
 ConVar sv_enablebunnyhopping = null;
 
@@ -388,8 +387,6 @@ public void OnPluginStart()
 
 	Convar.AutoExecConfig();
 
-	sv_airaccelerate = FindConVar("sv_airaccelerate");
-	sv_airaccelerate.Flags &= ~(FCVAR_NOTIFY | FCVAR_REPLICATED);
 
 	sv_enablebunnyhopping = FindConVar("sv_enablebunnyhopping");
 
@@ -1281,14 +1278,6 @@ void ChangeClientStyle(int client, int style, bool manual)
 	if(GetStyleSettingBool(style, "unranked"))
 	{
 		Shavit_PrintToChat(client, "%T", "UnrankedWarning", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
-	}
-
-	int aa_old = RoundToZero(GetStyleSettingFloat(gA_Timers[client].iStyle, "airaccelerate"));
-	int aa_new = RoundToZero(GetStyleSettingFloat(style, "airaccelerate"));
-
-	if(aa_old != aa_new)
-	{
-		Shavit_PrintToChat(client, "%T", "NewAiraccelerate", client, aa_old, gS_ChatStrings.sVariable, aa_new, gS_ChatStrings.sText);
 	}
 
 	CallOnStyleChanged(client, gA_Timers[client].iStyle, style, manual);
@@ -2590,7 +2579,6 @@ public SMCResult OnStyleEnterSection(SMCParser smc, const char[] name, bool opt_
 	gSM_StyleKeys[gI_CurrentParserIndex].SetString("easybhop", "1");
 	gSM_StyleKeys[gI_CurrentParserIndex].SetString("prespeed", "0");
 	gSM_StyleKeys[gI_CurrentParserIndex].SetString("velocity_limit", "0.0");
-	gSM_StyleKeys[gI_CurrentParserIndex].SetString("airaccelerate", "1000.0");
 	gSM_StyleKeys[gI_CurrentParserIndex].SetString("bunnyhopping", "1");
 	gSM_StyleKeys[gI_CurrentParserIndex].SetString("runspeed", "260.00");
 	gSM_StyleKeys[gI_CurrentParserIndex].SetString("gravity", "1.0");
@@ -3866,13 +3854,6 @@ void StopTimer_Cheat(int client, const char[] message)
 	Shavit_PrintToChat(client, "%T", "CheatTimerStop", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText, message);
 }
 
-void UpdateAiraccelerate(int client, float airaccelerate)
-{
-	char sAiraccelerate[8];
-	FloatToString(airaccelerate, sAiraccelerate, 8);
-	sv_airaccelerate.ReplicateToClient(client, sAiraccelerate);
-}
-
 void UpdateStyleSettings(int client)
 {
 	if(sv_autobunnyhopping != null)
@@ -3884,8 +3865,6 @@ void UpdateStyleSettings(int client)
 	{
 		sv_enablebunnyhopping.ReplicateToClient(client, (GetStyleSettingBool(gA_Timers[client].iStyle, "bunnyhopping"))? "1":"0");
 	}
-
-	UpdateAiraccelerate(client, GetStyleSettingFloat(gA_Timers[client].iStyle, "airaccelerate"));
 
 	SetEntityGravity(client, GetStyleSettingFloat(gA_Timers[client].iStyle, "gravity"));
 }
