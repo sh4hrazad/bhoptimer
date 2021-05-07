@@ -23,6 +23,7 @@
 Database gH_SQL = null;
 bool gB_Connected = false;
 bool gB_MySQL = false;
+bool gB_LinearMap;
 
 char gS_Map[160];
 int gI_Steamid[101];//this is a mysql index, i dont have any better implementation
@@ -31,14 +32,13 @@ int gI_LastStage[MAXPLAYERS + 1];
 float gF_LeaveStageTime[MAXPLAYERS + 1];
 float gF_StageTime[MAXPLAYERS + 1];
 
-float gF_WrcpTime[MAX_STAGES][gI_Styles];
-char gS_WrcpName[MAX_STAGES][gI_Styles][MAX_NAME_LENGTH];
-float gF_PrStageTime[MAXPLAYERS + 1][MAX_STAGES][gI_Styles];
+float gF_WrcpTime[MAX_STAGES + 1][gI_Styles];
+char gS_WrcpName[MAX_STAGES + 1][gI_Styles][MAX_NAME_LENGTH];
+float gF_PrStageTime[MAXPLAYERS + 1][MAX_STAGES + 1][gI_Styles];
 
 int gI_StyleChoice[MAXPLAYERS + 1];
 int gI_StageChoice[MAXPLAYERS + 1];
-bool gB_Maptop[MAXPLAYERS + 1];
-bool gB_WRCPMenu[MAXPLAYERS + 1];
+char gS_MapChoice[MAXPLAYERS + 1][160];
 bool gB_DeleteMaptop[MAXPLAYERS + 1];
 bool gB_DeleteWRCP[MAXPLAYERS + 1];
 bool gB_InStageZone[MAXPLAYERS + 1];
@@ -98,22 +98,22 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_maptop", Command_Maptop, "Alias of sm_mtop");
 
 	//delete
-	RegConsoleCmd("sm_delwrcp", Command_DeleteWRCP, "Delete a WRCP. Actually it's alias of sm_wrcp");
-	RegConsoleCmd("sm_delwrcps", Command_DeleteWRCP, "Alias of sm_delwrcp");
-	RegConsoleCmd("sm_delsrcp", Command_DeleteWRCP, "Alias of sm_delwrcp");
-	RegConsoleCmd("sm_delsrcps", Command_DeleteWRCP, "Alias of sm_delwrcp");
-	RegConsoleCmd("sm_deletewrcp", Command_DeleteWRCP, "Alias of sm_delwrcp");
-	RegConsoleCmd("sm_deletewrcps", Command_DeleteWRCP, "Alias of sm_delwrcp");
-	RegConsoleCmd("sm_deletesrcp", Command_DeleteWRCP, "Alias of sm_delwrcp");
-	RegConsoleCmd("sm_deletesrcps", Command_DeleteWRCP, "Alias of sm_delwrcp");
+	RegAdminCmd("sm_delwrcp", Command_DeleteWRCP, ADMFLAG_RCON, "Delete a WRCP. Actually it's alias of sm_wrcp");
+	RegAdminCmd("sm_delwrcps", Command_DeleteWRCP, ADMFLAG_RCON, "Alias of sm_delwrcp");
+	RegAdminCmd("sm_delsrcp", Command_DeleteWRCP, ADMFLAG_RCON, "Alias of sm_delwrcp");
+	RegAdminCmd("sm_delsrcps", Command_DeleteWRCP, ADMFLAG_RCON, "Alias of sm_delwrcp");
+	RegAdminCmd("sm_deletewrcp", Command_DeleteWRCP, ADMFLAG_RCON, "Alias of sm_delwrcp");
+	RegAdminCmd("sm_deletewrcps", Command_DeleteWRCP, ADMFLAG_RCON, "Alias of sm_delwrcp");
+	RegAdminCmd("sm_deletesrcp", Command_DeleteWRCP, ADMFLAG_RCON, "Alias of sm_delwrcp");
+	RegAdminCmd("sm_deletesrcps", Command_DeleteWRCP, ADMFLAG_RCON, "Alias of sm_delwrcp");
 
-	RegConsoleCmd("sm_delmtop", Command_DeleteMaptop, "Delete a stage record. Actually it's alias of sm_delwrcp");
-	RegConsoleCmd("sm_delmaptop", Command_DeleteMaptop, "Alias of sm_delmtop");
-	RegConsoleCmd("sm_deletemtop", Command_DeleteMaptop, "Alias of sm_delmtop");
-	RegConsoleCmd("sm_deletemaptop", Command_DeleteMaptop, "Alias of sm_delmtop");
+	RegAdminCmd("sm_delmtop", Command_DeleteMaptop, ADMFLAG_RCON, "Delete a stage record. Actually it's alias of sm_delwrcp");
+	RegAdminCmd("sm_delmaptop", Command_DeleteMaptop, ADMFLAG_RCON, "Alias of sm_delmtop");
+	RegAdminCmd("sm_deletemtop", Command_DeleteMaptop, ADMFLAG_RCON, "Alias of sm_delmtop");
+	RegAdminCmd("sm_deletemaptop", Command_DeleteMaptop, ADMFLAG_RCON, "Alias of sm_delmtop");
 	//TODO:i dont care how many reg has, just need it if neccessary xD
 
-	RegConsoleCmd("sm_test", Command_Test, "do stuff");
+	RegAdminCmd("sm_test", Command_Test, ADMFLAG_RCON, "do stuff");
 
 	gH_Forwards_EnterStage = CreateGlobalForward("Shavit_OnEnterStage", ET_Event, Param_Cell, Param_Cell, Param_Cell);
 	gH_Forwards_LeaveStage = CreateGlobalForward("Shavit_OnLeaveStage", ET_Event, Param_Cell, Param_Cell, Param_Cell);
@@ -123,17 +123,21 @@ public void OnPluginStart()
 	SQL_DBConnect();
 }
 
-public void OnClientPutInServer(int client)
+public void OnClientPostAdminCheck(int client)
 {
 	gI_LastStage[client] = 1;
-	for(int i = 1; i <= Shavit_GetMapStages(); i++)//init
+	for(int i = 1; i <= MAX_STAGES; i++)//init
 	{
 		for(int j = 0; j < gI_Styles; j++)
 		{
 			gF_PrStageTime[client][i][j] = 0.0;
 		}
 	}
-	LoadPR(client);
+
+	if(!gB_LinearMap)
+	{
+		LoadPR(client);
+	}
 }
 
 public void OnMapStart()
@@ -141,6 +145,17 @@ public void OnMapStart()
 	if(!gB_Connected)
 	{
 		return;
+	}
+
+	if(Shavit_GetMapStages() == 1)
+	{
+		gB_LinearMap = true;
+		return;
+	}
+
+	else
+	{
+		gB_LinearMap = false;
 	}
 
 	GetCurrentMap(gS_Map, 160);
@@ -209,28 +224,34 @@ public Action Command_Test(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action Command_Maptop(int client, int args)
+public Action Command_WRCP(int client, int args)
 {
 	if(!IsValidClient(client))
 	{
 		return Plugin_Handled;
 	}
 
-	gB_Maptop[client] = true;
-	FakeClientCommand(client, "sm_wrcp");
-
-	return Plugin_Handled;
-}
-
-public Action Command_DeleteMaptop(int client, int args)
-{
-	if(!IsValidClient(client))
+	if(gB_LinearMap)
 	{
+		Shavit_PrintToChat(client, "This is a linear map");
+
 		return Plugin_Handled;
 	}
 
-	gB_DeleteMaptop[client] = true;
-	FakeClientCommand(client, "sm_wrcp");
+	gB_DeleteWRCP[client] = false;
+
+	if(args == 0)
+	{
+		OpenWRCPMenu(client, gS_Map);
+	}
+
+	else
+	{
+		char sMap[160];
+		GetCmdArg(1, sMap, 160);
+		OpenWRCPMenu(client, sMap);
+	}
+
 	return Plugin_Handled;
 }
 
@@ -241,22 +262,33 @@ public Action Command_DeleteWRCP(int client, int args)
 		return Plugin_Handled;
 	}
 
-	gB_DeleteWRCP[client] = true;
-	FakeClientCommand(client, "sm_wrcp");
-	return Plugin_Handled;
-}
-
-public Action Command_WRCP(int client, int args)
-{
-	if(!IsValidClient(client))
+	if(gB_LinearMap)
 	{
+		Shavit_PrintToChat(client, "This is a linear map");
+
 		return Plugin_Handled;
 	}
 
-	if(!gB_Maptop[client] && !gB_DeleteMaptop[client] && !gB_DeleteWRCP[client])
+	gB_DeleteWRCP[client] = true;
+
+	if(args == 0)
 	{
-		gB_WRCPMenu[client] = true;
+		OpenWRCPMenu(client, gS_Map);
 	}
+
+	else
+	{
+		char sMap[160];
+		GetCmdArg(1, sMap, 160);
+		OpenWRCPMenu(client, sMap);
+	}
+
+	return Plugin_Handled;
+}
+
+void OpenWRCPMenu(int client, const char[] map)
+{
+	strcopy(gS_MapChoice[client], 160, map);
 
 	Menu menu = new Menu(WRCPMenu_Handler);
 	menu.SetTitle("%T", "WrcpMenuTitle-Style", client);
@@ -269,10 +301,7 @@ public Action Command_WRCP(int client, int args)
 		menu.AddItem("", sDisplay);
 	}
 
-	menu.ExitButton = false;
 	menu.Display(client, -1);
-
-	return Plugin_Handled;
 }
 
 public int WRCPMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
@@ -292,7 +321,6 @@ public int WRCPMenu_Handler(Menu menu, MenuAction action, int param1, int param2
 			stagemenu.AddItem("", sDisplay);
 		}
 
-		stagemenu.ExitButton = false;
 		stagemenu.Display(param1, -1);
 	}
 
@@ -316,20 +344,13 @@ public int WRCPMenu2_Handler(Menu menu, MenuAction action, int param1, int param
 		char sName[MAX_NAME_LENGTH];
 		strcopy(sName, MAX_NAME_LENGTH, gS_WrcpName[stage][style]);
 
-		if(gB_Maptop[param1] || gB_DeleteMaptop[param1])
-		{
-			MaptopMenu(param1, stage, style, gS_Map);
-		}
-
 		if(gB_DeleteWRCP[param1])
 		{
 			DeleteWRCPConfirm(param1);
 		}
 
-		if(gB_WRCPMenu[param1])
+		else
 		{
-			gB_WRCPMenu[param1] = false;
-
 			char sMessage[255];
 			if(time > 0.0)
 			{
@@ -356,160 +377,6 @@ public int WRCPMenu2_Handler(Menu menu, MenuAction action, int param1, int param
 	return 0;
 }
 
-void MaptopMenu(int client, int stage, int style, const char[] map)
-{
-	DataPack dp = new DataPack();
-	dp.WriteCell(GetClientSerial(client));
-	dp.WriteCell(stage);
-	dp.WriteCell(style);
-	dp.WriteString(map);
-
-	char sQuery[512];
-	FormatEx(sQuery, 512, 
-			"SELECT p1.auth, p1.time, p1.completions, p2.name FROM %sstage p1 " ...
-			"JOIN (SELECT auth, name FROM %susers) p2 " ...
-			"ON p1.auth = p2.auth " ...
-			"WHERE (stage = '%d' AND style = '%d') AND map = '%s' " ...
-			"ORDER BY p1.time ASC " ...
-			"LIMIT 100;", 
-			gS_MySQLPrefix, gS_MySQLPrefix, stage, style, map);
-	gH_SQL.Query(SQL_Maptop_Callback, sQuery, dp, DBPrio_High);
-}
-
-public void SQL_Maptop_Callback(Database db, DBResultSet results, const char[] error, DataPack dp)
-{
-	dp.Reset();
-
-	int client = GetClientFromSerial(dp.ReadCell());
-	int stage = dp.ReadCell();
-	int style = dp.ReadCell();
-	char sMap[160];
-	dp.ReadString(sMap, 160);
-
-	delete dp;
-
-	if(results == null)
-	{
-		LogError("Timer (GetWrcp) SQL query failed. Reason: %s", error);
-		return;
-	}
-
-	Menu wrcpmenu = new Menu(WRCPMenu3_Handler);
-
-	char sTitle[128];
-	if(gB_Maptop[client])
-	{
-		FormatEx(sTitle, 128, "%T", "WrcpMenuTitle-Maptop", client, sMap, stage);
-		gB_Maptop[client] = false;
-	}
-	else if(gB_DeleteMaptop[client])
-	{
-		FormatEx(sTitle, 128, "%T", "DeleteMaptopMenuTitle-Maptop", client, sMap, stage);
-		gB_DeleteMaptop[client] = false;
-	}
-
-	wrcpmenu.SetTitle(sTitle);
-
-	int iCount = 0;
-
-	while(results.FetchRow())
-	{
-		if(++iCount <= 100)
-		{
-			// 0 - steamid (mysql delete index)
-			gI_Steamid[iCount] = results.FetchInt(0);
-
-			// 1 - time
-			float time = results.FetchFloat(1);
-			char sTime[32];
-			FormatSeconds(time, sTime, 32, true);
-
-			// compareTime
-			float compareTime = time - gF_WrcpTime[stage][style];
-			char sCompareTime[32];
-			FormatSeconds(compareTime, sCompareTime, 32, true);
-
-			// 2 - completions
-			int completions = results.FetchInt(2);
-
-			// 3 - name
-			char sName[MAX_NAME_LENGTH];
-			results.FetchString(3, sName, MAX_NAME_LENGTH);
-
-			char sDisplay[128];
-			FormatEx(sDisplay, 128, "#%d | %s (+%s) - %s (%d)", iCount, sTime, sCompareTime, sName, completions, client);
-			wrcpmenu.AddItem("", sDisplay, ITEMDRAW_DEFAULT);
-		}
-	}
-
-	if(wrcpmenu.ItemCount == 0)
-	{
-		char sNoRecords[64];
-		FormatEx(sNoRecords, 64, "%t", "WrcpMenuItem-NoRecord", client);
-
-		wrcpmenu.AddItem("-1", sNoRecords, ITEMDRAW_DISABLED);
-	}
-
-	wrcpmenu.ExitButton = true;
-	wrcpmenu.Display(client, -1);
-}
-
-//delete maptop
-public int WRCPMenu3_Handler(Menu menu, MenuAction action, int param1, int param2)
-{
-	if(action == MenuAction_Select)
-	{
-		if(!gB_Maptop[param1])
-		{
-			int index = gI_Steamid[param2 + 1];
-			int stage = gI_StageChoice[param1];
-			int style = gI_StyleChoice[param1];
-
-			char sQuery[256];
-			FormatEx(sQuery, 256, "DELETE FROM %sstage WHERE (stage = '%d' AND style = '%d') AND (auth = '%d' AND map = '%s');", 
-					gS_MySQLPrefix, stage, style, index, gS_Map);
-
-			DataPack dp = new DataPack();
-			dp.WriteCell(GetClientSerial(param1));
-			dp.WriteCell(stage);
-			dp.WriteCell(style);
-
-			gH_SQL.Query(SQL_DeleteMaptop_Callback, sQuery, dp);
-		}
-	}
-
-	else if(action == MenuAction_End)
-	{
-		delete menu;
-	}
-
-	return 0;
-}
-
-public void SQL_DeleteMaptop_Callback(Database db, DBResultSet results, const char[] error, DataPack data)
-{
-	data.Reset();
-	int client = GetClientFromSerial(data.ReadCell());
-	int stage = data.ReadCell();
-	int style = data.ReadCell();
-
-	delete data;
-
-	if(results == null)
-	{
-		LogError("Timer (single stage record delete) SQL query failed. Reason: %s", error);
-
-		return;
-	}
-
-	LoadWRCP();
-	Reset(stage, style);
-
-	Shavit_PrintToChat(client, "%T", "StageRecordDeleteSuccessful", client, gS_ChatStrings.sText, 
-		gS_ChatStrings.sVariable, stage, gS_ChatStrings.sText, 
-		gS_ChatStrings.sVariable2, style, gS_ChatStrings.sText);
-}
-
 void DeleteWRCPConfirm(int client)
 {
 	Menu menu = new Menu(DeleteWRCPMenu_Handler);
@@ -523,8 +390,6 @@ void DeleteWRCPConfirm(int client)
 
 	menu.ExitButton = true;
 	menu.Display(client, -1);
-
-	gB_DeleteWRCP[client] = false;
 }
 
 public int DeleteWRCPMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
@@ -536,7 +401,7 @@ public int DeleteWRCPMenu_Handler(Menu menu, MenuAction action, int param1, int 
 			int stage = gI_StageChoice[param1];
 			int style = gI_StyleChoice[param1];
 
-			char sQuery[256];
+			char sQuery[256];//i write 2 callbacks in order to find wrcp auth index, but seems to have a better implementation(mysql syntax)
 			FormatEx(sQuery, 256, 
 					"SELECT auth, time FROM %sstage " ...
 					"WHERE (stage = '%d' AND style = '%d') AND map = '%s' " ...
@@ -579,7 +444,6 @@ public void SQL_DeleteWRCP_Callback(Database db, DBResultSet results, const char
 	dp.WriteCell(GetClientSerial(client));
 	dp.WriteCell(index);
 
-
 	char sQuery[256];
 	FormatEx(sQuery, 256, "DELETE FROM %sstage WHERE (stage = '%d' AND style = '%d') AND (auth = '%d' AND map = '%s');", 
 			gS_MySQLPrefix, stage, style, index, gS_Map);
@@ -617,6 +481,285 @@ public void SQL_DeleteWRCP_Callback2(Database db, DBResultSet results, const cha
 	Call_Finish();
 
 	Shavit_PrintToChat(client, "%T", "WRCPDeleteSuccessful", client, gS_ChatStrings.sText, 
+		gS_ChatStrings.sVariable, stage, gS_ChatStrings.sText, 
+		gS_ChatStrings.sVariable2, style, gS_ChatStrings.sText);
+}
+
+public Action Command_Maptop(int client, int args)
+{
+	if(!IsValidClient(client))
+	{
+		return Plugin_Handled;
+	}
+
+	if(gB_LinearMap)
+	{
+		Shavit_PrintToChat(client, "This is a linear map");
+
+		return Plugin_Handled;
+	}
+
+	gB_DeleteMaptop[client] = false;
+
+	if(args == 0)
+	{
+		OpenMaptopMenu(client, gS_Map);
+	}
+
+	else
+	{
+		char sMap[128];
+		GetCmdArg(1, sMap, 128);
+		OpenMaptopMenu(client, sMap);
+	}
+
+	return Plugin_Handled;
+}
+
+public Action Command_DeleteMaptop(int client, int args)
+{
+	if(!IsValidClient(client))
+	{
+		return Plugin_Handled;
+	}
+
+	if(gB_LinearMap)
+	{
+		Shavit_PrintToChat(client, "This is a linear map");
+
+		return Plugin_Handled;
+	}
+
+	gB_DeleteMaptop[client] = true;
+
+	if(args == 0)
+	{
+		OpenMaptopMenu(client, gS_Map);
+	}
+
+	else
+	{
+		char sMap[128];
+		GetCmdArg(1, sMap, 128);
+		OpenMaptopMenu(client, sMap);
+	}
+
+	return Plugin_Handled;
+}
+
+void OpenMaptopMenu(int client, const char[] map)
+{
+	strcopy(gS_MapChoice[client], 160, map);
+
+	Menu menu = new Menu(MaptopMenu_Handler);
+	menu.SetTitle("%T", "WrcpMenuTitle-Style", client);
+
+	for(int i = 0; i < gI_Styles; i++)
+	{
+		char sDisplay[64];
+		FormatEx(sDisplay, 64, "%s", gS_StyleStrings[i].sStyleName);
+
+		menu.AddItem("", sDisplay);
+	}
+
+	menu.Display(client, -1);
+}
+
+public int MaptopMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		gI_StyleChoice[param1] = param2;
+
+		Menu stagemenu = new Menu(MaptopMenu2_Handler);
+		stagemenu.SetTitle("%T", "WrcpMenuTitle-Stage", param1);
+
+		for(int i = 1; i <= Shavit_GetMapStages(); i++)
+		{
+			char sDisplay[64];
+			FormatEx(sDisplay, 64, "%T %d", "WrcpMenuItem-Stage", param1, i);
+
+			stagemenu.AddItem("", sDisplay);
+		}
+
+		stagemenu.Display(param1, -1);
+	}
+
+	else if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
+}
+
+public int MaptopMenu2_Handler(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		gI_StageChoice[param1] = param2 + 1;
+		
+		int stage = gI_StageChoice[param1];
+		int style = gI_StyleChoice[param1];
+
+		DataPack dp = new DataPack();
+		dp.WriteCell(GetClientSerial(param1));
+		dp.WriteCell(stage);
+		dp.WriteCell(style);
+		dp.WriteString(gS_MapChoice[param1]);
+
+		char sQuery[512];
+		FormatEx(sQuery, 512, 
+				"SELECT p1.auth, p1.time, p1.completions, p2.name FROM %sstage p1 " ...
+				"JOIN (SELECT auth, name FROM %susers) p2 " ...
+				"ON p1.auth = p2.auth " ...
+				"WHERE (stage = '%d' AND style = '%d') AND map = '%s' " ...
+				"ORDER BY p1.time ASC " ...
+				"LIMIT 100;", 
+				gS_MySQLPrefix, gS_MySQLPrefix, stage, style, gS_MapChoice[param1]);
+		gH_SQL.Query(SQL_Maptop_Callback, sQuery, dp, DBPrio_High);
+	}
+
+	else if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
+}
+
+public void SQL_Maptop_Callback(Database db, DBResultSet results, const char[] error, DataPack dp)
+{
+	dp.Reset();
+
+	int client = GetClientFromSerial(dp.ReadCell());
+	int stage = dp.ReadCell();
+	int style = dp.ReadCell();
+	char sMap[160];
+	dp.ReadString(sMap, 160);
+
+	delete dp;
+
+	if(results == null)
+	{
+		LogError("Timer (GetWrcp) SQL query failed. Reason: %s", error);
+		return;
+	}
+
+	Menu maptopmenu = new Menu(MaptopMenu3_Handler);
+
+	char sTitle[128];
+	if(gB_DeleteMaptop[client])
+	{
+		FormatEx(sTitle, 128, "%T", "DeleteMaptopMenuTitle-Maptop", client, sMap, stage);
+	}
+	else
+	{
+		FormatEx(sTitle, 128, "%T", "WrcpMenuTitle-Maptop", client, sMap, stage);
+	}
+
+	maptopmenu.SetTitle(sTitle);
+
+	int iCount = 0;
+
+	while(results.FetchRow())
+	{
+		if(++iCount <= 100)
+		{
+			// 0 - steamid (mysql delete index)
+			gI_Steamid[iCount] = results.FetchInt(0);
+
+			// 1 - time
+			float time = results.FetchFloat(1);
+			char sTime[32];
+			FormatSeconds(time, sTime, 32, true);
+
+			// compareTime
+			float compareTime = time - gF_WrcpTime[stage][style];
+			char sCompareTime[32];
+			FormatSeconds(compareTime, sCompareTime, 32, true);
+
+			// 2 - completions
+			int completions = results.FetchInt(2);
+
+			// 3 - name
+			char sName[MAX_NAME_LENGTH];
+			results.FetchString(3, sName, MAX_NAME_LENGTH);
+
+			char sDisplay[128];
+			FormatEx(sDisplay, 128, "#%d | %s (+%s) - %s (%d)", iCount, sTime, sCompareTime, sName, completions, client);
+			maptopmenu.AddItem("", sDisplay, ITEMDRAW_DEFAULT);
+		}
+	}
+
+	if(maptopmenu.ItemCount == 0)
+	{
+		char sNoRecords[64];
+		FormatEx(sNoRecords, 64, "%t", "WrcpMenuItem-NoRecord", client);
+
+		maptopmenu.AddItem("-1", sNoRecords, ITEMDRAW_DISABLED);
+	}
+
+	maptopmenu.Display(client, -1);
+}
+
+public int MaptopMenu3_Handler(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		if(gB_DeleteMaptop[param1])
+		{
+			gB_DeleteMaptop[param1] = false;
+
+			int index = gI_Steamid[param2 + 1];
+			int stage = gI_StageChoice[param1];
+			int style = gI_StyleChoice[param1];
+
+			char sQuery[256];
+			FormatEx(sQuery, 256, "DELETE FROM %sstage WHERE (stage = '%d' AND style = '%d') AND (auth = '%d' AND map = '%s');", 
+					gS_MySQLPrefix, stage, style, index, gS_MapChoice[param1]);
+
+			DataPack dp = new DataPack();
+			dp.WriteCell(GetClientSerial(param1));
+			dp.WriteCell(stage);
+			dp.WriteCell(style);
+
+			gH_SQL.Query(SQL_DeleteMaptop_Callback, sQuery, dp);
+		}
+		else
+		{
+			return 0;//do stuff here
+		}
+	}
+
+	else if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
+}
+
+public void SQL_DeleteMaptop_Callback(Database db, DBResultSet results, const char[] error, DataPack data)
+{
+	data.Reset();
+	int client = GetClientFromSerial(data.ReadCell());
+	int stage = data.ReadCell();
+	int style = data.ReadCell();
+
+	delete data;
+
+	if(results == null)
+	{
+		LogError("Timer (single stage record delete) SQL query failed. Reason: %s", error);
+
+		return;
+	}
+
+	LoadWRCP();
+	Reset(stage, style);
+
+	Shavit_PrintToChat(client, "%T", "StageRecordDeleteSuccessful", client, gS_ChatStrings.sText, 
 		gS_ChatStrings.sVariable, stage, gS_ChatStrings.sText, 
 		gS_ChatStrings.sVariable2, style, gS_ChatStrings.sText);
 }
@@ -665,7 +808,7 @@ void ResetTimer(int client)
 
 public void Shavit_OnEnterZone(int client, int type, int track, int id, int entity, int data)
 {
-	if(track != Track_Main)
+	if(track != Track_Main || gB_LinearMap)
 	{
 		return;
 	}
@@ -725,7 +868,7 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 
 public void Shavit_OnLeaveZone(int client, int type, int track, int id, int entity, int data)
 {
-	if(track != Track_Main)
+	if(track != Track_Main || gB_LinearMap)
 	{
 		return;
 	}
