@@ -1833,7 +1833,7 @@ void AddReplayBots()
 		}
 	}
 
-	for(int i = 1; i <= Shavit_GetMapStages(); i++)
+	for(int i = 1; i <= MAX_STAGES; i++)
 	{
 		if(gA_FrameCache_Stage[0][i].iFrameCount > 0)
 		{
