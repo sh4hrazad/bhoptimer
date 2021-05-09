@@ -243,6 +243,11 @@
 		"#format"	"{1:d}"
 		"en"		"Stage: {1}"
 	}
+	"ZoneSetData"
+	{
+		"#format"	"{1:d}"
+		"en"		"Data: {1}"
+	}
 	"ZoneEnterDataChat"
 	{
 		"en"		"Input your desired data in chat."
