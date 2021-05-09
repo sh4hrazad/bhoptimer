@@ -1067,6 +1067,17 @@ forward void Shavit_OnProcessMovementPost(int client);
 forward void Shavit_OnWRCPDeleted(int stage, int style, int steamid, const char[] mapname);
 
 /**
+ * Called when a player finishes a stage. (touches the stage zone)
+ *
+ * @param client					Client index.
+ * @param stage						Stage the record was done on.
+ * @param style						Style the record was done on.
+ * @param time						Record time.
+ * @noreturn
+ */
+forward void Shavit_OnFinishStage(int client, int stage, int style, float time);
+
+/**
  * Returns bhoptimer's database handle.
  * Call within Shavit_OnDatabaseLoaded. Safety is not guaranteed anywhere else!
  *
@@ -2059,22 +2070,6 @@ native float Shavit_GetClosestReplayVelocityDifference(int client, bool threeD);
 native void Shavit_StopChatSound();
 
 /**
- * Marks a map as if it has built-in zones/buttons.
- *
- * @noreturn
- */
-native void Shavit_MarkKZMap();
-
-/**
- * Lets us know if the map was marked as a KZ map.
- * KZ map: a map with built-in zones/buttons.
- * Does not necessarily mean that the map was designed for KZ gameplay.
- *
- * @return							Boolean value.
- */
-native bool Shavit_IsKZMap();
-
-/**
  * Gets the map tier for a specified map.
  * Use the map's display name.
  *
@@ -2389,11 +2384,29 @@ native void Shavit_GetPlainChatrank(int client, char[] buf, int buflen, bool inc
  */
 native void Shavit_DeleteWR(int style, int track, const char[] map, int accountid, int recordid, bool delete_sql, bool update_cache);
 
-native float Shavit_GetClientStageTime(int client);
-
-native void Shavit_SetClientStageTime(int client, float time = 0.0);
-
+/*
+ * Reload WRCPs.
+ *
+ * @noreturn
+ */
 native void Shavit_ReloadWRCPs();
+
+/**
+ * Detect client recording single stage time(not recording finish map time).
+ *
+ * @param client					Client index
+ * @return							true if client type !stage and stuff.
+ */
+native bool Shavit_IsClientSingleStageTiming(int client);
+
+/**
+ * Finishes the stage for a player, with their current timer stats.
+ * Will not teleport the player to anywhere, it's handled inside the mapzones plugin.
+ *
+ * @param client					Client index.
+ * @noreturn
+ */
+native void Shavit_FinishStage(int client);
 
 public SharedPlugin __pl_shavit =
 {
@@ -2482,12 +2495,11 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_InsideZone");
 	MarkNativeAsOptional("Shavit_InsideZoneGetID");
 	MarkNativeAsOptional("Shavit_IsClientCreatingZone");
-	MarkNativeAsOptional("Shavit_IsKZMap");
+	MarkNativeAsOptional("Shavit_IsClientSingleStageTiming");
 	MarkNativeAsOptional("Shavit_IsPaused");
 	MarkNativeAsOptional("Shavit_IsPracticeMode");
 	MarkNativeAsOptional("Shavit_IsReplayDataLoaded");
 	MarkNativeAsOptional("Shavit_LoadSnapshot");
-	MarkNativeAsOptional("Shavit_MarkKZMap");
 	MarkNativeAsOptional("Shavit_OpenStatsMenu");
 	MarkNativeAsOptional("Shavit_PauseTimer");
 	MarkNativeAsOptional("Shavit_PrintToChat");
@@ -2543,10 +2555,9 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_StartReplayFromFrameCache");
 	MarkNativeAsOptional("Shavit_StartReplayFromFile");
 	MarkNativeAsOptional("Shavit_GetMapStages");
-	MarkNativeAsOptional("Shavit_GetClientStageTime");
-	MarkNativeAsOptional("Shavit_SetClientStageTime");
 	MarkNativeAsOptional("Shavit_ReloadAllReplays");
 	MarkNativeAsOptional("Shavit_ReloadWRCPs");
 	MarkNativeAsOptional("Shavit_GetWRCPName");
+	MarkNativeAsOptional("Shavit_FinishStage");
 }
 #endif

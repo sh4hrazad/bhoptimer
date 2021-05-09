@@ -171,6 +171,7 @@ Handle gH_Forwards_OnEndZone = null;
 
 char gS_ZoneHookname[MAXPLAYERS+1][128];
 ArrayList gA_TriggerMultiple;
+bool gB_SingleStageTiming[MAXPLAYERS+1];
 
 public Plugin myinfo =
 {
@@ -191,6 +192,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_InsideZone", Native_InsideZone);
 	CreateNative("Shavit_InsideZoneGetID", Native_InsideZoneGetID);
 	CreateNative("Shavit_IsClientCreatingZone", Native_IsClientCreatingZone);
+	CreateNative("Shavit_IsClientSingleStageTiming", Native_IsClientSingleStageTiming);
 	CreateNative("Shavit_ZoneExists", Native_ZoneExists);
 	CreateNative("Shavit_Zones_DeleteMap", Native_Zones_DeleteMap);
 
@@ -233,6 +235,7 @@ public void OnPluginStart()
 
 	RegConsoleCmd("sm_stages", Command_Stages, "Opens the stage menu. Usage: sm_stages [stage #]");
 	RegConsoleCmd("sm_stage", Command_Stages, "Opens the stage menu. Usage: sm_stage [stage #]");
+	RegConsoleCmd("sm_s", Command_Stages, "Opens the stage menu. Usage: sm_stage [stage #]");
 
 	RegConsoleCmd("sm_back", Command_Back, "Go back to the current stage zone.");
 	RegConsoleCmd("sm_teleport", Command_Back, "Go back to the current stage zone. Alias of sm_back");
@@ -540,6 +543,11 @@ bool InsideZone(int client, int type, int track)
 public int Native_IsClientCreatingZone(Handle handler, int numParams)
 {
 	return (gI_MapStep[GetNativeCell(1)] != 0);
+}
+
+public int Native_IsClientSingleStageTiming(Handle handler, int numParams)
+{
+	return gB_SingleStageTiming[GetNativeCell(1)];
 }
 
 public int Native_GetClientStage(Handle handler, int numParams)
@@ -1113,7 +1121,8 @@ public Action Command_Stages(int client, int args)
 			if(gA_ZoneCache[i].bZoneInitialized && gA_ZoneCache[i].iZoneType == Zone_Stage && gA_ZoneCache[i].iZoneData == iStage)
 			{
 				Shavit_StopTimer(client);
-				Shavit_SetClientStageTime(client, 0.0);
+				gB_SingleStageTiming[client] = true;
+
 				if(!EmptyVector(gV_Destinations[i]))
 				{
 					TeleportEntity(client, gV_Destinations[i], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
@@ -1165,7 +1174,7 @@ public int MenuHandler_SelectStage(Menu menu, MenuAction action, int param1, int
 		int iIndex = StringToInt(sInfo);
 		
 		Shavit_StopTimer(param1);
-		Shavit_SetClientStageTime(param1, 0.0);
+		gB_SingleStageTiming[param1] = true;
 
 		if(!EmptyVector(gV_Destinations[iIndex]))
 		{
@@ -2956,17 +2965,19 @@ public void StartTouchPost(int entity, int other)
 
 	else if(type == Zone_End || type == Zone_End_2)
 	{
-		if(status != Timer_Stopped && !Shavit_IsPaused(other) && Shavit_GetClientTrack(other) == gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack)
+		gI_ClientCurrentStage[other] = gI_Stages + 1;//a hack that record the last stage's time
+		Shavit_FinishStage(other);
+		
+		if(status != Timer_Stopped && !Shavit_IsPaused(other) && !gB_SingleStageTiming[other] && Shavit_GetClientTrack(other) == gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack)
 		{
 			Shavit_FinishMap(other, gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack);
 		}
-
-		gI_ClientCurrentStage[other] = gI_Stages + 1;//a hack that record the last stage's time
 	}
 
 	else if(type == Zone_Stage)
 	{
 		gI_ClientCurrentStage[other] = gA_ZoneCache[gI_EntityZone[entity]].iZoneData;
+		Shavit_FinishStage(other);
 	}
 
 	gB_InsideZone[other][gA_ZoneCache[gI_EntityZone[entity]].iZoneType][gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack] = true;
@@ -3017,17 +3028,20 @@ public void TouchPost(int entity, int other)
 
 	// do precise stuff here, this will be called *A LOT*
 	int type = gA_ZoneCache[gI_EntityZone[entity]].iZoneType;
+
 	if(type == Zone_Start || type == Zone_Start_2)
 	{
 		// start timer instantly for main track, but require bonuses to have the current timer stopped
 		// so you don't accidentally step on those while running
 		if(Shavit_GetTimerStatus(other) == Timer_Stopped || Shavit_GetClientTrack(other) != Track_Main)
 		{
+			gB_SingleStageTiming[other] = false;
 			Shavit_StartTimer(other, gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack);
 		}
 
 		else if(gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack == Track_Main)
 		{
+			gB_SingleStageTiming[other] = false;
 			Shavit_StartTimer(other, Track_Main);
 		}
 	}
@@ -3059,6 +3073,11 @@ public void TouchPost(int entity, int other)
 			if(result != Plugin_Continue)
 			{
 				return;
+			}
+
+			if(gB_SingleStageTiming[other])
+			{
+				Shavit_StartTimer(other, Track_Main);
 			}
 		}
 	}
