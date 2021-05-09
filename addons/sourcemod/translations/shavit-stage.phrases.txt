@@ -4,7 +4,7 @@
 	"ZoneStageTime"
 	{
 		"#format"	"{1:s},{2:s},{3:d},{4:s},{5:s},{6:s}{7:s}"
-		"en"		"{1}You entered stage {2}{3}{4}. Time: {5}{6}{7}."
+		"en"		"{1}You finished stage {2}{3}{4}. Time: {5}{6}{7}."
 	}
 	"ZoneStageAvoidSkip"
 	{
