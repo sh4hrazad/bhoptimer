@@ -100,9 +100,11 @@ bool gB_SnapToWall[MAXPLAYERS+1];
 bool gB_CursorTracing[MAXPLAYERS+1];
 int gI_ZoneFlags[MAXPLAYERS+1];
 int gI_ZoneData[MAXPLAYERS+1][ZONETYPES_SIZE];
+int gI_ZoneMaxData[TRACKS_SIZE];
 bool gB_WaitingForChatInput[MAXPLAYERS+1];
-bool gB_StageInput[MAXPLAYERS+1];
+bool gB_ZoneDataInput[MAXPLAYERS+1];
 bool gB_CommandToEdit[MAXPLAYERS+1];
+bool gB_SingleStageTiming[MAXPLAYERS+1];
 
 // cache
 float gV_Point1[MAXPLAYERS+1][3];
@@ -116,6 +118,7 @@ int gI_InsideZoneIndex[MAXPLAYERS+1];
 int gI_ZoneTrack[MAXPLAYERS+1];
 int gI_ZoneDatabaseID[MAXPLAYERS+1];
 int gI_ZoneID[MAXPLAYERS+1];
+char gS_ZoneHookname[MAXPLAYERS+1][128];
 
 // zone cache
 zone_settings_t gA_ZoneSettings[ZONETYPES_SIZE][TRACKS_SIZE];
@@ -127,8 +130,9 @@ float gV_Destinations[MAX_ZONES][3];
 float gV_ZoneCenter[MAX_ZONES][3];
 float gV_ZoneCenter_Angle[MAX_ZONES][3];
 int gI_EntityZone[4096];
+ArrayList gA_TriggerMultiple;
 bool gB_ZonesCreated = false;
-int gI_Stages; // how many stages in a map
+int gI_Stages = 1; // how many stages in a map, default 1.
 int gI_ClientCurrentStage[MAXPLAYERS+1];
 
 char gS_BeamSprite[PLATFORM_MAX_PATH];
@@ -166,11 +170,6 @@ Handle gH_Forwards_EnterZone = null;
 Handle gH_Forwards_LeaveZone = null;
 Handle gH_Forwards_OnStage = null;
 Handle gH_Forwards_OnEndZone = null;
-
-char gS_ZoneHookname[MAXPLAYERS+1][128];
-ArrayList gA_TriggerMultiple;
-bool gB_SingleStageTiming[MAXPLAYERS+1];
-int gI_ZoneMaxData[TRACKS_SIZE];
 
 public Plugin myinfo =
 {
@@ -804,8 +803,6 @@ public void SQL_GetStageZone_Callback(Database db, DBResultSet results, const ch
 		LogError("Timer (zones GetStageZone) SQL query failed. Reason: %s", error);
 		return;
 	}
-	
-	gI_Stages = 1;//default 1
 
 	while(results.FetchRow())
 	{
@@ -988,7 +985,7 @@ public void OnClientPutInServer(int client)
 	{
 		gB_InsideZoneID[client][i] = false;
 	}
-	gB_StageInput[client] = false;
+	gB_ZoneDataInput[client] = false;
 	gB_CommandToEdit[client] = false;
 
 	Reset(client);
@@ -1491,15 +1488,7 @@ void OpenEditMenu(int client)
 		char sTrack[32];
 		GetTrackName(client, gA_ZoneCache[i].iZoneTrack, sTrack, 32);
 
-		if(gA_ZoneCache[i].iZoneType == Zone_Stage)
-		{
-			FormatEx(sDisplay, 64, "#%d - %s %d (%s)", (i + 1), gS_ZoneNames[gA_ZoneCache[i].iZoneType], gA_ZoneCache[i].iZoneData, sTrack);
-		}
-
-		else
-		{
-			FormatEx(sDisplay, 64, "#%d - %s (%s)", (i + 1), gS_ZoneNames[gA_ZoneCache[i].iZoneType], sTrack);
-		}
+		FormatEx(sDisplay, 64, "#%d - %s %d (%s)", (i + 1), gS_ZoneNames[gA_ZoneCache[i].iZoneType], gA_ZoneCache[i].iZoneData, sTrack);
 
 		if(gB_InsideZoneID[client][i])
 		{
@@ -2180,7 +2169,7 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 	if(gB_WaitingForChatInput[client] && gI_MapStep[client] == 3)
 	{
 		gI_ZoneData[client][gI_ZoneType[client]] = StringToInt(sArgs);
-		gB_StageInput[client] = true;
+		gB_ZoneDataInput[client] = true;
 		CreateEditMenu(client);
 
 		return Plugin_Handled;
@@ -2280,25 +2269,20 @@ void CreateEditMenu(int client)
 	FormatEx(sMenuItem, 64, "%T", "ZoneForceRender", client, ((gI_ZoneFlags[client] & ZF_ForceRender) > 0)? "＋":"－");
 	menu.AddItem("forcerender", sMenuItem);
 
-	if(gI_ZoneType[client] == Zone_Stage)
-	{
-		if(!gB_StageInput[client] && !gB_CommandToEdit[client])
-		{
-			gI_ZoneData[client][Zone_Stage] = gI_Stages + 1;//due to startzone is also a stage
-		}
-		gB_StageInput[client] = false;
-		gB_CommandToEdit[client] = false;
-
-		FormatEx(sMenuItem, 64, "%T", "ZoneSetStage", client, gI_ZoneData[client][Zone_Stage]);
-		menu.AddItem("datafromchat", sMenuItem);
-	}
-
-	else
+	if(!gB_ZoneDataInput[client] && !gB_CommandToEdit[client])
 	{
 		gI_ZoneData[client][gI_ZoneType[client]] = gI_ZoneMaxData[gI_ZoneType[client]] + 1;
-		FormatEx(sMenuItem, 64, "%T", "ZoneSetData", client, gI_ZoneData[client][gI_ZoneType[client]]);
-		menu.AddItem("datafromchat", sMenuItem);
+
+		if(gI_ZoneType[client] == Zone_Stage)
+		{
+			gI_ZoneData[client][gI_ZoneType[client]] = gI_Stages + 1;
+		}
 	}
+	gB_ZoneDataInput[client] = false;
+	gB_CommandToEdit[client] = false;
+
+	FormatEx(sMenuItem, 64, "%T", "ZoneSetData", client, gI_ZoneData[client][gI_ZoneType[client]]);
+	menu.AddItem("datafromchat", sMenuItem);
 
 	menu.ExitButton = true;
 	menu.Display(client, 600);
