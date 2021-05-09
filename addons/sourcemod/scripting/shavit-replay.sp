@@ -2895,7 +2895,7 @@ public void Shavit_OnStop(int client)
 
 public void Shavit_OnLeaveZone(int client, int type, int track, int id, int entity)
 {
-	if(type == Zone_Start || type == Zone_Start_2)
+	if(type == Zone_Start)
 	{
 		gB_ClearFrame[client] = false;
 		gB_ClearFrame_Stage[client] = false;

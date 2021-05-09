@@ -99,9 +99,7 @@ enum
 enum
 {
 	Zone_Start,
-	Zone_Start_2,
 	Zone_End,
-	Zone_End_2,
 	Zone_Stage,
 	Zone_Stop,
 	Zone_Teleport,
@@ -175,8 +173,8 @@ enum struct timer_snapshot_t
 	int iTimerTrack;
 	int iMeasuredJumps;
 	int iPerfectJumps;
-	float fTimeOffset[4];
-	float fDistanceOffset[4];
+	float fTimeOffset[2];
+	float fDistanceOffset[2];
 	float fAvgVelocity;
 	float fMaxVelocity;
 	float fTimescale;

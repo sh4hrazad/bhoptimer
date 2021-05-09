@@ -63,8 +63,8 @@ enum struct playertimer_t
 	int iLandingTick;
 	bool bOnGround;
 	float fTimescale;
-	float fTimeOffset[4];
-	float fDistanceOffset[4];
+	float fTimeOffset[2];
+	float fDistanceOffset[2];
 	// convert to array for per zone offsets
 	int iZoneIncrement;
 	float fAvgVelocity;
@@ -639,7 +639,7 @@ public Action Command_StartTimer(int client, int args)
 		track = gA_Timers[client].iTrack;
 	}
 
-	if(gCV_AllowTimerWithoutZone.BoolValue || (gB_Zones && (Shavit_ZoneExists(Zone_Start, track) || Shavit_ZoneExists(Zone_Start_2, track))))
+	if(gCV_AllowTimerWithoutZone.BoolValue || (gB_Zones && Shavit_ZoneExists(Zone_Start, track)))
 	{
 		if(!Shavit_StopTimer(client, false))
 		{
@@ -699,7 +699,7 @@ public Action Command_TeleportEnd(int client, int args)
 		}
 	}
 
-	if(gB_Zones && (Shavit_ZoneExists(Zone_End, track) || Shavit_ZoneExists(Zone_End_2, track)))
+	if(gB_Zones && Shavit_ZoneExists(Zone_End, track))
 	{
 		if(Shavit_StopTimer(client, false))
 		{
@@ -1284,7 +1284,7 @@ void ChangeClientStyle(int client, int style, bool manual)
 
 	CallOnStyleChanged(client, gA_Timers[client].iStyle, style, manual);
 
-	if(gCV_AllowTimerWithoutZone.BoolValue || (gB_Zones && (Shavit_ZoneExists(Zone_Start, gA_Timers[client].iTrack) || Shavit_ZoneExists(Zone_Start_2, gA_Timers[client].iTrack))))
+	if(gCV_AllowTimerWithoutZone.BoolValue || (gB_Zones && (Shavit_ZoneExists(Zone_Start, gA_Timers[client].iTrack))))
 	{
 		Shavit_StopTimer(client, true);
 		Call_StartForward(gH_Forwards_OnRestart);
@@ -1520,7 +1520,7 @@ public int Native_CanPause(Handle handler, int numParams)
 		iFlags |= CPR_NoTimer;
 	}
 
-	if(Shavit_InsideZone(client, Zone_Start, gA_Timers[client].iTrack) || Shavit_InsideZone(client, Zone_Start_2, gA_Timers[client].iTrack))
+	if(Shavit_InsideZone(client, Zone_Start, gA_Timers[client].iTrack))
 	{
 		iFlags |= CPR_InStartZone;
 	}
@@ -3518,7 +3518,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	}
 
 	int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
-	bool bInStart = (Shavit_InsideZone(client, Zone_Start, gA_Timers[client].iTrack) || Shavit_InsideZone(client, Zone_Start_2, gA_Timers[client].iTrack));
+	bool bInStart = Shavit_InsideZone(client, Zone_Start, gA_Timers[client].iTrack);
 
 	if(gA_Timers[client].bEnabled && !gA_Timers[client].bPaused)
 	{

@@ -1147,7 +1147,7 @@ public void Shavit_OnResume(int client, int track)
 public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float vel[3], float angles[3], TimerStatus status, int track, int style)
 {
 	bool bNoclip = (GetEntityMoveType(client) == MOVETYPE_NOCLIP);
-	bool bInStart = (Shavit_InsideZone(client, Zone_Start, track) || Shavit_InsideZone(client, Zone_Start_2, track));
+	bool bInStart = Shavit_InsideZone(client, Zone_Start, track);
 	bool bInStage = Shavit_InsideZone(client, Zone_Stage, track);
 	bool bLimitpre = Shavit_GetMapLimitspeed();
 	static bool bInZone;
@@ -2596,7 +2596,7 @@ void TeleportToCheckpoint(int client, int index, bool suppressMessage)
 
 	gI_TimesTeleported[client]++;
 
-	if(Shavit_InsideZone(client, Zone_Start, -1) || Shavit_InsideZone(client, Zone_Start_2, -1))
+	if(Shavit_InsideZone(client, Zone_Start, -1))
 	{
 		Shavit_StopTimer(client);
 	}
@@ -3122,7 +3122,7 @@ public Action Respawn(Handle timer, any data)
 
 void RestartTimer(int client, int track)
 {
-	if((gB_Zones && (Shavit_ZoneExists(Zone_Start, track) || Shavit_ZoneExists(Zone_Start_2, track))))
+	if(gB_Zones && Shavit_ZoneExists(Zone_Start, track))
 	{
 		Shavit_RestartTimer(client, track);
 	}

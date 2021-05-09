@@ -47,9 +47,7 @@ char gS_Map[160];
 char gS_ZoneNames[][] =
 {
 	"Start Zone", // starts timer
-	"Start Zone 2", // 2nd zone to start timer
 	"End Zone", // stops timer
-	"End Zone 2", // 2nd zone to stop timer
 	"Stage Zone", // shows time when entering zone
 	"Stop Timer", // stops the player's timer
 	"Teleport Zone" // teleports to a defined point
@@ -2712,10 +2710,10 @@ public void Shavit_OnRestart(int client, int track)
 		int iIndex = -1;
 
 		// standard zoning
-		if((iIndex = GetZoneIndex(Zone_Start, track)) != -1 || (iIndex = GetZoneIndex(Zone_Start_2, track)) != -1)
+		if((iIndex = GetZoneIndex(Zone_Start, track)) != -1)
 		{
 			float fCenter[3];
-			iIndex = (GetZoneIndex(Zone_Start, track) == -1) ? GetZoneIndex(Zone_Start_2, track) : GetZoneIndex(Zone_Start, track);
+			iIndex = GetZoneIndex(Zone_Start, track);
 			fCenter[0] = gV_ZoneCenter[iIndex][0];
 			fCenter[1] = gV_ZoneCenter[iIndex][1];
 			fCenter[2] = gV_MapZones[iIndex][0][2] + 2.0;
@@ -2733,10 +2731,10 @@ public void Shavit_OnEnd(int client, int track)
 	{
 		int iIndex = -1;
 
-		if((iIndex = GetZoneIndex(Zone_End, track)) != -1 || (iIndex = GetZoneIndex(Zone_End_2, track)) != -1)
+		if((iIndex = GetZoneIndex(Zone_End, track)) != -1)
 		{
 			float fCenter[3];
-			iIndex = (GetZoneIndex(Zone_End, track) == -1) ? GetZoneIndex(Zone_End_2, track) : GetZoneIndex(Zone_End, track);
+			iIndex = GetZoneIndex(Zone_End, track);
 			fCenter[0] = gV_ZoneCenter[iIndex][0];
 			fCenter[1] = gV_ZoneCenter[iIndex][1];
 			fCenter[2] = gV_MapZones[iIndex][0][2];
@@ -2935,7 +2933,7 @@ void CreateZoneEntities()
 public void StartTouchPost(int entity, int other)
 {
 	if(other < 1 || other > MaxClients || gI_EntityZone[entity] == -1 || !gA_ZoneCache[gI_EntityZone[entity]].bZoneInitialized || IsFakeClient(other) ||
-		(gCV_EnforceTracks.BoolValue && gA_ZoneCache[gI_EntityZone[entity]].iZoneType > Zone_End_2 && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack != Shavit_GetClientTrack(other)))
+		(gCV_EnforceTracks.BoolValue && gA_ZoneCache[gI_EntityZone[entity]].iZoneType > Zone_End && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack != Shavit_GetClientTrack(other)))
 	{
 		return;
 	}
@@ -2958,12 +2956,12 @@ public void StartTouchPost(int entity, int other)
 		}
 	}
 
-	else if(type == Zone_Start || type == Zone_Start_2)
+	else if(type == Zone_Start)
 	{
 		gI_ClientCurrentStage[other] = 1;
 	}
 
-	else if(type == Zone_End || type == Zone_End_2)
+	else if(type == Zone_End)
 	{
 		gI_ClientCurrentStage[other] = gI_Stages + 1;//a hack that record the last stage's time
 		Shavit_FinishStage(other);
@@ -3021,7 +3019,7 @@ public void EndTouchPost(int entity, int other)
 public void TouchPost(int entity, int other)
 {
 	if(other < 1 || other > MaxClients || gI_EntityZone[entity] == -1 || IsFakeClient(other) ||
-		(gCV_EnforceTracks.BoolValue && gA_ZoneCache[gI_EntityZone[entity]].iZoneType > Zone_End_2 && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack != Shavit_GetClientTrack(other)))
+		(gCV_EnforceTracks.BoolValue && gA_ZoneCache[gI_EntityZone[entity]].iZoneType > Zone_End && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack != Shavit_GetClientTrack(other)))
 	{
 		return;
 	}
@@ -3029,7 +3027,7 @@ public void TouchPost(int entity, int other)
 	// do precise stuff here, this will be called *A LOT*
 	int type = gA_ZoneCache[gI_EntityZone[entity]].iZoneType;
 
-	if(type == Zone_Start || type == Zone_Start_2)
+	if(type == Zone_Start)
 	{
 		// start timer instantly for main track, but require bonuses to have the current timer stopped
 		// so you don't accidentally step on those while running
@@ -3082,7 +3080,7 @@ public void TouchPost(int entity, int other)
 		}
 	}
 
-	else if(type == Zone_End || type == Zone_End_2)
+	else if(type == Zone_End)
 	{
 		Action result = Plugin_Continue;
 		Call_StartForward(gH_Forwards_OnEndZone);

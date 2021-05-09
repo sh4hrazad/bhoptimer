@@ -1460,12 +1460,12 @@ void UpdateMainHUD(int client)
 
 	if(!bReplay)
 	{
-		if(Shavit_InsideZone(target, Zone_Start, -1) || Shavit_InsideZone(target, Zone_Start_2, -1))
+		if(Shavit_InsideZone(target, Zone_Start, -1))
 		{
 			iZoneHUD = ZoneHUD_Start;
 		}
 		
-		else if(Shavit_InsideZone(target, Zone_End, -1) || Shavit_InsideZone(target, Zone_End_2, -1))
+		else if(Shavit_InsideZone(target, Zone_End, -1))
 		{
 			iZoneHUD = ZoneHUD_End;
 		}
@@ -1861,7 +1861,7 @@ void UpdateKeyHint(int client)
 			char autobhop[4];
 			Shavit_GetStyleSetting(style, "autobhop", autobhop, 4);
 
-			if(!bReplay && (gI_HUDSettings[client] & HUD_SYNC) > 0 && Shavit_GetTimerStatus(target) == Timer_Running && StringToInt(sync) && (!gB_Zones || (!Shavit_InsideZone(target, Zone_Start, -1) && !Shavit_InsideZone(target, Zone_Start_2, -1))))
+			if(!bReplay && (gI_HUDSettings[client] & HUD_SYNC) > 0 && Shavit_GetTimerStatus(target) == Timer_Running && StringToInt(sync) && (!gB_Zones || !Shavit_InsideZone(target, Zone_Start, -1)))
 			{
 				Format(sMessage, 256, "%s%s%T: %.01f", sMessage, (strlen(sMessage) > 0)? "\n\n":"", "HudSync", client, Shavit_GetSync(target));
 

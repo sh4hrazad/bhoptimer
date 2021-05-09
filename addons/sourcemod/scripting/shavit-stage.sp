@@ -810,7 +810,7 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 		return;
 	}
 
-	if(type == Zone_Stage || type == Zone_Start || type == Zone_Start_2 || type == Zone_End || type == Zone_End_2)
+	if(type == Zone_Stage || type == Zone_Start || type == Zone_End)
 	{
 		int stage = Shavit_GetClientStage(client);
 		int style = Shavit_GetBhopStyle(client);
@@ -822,7 +822,7 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 		Call_Finish();
 
 		//total time
-		if(!Shavit_IsClientSingleStageTiming(client) && type != Zone_Start && type != Zone_Start_2 && Shavit_GetClientTime(client) != 0.0)
+		if(!Shavit_IsClientSingleStageTiming(client) && type != Zone_Start && Shavit_GetClientTime(client) != 0.0)
 		{
 			char sMessage[255];
 			char sTime[32];
@@ -833,7 +833,7 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 			Shavit_PrintToChat(client, "%s", sMessage);
 		}
 
-		if((type == Zone_End || type == Zone_End_2) && Shavit_IsClientSingleStageTiming(client))
+		if(type == Zone_End && Shavit_IsClientSingleStageTiming(client))
 		{
 			Shavit_StopTimer(client);
 		}
@@ -849,7 +849,7 @@ public void Shavit_OnLeaveZone(int client, int type, int track, int id, int enti
 		return;
 	}
 
-	if(type == Zone_Stage || type == Zone_Start || type == Zone_Start_2)
+	if(type == Zone_Stage || type == Zone_Start)
 	{
 		gF_LeaveStageTime[client] = Shavit_GetClientTime(client);
 
