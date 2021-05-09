@@ -737,9 +737,10 @@ forward void Shavit_OnDatabaseLoaded();
 /**
  * Called when the chat messages configuration finishes loading and it's ready to load everything into the cache.
  *
+ * @param strings                   The chat strings
  * @noreturn
  */
-forward void Shavit_OnChatConfigLoaded();
+forward void Shavit_OnChatConfigLoaded(chatstrings_t strings);
 
 /**
  * Called when a player triggered wrcp.
@@ -1778,7 +1779,7 @@ native bool Shavit_HasStyleSetting(int style, const char[] key);
  * @param value						Value to set the style key to.
  * @param replace					Should the value be set if the given key already exists.
  *
- * @return 							True on success, false on failure. .
+ * @return 							True on success, false on failure.
  */
 native bool Shavit_SetStyleSettingFloat(int style, const char[] key, float value, bool replace = true);
 
@@ -1790,7 +1791,7 @@ native bool Shavit_SetStyleSettingFloat(int style, const char[] key, float value
  * @param value						Value to set the style key to.
  * @param replace					Should the value be set if the given key already exists.
  *
- * @return 							True on success, false on failure. .
+ * @return 							True on success, false on failure.
  */
 native bool Shavit_SetStyleSettingBool(int style, const char[] key, bool value, bool replace = true);
 
@@ -1802,7 +1803,7 @@ native bool Shavit_SetStyleSettingBool(int style, const char[] key, bool value, 
  * @param value						Value to set the style key to.
  * @param replace					Should the value be set if the given key already exists.
  *
- * @return 							True on success, false on failure. .
+ * @return 							True on success, false on failure.
  */
 native bool Shavit_SetStyleSettingInt(int style, const char[] key, int value, bool replace = true);
 
@@ -1816,6 +1817,16 @@ native bool Shavit_SetStyleSettingInt(int style, const char[] key, int value, bo
  * @return							SP_ERROR_NONE on success, anything else on failure.
  */
 native int Shavit_GetStyleStrings(int style, int stringtype, char[] StyleStrings, int size);
+
+/**
+ * Saves the style related strings on string references.
+ *
+ * @param style                     Style index.
+ * @param strings                   Reference to a stylestrings_t.
+ * @param size                      Max length for the buffer.
+ * @return                          SP_ERROR_NONE on success, anything else on failure.
+ */
+native int Shavit_GetStyleStringsStruct(int style, any[] strings, int size = sizeof(stylestrings_t));
 
 /**
  * Retrieves the amount of styles in the server.
@@ -1842,6 +1853,15 @@ native void Shavit_GetOrderedStyles(int[] arr, int size);
  * @return							SP_ERROR_NONE on success, anything else on failure.
  */
 native int Shavit_GetChatStrings(int stringtype, char[] ChatStrings, int size);
+
+/**
+ * Saves chat related strings on string references.
+ *
+ * @param strings                   Reference to a chatstrings_t.
+ * @param size                      Size of chatstrings_t.
+ * @return                          SP_ERROR_NONE on success, anything else on failure.
+ */
+native int Shavit_GetChatStringsStruct(any[] strings, int size = sizeof(chatstrings_t));
 
 /**
  * Gets the HUD settings of a player.
@@ -2399,6 +2419,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_FormatChat");
 	MarkNativeAsOptional("Shavit_GetBhopStyle");
 	MarkNativeAsOptional("Shavit_GetChatStrings");
+	MarkNativeAsOptional("Shavit_GetChatStringsStruct");
 	MarkNativeAsOptional("Shavit_GetClientCompletions");
 	MarkNativeAsOptional("Shavit_GetClientJumps");
 	MarkNativeAsOptional("Shavit_GetClientPB");
@@ -2442,6 +2463,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetStyleSettingFloat");
 	MarkNativeAsOptional("Shavit_HasStyleSetting");
 	MarkNativeAsOptional("Shavit_GetStyleStrings");
+	MarkNativeAsOptional("Shavit_GetStyleStringsStruct");
 	MarkNativeAsOptional("Shavit_GetSync");
 	MarkNativeAsOptional("Shavit_GetTimeOffset");
 	MarkNativeAsOptional("Shavit_GetDistanceOffset");
