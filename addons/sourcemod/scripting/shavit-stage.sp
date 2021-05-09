@@ -17,7 +17,6 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define gI_Styles 16
 #define gS_None "N/A"
 
 Database gH_SQL = null;
@@ -25,15 +24,16 @@ bool gB_Connected = false;
 bool gB_MySQL = false;
 bool gB_LinearMap;
 
+int gI_Styles = 0;
 char gS_Map[160];
 int gI_Steamid[101];//this is a mysql index, i dont have any better implementation
 
 int gI_LastStage[MAXPLAYERS + 1];
 float gF_LeaveStageTime[MAXPLAYERS + 1];
 
-float gF_WrcpTime[MAX_STAGES + 1][gI_Styles];
-char gS_WrcpName[MAX_STAGES + 1][gI_Styles][MAX_NAME_LENGTH];
-float gF_PrStageTime[MAXPLAYERS + 1][MAX_STAGES + 1][gI_Styles];
+float gF_WrcpTime[MAX_STAGES + 1][STYLE_LIMIT];
+char gS_WrcpName[MAX_STAGES + 1][STYLE_LIMIT][MAX_NAME_LENGTH];
+float gF_PrStageTime[MAXPLAYERS + 1][MAX_STAGES + 1][STYLE_LIMIT];
 
 int gI_StyleChoice[MAXPLAYERS + 1];
 int gI_StageChoice[MAXPLAYERS + 1];
@@ -48,7 +48,7 @@ bool gB_Late = false;
 char gS_MySQLPrefix[32];
 
 // timer settings
-stylestrings_t gS_StyleStrings[gI_Styles];
+stylestrings_t gS_StyleStrings[STYLE_LIMIT];
 chatstrings_t gS_ChatStrings;
 
 Handle gH_Forwards_EnterStage = null;
@@ -159,8 +159,6 @@ public void OnMapStart()
 	GetCurrentMap(gS_Map, 160);
 	GetMapDisplayName(gS_Map, gS_Map, 160);
 
-	Reset(Shavit_GetMapStages(), gI_Styles, true);
-
 	if(gB_Late)
 	{
 		chatstrings_t chatstrings;
@@ -179,6 +177,9 @@ public void OnAllPluginsLoaded()
 
 public void Shavit_OnStyleConfigLoaded(int styles)
 {
+	gI_Styles = styles;
+	Reset(Shavit_GetMapStages(), gI_Styles, true);
+
 	for(int i = 0; i < styles; i++)
 	{
 		Shavit_GetStyleStrings(i, sStyleName, gS_StyleStrings[i].sStyleName, sizeof(stylestrings_t::sStyleName));

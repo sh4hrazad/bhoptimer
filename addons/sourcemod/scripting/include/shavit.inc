@@ -24,7 +24,7 @@
 #define _shavit_included
 
 #define SHAVIT_VERSION "2.7.0"
-#define STYLE_LIMIT 256
+#define STYLE_LIMIT 16
 #define MAX_ZONES 128
 #define MAX_STAGES 64
 
