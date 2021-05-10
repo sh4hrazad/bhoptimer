@@ -51,7 +51,7 @@ char gS_ZoneNames[][] =
 	"End Zone", // stops timer
 	"Stage Zone", // stage zone
 	"Stop Timer", // stops the player's timer
-	"Teleport Zone" // teleports to a defined point
+	"Teleport Zone", // teleports to a defined point
 	"Mark Zone" // do nothing, mainly used for marking map like clip, trigger_push and so on, with hookzone collocation is recommended
 };
 
@@ -104,6 +104,7 @@ int gI_ZoneFlags[MAXPLAYERS+1];
 int gI_ZoneData[MAXPLAYERS+1][ZONETYPES_SIZE];
 int gI_ZoneMaxData[TRACKS_SIZE];
 bool gB_WaitingForChatInput[MAXPLAYERS+1];
+bool gB_HookZoneConfirm[MAXPLAYERS+1];
 bool gB_ZoneDataInput[MAXPLAYERS+1];
 bool gB_CommandToEdit[MAXPLAYERS+1];
 bool gB_SingleStageTiming[MAXPLAYERS+1];
@@ -122,6 +123,7 @@ int gI_ZoneTrack[MAXPLAYERS+1];
 int gI_ZoneDatabaseID[MAXPLAYERS+1];
 int gI_ZoneID[MAXPLAYERS+1];
 char gS_ZoneHookname[MAXPLAYERS+1][128];
+int gI_HookZoneIndex[MAXPLAYERS+1];
 
 // zone cache
 zone_settings_t gA_ZoneSettings[ZONETYPES_SIZE][TRACKS_SIZE];
@@ -133,8 +135,8 @@ float gV_Destinations[MAX_ZONES][3];
 float gV_ZoneCenter[MAX_ZONES][3];
 float gV_ZoneCenter_Angle[MAX_ZONES][3];
 int gI_EntityZone[4096];
-ArrayList gA_TriggerMultiple;
-ArrayList gA_HookTriggerMultiple;
+ArrayList gA_Triggers;
+ArrayList gA_HookTriggers;
 bool gB_ZonesCreated = false;
 int gI_Stages = 1; // how many stages in a map, default 1.
 int gI_ClientCurrentStage[MAXPLAYERS+1];
@@ -753,16 +755,64 @@ void InitTeleDestinations()
 	}
 }
 
-void FindTriggerMultiple()
+void FindTriggers()
 {
-	delete gA_TriggerMultiple;
-	gA_TriggerMultiple = new ArrayList();
+	delete gA_Triggers;
+	gA_Triggers = new ArrayList();
 
 	int iEnt = -1;
+	int iCount = 1;
 
 	while((iEnt = FindEntityByClassname(iEnt, "trigger_multiple")) != -1)
 	{
-		gA_TriggerMultiple.Push(iEnt);
+		char sBuffer[128];
+		GetEntPropString(iEnt, Prop_Send, "m_iName", sBuffer, 128, 0);
+
+		if(strlen(sBuffer) == 0)
+		{
+			char sTargetname[64];
+			FormatEx(sTargetname, 64, "trigger_multiple_#%d", iCount);
+			DispatchKeyValue(iEnt, "targetname", sTargetname);
+		}
+
+		iCount++;
+		gA_Triggers.Push(iEnt);
+	}
+
+	iCount = 1;
+
+	while((iEnt = FindEntityByClassname(iEnt, "trigger_teleport")) != -1)
+	{
+		char sBuffer[128];
+		GetEntPropString(iEnt, Prop_Send, "m_iName", sBuffer, 128, 0);
+
+		if(strlen(sBuffer) == 0)
+		{
+			char sTargetname[64];
+			FormatEx(sTargetname, 64, "trigger_teleport_#%d", iCount);
+			DispatchKeyValue(iEnt, "targetname", sTargetname);
+		}
+
+		iCount++;
+		gA_Triggers.Push(iEnt);
+	}
+
+	iCount = 1;
+
+	while((iEnt = FindEntityByClassname(iEnt, "trigger_push")) != -1)
+	{
+		char sBuffer[128];
+		GetEntPropString(iEnt, Prop_Send, "m_iName", sBuffer, 128, 0);
+
+		if(strlen(sBuffer) == 0)
+		{
+			char sTargetname[64];
+			FormatEx(sTargetname, 64, "trigger_push_#%d", iCount);
+			DispatchKeyValue(iEnt, "targetname", sTargetname);
+		}
+
+		iCount++;
+		gA_Triggers.Push(iEnt);
 	}
 }
 
@@ -778,13 +828,13 @@ public void OnMapStart()
 
 	gI_MapZones = 0;
 	UnloadZones(0);
+	FindTriggers();
 	RefreshZones();
 	LoadStageZones();
 	
 	LoadZoneSettings();
 
 	InitTeleDestinations();
-	FindTriggerMultiple();
 	
 	PrecacheModel("models/props/cs_office/vending_machine.mdl");
 
@@ -1249,72 +1299,156 @@ public Action Command_HookZones(int client, int args)
 		return Plugin_Handled;
 	}
 
-	OpenHookZonesMenu(client);
+	OpenHookZonesMenu_SelectMethod(client);
 
 	return Plugin_Handled;
 }
 
-void OpenHookZonesMenu(int client)
+void OpenHookZonesMenu_SelectMethod(int client)
 {
 	Reset(client);
 
-	Menu menu = new Menu(MenuHandler_SelectHookZone);
-	menu.SetTitle("%T", "HookZoneMenu", client);
+	Menu menu = new Menu(HookZoneMenuHandler_SelectMethod);
+	menu.SetTitle("%T", "HookZoneSelectMethod", client);
 
-	for(int i = 0; i < gA_TriggerMultiple.Length; i++)
+	menu.AddItem("", "Name");
+	menu.AddItem("", "Origin");
+
+	menu.Display(client, -1);
+}
+
+public int HookZoneMenuHandler_SelectMethod(Menu a, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
 	{
-		int iEnt = gA_TriggerMultiple.Get(i);
-		
-		char sTriggerName[128];
-		GetEntPropString(iEnt, Prop_Send, "m_iName", sTriggerName, 128, 0);
-		menu.AddItem(sTriggerName, sTriggerName);
+		Menu menu = new Menu(MenuHandler_BeforeSelectHookZone);
+		menu.SetTitle("%T", "HookZoneMenuTrigger", param1);
+
+		switch(param2)
+		{
+			case 0:
+			{
+				for(int i = 0; i < gA_Triggers.Length; i++)
+				{
+					int iEnt = gA_Triggers.Get(i);
+					
+					char sTriggerName[128];
+					GetEntPropString(iEnt, Prop_Send, "m_iName", sTriggerName, 128, 0);
+					menu.AddItem(sTriggerName, sTriggerName);
+				}
+			}
+
+			case 1:
+			{
+				for(int i = 0; i < gA_Triggers.Length; i++)
+				{
+					int iEnt = gA_Triggers.Get(i);
+
+					float origin[3];
+					GetEntPropVector(iEnt, Prop_Send, "m_vecOrigin", origin);
+
+					char sBuffer[128];
+					FormatEx(sBuffer, 128, "%.2f %.2f %.2f", origin[0], origin[1], origin[2]);
+					menu.AddItem("", sBuffer);
+				}
+			}
+		}
+
+		menu.ExitBackButton = true;
+		menu.Display(param1, -1);
 	}
 
-	menu.ExitButton = true;
-	menu.Display(client, 300);
+	else if(action == MenuAction_End)
+	{
+		delete a;
+	}
+
+	return 0;
+}
+
+public int MenuHandler_BeforeSelectHookZone(Menu a, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		gI_HookZoneIndex[param1] = gA_Triggers.Get(param2);
+
+		Menu menu = new Menu(MenuHandler_SelectHookZone);
+		menu.SetTitle("%T", "HookZoneMenuBefore", param1);
+
+		menu.AddItem("", "Teleport To");
+		menu.AddItem("", "Hook zone");
+
+		menu.ExitBackButton = true;
+		menu.Display(param1, -1);
+	}
+
+	else if(action == MenuAction_Cancel)
+	{
+		OpenHookZonesMenu_SelectMethod(param1);
+	}
+
+	else if(action == MenuAction_End)
+	{
+		delete a;
+	}
+
+	return 0;
 }
 
 public int MenuHandler_SelectHookZone(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_Select)
 	{
+		int iEnt = gI_HookZoneIndex[param1];
 		char sHookname[128];
-		menu.GetItem(param2, sHookname, 128);
-		Shavit_PrintToChat(param1, "%T", "HookZonesItem", param1, sHookname);
-		strcopy(gS_ZoneHookname[param1], 128, sHookname);
-
-		int iEnt = gA_TriggerMultiple.Get(param2);
-		float origin[3], fMins[3], fMaxs[3];
+		GetEntPropString(iEnt, Prop_Send, "m_iName", sHookname, 128, 0);
+		float origin[3];
 		GetEntPropVector(iEnt, Prop_Send, "m_vecOrigin", origin);
-		GetEntPropVector(iEnt, Prop_Send, "m_vecMins", fMins);
-		GetEntPropVector(iEnt, Prop_Send, "m_vecMaxs", fMaxs);
 
-		for (int j = 0; j < 3; j++)
+		switch(param2)
 		{
-			fMins[j] = (fMins[j] + origin[j]);
+			case 0:
+			{
+				TeleportEntity(param1, origin, NULL_VECTOR, NULL_VECTOR);
+				Shavit_PrintToChat(param1, "%T", "HookTeleportZonesItem", param1, sHookname);
+				menu.Display(param1, -1);
+			}
+
+			case 1:
+			{
+				strcopy(gS_ZoneHookname[param1], 128, sHookname);
+				Shavit_PrintToChat(param1, "%T", "HookZonesItem", param1, sHookname);
+
+				float fMins[3], fMaxs[3];
+				GetEntPropVector(iEnt, Prop_Send, "m_vecMins", fMins);
+				GetEntPropVector(iEnt, Prop_Send, "m_vecMaxs", fMaxs);
+
+				for (int j = 0; j < 3; j++)
+				{
+					fMins[j] = (fMins[j] + origin[j]);
+				}
+
+				for (int j = 0; j < 3; j++)
+				{
+					fMaxs[j] = (fMaxs[j] + origin[j]);
+				}
+
+				gV_Point1[param1][0] = fMins[0];
+				gV_Point1[param1][1] = fMins[1];
+				gV_Point1[param1][2] = fMins[2];
+				gV_Point2[param1][0] = fMaxs[0];
+				gV_Point2[param1][1] = fMaxs[1];
+				gV_Point2[param1][2] = fMaxs[2];
+
+				OpenHookZonesMenu_Track(param1);
+			}
 		}
-
-		for (int j = 0; j < 3; j++)
-		{
-			fMaxs[j] = (fMaxs[j] + origin[j]);
-		}
-
-		gV_Point1[param1][0] = fMins[0];
-		gV_Point1[param1][1] = fMins[1];
-		gV_Point1[param1][2] = fMins[2];
-		gV_Point2[param1][0] = fMaxs[0];
-		gV_Point2[param1][1] = fMaxs[1];
-		gV_Point2[param1][2] = fMaxs[2];
-
-		OpenHookZonesMenu_Track(param1);
 	}
 
-	else if(action == MenuAction_End)
+	else if(action == MenuAction_Cancel)
 	{
-		delete menu;
+		OpenHookZonesMenu_SelectMethod(param1);
 	}
-
-	return 0;
 }
 
 void OpenHookZonesMenu_Track(int client)
@@ -1333,7 +1467,7 @@ void OpenHookZonesMenu_Track(int client)
 		menu.AddItem(sInfo, sDisplay);
 	}
 
-	menu.ExitButton = true;
+	menu.ExitBackButton = true;
 	menu.Display(client, 300);
 }
 
@@ -1359,6 +1493,11 @@ public int MenuHandler_SelectHookZone_Track(Menu menu, MenuAction action, int pa
 
 		submenu.ExitButton = true;
 		submenu.Display(param1, 300);
+	}
+
+	else if(action == MenuAction_Cancel)
+	{
+		OpenHookZonesMenu_SelectMethod(param1);
 	}
 
 	else if(action == MenuAction_End)
@@ -1405,8 +1544,23 @@ void HookZoneConfirmMenu(int client)
 	FormatEx(sMenuItem, 64, "%T", "ZoneSetNo", client);
 	menu.AddItem("no", sMenuItem);
 
+	if(!gB_ZoneDataInput[client] && !gB_CommandToEdit[client])
+	{
+		gI_ZoneData[client][gI_ZoneType[client]] = gI_ZoneMaxData[gI_ZoneType[client]] + 1;
+
+		if(gI_ZoneType[client] == Zone_Stage)
+		{
+			gI_ZoneData[client][gI_ZoneType[client]] = gI_Stages + 1;
+		}
+	}
+	gB_ZoneDataInput[client] = false;
+	gB_CommandToEdit[client] = false;
+
+	FormatEx(sMenuItem, 64, "%T", "ZoneSetData", client, gI_ZoneData[client][gI_ZoneType[client]]);
+	menu.AddItem("datafromchat", sMenuItem);
+
 	menu.ExitButton = false;
-	menu.Display(client, 600);
+	menu.Display(client, -1);
 }
 
 public int HookZoneConfirm_Handler(Menu menu, MenuAction action, int param1, int param2)
@@ -1423,7 +1577,17 @@ public int HookZoneConfirm_Handler(Menu menu, MenuAction action, int param1, int
 
 		else if(StrEqual(sInfo, "no"))
 		{
-			OpenHookZonesMenu(param1);
+			OpenHookZonesMenu_SelectMethod(param1);
+		}
+
+		else if(StrEqual(sInfo, "datafromchat"))
+		{
+			gB_WaitingForChatInput[param1] = true;
+			gB_HookZoneConfirm[param1] = true;
+
+			Shavit_PrintToChat(param1, "%T", "ZoneEnterDataChat", param1);
+
+			return 0;
 		}
 	}
 
@@ -1505,6 +1669,26 @@ public int MenuHandler_SelectZoneTrack(Menu menu, MenuAction action, int param1,
 		delete menu;
 	}
 	
+	return 0;
+}
+
+public int MenuHandler_SelectZoneType(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		char info[8];
+		menu.GetItem(param2, info, 8);
+
+		gI_ZoneType[param1] = StringToInt(info);
+
+		ShowPanel(param1, 1);
+	}
+
+	else if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+
 	return 0;
 }
 
@@ -1837,29 +2021,6 @@ public void SQL_DeleteAllZones_Callback(Database db, DBResultSet results, const 
 	Shavit_PrintToChat(client, "%T", "ZoneDeleteAllSuccessful", client);
 }
 
-public int MenuHandler_SelectZoneType(Menu menu, MenuAction action, int param1, int param2)
-{
-	if(action == MenuAction_Select)
-	{
-		char info[8];
-		menu.GetItem(param2, info, 8);
-
-		gI_ZoneType[param1] = StringToInt(info);
-
-		if(gI_ZoneType[param1] != Zone_Mark)
-		{
-			ShowPanel(param1, 1);
-		}
-	}
-
-	else if(action == MenuAction_End)
-	{
-		delete menu;
-	}
-
-	return 0;
-}
-
 void Reset(int client)
 {
 	gI_ZoneTrack[client] = Track_Main;
@@ -1871,6 +2032,7 @@ void Reset(int client)
 	gI_ZoneFlags[client] = 0;
 	gI_ZoneDatabaseID[client] = -1;
 	gB_WaitingForChatInput[client] = false;
+	gB_HookZoneConfirm[client] = false;
 	strcopy(gS_ZoneHookname[client], 128, "NONE");
 	gI_ZoneID[client] = -1;
 
@@ -2213,10 +2375,17 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
 {
-	if(gB_WaitingForChatInput[client] && gI_MapStep[client] == 3)
+	if((gB_WaitingForChatInput[client] && gI_MapStep[client] == 3) || gB_HookZoneConfirm[client])
 	{
 		gI_ZoneData[client][gI_ZoneType[client]] = StringToInt(sArgs);
 		gB_ZoneDataInput[client] = true;
+
+		if(gB_HookZoneConfirm[client])
+		{
+			HookZoneConfirmMenu(client);
+			return Plugin_Handled;
+		}
+
 		CreateEditMenu(client);
 
 		return Plugin_Handled;
@@ -2489,14 +2658,11 @@ public Action Timer_DrawEverything(Handle Timer)
 	}
 
 	static int iCycle = 0;
-	static int iMaxZonesPerFrame = 5;
 
 	if(iCycle >= gI_MapZones)
 	{
 		iCycle = 0;
 	}
-
-	int iDrawn = 0;
 
 	for(int i = iCycle; i < gI_MapZones; i++, iCycle++)
 	{
@@ -2509,18 +2675,11 @@ public Action Timer_DrawEverything(Handle Timer)
 			{
 				DrawZone(gV_MapZones_Visual[i],
 						GetZoneColors(type, track),
-						RoundToCeil(float(gI_MapZones) / iMaxZonesPerFrame) * gCV_Interval.FloatValue,
+						gCV_Interval.FloatValue,
 						gA_ZoneSettings[type][track].fWidth,
 						gA_ZoneSettings[type][track].bFlatZone,
-						gV_ZoneCenter[i],
 						gA_ZoneSettings[type][track].iBeam,
 						gA_ZoneSettings[type][track].iHalo);
-				++iDrawn;
-			}
-
-			if(++iDrawn % iMaxZonesPerFrame == 0)
-			{
-				return Plugin_Continue;
 			}
 		}
 	}
@@ -2595,7 +2754,7 @@ public Action Timer_Draw(Handle Timer, any data)
 		// This is here to make the zone setup grid snapping be 1:1 to how it looks when done with the setup.
 		origin = points[7];
 
-		DrawZone(points, GetZoneColors(type, track, 125), 0.1, gA_ZoneSettings[type][track].fWidth, false, origin, gI_BeamSpriteIgnoreZ, gA_ZoneSettings[type][track].iHalo);
+		DrawZone(points, GetZoneColors(type, track, 125), 0.1, gA_ZoneSettings[type][track].fWidth, false, gI_BeamSpriteIgnoreZ, gA_ZoneSettings[type][track].iHalo);
 
 		if(gI_ZoneType[client] == Zone_Teleport && !EmptyVector(gV_Teleport[client]))
 		{
@@ -2631,7 +2790,7 @@ public Action Timer_Draw(Handle Timer, any data)
 	return Plugin_Continue;
 }
 
-void DrawZone(float points[8][3], int color[4], float life, float width, bool flat, float center[3], int beam, int halo)
+void DrawZone(float points[8][3], int color[4], float life, float width, bool flat, int beam, int halo)
 {
 	static int pairs[][] =
 	{
@@ -2649,28 +2808,10 @@ void DrawZone(float points[8][3], int color[4], float life, float width, bool fl
 		{ 7, 5 }
 	};
 
-	int clients[MAXPLAYERS+1];
-	int count = 0;
-
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(IsClientInGame(i) && !IsFakeClient(i))
-		{
-			float eyes[3];
-			GetClientEyePosition(i, eyes);
-
-			if(GetVectorDistance(eyes, center) <= 1024.0 ||
-				(TR_TraceRayFilter(eyes, center, MASK_PLAYERSOLID, RayType_EndPoint, TraceFilter_World) && !TR_DidHit()))
-			{
-				clients[count++] = i;
-			}
-		}
-	}
-
 	for(int i = 0; i < ((flat)? 4:12); i++)
 	{
 		TE_SetupBeamPoints(points[pairs[i][0]], points[pairs[i][1]], beam, halo, 0, 0, life, width, width, 0, 0.0, color, 0);
-		TE_Send(clients, count, 0.0);
+		TE_SendToAll(0.0);
 	}
 }
 
@@ -2839,8 +2980,8 @@ void CreateZoneEntities()
 		return;
 	}
 
-	delete gA_HookTriggerMultiple;
-	gA_HookTriggerMultiple = new ArrayList();
+	delete gA_HookTriggers;
+	gA_HookTriggers = new ArrayList();
 
 	for(int i = 0; i < gI_MapZones; i++)
 	{
@@ -2927,27 +3068,25 @@ void CreateZoneEntities()
 
 		else//create hookzones
 		{
-			int iEnt = -1;
-
-			while ((iEnt = FindEntityByClassname(iEnt, "trigger_multiple")) != -1)
+			for(int index = 0; index < gA_Triggers.Length; index++)
 			{
+				int iEnt = gA_Triggers.Get(index);
 				char sTriggerName[128];
 				GetEntPropString(iEnt, Prop_Send, "m_iName", sTriggerName, 128, 0);
 
-				if (StrEqual(gA_ZoneCache[i].sZoneHookname, sTriggerName))
+				if(StrEqual(gA_ZoneCache[i].sZoneHookname, sTriggerName))
 				{
-					for (int j = 0; j < 3; j++)
+					if(gA_ZoneCache[i].iZoneType != Zone_Mark)
 					{
-						gV_MapZones_Visual[i][0][j] = gV_MapZones[i][0][j];
-						gV_MapZones_Visual[i][7][j] = gV_MapZones[i][1][j];
-					}
-
-					for(int j = 1; j < 7; j++)
-					{
-						for(int k = 0; k < 3; k++)
+						for(int j = 0; j < 8; j++)
 						{
-							gV_MapZones_Visual[i][j][k] = gV_MapZones_Visual[i][((j >> (2 - k)) & 1) * 7][k];
+							for(int k = 0; k < 3; k++)
+							{
+								gV_MapZones_Visual[i][j][k] = 0.0;//do not set their visual point, use trigger material instead
+							}
 						}
+
+						gA_HookTriggers.Push(iEnt);//do not push markzone index to arraylist
 					}
 
 					SDKHook(iEnt, SDKHook_StartTouchPost, StartTouchPost);
@@ -2960,9 +3099,8 @@ void CreateZoneEntities()
 					char sTargetname[32];
 					FormatEx(sTargetname, 32, "shavit_hookzones_%d_%d", gA_ZoneCache[i].iZoneTrack, gA_ZoneCache[i].iZoneType);
 					DispatchKeyValue(iEnt, "targetname", sTargetname);
-					gA_HookTriggerMultiple.Push(iEnt);
 
-					break;// stop looping from finding trigger_multiple to hook
+					break;// stop looping from finding triggers to hook
 				}
 			}
 		}
@@ -3156,6 +3294,11 @@ bool IsEntityInsideZone(int entity, float point[8][3])
 
 void transmitTriggers(int client, bool btransmit)
 {
+	if(!IsValidClient(client))
+	{
+		return;
+	}
+
 	static bool bHooked = false;
 	
 	if(bHooked == btransmit)
@@ -3163,9 +3306,9 @@ void transmitTriggers(int client, bool btransmit)
 		return;
 	}
 
-	for(int i = 0; i < gA_HookTriggerMultiple.Length; i++)
+	for(int i = 0; i < gA_HookTriggers.Length; i++)
 	{
-		int entity = gA_HookTriggerMultiple.Get(i);
+		int entity = gA_HookTriggers.Get(i);
 		int effectFlags = GetEntData(entity, gI_Offset_m_fEffects);
 		int edictFlags = GetEdictFlags(entity);
 		

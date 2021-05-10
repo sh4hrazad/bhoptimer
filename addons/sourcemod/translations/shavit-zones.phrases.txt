@@ -173,9 +173,22 @@
 	{
 		"en"		"Select a Stage:"
 	}
-	"HookZoneMenu"
+	"HookZoneSelectMethod"
 	{
-		"en"		"Select a trigger_multiple"
+		"en"		"Select a method"
+	}
+	"HookZoneMenuBefore"
+	{
+		"en"		"What do you want?"
+	}
+	"HookZoneMenuTrigger"
+	{
+		"en"		"Select a trigger"
+	}
+	"HookTeleportZonesItem"
+	{
+		"#format"	"{1:s}"
+		"en"		"Teleport to '{1}'"
 	}
 	"HookZonesItem"
 	{
@@ -237,11 +250,6 @@
 	{
 		"#format"	"{1:d}"
 		"en"		"Custom speed limit: {1} (No Limit)"
-	}
-	"ZoneSetStage"
-	{
-		"#format"	"{1:d}"
-		"en"		"Stage: {1}"
 	}
 	"ZoneSetData"
 	{
