@@ -34,7 +34,8 @@
 #pragma dynamic 131072
 #pragma newdecls required
 
-#define DEBUG
+//#define DEBUG
+#define EF_NODRAW 32
 
 EngineVersion gEV_Type = Engine_Unknown;
 
@@ -105,6 +106,7 @@ bool gB_WaitingForChatInput[MAXPLAYERS+1];
 bool gB_ZoneDataInput[MAXPLAYERS+1];
 bool gB_CommandToEdit[MAXPLAYERS+1];
 bool gB_SingleStageTiming[MAXPLAYERS+1];
+bool gB_ShowTriggers[MAXPLAYERS+1];
 
 // cache
 float gV_Point1[MAXPLAYERS+1][3];
@@ -131,6 +133,7 @@ float gV_ZoneCenter[MAX_ZONES][3];
 float gV_ZoneCenter_Angle[MAX_ZONES][3];
 int gI_EntityZone[4096];
 ArrayList gA_TriggerMultiple;
+ArrayList gA_HookTriggerMultiple;
 bool gB_ZonesCreated = false;
 int gI_Stages = 1; // how many stages in a map, default 1.
 int gI_ClientCurrentStage[MAXPLAYERS+1];
@@ -138,6 +141,7 @@ int gI_ClientCurrentStage[MAXPLAYERS+1];
 char gS_BeamSprite[PLATFORM_MAX_PATH];
 char gS_BeamSpriteIgnoreZ[PLATFORM_MAX_PATH];
 int gI_BeamSpriteIgnoreZ;
+int gI_Offset_m_fEffects = -1;
 
 // admin menu
 TopMenu gH_AdminMenu = null;
@@ -209,6 +213,15 @@ public void OnPluginStart()
 
 	// game specific
 	gEV_Type = GetEngineVersion();
+
+	gI_Offset_m_fEffects = FindSendPropInfo("CBaseEntity", "m_fEffects");
+	
+	if(gI_Offset_m_fEffects == -1)
+	{
+		SetFailState("[Show Zones] Could not find CBaseEntity:m_fEffects");
+	}
+	
+	RegConsoleCmd("sm_showzones", Command_Showzones, "Command to dynamically toggle shavit's zones trigger visibility");
 
 	// menu
 	RegAdminCmd("sm_zone", Command_Zones, ADMFLAG_RCON, "Opens the mapzones menu.");
@@ -987,8 +1000,15 @@ public void OnClientPutInServer(int client)
 	}
 	gB_ZoneDataInput[client] = false;
 	gB_CommandToEdit[client] = false;
+	gB_ShowTriggers[client] = false;
 
 	Reset(client);
+}
+
+public void OnClientDisconnect_Post(int client)
+{
+	gB_ShowTriggers[client] = false;
+	transmitTriggers(client, false);
 }
 
 public Action Command_Modifier(int client, int args)
@@ -1189,6 +1209,29 @@ public int MenuHandler_SelectStage(Menu menu, MenuAction action, int param1, int
 	}
 	
 	return 0;
+}
+
+public Action Command_Showzones(int client, int args)
+{
+	if(!IsValidClient(client))
+	{
+		return Plugin_Handled;
+	}
+	
+	gB_ShowTriggers[client] = !gB_ShowTriggers[client];
+	
+	if(gB_ShowTriggers[client])
+	{
+		Shavit_PrintToChat(client, "Showing zones.");
+	}
+	else
+	{
+		Shavit_PrintToChat(client, "Stopped showing zones.");
+	}
+	
+	transmitTriggers(client, gB_ShowTriggers[client]);
+
+	return Plugin_Handled;
 }
 
 public Action Command_HookZones(int client, int args)
@@ -2792,6 +2835,9 @@ void CreateZoneEntities()
 		return;
 	}
 
+	delete gA_HookTriggerMultiple;
+	gA_HookTriggerMultiple = new ArrayList();
+
 	for(int i = 0; i < gI_MapZones; i++)
 	{
 		for(int j = 1; j <= MaxClients; j++)
@@ -2816,7 +2862,7 @@ void CreateZoneEntities()
 			continue;
 		}
 
-		if (StrEqual(gA_ZoneCache[i].sZoneHookname, "NONE"))
+		if(StrEqual(gA_ZoneCache[i].sZoneHookname, "NONE"))//create non-hooked zones
 		{
 			int entity = CreateEntityByName("trigger_multiple");
 
@@ -2875,7 +2921,7 @@ void CreateZoneEntities()
 			DispatchKeyValue(entity, "targetname", sTargetname);
 		}
 
-		else
+		else//create hookzones
 		{
 			int iEnt = -1;
 
@@ -2910,6 +2956,7 @@ void CreateZoneEntities()
 					char sTargetname[32];
 					FormatEx(sTargetname, 32, "shavit_hookzones_%d_%d", gA_ZoneCache[i].iZoneTrack, gA_ZoneCache[i].iZoneType);
 					DispatchKeyValue(iEnt, "targetname", sTargetname);
+					gA_HookTriggerMultiple.Push(iEnt);
 
 					break;// stop looping from finding trigger_multiple to hook
 				}
@@ -3101,4 +3148,130 @@ bool IsEntityInsideZone(int entity, float point[8][3])
     }
 
     return true;
+}
+
+void transmitTriggers(int client, bool btransmit)
+{
+	static bool bHooked = false;
+	
+	if(bHooked == btransmit)
+	{
+		return;
+	}
+
+	for(int i = 0; i < gA_HookTriggerMultiple.Length; i++)
+	{
+		int entity = gA_HookTriggerMultiple.Get(i);
+		int effectFlags = GetEntData(entity, gI_Offset_m_fEffects);
+		int edictFlags = GetEdictFlags(entity);
+		
+		if(btransmit)
+		{
+			effectFlags &= ~EF_NODRAW;
+			edictFlags &= ~FL_EDICT_DONTSEND;
+		}
+
+		else
+		{
+			effectFlags |= EF_NODRAW;
+			edictFlags |= FL_EDICT_DONTSEND;
+		}
+		
+		SetEntData(entity, gI_Offset_m_fEffects, effectFlags);
+		ChangeEdictState(entity, gI_Offset_m_fEffects);
+		SetEdictFlags(entity, edictFlags);
+
+		static Handle gH_DrawZonesToClient = null;
+		
+		if(btransmit)
+		{
+			SDKHook(entity, SDKHook_SetTransmit, Hook_SetTransmit);
+			if(gH_DrawZonesToClient == null)
+			{
+				gH_DrawZonesToClient = CreateTimer(gCV_Interval.FloatValue, Timer_DrawZonesToClient, GetClientSerial(client), TIMER_REPEAT);
+			}
+		}
+
+		else
+		{
+			SDKUnhook(entity, SDKHook_SetTransmit, Hook_SetTransmit);
+			delete gH_DrawZonesToClient;
+		}
+	}
+
+	bHooked = btransmit;
+}
+
+public Action Hook_SetTransmit(int entity, int other)
+{
+	if(!gB_ShowTriggers[other])
+	{
+		return Plugin_Handled;
+	}
+
+	return Plugin_Continue;
+}
+
+public Action Timer_DrawZonesToClient(Handle Timer, any data)
+{
+	if(gI_MapZones == 0)
+	{
+		return Plugin_Continue;
+	}
+
+	int client = GetClientFromSerial(data);
+
+	static int iCycle = 0;
+
+	if(iCycle >= gI_MapZones)
+	{
+		iCycle = 0;
+	}
+
+	for(int i = iCycle; i < gI_MapZones; i++, iCycle++)
+	{
+		if(gA_ZoneCache[i].bZoneInitialized)
+		{
+			int type = gA_ZoneCache[i].iZoneType;
+			int track = gA_ZoneCache[i].iZoneTrack;
+
+			DrawZoneToSingleClient(client, 
+								gV_MapZones_Visual[i], 
+								GetZoneColors(type, track), 
+								gCV_Interval.FloatValue, 
+								gA_ZoneSettings[type][track].fWidth, 
+								gA_ZoneSettings[type][track].bFlatZone, 
+								gA_ZoneSettings[type][track].iBeam, 
+								gA_ZoneSettings[type][track].iHalo);
+		}
+	}
+
+	iCycle = 0;
+
+	return Plugin_Continue;
+}
+
+void DrawZoneToSingleClient(int client, float points[8][3], int color[4], float life, float width, bool flat, int beam, int halo)
+{
+	static int pairs[][] =
+	{
+		{ 0, 2 },
+		{ 2, 6 },
+		{ 6, 4 },
+		{ 4, 0 },
+		{ 0, 1 },
+		{ 3, 1 },
+		{ 3, 2 },
+		{ 3, 7 },
+		{ 5, 1 },
+		{ 5, 4 },
+		{ 6, 7 },
+		{ 7, 5 }
+	};
+
+	for(int i = 0; i < ((flat)? 4:12); i++)
+	{
+		TE_SetupBeamPoints(points[pairs[i][0]], points[pairs[i][1]], beam, halo, 0, 0, life, width, width, 0, 0.0, color, 0);
+		TE_SendToClient(client, 0.0);
+	}
 }
