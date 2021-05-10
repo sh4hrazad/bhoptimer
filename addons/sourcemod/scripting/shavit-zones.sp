@@ -49,9 +49,10 @@ char gS_ZoneNames[][] =
 {
 	"Start Zone", // starts timer
 	"End Zone", // stops timer
-	"Stage Zone", // shows time when entering zone
+	"Stage Zone", // stage zone
 	"Stop Timer", // stops the player's timer
 	"Teleport Zone" // teleports to a defined point
+	"Mark Zone" // do nothing, mainly used for marking map like clip, trigger_push and so on, with hookzone collocation is recommended
 };
 
 enum struct zone_cache_t
@@ -1253,25 +1254,6 @@ public Action Command_HookZones(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action Command_Zones(int client, int args)
-{
-	if(!IsValidClient(client))
-	{
-		return Plugin_Handled;
-	}
-
-	if(!IsPlayerAlive(client))
-	{
-		Shavit_PrintToChat(client, "%T", "ZonesCommand", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
-
-		return Plugin_Handled;
-	}
-
-	OpenZonesMenu(client);
-
-	return Plugin_Handled;
-}
-
 void OpenHookZonesMenu(int client)
 {
 	Reset(client);
@@ -1451,6 +1433,25 @@ public int HookZoneConfirm_Handler(Menu menu, MenuAction action, int param1, int
 	}
 
 	return 0;
+}
+
+public Action Command_Zones(int client, int args)
+{
+	if(!IsValidClient(client))
+	{
+		return Plugin_Handled;
+	}
+
+	if(!IsPlayerAlive(client))
+	{
+		Shavit_PrintToChat(client, "%T", "ZonesCommand", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+
+		return Plugin_Handled;
+	}
+
+	OpenZonesMenu(client);
+
+	return Plugin_Handled;
 }
 
 void OpenZonesMenu(int client)
@@ -1845,7 +1846,10 @@ public int MenuHandler_SelectZoneType(Menu menu, MenuAction action, int param1, 
 
 		gI_ZoneType[param1] = StringToInt(info);
 
-		ShowPanel(param1, 1);
+		if(gI_ZoneType[param1] != Zone_Mark)
+		{
+			ShowPanel(param1, 1);
+		}
 	}
 
 	else if(action == MenuAction_End)
@@ -3234,6 +3238,11 @@ public Action Timer_DrawZonesToClient(Handle Timer, any data)
 		{
 			int type = gA_ZoneCache[i].iZoneType;
 			int track = gA_ZoneCache[i].iZoneTrack;
+
+			if(gA_ZoneSettings[type][track].bVisible || (gA_ZoneCache[i].iZoneFlags & ZF_ForceRender) > 0)
+			{
+				continue;//already draw to everyone, find next undrawn
+			}
 
 			DrawZoneToSingleClient(client, 
 								gV_MapZones_Visual[i], 

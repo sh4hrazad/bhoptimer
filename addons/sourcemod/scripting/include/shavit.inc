@@ -103,6 +103,7 @@ enum
 	Zone_Stage,
 	Zone_Stop,
 	Zone_Teleport,
+	Zone_Mark,
 	ZONETYPES_SIZE
 };
 
