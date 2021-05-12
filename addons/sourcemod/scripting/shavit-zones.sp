@@ -3157,6 +3157,11 @@ public void StartTouchPost(int entity, int other)
 		Shavit_FinishStage(other);
 	}
 
+	else if(type == Zone_Mark)
+	{
+		return;//cant do anything in mark zone, insidezone or else are not permitted.
+	}
+
 	gB_InsideZone[other][gA_ZoneCache[gI_EntityZone[entity]].iZoneType][gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack] = true;
 	gB_InsideZoneID[other][gI_EntityZone[entity]] = true;
 	gI_InsideZoneIndex[other] = gI_EntityZone[entity];
