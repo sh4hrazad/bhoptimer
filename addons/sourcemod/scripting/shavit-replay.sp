@@ -164,7 +164,7 @@ bool gB_Linux;
 char gS_ReplayFolder[PLATFORM_MAX_PATH];
 
 framecache_t gA_FrameCache[STYLE_LIMIT][TRACKS_SIZE];
-framecache_t gA_FrameCache_Stage[STYLE_LIMIT][MAX_STAGES];
+framecache_t gA_FrameCache_Stage[STYLE_LIMIT][MAX_STAGES + 1];
 
 bool gB_Button[MAXPLAYERS+1];
 int gI_PlayerFrames[MAXPLAYERS+1];
@@ -2978,7 +2978,7 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 	gB_makeReplay = makeReplay;
 }
 
-public void Shavit_OnWRCP(int client, int stage, int style, int steamid, float time, const char[] mapname)
+public void Shavit_OnWRCP(int client, int stage, int style, int steamid, float time, float prespeed, const char[] mapname)
 {
 	if(Shavit_IsPracticeMode(client) || !gCV_Enabled.BoolValue || gI_PlayerFrames_Stage[client] == 0)
 	{

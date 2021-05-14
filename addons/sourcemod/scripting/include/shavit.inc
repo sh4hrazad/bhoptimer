@@ -27,6 +27,7 @@
 #define STYLE_LIMIT 16
 #define MAX_ZONES 128
 #define MAX_STAGES 64
+#define MAX_CPZONES 16
 
 // HUD
 #define HUD_NONE				0
@@ -101,6 +102,7 @@ enum
 	Zone_Start,
 	Zone_End,
 	Zone_Stage,
+	Zone_Checkpoint,
 	Zone_Stop,
 	Zone_Teleport,
 	Zone_Mark,
@@ -749,10 +751,11 @@ forward void Shavit_OnChatConfigLoaded(chatstrings_t strings);
  * @param style						style index.
  * @param steamid					WRCP steamid.
  * @param time						WRCP time.
+ * @param prespeed					WRCP stage prespeed.
  * @param mapname					Current mapname.
  * @noreturn
  */
-forward void Shavit_OnWRCP(int client, int stage, int style, int steamid, float time, const char[] mapname);
+forward void Shavit_OnWRCP(int client, int stage, int style, int steamid, float time, float prespeed, const char[] mapname);
 
 /**
  * Called when a player teleports with checkpoints.
@@ -814,9 +817,21 @@ forward void Shavit_OnLeaveZone(int client, int type, int track, int id, int ent
  * @param client					Client index.
  * @param stage						Stage number.
  * @param style						Style index.
- * @return							Action Types.
+ * @param finalspeed				Speed when client enters stage zone.
+ * @noreturn
  */
-forward void Shavit_OnEnterStage(int client, int stage, int style);
+forward void Shavit_OnEnterStage(int client, int stage, int style, float finalspeed);
+
+/**
+ * Called when a player enters a checkpoint-zone.
+ *
+ * @param client					Client index.
+ * @param stage						Stage number.
+ * @param style						Style index.
+ * @param finalspeed				Speed when client enters stage zone.
+ * @noreturn
+ */
+forward void Shavit_OnEnterCheckpoint(int client, int cp, int style, float finalspeed);
 
 /**
  * Called when a player leaves a stage-zone.
@@ -824,9 +839,21 @@ forward void Shavit_OnEnterStage(int client, int stage, int style);
  * @param client					Client index.
  * @param stage						Stage number.
  * @param style						Style index.
- * @return							Action Types.
+ * @param prespeed					Speed when client leaves stage zone.
+ * @noreturn
  */
-forward void Shavit_OnLeaveStage(int client, int stage, int style);
+forward void Shavit_OnLeaveStage(int client, int stage, int style, float prespeed);
+
+/**
+ * Called when a player leaves a stage-zone.
+ *
+ * @param client					Client index.
+ * @param stage						Stage number.
+ * @param style						Style index.
+ * @param prespeed					Speed when client leaves stage zone.
+ * @noreturn
+ */
+forward void Shavit_OnLeaveCheckpoint(int client, int cp, int style, float prespeed);
 
 /**
  * Called when a player gets the worst record in the server for the style.
@@ -1069,12 +1096,25 @@ forward void Shavit_OnWRCPDeleted(int stage, int style, int steamid, const char[
  * Called when a player finishes a stage. (touches the stage zone)
  *
  * @param client					Client index.
- * @param stage						Stage the record was done on.
+ * @param stage						Stage id was done on.
  * @param style						Style the record was done on.
  * @param time						Record time.
  * @noreturn
  */
 forward void Shavit_OnFinishStage(int client, int stage, int style, float time);
+
+/**
+ * Called when a player finishes a checkpoint. (touches the checkpoint/stage zone)
+ *
+ * @param client					Client index.
+ * @param style						Style the record was done on.
+ * @param cpnum						Checkpoint/Stage zone number was done on.
+ * @param time						Current time when the checkpoint finished.
+ * @param diff						Difference between wr checkpoint time and pr checkpoint time, below 0 means faster, otherwise slower.
+ * @param finalspeed				Speed when client enters checkpoint/stage zone.
+ * @noreturn
+ */
+forward void Shavit_OnFinishCheckpoint(int client, int style, int cpnum, float time, float diff, float finalspeed);
 
 /**
  * Returns bhoptimer's database handle.
@@ -1240,11 +1280,26 @@ native TimerStatus Shavit_GetTimerStatus(int client);
 native int Shavit_GetClientStage(int client);
 
 /**
+ * Retrieve the current checkpoint ID for client.
+ *
+ * @param client					Client index.
+ * @return                          checkpoint ID.
+ */
+native int Shavit_GetClientCheckpoint(int client);
+
+/**
  * Retrieve the map's stage numbers.
  *
  * @return                          stage numbers.
  */
 native int Shavit_GetMapStages();
+
+/**
+ * Retrieve the map's checkpoint zones numbers.
+ *
+ * @return                          checkpoint zones numbers.
+ */
+native int Shavit_GetMapCheckpoints();
 
 /**
  * Retrieve the amount of strafes done since the timer started.
@@ -1321,6 +1376,17 @@ native void Shavit_GetWRName(int style, char[] wrname, int wrmaxlength, int trac
  * @noreturn
  */
 native void Shavit_GetWRCPName(int style, char[] wrcpname, int wrcpmaxlength, int stage);
+
+/**
+ * Saves the WRCP's player name on the map on a variable.
+ *
+ * @param style						Style to get the WRCP for.
+ * @param wrcpname					Reference to the name variable.
+ * @param wrcpmaxlength				Max length for the string.
+ * @param cpnum						WRCheckPoint stage.
+ * @noreturn
+ */
+native void Shavit_GetWRCheckpointName(int style, char[] wrcpname, int wrcpmaxlength, int cpnum);
 
 /**
  * Retrieves the best time of a player.
@@ -1724,7 +1790,7 @@ native int Shavit_GetWRHolders(int track = -1, int style = -1, bool usecvars = t
  */
 native int Shavit_GetWRHolderRank(int client, int track = -1, int style = -1, bool usecvars = true);
 
-/*
+/**
  * Gets a value from the style config for the given style
  * e.g. Shavit_GetStyleSetting(Shavit_GetBhopStyle(client), "TAS", sBuffer, 2);
  *
@@ -1737,7 +1803,7 @@ native int Shavit_GetWRHolderRank(int client, int track = -1, int style = -1, bo
  */
 native bool Shavit_GetStyleSetting(int style, const char[] key, char[] value, int maxlength);
 
-/*
+/**
  * Gets an int value from the style config for the given style. Returns 0 if key is not found.
  * e.g. Shavit_GetStyleSettingInt(Shavit_GetBhopStyle(client), "TAS");
  *
@@ -1748,7 +1814,7 @@ native bool Shavit_GetStyleSetting(int style, const char[] key, char[] value, in
  */
 native int Shavit_GetStyleSettingInt(int style, const char[] key);
 
-/*
+/**
  * Gets the bool value from the style config for the given style. Returns false if key is not found.
  * e.g. if(Shavit_GetStyleSettingBool(Shavit_GetBhopStyle(client), "TAS"))
  *
@@ -1759,7 +1825,7 @@ native int Shavit_GetStyleSettingInt(int style, const char[] key);
  */
 native bool Shavit_GetStyleSettingBool(int style, const char[] key);
 
-/*
+/**
  * Gets a float value from the style config for the given style. Returns 0.0 if key is not found
  * e.g. Shavit_GetStyleSettingFloat(Shavit_GetBhopStyle(client), "speed");
  *
@@ -1770,7 +1836,7 @@ native bool Shavit_GetStyleSettingBool(int style, const char[] key);
  */
 native float Shavit_GetStyleSettingFloat(int style, const char[] key);
 
-/*
+/**
  * Checks if the given key exists for that style
  * e.g. Shavit_HasStyleSetting(Shavit_GetBhopStyle(client), "tas");
  *
@@ -1781,7 +1847,7 @@ native float Shavit_GetStyleSettingFloat(int style, const char[] key);
  */
 native bool Shavit_HasStyleSetting(int style, const char[] key);
 
-/*
+/**
  * Set the style setting to the given float value
  *
  * @param style						Style index.
@@ -1793,7 +1859,7 @@ native bool Shavit_HasStyleSetting(int style, const char[] key);
  */
 native bool Shavit_SetStyleSettingFloat(int style, const char[] key, float value, bool replace = true);
 
-/*
+/**
  * Set the style setting to the given bool value
  *
  * @param style						Style index.
@@ -1805,7 +1871,7 @@ native bool Shavit_SetStyleSettingFloat(int style, const char[] key, float value
  */
 native bool Shavit_SetStyleSettingBool(int style, const char[] key, bool value, bool replace = true);
 
-/*
+/**
  * Set the style setting to the given int value
  *
  * @param style						Style index.
@@ -2319,7 +2385,7 @@ native void Shavit_SetCurrentCheckpoint(int client, int index);
  */
 native int Shavit_GetTimesTeleported(int client);
 
-/*
+/**
  * returns the number of preframes in the players current run.
  *
  * @param client					Client index
@@ -2328,7 +2394,7 @@ native int Shavit_GetTimesTeleported(int client);
  */
 native int Shavit_GetPlayerPreFrame(int client);
 
-/*
+/**
  * returns the number of timer preframes in the players current run.
  *
  * @param client					Client index
@@ -2337,7 +2403,7 @@ native int Shavit_GetPlayerPreFrame(int client);
  */
 native int Shavit_GetPlayerTimerFrame(int client);
 
-/*
+/**
  * Sets player's preframe length.
  *
  * @param client					Client index
@@ -2348,7 +2414,7 @@ native int Shavit_GetPlayerTimerFrame(int client);
  */
 native void Shavit_SetPlayerPreFrame(int client, int PreFrame);
 
-/*
+/**
  * Sets player's timer preframe length.
  *
  * @param client					Client index
@@ -2358,7 +2424,7 @@ native void Shavit_SetPlayerPreFrame(int client, int PreFrame);
  */
 native void Shavit_SetPlayerTimerFrame(int client, int TimerPreFrame);
 
-/*
+/**
  * Retrieves the player's chatrank trimmed and without colors.
  *
  * @param client					Client index
@@ -2369,7 +2435,7 @@ native void Shavit_SetPlayerTimerFrame(int client, int TimerPreFrame);
  */
 native void Shavit_GetPlainChatrank(int client, char[] buf, int buflen, bool includename=false);
 
-/*
+/**
  * Used to delete a WR. Used to ensure Shavit_OnWRDeleted is ran.
  *
  * @param style						Record style.
@@ -2383,12 +2449,19 @@ native void Shavit_GetPlainChatrank(int client, char[] buf, int buflen, bool inc
  */
 native void Shavit_DeleteWR(int style, int track, const char[] map, int accountid, int recordid, bool delete_sql, bool update_cache);
 
-/*
+/**
  * Reload WRCPs.
  *
  * @noreturn
  */
 native void Shavit_ReloadWRCPs();
+
+/**
+ * Reload WR Checkpoints.
+ *
+ * @noreturn
+ */
+native void Shavit_ReloadWRCheckpoints();
 
 /**
  * Detect client recording single stage time(not recording finish map time).
@@ -2406,6 +2479,15 @@ native bool Shavit_IsClientSingleStageTiming(int client);
  * @noreturn
  */
 native void Shavit_FinishStage(int client);
+
+/**
+ * Finishes the checkpoint for a player, with their current timer stats.
+ * Will not teleport the player to anywhere, it's handled inside the mapzones plugin.
+ *
+ * @param client					Client index.
+ * @noreturn
+ */
+native void Shavit_FinishCheckpoint(int client);
 
 public SharedPlugin __pl_shavit =
 {
@@ -2438,6 +2520,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetClientTime");
 	MarkNativeAsOptional("Shavit_GetClientTrack");
 	MarkNativeAsOptional("Shavit_GetClientStage");
+	MarkNativeAsOptional("Shavit_GetClientCheckpoint");
 	MarkNativeAsOptional("Shavit_GetDatabase");
 	MarkNativeAsOptional("Shavit_GetHUDSettings");
 	MarkNativeAsOptional("Shavit_GetMapTier");
@@ -2554,9 +2637,13 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_StartReplayFromFrameCache");
 	MarkNativeAsOptional("Shavit_StartReplayFromFile");
 	MarkNativeAsOptional("Shavit_GetMapStages");
+	MarkNativeAsOptional("Shavit_GetMapCheckpoints");
 	MarkNativeAsOptional("Shavit_ReloadAllReplays");
 	MarkNativeAsOptional("Shavit_ReloadWRCPs");
+	MarkNativeAsOptional("Shavit_ReloadWRCheckpoints");
 	MarkNativeAsOptional("Shavit_GetWRCPName");
+	MarkNativeAsOptional("Shavit_GetWRCheckpointName");
 	MarkNativeAsOptional("Shavit_FinishStage");
+	MarkNativeAsOptional("Shavit_FinishCheckpoint");
 }
 #endif

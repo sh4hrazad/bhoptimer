@@ -1,15 +1,10 @@
 "Phrases"
 {
 	/*-------------Chat-------------*/
-	"ZoneStageTime"
+	"ZoneCheckpointTime"
 	{
-		"#format"	"{1:s},{2:s},{3:d},{4:s},{5:s},{6:s}{7:s}"
-		"en"		"{1}You finished stage {2}{3}{4}. Time: {5}{6}{7}."
-	}
-	"ZoneStageAvoidSkip"
-	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"{1}You cannot skip stage{2}."
+		"#format"	"{1:s},{2:s},{3:s},{4:d},{5:s},{6:s}{7:s},{8:s},{9:s},{10:s},{11:s}"
+		"en"		"{1}{2} [{3}{4}{5}] | {6}{7}{8} | WR {9}{10}{11}."
 	}
 	"ZoneStageEnterTotalTime"
 	{
