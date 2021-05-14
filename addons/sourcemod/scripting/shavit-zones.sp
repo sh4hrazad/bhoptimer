@@ -139,8 +139,8 @@ int gI_EntityZone[4096];
 ArrayList gA_Triggers;
 ArrayList gA_HookTriggers;
 bool gB_ZonesCreated = false;
-int gI_Stages = 1; // how many stages in a map, default 1.
-int gI_Checkpoints = 0; // how many checkpoint zones in a map, default 0.
+int gI_Stages; // how many stages in a map, default 1.
+int gI_Checkpoints; // how many checkpoint zones in a map, default 0.
 int gI_ClientCurrentStage[MAXPLAYERS+1];
 int gI_ClientCurrentCP[MAXPLAYERS+1];
 
@@ -842,6 +842,8 @@ public void OnMapStart()
 	GetMapDisplayName(gS_Map, gS_Map, 160);
 
 	gI_MapZones = 0;
+	gI_Stages = 1;
+	gI_Checkpoints = 0;
 	UnloadZones(0);
 	FindTriggers();
 	RefreshZones();
@@ -895,7 +897,7 @@ public void SQL_GetStageZone_Callback(Database db, DBResultSet results, const ch
 public void LoadCheckpointZones()
 {
 	char sQuery[256];
-	FormatEx(sQuery, 256, "SELECT id, data FROM mapzones WHERE type = %i and map = '%s'", Zone_Checkpoint, gS_Map);
+	FormatEx(sQuery, 256, "SELECT id, data FROM mapzones WHERE type = %i AND map = '%s'", Zone_Checkpoint, gS_Map);
 	gH_SQL.Query(SQL_GetCheckpointZone_Callback, sQuery, 0, DBPrio_High);
 }
 
@@ -3176,8 +3178,11 @@ public void StartTouchPost(int entity, int other)
 
 	else if(type == Zone_End)
 	{
-		gI_ClientCurrentStage[other] = gI_Stages + 1;//a hack that record the last stage's time
-		Shavit_FinishStage(other);
+		if(gI_Stages > 1)//prevent no stages.
+		{
+			gI_ClientCurrentStage[other] = gI_Stages + 1;//a hack that record the last stage's time
+			Shavit_FinishStage(other);
+		}
 		
 		if(status != Timer_Stopped && !Shavit_IsPaused(other) && !gB_SingleStageTiming[other] && Shavit_GetClientTrack(other) == gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack)
 		{
@@ -3192,6 +3197,7 @@ public void StartTouchPost(int entity, int other)
 
 		if(!gB_SingleStageTiming[other])
 		{
+			gI_ClientCurrentCP[other] = gA_ZoneCache[gI_EntityZone[entity]].iZoneData - 1;
 			Shavit_FinishCheckpoint(other);
 		}
 	}

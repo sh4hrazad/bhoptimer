@@ -24,13 +24,6 @@ bool gB_Connected = false;
 bool gB_MySQL = false;
 bool gB_LinearMap;
 
-int gI_Styles = 0;
-char gS_Map[160];
-int gI_Steamid[101];//this is a mysql index, i dont have any better implementation
-
-int gI_LastStage[MAXPLAYERS+1];
-float gF_LeaveStageTime[MAXPLAYERS+1];
-
 enum struct cp_t
 {
 	float fStageTime;
@@ -39,6 +32,14 @@ enum struct cp_t
 	float fFinalspeed;
 	char sName[MAX_NAME_LENGTH];
 }
+
+int gI_Styles = 0;
+char gS_Map[160];
+int gI_Steamid[101];//this is a mysql index, i dont have any better implementation
+
+int gI_LastStage[MAXPLAYERS+1];
+int gI_LastCheckpoint[MAXPLAYERS+1];
+float gF_LeaveStageTime[MAXPLAYERS+1];
 
 cp_t gA_WRCP[MAX_STAGES+1][STYLE_LIMIT];
 cp_t gA_PRCP[MAXPLAYERS+1][MAX_STAGES+1][STYLE_LIMIT];
@@ -82,7 +83,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_ReloadWRCPs", Native_ReloadWRCPs);
 	CreateNative("Shavit_ReloadWRCheckpoints", Native_ReloadWRCheckpoints);
 	CreateNative("Shavit_GetWRCPName", Native_GetWRCPName);
-	CreateNative("Shavit_GetWRCheckpointName", Native_GetWRCheckpointName);
 	CreateNative("Shavit_FinishStage", Native_FinishStage);
 	CreateNative("Shavit_FinishCheckpoint", Native_FinishCheckpoint);
 	// registers library, check "bool LibraryExists(const char[] name)" in order to use with other plugins
@@ -138,9 +138,10 @@ public void OnPluginStart()
 	SQL_DBConnect();
 }
 
-public void OnClientPostAdminCheck(int client)
+public void OnClientPutInServer(int client)
 {
 	gI_LastStage[client] = 1;
+	gI_LastCheckpoint[client] = 0;
 	for(int i = 1; i <= MAX_STAGES; i++)//init
 	{
 		for(int j = 0; j < gI_Styles; j++)
@@ -162,25 +163,35 @@ public void OnMapStart()
 		return;
 	}
 
-	if(Shavit_GetMapStages() == 1)
-	{
-		gB_LinearMap = true;
-		return;
-	}
-
-	else
-	{
-		gB_LinearMap = false;
-	}
-
 	GetCurrentMap(gS_Map, 160);
 	GetMapDisplayName(gS_Map, gS_Map, 160);
+
+	ResetStage(MAX_STAGES, STYLE_LIMIT, true);
+	ResetCPs(MAX_CPZONES, STYLE_LIMIT, true);
 
 	if(gB_Late)
 	{
 		chatstrings_t chatstrings;
 		Shavit_GetChatStringsStruct(chatstrings);
 		Shavit_OnChatConfigLoaded(chatstrings);
+
+		if(Shavit_GetMapStages() == 1)
+		{
+			gB_LinearMap = true;
+		}
+
+		else
+		{
+			gB_LinearMap = false;
+		}
+
+		for(int i = 1; i <= MaxClients; i++)
+		{
+			if(IsValidClient(i))
+			{
+				OnClientPutInServer(i);
+			}
+		}
 	}
 }
 
@@ -195,8 +206,6 @@ public void OnAllPluginsLoaded()
 public void Shavit_OnStyleConfigLoaded(int styles)
 {
 	gI_Styles = styles;
-	ResetStage(MAX_STAGES, styles, true);
-	ResetCPs(MAX_CPZONES, styles, true);
 
 	for(int i = 0; i < styles; i++)
 	{
@@ -241,7 +250,6 @@ void ResetCPs(int cpnum, int style, bool all = false)
 			for(int j = 0; j < style; j++)
 			{
 				gA_WRCP[i][j].fCheckpointTime = -1.0;
-				strcopy(gA_WRCP[i][j].sName, 16, gS_None);
 			}
 		}
 	}
@@ -249,7 +257,6 @@ void ResetCPs(int cpnum, int style, bool all = false)
 	else
 	{
 		gA_WRCP[cpnum][style].fCheckpointTime = -1.0;
-		strcopy(gA_WRCP[cpnum][style].sName, 16, gS_None);
 	}
 
 	LoadWRCheckpoints();
@@ -835,12 +842,14 @@ public void SQL_DeleteMaptop_Callback(Database db, DBResultSet results, const ch
 public void Shavit_OnRestart(int client, int track)
 {
 	gI_LastStage[client] = 1;
+	gI_LastCheckpoint[client] = 0;
 }
 
 public void Player_Death(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	gI_LastStage[client] = 1;
+	gI_LastCheckpoint[client] = 0;
 }
 
 public void Shavit_OnEnterZone(int client, int type, int track, int id, int entity, int data)
@@ -866,23 +875,13 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 		Call_PushFloat(finalSpeed);
 		Call_Finish();
 
-		if(!Shavit_IsClientSingleStageTiming(client) && type != Zone_Start && Shavit_GetClientTime(client) != 0.0)
-		{
-			char sMessage[255];
-			char sTime[32];
-
-			FormatSeconds(Shavit_GetClientTime(client), sTime, 32, true);
-			FormatEx(sMessage, 255, "%T", "ZoneStageEnterTotalTime", 
-				client, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText);
-			Shavit_PrintToChat(client, "%s", sMessage);
-		}
-
 		if(type == Zone_End && Shavit_IsClientSingleStageTiming(client))
 		{
 			Shavit_StopTimer(client);
 		}
 
 		gI_LastStage[client] = stage;
+		gI_LastCheckpoint[client] = stage;
 	}
 
 	else if(type == Zone_Checkpoint)
@@ -890,6 +889,7 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 		int cpnum = Shavit_GetClientCheckpoint(client);
 		int style = Shavit_GetBhopStyle(client);
 		gA_PRCP[client][cpnum][style].fFinalspeed = finalSpeed;
+		gI_LastCheckpoint[client] = cpnum;
 
 		Call_StartForward(gH_Forwards_EnterCheckpoint);
 		Call_PushCell(client);
@@ -1030,8 +1030,9 @@ public void SQL_CPCheck_Callback(Database db, DBResultSet results, const char[] 
 			float speed = (bInsertCP) ? gA_PRCP[client][cpnum][style].fFinalspeed : gA_PRCP[client][cpnum][style].fPrespeed;
 
 			FormatEx(sQuery, 512,
-				"UPDATE `%scp` SET auth = %d, time = %f, style = %d, cp = %d, speed = %f, date = %d WHERE map = '%s';", 
-				gS_MySQLPrefix, GetSteamAccountID(client), gA_WRCP[cpnum][style].fCheckpointTime, style, cpnum, speed, GetTime(), gS_Map);
+				"UPDATE `%scp` SET auth = %d, time = %f, style = %d, speed = %f, date = %d WHERE cp = %d AND map = '%s';", 
+				gS_MySQLPrefix, GetSteamAccountID(client), gA_WRCP[cpnum][style].fCheckpointTime, style, speed, GetTime(), cpnum, gS_Map);
+			
 			hTransaction.AddQuery(sQuery);
 		}
 	}
@@ -1042,9 +1043,10 @@ public void SQL_CPCheck_Callback(Database db, DBResultSet results, const char[] 
 		{
 			float speed = (bInsertCP) ? gA_PRCP[client][cpnum][style].fFinalspeed : gA_PRCP[client][cpnum][style].fPrespeed;
 
-			FormatEx(sQuery, 512,
+			FormatEx(sQuery, 1024,
 				"INSERT INTO `%scp` (auth, map, time, style, cp, speed, date) VALUES (%d, '%s', %f, %d, %d, %f, %d);",
 				gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, gA_WRCP[cpnum][style].fCheckpointTime, style, cpnum, speed, GetTime());
+			
 			hTransaction.AddQuery(sQuery);
 		}
 	}
@@ -1238,12 +1240,8 @@ void LoadWRCheckpoints()
 {
 	char sQuery[512];
 	FormatEx(sQuery, 512, 
-			"SELECT p1.auth, p1.cp, p1.style, p1.time, p1.speed, p2.name FROM `%scp` p1 " ...
-			"JOIN (SELECT auth, name FROM `%susers`) p2 " ...
-			"ON p1.auth = p2.auth " ...
-			"WHERE map = '%s' " ...
-			"ORDER BY p1.cp ASC;", 
-			gS_MySQLPrefix, gS_MySQLPrefix, gS_Map);
+			"SELECT cp, style, time, speed FROM `%scp` WHERE map = '%s' ORDER BY cp ASC;", 
+			gS_MySQLPrefix, gS_Map);
 
 	gH_SQL.Query(SQL_LoadWRCheckpoint_Callback, sQuery, 0, DBPrio_High);
 }
@@ -1258,30 +1256,24 @@ public void SQL_LoadWRCheckpoint_Callback(Database db, DBResultSet results, cons
 
 	while(results.FetchRow())
 	{
-		int cpnum = results.FetchInt(1);
-		int style = results.FetchInt(2);
-		gA_WRCP[cpnum][style].fCheckpointTime = results.FetchFloat(3);
-		gA_WRCP[cpnum][style].fFinalspeed = results.FetchFloat(4);
-		results.FetchString(5, gA_WRCP[cpnum][style].sName, MAX_NAME_LENGTH);
+		int cpnum = results.FetchInt(0);
+		int style = results.FetchInt(1);
+		gA_WRCP[cpnum][style].fCheckpointTime = results.FetchFloat(2);
+		gA_WRCP[cpnum][style].fFinalspeed = results.FetchFloat(3);
 	}
 }
 
 public int Native_ReloadWRCPs(Handle handler, int numParams)
 {
-	LoadWRCP();
+	OnMapStart();
 }
 
 public int Native_ReloadWRCheckpoints(Handle handler, int numParams)
 {
-	LoadWRCheckpoints();
+	OnMapStart();
 }
 
 public int Native_GetWRCPName(Handle handler, int numParams)
-{
-	SetNativeString(2, gA_WRCP[GetNativeCell(4)][GetNativeCell(1)].sName, GetNativeCell(3));
-}
-
-public int Native_GetWRCheckpointName(Handle handler, int numParams)
 {
 	SetNativeString(2, gA_WRCP[GetNativeCell(4)][GetNativeCell(1)].sName, GetNativeCell(3));
 }
@@ -1322,7 +1314,7 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 	int style = Shavit_GetBhopStyle(client);
 	float time = Shavit_GetClientTime(client);
 
-	if(time == 0.0 || Shavit_GetTimerStatus(client) == Timer_Stopped)
+	if(cpnum <= gI_LastCheckpoint[client] || time == 0.0 || Shavit_GetTimerStatus(client) == Timer_Stopped)
 	{
 		return;
 	}
@@ -1352,6 +1344,13 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 	if(gA_WRCP[cpnum][style].fCheckpointTime == -1.0)
 	{
 		FormatEx(sDifftime, 32, "N/A");
+	}
+
+	else if(diff > 0)
+	{
+		char sBuffer[32];
+		FormatEx(sBuffer, 32, "+%s", sDifftime);
+		strcopy(sDifftime, 32, sBuffer);
 	}
 
 	char sMessage[255];

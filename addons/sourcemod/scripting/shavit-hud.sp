@@ -56,8 +56,8 @@ enum ZoneHUD
 {
 	ZoneHUD_None,
 	ZoneHUD_Start,
-	ZoneHUD_Stage,
-	ZoneHUD_End
+	ZoneHUD_End,
+	ZoneHUD_Stage
 };
 
 enum struct huddata_t
@@ -1466,15 +1466,15 @@ void UpdateMainHUD(int client)
 		{
 			iZoneHUD = ZoneHUD_Start;
 		}
-
-		else if(Shavit_InsideZone(target, Zone_Stage, -1))
-		{
-			iZoneHUD = ZoneHUD_Stage;
-		}
 		
 		else if(Shavit_InsideZone(target, Zone_End, -1))
 		{
 			iZoneHUD = ZoneHUD_End;
+		}
+
+		else if(Shavit_InsideZone(target, Zone_Stage, -1))
+		{
+			iZoneHUD = ZoneHUD_Stage;
 		}
 	}
 	else
