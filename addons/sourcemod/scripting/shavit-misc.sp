@@ -75,7 +75,6 @@ char gS_CurrentMap[192];
 char gS_PreviousMap[PLATFORM_MAX_PATH];
 int gI_Style[MAXPLAYERS+1];
 Function gH_AfterWarningMenu[MAXPLAYERS+1];
-bool gB_ClosedKZCP[MAXPLAYERS+1];
 
 ArrayList gA_Checkpoints[MAXPLAYERS+1];
 int gI_CurrentCheckpoint[MAXPLAYERS+1];
@@ -335,7 +334,6 @@ public void OnPluginStart()
 
 	// crons
 	CreateTimer(10.0, Timer_Cron, 0, TIMER_REPEAT);
-	CreateTimer(0.5, Timer_PersistKZCP, 0, TIMER_REPEAT);
 
 	if(gEV_Type != Engine_TF2)
 	{
@@ -915,22 +913,6 @@ public Action Timer_Cron(Handle timer)
 	return Plugin_Continue;
 }
 
-public Action Timer_PersistKZCP(Handle timer)
-{
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(!gB_ClosedKZCP[i] &&
-			Shavit_GetStyleSettingInt(gI_Style[i], "kzcheckpoints")
-			&& GetClientMenu(i) == MenuSource_None &&
-			IsClientInGame(i) && IsPlayerAlive(i))
-		{
-			OpenKZCPMenu(i);
-		}
-	}
-
-	return Plugin_Continue;
-}
-
 public Action Timer_Scoreboard(Handle timer)
 {
 	for(int i = 1; i <= MaxClients; i++)
@@ -1320,7 +1302,6 @@ public void OnClientPutInServer(int client)
 	}
 
 	gB_SaveStates[client] = false;
-	gB_ClosedKZCP[client] = false;
 }
 
 void RemoveAllWeapons(int client)
@@ -1923,11 +1904,6 @@ public Action Command_Checkpoints(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(Shavit_GetStyleSettingInt(gI_Style[client], "kzcheckpoints"))
-	{
-		gB_ClosedKZCP[client] = false;
-	}
-
 	return OpenCheckpointsMenu(client);
 }
 
@@ -2002,128 +1978,9 @@ public Action Command_Tele(int client, int args)
 
 public Action OpenCheckpointsMenu(int client)
 {
-	if(Shavit_GetStyleSettingInt(gI_Style[client], "kzcheckpoints"))
-	{
-		OpenKZCPMenu(client);
-	}
-	else
-	{
-		OpenNormalCPMenu(client);
-	}
+	OpenNormalCPMenu(client);
 
 	return Plugin_Handled;
-}
-
-void OpenKZCPMenu(int client)
-{
-	// if we're segmenting, resort to the normal checkpoints instead
-	if(CanSegment(client))
-	{
-		OpenNormalCPMenu(client);
-
-		return;
-	}
-	Menu menu = new Menu(MenuHandler_KZCheckpoints, MENU_ACTIONS_DEFAULT|MenuAction_DisplayItem);
-	menu.SetTitle("%T\n", "MiscCheckpointMenu", client);
-
-	char sDisplay[64];
-	FormatEx(sDisplay, 64, "%T", "MiscCheckpointSave", client, (gA_Checkpoints[client].Length + 1));
-	menu.AddItem("save", sDisplay, (gA_Checkpoints[client].Length < gCV_MaxCP.IntValue)? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
-
-	if(gA_Checkpoints[client].Length > 0)
-	{
-		FormatEx(sDisplay, 64, "%T", "MiscCheckpointTeleport", client, gI_CurrentCheckpoint[client]);
-		menu.AddItem("tele", sDisplay, ITEMDRAW_DEFAULT);
-	}
-	else
-	{
-		FormatEx(sDisplay, 64, "%T", "MiscCheckpointTeleport", client, 1);
-		menu.AddItem("tele", sDisplay, ITEMDRAW_DISABLED);
-	}
-
-	FormatEx(sDisplay, 64, "%T", "MiscCheckpointPrevious", client);
-	menu.AddItem("prev", sDisplay);
-
-	FormatEx(sDisplay, 64, "%T", "MiscCheckpointNext", client);
-	menu.AddItem("next", sDisplay);
-
-	if((Shavit_CanPause(client) & CPR_ByConVar) == 0)
-	{
-		FormatEx(sDisplay, 64, "%T", "MiscCheckpointPause", client);
-		menu.AddItem("pause", sDisplay);
-	}
-
-	menu.ExitButton = true;
-	menu.Display(client, MENU_TIME_FOREVER);
-}
-
-public int MenuHandler_KZCheckpoints(Menu menu, MenuAction action, int param1, int param2)
-{
-	if(action == MenuAction_Select)
-	{
-		if(CanSegment(param1) || !Shavit_GetStyleSettingInt(gI_Style[param1], "kzcheckpoints"))
-		{
-			return 0;
-		}
-
-		char sInfo[8];
-		menu.GetItem(param2, sInfo, 8);
-
-		if(StrEqual(sInfo, "save"))
-		{
-			if(gA_Checkpoints[param1].Length < gCV_MaxCP.IntValue)
-			{
-				SaveCheckpoint(param1);
-			}
-		}
-		else if(StrEqual(sInfo, "tele"))
-		{
-			TeleportToCheckpoint(param1, gI_CurrentCheckpoint[param1], true);
-		}
-		else if(StrEqual(sInfo, "prev"))
-		{
-			if(gI_CurrentCheckpoint[param1] > 1)
-			{
-				gI_CurrentCheckpoint[param1]--;
-			}
-		}
-		else if(StrEqual(sInfo, "next"))
-		{
-			if(gI_CurrentCheckpoint[param1] < gA_Checkpoints[param1].Length)
-				gI_CurrentCheckpoint[param1]++;
-		}
-		else if(StrEqual(sInfo, "pause"))
-		{
-			if(Shavit_CanPause(param1) == 0)
-			{
-				if(Shavit_IsPaused(param1))
-				{
-					Shavit_ResumeTimer(param1, true);
-				}
-				else
-				{
-					Shavit_PauseTimer(param1);
-				}
-			}
-		}
-
-		OpenCheckpointsMenu(param1);
-	}
-
-	else if(action == MenuAction_Cancel)
-	{
-		if(param2 == MenuCancel_Exit)
-		{
-			gB_ClosedKZCP[param1] = true;
-		}
-	}
-
-	else if(action == MenuAction_End)
-	{
-		delete menu;
-	}
-
-	return 0;
 }
 
 void OpenNormalCPMenu(int client)
@@ -2378,13 +2235,6 @@ bool SaveCheckpoint(int client)
 
 	if (IsFakeClient(target))
 	{
-		if((GetEntityFlags(client) & FL_ONGROUND) == 0 || client != target)
-		{
-			Shavit_PrintToChat(client, "%T", "CommandSaveCPKZInvalid", client);
-
-			return false;
-		}
-
 		if(Shavit_InsideZone(client, Zone_Start, -1))
 		{
 			Shavit_PrintToChat(client, "%T", "CommandAliveSpectate", client, gS_ChatStrings.sVariable, gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
@@ -2564,13 +2414,6 @@ void TeleportToCheckpoint(int client, int index, bool suppressMessage)
 	cp_cache_t cpcache;
 	gA_Checkpoints[client].GetArray(index - 1, cpcache, sizeof(cp_cache_t));
 
-	if(Shavit_GetStyleSettingInt(gI_Style[client], "kzcheckpoints") != Shavit_GetStyleSettingInt(cpcache.aSnapshot.bsStyle, "kzcheckpoints"))
-	{
-		Shavit_PrintToChat(client, "%T", "CommandTeleCPInvalid", client);
-
-		return;
-	}
-
 	if(IsNullVector(cpcache.fPosition))
 	{
 		return;
@@ -2636,14 +2479,6 @@ void LoadCheckpointCache(int client, cp_cache_t cpcache, bool isPersistentData)
 	{
 		SetEntPropFloat(client, Prop_Send, "m_flDuckAmount", cpcache.fDucktime);
 		SetEntPropFloat(client, Prop_Send, "m_flDuckSpeed", cpcache.fDuckSpeed);
-	}
-
-	// this is basically the same as normal checkpoints except much less data is used
-	if(!isPersistentData && Shavit_GetStyleSettingInt(gI_Style[client], "kzcheckpoints"))
-	{
-		TeleportEntity(client, cpcache.fPosition, cpcache.fAngles, view_as<float>({ 0.0, 0.0, 0.0 }));
-
-		return;
 	}
 
 	Shavit_LoadSnapshot(client, cpcache.aSnapshot);
@@ -3000,11 +2835,6 @@ public Action Shavit_OnStart(int client)
 		}
 	}
 
-	if(Shavit_GetStyleSettingInt(gI_Style[client], "kzcheckpoints"))
-	{
-		ResetCheckpoints(client);
-	}
-
 	return Plugin_Continue;
 }
 
@@ -3043,14 +2873,6 @@ public void Shavit_OnRestart(int client, int track)
 	if(gEV_Type != Engine_TF2)
 	{
 		SetEntPropFloat(client, Prop_Send, "m_flStamina", 0.0);
-	}
-
-	if(!gB_ClosedKZCP[client] &&
-		Shavit_GetStyleSettingInt(gI_Style[client], "kzcheckpoints") &&
-		GetClientMenu(client, null) == MenuSource_None &&
-		IsPlayerAlive(client) && GetClientTeam(client) >= 2)
-	{
-		OpenKZCPMenu(client);
 	}
 	
 	if(!gCV_RespawnOnRestart.BoolValue)
@@ -3175,15 +2997,6 @@ public void Player_Spawn(Event event, const char[] name, bool dontBroadcast)
 		}
 
 		UpdateClanTag(client);
-
-		// refreshes kz cp menu if there is nothing open
-		if(!gB_ClosedKZCP[client] &&
-			Shavit_GetStyleSettingInt(gI_Style[client], "kzcheckpoints") &&
-			GetClientMenu(client, null) == MenuSource_None &&
-			IsPlayerAlive(client) && GetClientTeam(client) >= 2)
-		{
-			OpenKZCPMenu(client);
-		}
 	}
 
 	if(gCV_NoBlock.BoolValue)

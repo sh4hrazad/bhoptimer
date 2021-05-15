@@ -1043,7 +1043,7 @@ public void SQL_CPCheck_Callback(Database db, DBResultSet results, const char[] 
 		{
 			float speed = (bInsertCP) ? gA_PRCP[client][cpnum][style].fFinalspeed : gA_PRCP[client][cpnum][style].fPrespeed;
 
-			FormatEx(sQuery, 1024,
+			FormatEx(sQuery, 512,
 				"INSERT INTO `%scp` (auth, map, time, style, cp, speed, date) VALUES (%d, '%s', %f, %d, %d, %f, %d);",
 				gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, gA_WRCP[cpnum][style].fCheckpointTime, style, cpnum, speed, GetTime());
 			
@@ -1238,10 +1238,8 @@ public void SQL_LoadWRCP_Callback(Database db, DBResultSet results, const char[]
 
 void LoadWRCheckpoints()
 {
-	char sQuery[512];
-	FormatEx(sQuery, 512, 
-			"SELECT cp, style, time, speed FROM `%scp` WHERE map = '%s' ORDER BY cp ASC;", 
-			gS_MySQLPrefix, gS_Map);
+	char sQuery[256];
+	FormatEx(sQuery, 256, "SELECT cp, style, time, speed FROM `%scp` WHERE map = '%s' ORDER BY cp ASC;", gS_MySQLPrefix, gS_Map);
 
 	gH_SQL.Query(SQL_LoadWRCheckpoint_Callback, sQuery, 0, DBPrio_High);
 }

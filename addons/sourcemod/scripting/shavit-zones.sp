@@ -985,6 +985,11 @@ void KillZoneEntity(int index)
 // 0 - all zones
 void UnloadZones(int zone)
 {
+	for(int i = 0; i < ZONETYPES_SIZE; i++)
+	{
+		gI_ZoneMaxData[i] = 0;
+	}
+
 	for(int i = 0; i < MAX_ZONES; i++)
 	{
 		if((zone == 0 || gA_ZoneCache[i].iZoneType == zone) && gA_ZoneCache[i].bZoneInitialized)
@@ -1005,7 +1010,7 @@ void UnloadZones(int zone)
 		{
 			GetEntPropString(iEntity, Prop_Data, "m_iName", sTargetname, 32);
 
-			if(StrContains(sTargetname, "shavit_zones_") != -1)
+			if(StrContains(sTargetname, "shavit_") != -1)
 			{
 				AcceptEntityInput(iEntity, "Kill");
 			}
@@ -3144,10 +3149,6 @@ void CreateZoneEntities()
 
 					gI_EntityZone[iEnt] = i;
 					gA_ZoneCache[i].iEntityID = iEnt;
-
-					char sTargetname[32];
-					FormatEx(sTargetname, 32, "shavit_hookzones_%d_%d", gA_ZoneCache[i].iZoneTrack, gA_ZoneCache[i].iZoneType);
-					DispatchKeyValue(iEnt, "targetname", sTargetname);
 
 					break;// stop looping from finding triggers to hook
 				}
