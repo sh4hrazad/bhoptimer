@@ -6,38 +6,110 @@
 	{
 		"en"		"Start Zone"
 	}
-	"HudZoneTier"
+	"Tier"
 	{
-		"#format"	"{1:d}"
-		"en"		"Tier {1}"
+		"en"		"难度"
+	}
+	"Stages"
+	{
+		"en"		"关卡数"
+	}
+	"Bonuses"
+	{
+		"en"		"奖励数"
+	}
+	"HudZoneMapinfo"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"en"		"{1} | {2} | {3}"
 	}
 	"HudInStartZone"
 	{
 		"#format"	"{1:d}"
 		"en"		"In Start Zone\n\n{1}"
 	}
+	"InStartZone"
+	{
+		"en"		"In Start Zone"
+		"chi"		"起点"
+	}
+	"InEndZone"
+	{
+		"en"		"In End Zone"
+		"chi"		"\t\t  终点"
+	}
 	"HudInStartZoneCSGO"
 	{
-		"#format"	"{1:d}"
-		"en"		"In Start Zone\n\n\t\t\t{1}"
+		"#format"	"{1:s},{2:d}"
+		"en"		"\n\n\t\t\t{1}({2})"
 	}
 	"HudEndZone"
 	{
 		"en"		"End Zone"
 	}
-	"HudInEndZone"
+	"SR"
 	{
-		"#format"	"{1:d}"
-		"en"		"In End Zone\n\n{1}"
+		"en"		"SR"
+		"chi"		"最佳记录"
 	}
-	"HudInEndZoneCSGO"
+	"PR"
 	{
-		"#format"	"{1:d}"
-		"en"		"In End Zone\n\n\t\t\t{1}"
+		"en"		"PR"
+		"chi"		"个人记录"
+	}
+	"Rank"
+	{
+		"en"		"Rank"
+		"chi"		"排名"
+	}
+	"HUDNoRecord"
+	{
+		"en"		"N/A"
+		"chi"		"无记录"
+	}
+	"InStageZone"
+	{
+		"en"		"In End Zone"
+		"chi"		"\t   关卡"
+	}
+	"WRCP"
+	{
+		"en"		"WRCP"
+		"chi"		"关卡最佳"
+	}
+	"PRCP"
+	{
+		"en"		"PR"
+		"chi"		"个人最佳"
 	}
 	"HudPaused"
 	{
 		"en"		"[PAUSED]"
+	}
+	"TimerStopped"
+	{
+		"en"		"Stopped"
+		"chi"		"计时已停止"
+	}
+	"Time"
+	{
+		"en"		"Time"
+		"chi"		"时间"
+	}
+	"Checkpoint"
+	{
+		"en"		"Checkpoint"
+		"chi"		"检查点"
+	}
+	"Stage"
+	{
+		"en"		"Stage"
+		"chi"		"关卡"
+	}
+	"Speed"
+	{
+		"en"		"Speed"
+		"chi"		"速度"
 	}
 	"HudTimeText"
 	{
@@ -160,6 +232,11 @@
 	"HudTopLeftRankText"
 	{
 		"en"		"Top left Rank"
+	}
+	"HudStage"
+	{
+		"en"		"Stage message"
+		"chi"		"关卡信息"
 	}
 	// ---------- Record Bots ---------- //
 	"ReplayText"

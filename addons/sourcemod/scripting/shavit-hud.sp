@@ -46,11 +46,12 @@
 #define HUD2_TIMEDIFFERENCE		(1 << 10)
 #define HUD2_PERFS				(1 << 11)
 #define HUD2_TOPLEFT_RANK		(1 << 12)
+#define HUD2_STAGE				(1 << 13)
 
 #define HUD_DEFAULT				(HUD_MASTER|HUD_CENTER|HUD_ZONEHUD|HUD_OBSERVE|HUD_TOPLEFT|HUD_SYNC|HUD_TIMELEFT|HUD_2DVEL|HUD_SPECTATORS)
 #define HUD_DEFAULT2			(HUD2_PERFS)
 
-#define MAX_HINT_SIZE 1024
+#define MAX_HINT_SIZE 227
 
 enum ZoneHUD
 {
@@ -68,6 +69,7 @@ enum struct huddata_t
 	int iStyle;
 	int iTrack;
 	int iStage;
+	int iCheckpoint;
 	int iJumps;
 	int iStrafes;
 	int iRank;
@@ -123,7 +125,7 @@ float gF_PreviousAngle[MAXPLAYERS+1];
 float gF_AngleDiff[MAXPLAYERS+1];
 
 bool gB_Late = false;
-char gS_HintPadding[MAX_HINT_SIZE+1];
+char gS_HintPadding[MAX_HINT_SIZE];
 
 // hud handle
 Handle gH_HUD = null;
@@ -136,10 +138,14 @@ Convar gCV_UseHUDFix = null;
 Convar gCV_SpecNameSymbolLength = null;
 Convar gCV_DefaultHUD = null;
 Convar gCV_DefaultHUD2 = null;
+Convar gCV_CheckpointDifferenceTime = null;
 
 // timer settings
 stylestrings_t gS_StyleStrings[STYLE_LIMIT];
 chatstrings_t gS_ChatStrings;
+
+// temp hud timer
+float gF_LastCPTime[MAXPLAYERS+1];
 
 public Plugin myinfo =
 {
@@ -199,6 +205,7 @@ public void OnPluginStart()
 	gCV_SpectatorList = new Convar("shavit_hud_speclist", "1", "Who to show in the specators list?\n0 - everyone\n1 - all admins (admin_speclisthide override to bypass)\n2 - players you can target", 0, true, 0.0, true, 2.0);
 	gCV_UseHUDFix = new Convar("shavit_hud_csgofix", "1", "Apply the csgo color fix to the center hud?\nThis will add a dollar sign and block sourcemod hooks to hint message", 0, true, 0.0, true, 1.0);
 	gCV_SpecNameSymbolLength = new Convar("shavit_hud_specnamesymbollength", "32", "Maximum player name length that should be displayed in spectators panel", 0, true, 0.0, true, float(MAX_NAME_LENGTH));
+	gCV_CheckpointDifferenceTime = new Convar("shavit_showtime_checkpointdiff", "3.0", "How long will the checkpoint difference time last?\n0 - will last to the next stage/checkpoint", 0, true, 0.0);
 
 	char defaultHUD[8];
 	IntToString(HUD_DEFAULT, defaultHUD, 8);
@@ -231,15 +238,15 @@ public void OnPluginStart()
 		..."HUD2_MAPTIER				512\n"
 		..."HUD2_TIMEDIFFERENCE		1024\n"
 		..."HUD2_PERFS				2048\n"
-		..."HUD2_TOPLEFT_RANK				4096");
+		..."HUD2_TOPLEFT_RANK				4096\n"
+		..."HUD2_STAGE				8192");
 
 	Convar.AutoExecConfig();
 
-	for (int i = 0; i < MAX_HINT_SIZE; i++)
+	for (int i = 0; i < sizeof(gS_HintPadding) - 1; i++)
 	{
-		gS_HintPadding[i] = ' ';
+		gS_HintPadding[i] = '\n';
 	}
-	gS_HintPadding[MAX_HINT_SIZE] = '\0';
 
 	// commands
 	RegConsoleCmd("sm_hud", Command_HUD, "Opens the HUD settings menu.");
@@ -752,6 +759,10 @@ Action ShowHUDMenu(int client, int item)
 	FormatEx(sHudItem, 64, "%T", "HudTopLeftRankText", client);
 	menu.AddItem(sInfo, sHudItem);
 
+	FormatEx(sInfo, 16, "@%d", HUD2_STAGE);
+	FormatEx(sHudItem, 64, "%T", "HudStage", client);
+	menu.AddItem(sInfo, sHudItem);
+
 	if(gB_Rankings)
 	{
 		FormatEx(sInfo, 16, "@%d", HUD2_MAPTIER);
@@ -1224,11 +1235,6 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 				GetTrackName(client, data.iTrack, sTrack, 32);
 				Format(sTrack, 32, "(%s) ", sTrack);
 			}
-			
-			if(data.iStage > 0)
-			{
-				Format(sTrack, 32, "(WRCP #%d) ", data.iStage);
-			}
 
 			FormatEx(sLine, 128, "<u><span color='#%s'>%s %s%T</span></u> <span color='#DB88C2'>%s</span>", gS_StyleStrings[data.iStyle].sHTMLColor, gS_StyleStrings[data.iStyle].sStyleName, sTrack, "ReplayText", client, sPlayerName);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
@@ -1270,7 +1276,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 	if((gI_HUDSettings[client] & HUD_ZONEHUD) > 0 && data.iZoneHUD != ZoneHUD_None)
 	{
 		char sZoneHUD[64];
-		FormatEx(sZoneHUD, 64, "<span class='fontSize-xxl' color='#%06X'>", ((gI_Gradient.r << 16) + (gI_Gradient.g << 8) + (gI_Gradient.b)));
+		FormatEx(sZoneHUD, 64, "<span class='fontSize-l'>");
 		StrCat(buffer, maxlen, sZoneHUD);
 
 		if(data.iZoneHUD == ZoneHUD_Start)
@@ -1279,33 +1285,178 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			{
 				if(data.iTrack == Track_Main)
 				{
-					FormatEx(sZoneHUD, 32, "%T", "HudZoneTier", client, Shavit_GetMapTier(gS_Map));
+					int tier = Shavit_GetMapTier(gS_Map);
+					int tierColor = 0xFFFFFF;//white default
+
+					switch(tier)
+					{
+						case 1: tierColor = 0xCCCCCC;
+						case 2: tierColor = 0xFBFFB6;
+						case 3: tierColor = 0xFFFF00;
+						case 4: tierColor = 0x0064FF;
+						case 5: tierColor = 0xFF00FF;
+						case 6: tierColor = ((gI_Gradient.r << 16) + (gI_Gradient.g << 8) + (gI_Gradient.b));
+						default: tierColor = 0x000000;
+					}
+
+					FormatEx(sZoneHUD, 64, "<span color='#FF0000'>%T</span> ", "Tier", client);
+					AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
+					FormatEx(sZoneHUD, 64, "<span color='#%06X'>%d</span>", tierColor, Shavit_GetMapTier(gS_Map));
+					AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
+
+					FormatEx(sZoneHUD, 64, "| <span color='#00FF00'>%T</span> ", "Stages", client);
+					AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
+					FormatEx(sZoneHUD, 64, "%d ", Shavit_GetMapStages());
+					AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
+
+					FormatEx(sZoneHUD, 64, "| <span color='#00FFFF'>%T</span> ", "Bonuses", client);
+					AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
+					Format(sZoneHUD, 64, "%d", Shavit_GetMapBonuses());
+					AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
+
+					iLines++;
 				}
 
-				else
+				FormatEx(sZoneHUD, 64, "<span color='#%06X'>", ((gI_Gradient.r << 16) + (gI_Gradient.g << 8) + (gI_Gradient.b)));
+				StrCat(buffer, maxlen, sZoneHUD);
+
+				if(data.iTrack != Track_Main)
 				{
-					GetTrackName(client, data.iTrack, sZoneHUD, 32);
+					ReplaceString(buffer, maxlen, "fontSize-l", "fontSize-xxl");
+
+					char sZoneName[32];
+					GetTrackName(client, data.iTrack, sZoneName, 32);
+					Format(sZoneHUD, 64, "\t\t %s", sZoneName);
+
+					AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
+					iLines++;
 				}
 
-				Format(sZoneHUD, 32, "\t\t%s\n\n", sZoneHUD);
-				AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
-				iLines++;
+				char sStartZone[32];
+				FormatEx(sStartZone, 32, "%T", "InStartZone", client);
+				FormatEx(sZoneHUD, 64, "%T", "HudInStartZoneCSGO", client, sStartZone, data.iSpeed);
+				StrCat(buffer, maxlen, sZoneHUD);
 			}
-			
-			FormatEx(sZoneHUD, 64, "%T</span>", "HudInStartZoneCSGO", client, data.iSpeed);
 		}
 
-		else
+		else if(data.iZoneHUD == ZoneHUD_End)
 		{
-			FormatEx(sZoneHUD, 64, "%T</span>", "HudInEndZoneCSGO", client, data.iSpeed);
+			char sEndZone[16];
+			FormatEx(sEndZone, 16, "%T", "InEndZone", client);
+
+			FormatEx(sZoneHUD, 64, "<span color='#%06X'>%s</span>", ((gI_Gradient.r << 16) + (gI_Gradient.g << 8) + (gI_Gradient.b)), sEndZone);
+			AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
+			iLines++;
+
+			float fWRTime = Shavit_GetWorldRecord(data.iStyle, data.iTrack);
+			float fSelfPB = Shavit_GetClientPB(client, data.iStyle, data.iTrack);
+			char sWRTime[32];
+			char sSelfPB[32];
+
+			if(fWRTime != 0.0)
+			{
+				FormatSeconds(fWRTime, sWRTime, 32);
+				FormatSeconds(fSelfPB, sSelfPB, 32);
+			}
+			else
+			{
+				FormatEx(sWRTime, 32, "%T", "HUDNoRecord", client);
+				FormatEx(sSelfPB, 32, "%T", "HUDNoRecord", client);
+			}
+
+			char sTransSR[16];
+			FormatEx(sTransSR, 16, "%T", "SR", client);
+			FormatEx(sZoneHUD, 64, "%s: <span color='#00FFFF'>%s</span>", sTransSR, sWRTime);
+			AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
+			iLines++;
+
+			int prColor = 0xFFFFFF;
+			if(fSelfPB > fWRTime)
+			{
+				prColor = 0xFF0000;
+			}
+			else
+			{
+				prColor = 0x00FF00;
+			}
+
+			char sTransPR[16];
+			FormatEx(sTransPR, 16, "%T", "PR", client);
+			FormatEx(sZoneHUD, 64, "%s: <span color='#%06X'>%s</span>", sTransPR, prColor, sSelfPB);
+			AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
+			iLines++;
+
+			char sTransRank[16];
+			FormatEx(sTransRank, 16, "%T", "Rank", client);
+			FormatEx(sZoneHUD, 64, "%s: <span color='#%06X'>%d/%d</span>", sTransRank, ((gI_Gradient.r << 16) + (gI_Gradient.g << 8) + (gI_Gradient.b)), 
+				Shavit_GetRankForTime(data.iStyle, fSelfPB, data.iTrack), Shavit_GetRecordAmount(data.iStyle, data.iTrack));
+			AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
+			iLines++;
 		}
-		
-		StrCat(buffer, maxlen, sZoneHUD);
+
+		else if(data.iZoneHUD == ZoneHUD_Stage)
+		{
+			char sStageZone[16];
+			FormatEx(sStageZone, 16, "%T", "InStageZone", client);
+
+			FormatEx(sZoneHUD, 64, "<span color='#%06X'>%s[%d]</span>", ((gI_Gradient.r << 16) + (gI_Gradient.g << 8) + (gI_Gradient.b)), sStageZone, data.iStage);
+			AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
+			iLines++;
+
+			float wrcpTime = Shavit_GetWRCPTime(data.iStage, data.iStyle);
+			float prcpTime = Shavit_GetPRCPTime(client, data.iStage, data.iStyle);
+
+			char sWRCPTime[32];
+			char sPRCPTime[32];
+
+			if(wrcpTime != -1.0)
+			{
+				FormatSeconds(wrcpTime, sWRCPTime, 32);
+				FormatSeconds(prcpTime, sPRCPTime, 32);
+			}
+			else
+			{
+				FormatEx(sWRCPTime, 32, "%T", "HUDNoRecord", client);
+				FormatEx(sPRCPTime, 32, "%T", "HUDNoRecord", client);
+			}
+
+			char sTransWRCP[16];
+			FormatEx(sTransWRCP, 16, "%T", "WRCP", client);
+			FormatEx(sZoneHUD, 64, "%s: <span color='#00FFFF'>%s</span>", sTransWRCP, sWRCPTime);
+			AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
+			iLines++;
+
+			int prColor = 0xFFFFFF;
+			if(prcpTime > wrcpTime)
+			{
+				prColor = 0xFF0000;
+			}
+			else
+			{
+				prColor = 0x00FF00;
+			}
+
+			char sTransPRCP[16];
+			FormatEx(sTransPRCP, 16, "%T", "PRCP", client);
+			FormatEx(sZoneHUD, 64, "%s: <span color='#%06X'>%s</span>", sTransPRCP, prColor, sPRCPTime);
+			AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
+			iLines++;
+
+			char sTransRank[16];
+			FormatEx(sTransRank, 16, "%T", "Rank", client);
+			FormatEx(sZoneHUD, 64, "%s: <span color='#%06X'>%d/%d</span>", sTransRank, ((gI_Gradient.r << 16) + (gI_Gradient.g << 8) + (gI_Gradient.b)), 
+				Shavit_GetStageRankForTime(data.iStyle, prcpTime, data.iStage), Shavit_GetStageRecordAmount(data.iStyle, data.iStage));
+			AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
+			iLines++;
+		}
 
 		return ++iLines;
 	}
 
 	StrCat(buffer, maxlen, "<span class='fontSize-l'>");
+
+	char sTransTime[8];
+	FormatEx(sTransTime, 8, "%T", "Time", client);
 
 	if(data.iTimerStatus != Timer_Stopped)
 	{
@@ -1329,7 +1480,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 		{
 			int iColor = 0xFF0000; // red, worse than both pb and wr
 			
-			if(data.iTimerStatus == Timer_Paused) 
+			if(data.iTimerStatus == Timer_Paused)
 			{
 				iColor = 0xA9C5E8; // blue sky
 			}
@@ -1361,19 +1512,70 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 				}
 			}
 
-			if((gI_HUD2Settings[client] & HUD2_RANK) == 0)
+			Format(sLine, 128, "%s: <span color='#%06X'>%s</span>", sTransTime, iColor, sTime);
+			AddHUDLine(buffer, maxlen, sLine, iLines);
+
+			if((gI_HUD2Settings[client] & HUD2_TIMEDIFFERENCE) == 0 && data.iZoneHUD != ZoneHUD_Stage)
 			{
-				FormatEx(sLine, 128, "<span color='#%06X'>%s%s</span> (#%d)", iColor, sTime, sTimeDiff, data.iRank);
+				float fTimer = GetGameTime() - gF_LastCPTime[client];
+
+				if(Shavit_IntoStage(client) || Shavit_IntoCheckpoint(client))
+				{
+					gF_LastCPTime[client] = GetGameTime();//restart timer
+				}
+
+				if(((0.0 < fTimer <= gCV_CheckpointDifferenceTime.FloatValue && GetGameTime() > gCV_CheckpointDifferenceTime.FloatValue) || gCV_CheckpointDifferenceTime.FloatValue == 0.0) && 
+					(data.iStage > 1 || data.iCheckpoint > 0) && !Shavit_IsClientSingleStageTiming(client))
+				{
+					char sBuffer[64];
+					FormatSeconds(Shavit_GetWRCheckpointDiffTime(client), sBuffer, 64);
+					
+					if(Shavit_GetWRCheckpointDiffTime(client) > 0.0)
+					{
+						Format(sTimeDiff, 128, "<span color='#FF0000'>[+%s]</span>", sBuffer);
+					}
+					else
+					{
+						Format(sTimeDiff, 128, "<span color='#36FF00'>[%s]</span>", sBuffer);
+					}
+
+					AddHUDLine(buffer, maxlen, sTimeDiff, iLines);
+				}
 			}
 
-			else
-			{
-				FormatEx(sLine, 128, "<span color='#%06X'>%s%s</span>", iColor, sTime, sTimeDiff);
-			}
-			
-			AddHUDLine(buffer, maxlen, sLine, iLines);
 			iLines++;
 		}
+	}
+
+	else
+	{
+		Format(sLine, 128, "%s: <span color='#FF0000'>%T</span>", sTransTime, "TimerStopped", client);
+		AddHUDLine(buffer, maxlen, sLine, iLines);
+		iLines++;
+	}
+
+	if((gI_HUD2Settings[client] & HUD2_STAGE) == 0 && data.iTrack == Track_Main)
+	{
+		if(Shavit_IsLinearMap())
+		{
+			char sTransCheckpoint[16];
+			FormatEx(sTransCheckpoint, 16, "%T", "Checkpoint", client);
+
+			int cp = (Shavit_GetClientCheckpoint(client) > Shavit_GetMapCheckpoints()) ? Shavit_GetMapCheckpoints() : Shavit_GetClientCheckpoint(client);
+			FormatEx(sLine, 128, "%s: %d/%d", sTransCheckpoint, cp, Shavit_GetMapCheckpoints());
+		}
+
+		else
+		{
+			char sTransStage[16];
+			FormatEx(sTransStage, 16, "%T", "Stage", client);
+
+			int stage = (Shavit_GetClientStage(client) > Shavit_GetMapStages()) ? Shavit_GetMapStages() : Shavit_GetClientStage(client);
+			FormatEx(sLine, 128, "%s: %d/%d", sTransStage, stage, Shavit_GetMapStages());
+		}
+
+		AddHUDLine(buffer, maxlen, sLine, iLines);
+		iLines++;
 	}
 
 	if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
@@ -1385,6 +1587,9 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			iColor = 0xFFC966;
 		}
 
+		char sSpeed[8];
+		FormatEx(sSpeed, 8, "%T", "Speed", client);
+
 		if(data.iTimerStatus != Timer_Stopped && gB_Replay && Shavit_GetReplayFrameCount(Shavit_GetClosestReplayStyle(data.iTarget), data.iTrack) != 0 && Shavit_GetClosestReplayTime(data.iTarget) != -1.0)
 		{
 			float res = Shavit_GetClosestReplayVelocityDifference(data.iTarget, (gI_HUDSettings[client] & HUD_2DVEL) == 0);
@@ -1392,42 +1597,9 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 		}
 		else
 		{
-			FormatEx(sLine, 128, "<span color='#%06X'>%d u/s</span>", iColor, data.iSpeed);
+			FormatEx(sLine, 128, "%s: <span color='#%06X'>%d </span>", sSpeed, iColor, data.iSpeed);
 		}
 
-		AddHUDLine(buffer, maxlen, sLine, iLines);
-		iLines++;
-	}
-
-	if(data.iTimerStatus != Timer_Stopped)
-	{
-		if((gI_HUD2Settings[client] & HUD2_JUMPS) == 0)
-		{
-			FormatEx(sLine, 128, "%d %T", data.iJumps, "HudJumpsText", client);
-			AddHUDLine(buffer, maxlen, sLine, iLines);
-			iLines++;
-		}
-
-		if((gI_HUD2Settings[client] & HUD2_STRAFE) == 0)
-		{
-			if((gI_HUD2Settings[client] & HUD2_SYNC) == 0)
-			{
-				FormatEx(sLine, 128, "%d %T (%.1f%%)", data.iStrafes, "HudStrafeText", client, data.fSync);
-			}
-
-			else
-			{
-				FormatEx(sLine, 128, "%d %T", data.iStrafes, "HudStrafeText", client);
-			}
-
-			AddHUDLine(buffer, maxlen, sLine, iLines);
-			iLines++;
-		}
-	}
-
-	if((gI_HUD2Settings[client] & HUD2_STYLE) == 0)
-	{
-		FormatEx(sLine, 128, "<span color='#%s'>%s</span>", gS_StyleStrings[data.iStyle].sHTMLColor, gS_StyleStrings[data.iStyle].sStyleName);
 		AddHUDLine(buffer, maxlen, sLine, iLines);
 		iLines++;
 	}
@@ -1440,10 +1612,12 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 void UpdateMainHUD(int client)
 {
 	int target = GetSpectatorTarget(client, client);
+	bool bReplay = (gB_Replay && Shavit_IsReplayEntity(target));
 
 	if((gI_HUDSettings[client] & HUD_CENTER) == 0 ||
 		((gI_HUDSettings[client] & HUD_OBSERVE) == 0 && client != target) ||
-		(gEV_Type == Engine_TF2 && (!gB_FirstPrint[target] || GetEngineTime() - gF_ConnectTime[target] < 1.5))) // TF2 has weird handling for hint text
+		(!IsValidClient(target) && !bReplay) ||
+		(gEV_Type == Engine_TF2 && IsValidClient(target) && (!gB_FirstPrint[target] || GetEngineTime() - gF_ConnectTime[target] < 1.5))) // TF2 has weird handling for hint text
 	{
 		return;
 	}
@@ -1452,7 +1626,6 @@ void UpdateMainHUD(int client)
 	GetEntPropVector(target, Prop_Data, "m_vecVelocity", fSpeed);
 
 	float fSpeedHUD = ((gI_HUDSettings[client] & HUD_2DVEL) == 0)? GetVectorLength(fSpeed):(SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0)));
-	bool bReplay = (gB_Replay && Shavit_IsReplayEntity(target));
 	ZoneHUD iZoneHUD = ZoneHUD_None;
 	int iReplayStyle = 0;
 	int iReplayTrack = 0;
@@ -1472,7 +1645,7 @@ void UpdateMainHUD(int client)
 			iZoneHUD = ZoneHUD_End;
 		}
 
-		else if(Shavit_InsideZone(target, Zone_Stage, -1))
+		else if(Shavit_InsideZone(target, Zone_Stage, -1) && Shavit_IsClientSingleStageTiming(target))
 		{
 			iZoneHUD = ZoneHUD_Stage;
 		}
@@ -1486,7 +1659,7 @@ void UpdateMainHUD(int client)
 		if(iReplayStyle != -1)
 		{
 			fReplayTime = Shavit_GetReplayTime(target);
-			fReplayLength = Shavit_GetReplayLength(iReplayStyle, iReplayTrack, iReplayStage);
+			fReplayLength = Shavit_GetReplayLength(iReplayStyle, iReplayTrack);
 
 			float fSpeed2 = Shavit_GetStyleSettingFloat(iReplayStyle, "speed");
 
@@ -1504,6 +1677,7 @@ void UpdateMainHUD(int client)
 	huddata.iStyle = (bReplay)? iReplayStyle:Shavit_GetBhopStyle(target);
 	huddata.iTrack = (bReplay)? iReplayTrack:Shavit_GetClientTrack(target);
 	huddata.iStage = (bReplay)? iReplayStage:Shavit_GetClientStage(target);
+	huddata.iCheckpoint = Shavit_GetClientCheckpoint(target);
 	huddata.fTime = (bReplay)? fReplayTime:Shavit_GetClientTime(target);
 	huddata.iJumps = (bReplay)? 0:Shavit_GetClientJumps(target);
 	huddata.iStrafes = (bReplay)? 0:Shavit_GetStrafeCount(target);
@@ -1735,12 +1909,18 @@ void UpdateTopLeftHUD(int client, bool wait)
 	if((!wait || gI_Cycle % 25 == 0) && (gI_HUDSettings[client] & HUD_TOPLEFT) > 0)
 	{
 		int target = GetSpectatorTarget(client, client);
+		bool bReplay = (gB_Replay && Shavit_IsReplayEntity(target));
+
+		if (!bReplay && !IsValidClient(target))
+		{
+			return;
+		}
 
 		int track = 0;
 		int style = 0;
 		float fTargetPB = 0.0;
 
-		if(!(gB_Replay && Shavit_IsReplayEntity(target)))
+		if(!bReplay)
 		{
 			style = Shavit_GetBhopStyle(target);
 			track = Shavit_GetClientTrack(target);
@@ -1855,6 +2035,12 @@ void UpdateKeyHint(int client)
 		if(target == client || (gI_HUDSettings[client] & HUD_OBSERVE) > 0)
 		{
 			int bReplay = gB_Replay && Shavit_IsReplayEntity(target);
+
+			if (!bReplay && !IsValidClient(target))
+			{
+				return;
+			}
+
 			int style = bReplay ? Shavit_GetReplayBotStyle(target) : Shavit_GetBhopStyle(target);
 
 			if(!(0 <= style < gI_Styles))
@@ -2000,8 +2186,8 @@ public int Native_GetHUDSettings(Handle handler, int numParams)
 
 void PrintCSGOHUDText(int client, const char[] str)
 {
-	char buff[2048];
-	FormatEx(buff, 2048, "</font>%s%s", str, gS_HintPadding);
+	char buff[MAX_HINT_SIZE];
+	FormatEx(buff, sizeof(buff), "</font>%s%s", str, gS_HintPadding);
 
 	Protobuf pb = view_as<Protobuf>(StartMessageOne("TextMsg", client, USERMSG_RELIABLE | USERMSG_BLOCKHOOKS));
 	pb.SetInt("msg_dst", 4);
@@ -2035,4 +2221,3 @@ void TrimPlayerName(const char[] name, char[] outname, int len)
 	if(count > gCV_SpecNameSymbolLength.IntValue)
 		Format(outname, len, "%s...", outname);
 }
-

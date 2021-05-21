@@ -137,6 +137,16 @@ enum
 	sMessageWarning,
 	sMessageVariable,
 	sMessageVariable2,
+	sMessageVariable3,
+	sMessageVariable4,
+	sMessageVariable5,
+	sMessageVariable6,
+	sMessageVariable7,
+	sMessageVariable8,
+	sMessageVariable9,
+	sMessageVariable10,
+	sMessageVariable11,
+	sMessageTeam,
 	sMessageStyle
 };
 
@@ -158,6 +168,16 @@ enum struct chatstrings_t
 	char sWarning[16];
 	char sVariable[16];
 	char sVariable2[16];
+	char sVariable3[16];
+	char sVariable4[16];
+	char sVariable5[16];
+	char sVariable6[16];
+	char sVariable7[16];
+	char sVariable8[16];
+	char sVariable9[16];
+	char sVariable10[16];
+	char sVariable11[16];
+	char sTeam[16];
 	char sStyle[16];
 }
 
@@ -1093,6 +1113,16 @@ forward void Shavit_OnProcessMovementPost(int client);
 forward void Shavit_OnWRCPDeleted(int stage, int style, int steamid, const char[] mapname);
 
 /**
+ * Called before a player finishes a stage.
+ *
+ * @param client					Client index.
+ * @param stage						Stage id.
+ * @param style						Style id.
+ * @return							False to prevent the stage from finishing.
+ */
+forward bool Shavit_OnFinishStagePre(int client, int stage, int style);
+
+/**
  * Called when a player finishes a stage. (touches the stage zone)
  *
  * @param client					Client index.
@@ -1102,6 +1132,16 @@ forward void Shavit_OnWRCPDeleted(int stage, int style, int steamid, const char[
  * @noreturn
  */
 forward void Shavit_OnFinishStage(int client, int stage, int style, float time);
+
+/**
+ * Called before a player finishes a checkpoint.
+ *
+ * @param client					Client index.
+ * @param cpnum						Checkpoint/Stage zone number was done on.
+ * @param style						Style id.
+ * @return							False to prevent the Checkpoint/Stage from finishing.
+ */
+forward bool Shavit_OnFinishCheckpointPre(int client, int stage, int style);
 
 /**
  * Called when a player finishes a checkpoint. (touches the checkpoint/stage zone)
@@ -1288,6 +1328,13 @@ native int Shavit_GetClientStage(int client);
 native int Shavit_GetClientCheckpoint(int client);
 
 /**
+ * Retrieve the map's bonus numbers.
+ *
+ * @return                          bonus numbers.
+ */
+native int Shavit_GetMapBonuses();
+
+/**
  * Retrieve the map's stage numbers.
  *
  * @return                          stage numbers.
@@ -1367,6 +1414,25 @@ native void Shavit_GetWRRecordID(int style, int &recordid, int track);
 native void Shavit_GetWRName(int style, char[] wrname, int wrmaxlength, int track);
 
 /**
+ * Get the amount of records on the current map/style on a stage.
+ *
+ * @param style						Style.
+ * @param stage						Timer stage.
+ * @return							Amount of stage records.
+ */
+native int Shavit_GetStageRecordAmount(int style, int stage);
+
+/**
+ * Calculate potential stage rank for a given style and time.
+ *
+ * @param style						Style.
+ * @param time						Time to check for.
+ * @param stage						Timer stage.
+ * @return							Stage rank.
+ */
+native int Shavit_GetStageRankForTime(int style, float time, int stage);
+
+/**
  * Saves the WRCP's player name on the map on a variable.
  *
  * @param style						Style to get the WRCP for.
@@ -1378,15 +1444,60 @@ native void Shavit_GetWRName(int style, char[] wrname, int wrmaxlength, int trac
 native void Shavit_GetWRCPName(int style, char[] wrcpname, int wrcpmaxlength, int stage);
 
 /**
- * Saves the WRCP's player name on the map on a variable.
+ * Gets the WRCP's time on the map on a variable.
  *
+ * @param stage						WRCP stage.
  * @param style						Style to get the WRCP for.
- * @param wrcpname					Reference to the name variable.
- * @param wrcpmaxlength				Max length for the string.
- * @param cpnum						WRCheckPoint stage.
- * @noreturn
+ * @return							WRCP Time.
  */
-native void Shavit_GetWRCheckpointName(int style, char[] wrcpname, int wrcpmaxlength, int cpnum);
+native float Shavit_GetWRCPTime(int stage, int style);
+
+/**
+ * Gets the WRCP's prespeed on the map on a variable.
+ *
+ * @param stage						WRCP stage.
+ * @param style						Style to get the WRCP for.
+ * @return							WRCP Prespeed.
+ */
+native float Shavit_GetWRCPPrespeed(int stage, int style);
+
+/**
+ * Gets the WR's checkpoint time on the map on a variable.
+ *
+ * @param cpnum						WR's Checkpoint number.
+ * @param style						Style to get the WRCP for.
+ * @return							WR checkpoint Time.
+ */
+native float Shavit_GetWRCheckpointTime(int stage, int style);
+
+/**
+ * Gets the difference time between WR's checkpoint time and client checkpoint time.
+ *
+ * @param client					Client index.
+ * @param difftime					String for difftime.
+ * @param maxlength					String maxlength for difftime.
+ * @return							Difference time.
+ */
+native float Shavit_GetWRCheckpointDiffTime(int client, char[] difftime = "N/A", int maxlength = 32);
+
+/**
+ * Gets the WR's checkpoint speed on the map on a variable.
+ *
+ * @param cpnum						WR's Checkpoint number.
+ * @param style						Style to get the WRCP for.
+ * @return							WR checkpoint Speed.
+ */
+native float Shavit_GetWRCheckpointSpeed(int cpnum, int style);
+
+/**
+ * Gets the client's prcp time.
+ *
+ * @param client					Client index.
+ * @param stage						WR's Checkpoint number.
+ * @param style						Style to get the WRCP for.
+ * @return							PR Time.
+ */
+native float Shavit_GetPRCPTime(int client, int stage, int style);
 
 /**
  * Retrieves the best time of a player.
@@ -1493,6 +1604,13 @@ native int Shavit_GetZoneFlags(int zoneid);
  * @return							Boolean value.
  */
 native bool Shavit_InsideZoneGetID(int client, int type, int track, int &zoneid);
+
+/**
+ * Checks if the map is linear.
+ *
+ * @return							Boolean value.
+ */
+native bool Shavit_IsLinearMap();
 
 /**
  * Checks if a player is in the process of creating a mapzone.
@@ -2472,22 +2590,40 @@ native void Shavit_ReloadWRCheckpoints();
 native bool Shavit_IsClientSingleStageTiming(int client);
 
 /**
- * Finishes the stage for a player, with their current timer stats.
+ * Detect stage conditions first.
+ * If true, finishes the stage for a player, with their current timer stats defaultly(depend on bypass).
  * Will not teleport the player to anywhere, it's handled inside the mapzones plugin.
  *
  * @param client					Client index.
+ * @param bypass					Bypass call to Shavit_OnFinishStagePre.If false, finish the stage but not insert any data to forward and mysql.
  * @noreturn
  */
-native void Shavit_FinishStage(int client);
+native void Shavit_FinishStage(int client, bool bypass = true);
 
 /**
- * Finishes the checkpoint for a player, with their current timer stats.
+ * Check player if they went to another stage.
+ * @param client					Client index.
+ * @return							True if they went.
+ */
+native bool Shavit_IntoStage(int client);
+
+/**
+ * Detect checkpoint conditions first.
+ * If true, finishes the checkpoint for a player, with their current timer stats defaultly(depend on bypass).
  * Will not teleport the player to anywhere, it's handled inside the mapzones plugin.
  *
  * @param client					Client index.
+ * @param bypass					Bypass call to Shavit_OnFinishCheckpointPre.If false, finish the checkpoint but not insert any data to forward and mysql.
  * @noreturn
  */
-native void Shavit_FinishCheckpoint(int client);
+native void Shavit_FinishCheckpoint(int client, bool bypass = true);
+
+/**
+ * Check player if they went to another checkpoint.
+ * @param client					Client index.
+ * @return							True if they went.
+ */
+native bool Shavit_IntoCheckpoint(int client);
 
 public SharedPlugin __pl_shavit =
 {
@@ -2576,6 +2712,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_HijackAngles");
 	MarkNativeAsOptional("Shavit_InsideZone");
 	MarkNativeAsOptional("Shavit_InsideZoneGetID");
+	MarkNativeAsOptional("Shavit_IsLinearMap");
 	MarkNativeAsOptional("Shavit_IsClientCreatingZone");
 	MarkNativeAsOptional("Shavit_IsClientSingleStageTiming");
 	MarkNativeAsOptional("Shavit_IsPaused");
@@ -2636,14 +2773,24 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetReplayBotFrameCount");
 	MarkNativeAsOptional("Shavit_StartReplayFromFrameCache");
 	MarkNativeAsOptional("Shavit_StartReplayFromFile");
+	MarkNativeAsOptional("Shavit_GetMapBonuses");
 	MarkNativeAsOptional("Shavit_GetMapStages");
 	MarkNativeAsOptional("Shavit_GetMapCheckpoints");
 	MarkNativeAsOptional("Shavit_ReloadAllReplays");
 	MarkNativeAsOptional("Shavit_ReloadWRCPs");
 	MarkNativeAsOptional("Shavit_ReloadWRCheckpoints");
+	MarkNativeAsOptional("Shavit_GetStageRecordAmount");
+	MarkNativeAsOptional("Shavit_GetStageRankForTime");
 	MarkNativeAsOptional("Shavit_GetWRCPName");
-	MarkNativeAsOptional("Shavit_GetWRCheckpointName");
+	MarkNativeAsOptional("Shavit_GetWRCPTime");
+	MarkNativeAsOptional("Shavit_GetWRCPPrespeed");
+	MarkNativeAsOptional("Shavit_GetWRCheckpointTime");
+	MarkNativeAsOptional("Shavit_GetWRCheckpointDiffTime");
+	MarkNativeAsOptional("Shavit_GetWRCheckpointSpeed");
+	MarkNativeAsOptional("Shavit_GetPRCPTime");
 	MarkNativeAsOptional("Shavit_FinishStage");
+	MarkNativeAsOptional("Shavit_IntoStage");
 	MarkNativeAsOptional("Shavit_FinishCheckpoint");
+	MarkNativeAsOptional("Shavit_IntoCheckpoint");
 }
 #endif

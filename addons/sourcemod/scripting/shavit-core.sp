@@ -1954,6 +1954,16 @@ public int Native_GetChatStrings(Handle handler, int numParams)
 		case sMessageWarning: return SetNativeString(2, gS_ChatStrings.sWarning, size);
 		case sMessageVariable: return SetNativeString(2, gS_ChatStrings.sVariable, size);
 		case sMessageVariable2: return SetNativeString(2, gS_ChatStrings.sVariable2, size);
+		case sMessageVariable3: return SetNativeString(2, gS_ChatStrings.sVariable3, size);
+		case sMessageVariable4: return SetNativeString(2, gS_ChatStrings.sVariable4, size);
+		case sMessageVariable5: return SetNativeString(2, gS_ChatStrings.sVariable5, size);
+		case sMessageVariable6: return SetNativeString(2, gS_ChatStrings.sVariable6, size);
+		case sMessageVariable7: return SetNativeString(2, gS_ChatStrings.sVariable7, size);
+		case sMessageVariable8: return SetNativeString(2, gS_ChatStrings.sVariable8, size);
+		case sMessageVariable9: return SetNativeString(2, gS_ChatStrings.sVariable9, size);
+		case sMessageVariable10: return SetNativeString(2, gS_ChatStrings.sVariable10, size);
+		case sMessageVariable11: return SetNativeString(2, gS_ChatStrings.sVariable11, size);
+		case sMessageTeam: return SetNativeString(2, gS_ChatStrings.sTeam, size);
 		case sMessageStyle: return SetNativeString(2, gS_ChatStrings.sStyle, size);
 	}
 
@@ -2820,6 +2830,16 @@ bool LoadMessages()
 	kv.GetString("warning", gS_ChatStrings.sWarning, sizeof(chatstrings_t::sWarning), "\x07af2a22");
 	kv.GetString("variable", gS_ChatStrings.sVariable, sizeof(chatstrings_t::sVariable), "\x077fd772");
 	kv.GetString("variable2", gS_ChatStrings.sVariable2, sizeof(chatstrings_t::sVariable2), "\x07276f5c");
+	kv.GetString("variable3", gS_ChatStrings.sVariable3, sizeof(chatstrings_t::sVariable3), "\x07276f5c");
+	kv.GetString("variable4", gS_ChatStrings.sVariable4, sizeof(chatstrings_t::sVariable4), "\x07276f5c");
+	kv.GetString("variable5", gS_ChatStrings.sVariable5, sizeof(chatstrings_t::sVariable5), "\x07276f5c");
+	kv.GetString("variable6", gS_ChatStrings.sVariable6, sizeof(chatstrings_t::sVariable6), "\x07276f5c");
+	kv.GetString("variable7", gS_ChatStrings.sVariable7, sizeof(chatstrings_t::sVariable7), "\x07276f5c");
+	kv.GetString("variable8", gS_ChatStrings.sVariable8, sizeof(chatstrings_t::sVariable8), "\x07276f5c");
+	kv.GetString("variable9", gS_ChatStrings.sVariable9, sizeof(chatstrings_t::sVariable9), "\x07276f5c");
+	kv.GetString("variable10", gS_ChatStrings.sVariable10, sizeof(chatstrings_t::sVariable10), "\x07276f5c");
+	kv.GetString("variable11", gS_ChatStrings.sVariable11, sizeof(chatstrings_t::sVariable11), "\x07276f5c");
+	kv.GetString("team", gS_ChatStrings.sTeam, sizeof(chatstrings_t::sTeam), "\x07276f5c");
 	kv.GetString("style", gS_ChatStrings.sStyle, sizeof(chatstrings_t::sStyle), "\x07db88c2");
 
 	delete kv;
@@ -2829,6 +2849,16 @@ bool LoadMessages()
 	ReplaceColors(gS_ChatStrings.sWarning, sizeof(chatstrings_t::sWarning));
 	ReplaceColors(gS_ChatStrings.sVariable, sizeof(chatstrings_t::sVariable));
 	ReplaceColors(gS_ChatStrings.sVariable2, sizeof(chatstrings_t::sVariable2));
+	ReplaceColors(gS_ChatStrings.sVariable3, sizeof(chatstrings_t::sVariable3));
+	ReplaceColors(gS_ChatStrings.sVariable4, sizeof(chatstrings_t::sVariable4));
+	ReplaceColors(gS_ChatStrings.sVariable5, sizeof(chatstrings_t::sVariable5));
+	ReplaceColors(gS_ChatStrings.sVariable6, sizeof(chatstrings_t::sVariable6));
+	ReplaceColors(gS_ChatStrings.sVariable7, sizeof(chatstrings_t::sVariable7));
+	ReplaceColors(gS_ChatStrings.sVariable8, sizeof(chatstrings_t::sVariable8));
+	ReplaceColors(gS_ChatStrings.sVariable9, sizeof(chatstrings_t::sVariable9));
+	ReplaceColors(gS_ChatStrings.sVariable10, sizeof(chatstrings_t::sVariable10));
+	ReplaceColors(gS_ChatStrings.sVariable11, sizeof(chatstrings_t::sVariable11));
+	ReplaceColors(gS_ChatStrings.sTeam, sizeof(chatstrings_t::sTeam));
 	ReplaceColors(gS_ChatStrings.sStyle, sizeof(chatstrings_t::sStyle));
 
 	Call_StartForward(gH_Forwards_OnChatConfigLoaded);

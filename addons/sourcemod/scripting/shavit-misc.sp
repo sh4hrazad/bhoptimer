@@ -130,6 +130,7 @@ Convar gCV_WRMessages = null;
 Convar gCV_BhopSounds = null;
 Convar gCV_RestrictNoclip = null;
 Convar gCV_BotFootsteps = null;
+Convar gCV_PrestrafeMessage = null;
 
 // external cvars
 ConVar sv_disable_immunity_alpha = null;
@@ -164,6 +165,13 @@ stylestrings_t gS_StyleStrings[STYLE_LIMIT];
 
 // chat settings
 chatstrings_t gS_ChatStrings;
+
+// ???
+TimerStatus gEnum_LastStatus[MAXPLAYERS+1];
+bool gB_InZone[MAXPLAYERS+1];
+bool gB_StartTimer[MAXPLAYERS+1];
+int gI_LastTrack[MAXPLAYERS+1];
+int gI_Jumps[MAXPLAYERS+1];
 
 public Plugin myinfo =
 {
@@ -325,6 +333,8 @@ public void OnPluginStart()
 	gCV_BhopSounds = new Convar("shavit_misc_bhopsounds", "1", "Should bhop (landing and jumping) sounds be muted?\n0 - Disabled\n1 - Blocked while !hide is enabled\n2 - Always blocked", 0,  true, 0.0, true, 2.0);
 	gCV_RestrictNoclip = new Convar("shavit_misc_restrictnoclip", "0", "Should noclip be be restricted\n0 - Disabled\n1 - No vertical velocity while in noclip in start zone\n2 - No noclip in start zone", 0, true, 0.0, true, 2.0);
 	gCV_BotFootsteps = new Convar("shavit_misc_botfootsteps", "1", "Enable footstep sounds for replay bots. Only works if shavit_misc_bhopsounds is less than 2.", 0, true, 0.0, true, 1.0);
+	gCV_PrestrafeMessage = new Convar("shavit_misc_prestrafemessage", "1", "Enable prestrafe message. Only works when player leave start/stage/checkpoint zone.", 0, true, 0.0, true, 1.0);
+
 
 	gCV_HideRadar.AddChangeHook(OnConVarChanged);
 	Convar.AutoExecConfig();
@@ -1132,7 +1142,6 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 	bool bInStart = Shavit_InsideZone(client, Zone_Start, track);
 	bool bInStage = Shavit_InsideZone(client, Zone_Stage, track);
 	bool bLimitpre = Shavit_GetMapLimitspeed();
-	static bool bInZone;
 
 	// i will not be adding a setting to toggle this off
 	if(bNoclip)
@@ -1157,9 +1166,71 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 		}
 	}
 
-	int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
+	// prestrafe message
+	if(!bNoclip && gCV_PrestrafeMessage.IntValue == 1)
+	{
+		if(!bInStart && gB_StartTimer[client] && gI_LastTrack[client] == track)
+		{
+			int stage = Shavit_GetClientStage(client);
+
+			if(stage == 1)
+			{
+				float fSpeed[3];
+				GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
+				float fSpeed3D = (SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0) + Pow(fSpeed[2], 2.0)));
+
+				float wrcpSpeed = Shavit_GetWRCheckpointSpeed(stage, style);
+				float diff = fSpeed3D - wrcpSpeed;
+
+				char sWRCPDiffSpeed[64];
+
+				if(wrcpSpeed <= 0.0)
+				{
+					strcopy(sWRCPDiffSpeed, 64, "N/A");
+				}
+
+				else
+				{
+					if(diff > 0.0)
+					{
+						FormatEx(sWRCPDiffSpeed, 64, "%s+%d u/s%s", gS_ChatStrings.sVariable10, RoundToFloor(diff), gS_ChatStrings.sText);
+					}
+
+					else if(diff == 0.0)
+					{
+						FormatEx(sWRCPDiffSpeed, 64, "%s%d u/s%s", gS_ChatStrings.sVariable2, RoundToFloor(diff), gS_ChatStrings.sText);
+					}
+
+					else
+					{
+						
+						FormatEx(sWRCPDiffSpeed, 64, "%s%d u/s%s", gS_ChatStrings.sVariable11, RoundToFloor(diff), gS_ChatStrings.sText);
+					}
+				}
+
+				char sPrestrafe[128];
+				FormatEx(sPrestrafe, 128, "%sStart: %s%d u/s %s| %sWR:%s %s", 
+					gS_ChatStrings.sStyle, 
+					gS_ChatStrings.sVariable5, RoundToFloor(fSpeed3D), gS_ChatStrings.sText, 
+					gS_ChatStrings.sVariable, gS_ChatStrings.sText, sWRCPDiffSpeed);
+				Shavit_PrintToChat(client, sPrestrafe);
+			}
+		}
+
+		else if(gEnum_LastStatus[client] == Timer_Stopped && status == Timer_Running)
+		{
+			//todo
+		}
+
+		gB_StartTimer[client] = bInStart;
+		gI_LastTrack[client] = track;
+	}
+
+	gEnum_LastStatus[client] = status;
 
 	// prespeed
+	int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
+
 	if(!bNoclip && Shavit_GetStyleSettingInt(gI_Style[client], "prespeed") == 0 && (bInStart || bInStage))
 	{
 		if((gCV_PreSpeed.IntValue == 2 || gCV_PreSpeed.IntValue == 3) && gI_GroundEntity[client] == -1 && iGroundEntity != -1 && (buttons & IN_JUMP) > 0)
@@ -1220,20 +1291,20 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 				return Plugin_Continue;
 			}
 
-			static int iJumps = 0;
 			float fSpeed[3];
 			GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
 			float fSpeedXY = SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0));
 
-			if(!bInZone)
+			if(!gB_InZone[client])
 			{
-				ScaleVector(fSpeed, 0.1);
+				fSpeed[0] *= 0.1;
+				fSpeed[1] *= 0.1;
 				TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed);
 			}
 
 			if(gI_GroundEntity[client] == 0 && iGroundEntity == -1)// 起跳 starts jump
 			{
-				if(++iJumps >= 2)
+				if(++gI_Jumps[client] >= 2)
 				{
 					float fScale = 260.0 / fSpeedXY;
 
@@ -1248,13 +1319,13 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 
 			else if(gI_GroundEntity[client] == 0 && iGroundEntity == 0)// 不跳 not jumping
 			{
-				iJumps = 0;
+				gI_Jumps[client] = 0;
 			}
 		}
 	}
 
 	gI_GroundEntity[client] = iGroundEntity;
-	bInZone = view_as<bool>(bInStart || bInStage);
+	gB_InZone[client] = view_as<bool>(bInStart || bInStage);
 
 	return Plugin_Continue;
 }
@@ -1392,6 +1463,7 @@ void PersistData(int client, bool disconnected)
 		(!IsPlayerAlive(client) && disconnected && !gB_SaveStates[client]) ||
 		GetSteamAccountID(client) == 0 ||
 		//Shavit_GetTimerStatus(client) == Timer_Stopped ||
+		Shavit_IsClientSingleStageTiming(client) ||
 		(!gCV_RestoreStates.BoolValue && !disconnected) ||
 		(gCV_PersistData.IntValue == 0 && disconnected))
 	{
