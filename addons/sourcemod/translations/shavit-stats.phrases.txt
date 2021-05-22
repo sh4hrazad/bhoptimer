@@ -5,117 +5,144 @@
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"{1}ERROR: {2}Could not open the stats menu."
+		"chi"		"{1}错误：{2}无法打开统计信息菜单."
 	}
 	// ---------- Map Completions ---------- //
 	"SelectTrack"
 	{
 		"en"		"Select timer track:"
+		"chi"		"选择计时器的track:"
 	}
 	"MapsDone"
 	{
 		"en"		"Maps done"
+		"chi"		"已完成的地图"
 	}
 	"MapsDoneFor"
 	{
 		"#format"	"{1:s},{2:s},{3:d}"
 		"en"		"[{1}] Maps done for {2}: ({3})"
+		"chi"		"[{1}] 以{2}完成的地图数: ({3})"
 	}
 	"MapsDoneOnStyle"
 	{
 		"#format"	"{1:s}"
 		"en"		"Maps done for {1} on style:"
+		"chi"		"在模式{1}上完成的地图:"
 	}
 	"MapsLeft"
 	{
 		"en"		"Maps left"
+		"chi"		"未完成的地图"
 	}
 	"MapsLeftFor"
 	{
 		"#format"	"{1:s},{2:s},{3:d}"
 		"en"		"[{1}] Maps left for {2}: ({3})"
+		"chi"		"[{1}] 以{2}未完成的地图数: ({3})"
 	}
 	"MapsLeftOnStyle"
 	{
 		"#format"	"{1:s}"
 		"en"		"Maps left for {1} on style:"
+		"chi"		"在模式{1}上未完成的地图:"
 	}
 	"MapsMenu"
 	{
 		"#format"	"{1:s}"
 		"en"		"[{1}] Stats:"
+		"chi"		"[{1}] 总体情况:"
 	}
 	"MapsPoints"
 	{
 		"en"		"points"
+		"chi"		"Pts"
 	}
 	"MapsJumps"
 	{
 		"en"		"jumps"
+		"chi"		"跳跃数"
 	}
 	"Nope"
 	{
 		"en"		"nope"
+		"chi"		"不行"
 	}
 	"NoResults"
 	{
 		"en"		"No results."
+		"chi"		"无结果."
 	}
 	// ---------- Player Profiles ---------- //
 	"Country"
 	{
 		"en"		"Country"
+		"chi"		"国家"
 	}
 	"LastLogin"
 	{
 		"en"		"Last Login"
+		"chi"		"上一次登录"
 	}
 	"MapCompletions"
 	{
 		"en"		"Map completions"
+		"chi"		"地图完成次数"
 	}
 	"NoRecords"
 	{
 		"en"		"Nothing."
+		"chi"		"什么都没有."
 	}
 	"Rank"
 	{
 		"en"		"Rank"
+		"chi"		"排名"
 	}
 	"Points"
 	{
 		"en"		"Points"
+		"chi"		"Pts"
 	}
 	"PointsUnranked"
 	{
 		"en"		"Unranked"
+		"chi"		"无排名"
 	}
 	"Profile"
 	{
 		"en"		"profile"
+		"chi"		"个人信息"
 	}
 	"WorldRecords"
 	{
 		"en"		"world records"
+		"chi"		"服务器记录数"
 	}
 	// ---------- Record Data ---------- //
 	"Date"
 	{
 		"en"		"Date"
+		"chi"		"日期"
 	}
 	"Jumps"
 	{
 		"en"		"Jumps"
+		"chi"		"跳跃数"
 	}
 	"Strafes"
 	{
 		"en"		"Strafes"
+		"chi"		"加速次数"
 	}
 	"Style"
 	{
 		"en"		"Style"
+		"chi"		"模式"
 	}
 	"Time"
 	{
 		"en"		"Time"
+		"chi"		"时间"
 	}
 }

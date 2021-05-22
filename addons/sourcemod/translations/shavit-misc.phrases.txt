@@ -5,206 +5,252 @@
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"You have to be {1}alive{2} to use this command."
+		"chi"		"您必须{1}活着{2}才能使用此命令."
 	}
 	"CommandAliveSpectate"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"You have to be {1}alive{2} or {3}spectate a player{4} to use this command."
+		"chi"		"您必须{1}活着{2}或{3}观看玩家{4}才能使用此命令."
 	}
 	"CommandSaveCPKZInvalid"
 	{
 		"en"		"You cannot perform this action when airborne or while watching another player."
+		"chi"		"您不能在空中或观看其他选手时执行此动作."
 	}
 	"CommandSaveCPKZZone"
 	{
 		"en"		"You cannot perform this action while in the start zone."
+		"chi"		"您不能在开始区域中执行此操作."
 	}
 	"CommandTeleCPInvalid"
 	{
 		"en"		"You may not teleport to this checkpoint due to setting mismatch."
+		"chi"		"由于设置不匹配，您可能无法传送到此检查点."
 	}
 	"CommandNoPause"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"Your timer has to be {1}resumed{2} to use this command."
+		"chi"		"您的计时器必须{1}恢复{2}才能使用此命令."
 	}
 	"CommandDisabled"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"This command is {1}disabled{2}."
+		"chi"		"此命令已{1}禁用{2}."
 	}
 	"FeatureDisabled"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"This feature is {1}disabled{2}."
+		"chi"		"此功能已{1}禁用{2}."
 	}
 	"HideEnabled"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"You are now {1}hiding{2} players."
+		"chi"		"您现在{1}隐藏了{2}所有玩家."
 	}
 	"HideDisabled"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"You are now {1}not hiding{2} players."
+		"chi"		"您现在{1}取消隐藏了{2}所有玩家."
 	}
 	"LackingAccess"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"You're {1}lacking access{2} to this command."
+		"chi"		"您{1}无权访问{2}此命令."
 	}
 	"SpectateDead"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"You {1}cannot{2} target a dead player."
+		"chi"		"您{1}不能{2}将死亡玩家作为目标."
 	}
 	"SpectatorCount"
 	{
 		"#format"	"{1:s},{2:N},{3:s},{4:s},{5:i},{6:s},{7:s}"
 		"en"		"{1}{2}{3} has {4}{5}{6} spectators: {7}"
+		"chi"		"{1}{2}{3}有{4}{5}{6}个观众：{7}."
 	}
 	"SpectatorCountZero"
 	{
 		"#format"	"{1:s},{2:N},{3:s}"
 		"en"		"No one is spectating {1}{2}{3}."
+		"chi"		"没有人观察 {1}{2}{3}."
 	}
 	"SpectatorInvalid"
 	{
 		"en"		"You should be alive or spectate someone to see your/their spectators."
+		"chi"		"你应该活着或看着别人去看你的或者他们的观众."
 	}
 	"TeleportAlive"
 	{
 		"en"		"You can teleport only if you are alive."
+		"chi"		"你只有在活着的时候才能传送."
 	}
 	"TeleportInvalidTarget"
 	{
 		"en"		"Invalid target."
+		"chi"		"目标无效."
 	}
 	"MiscCheckpointsSaved"
 	{
 		"#format"	"{1:d},{2:s},{3:s}"
 		"en"		"Checkpoint ({1}) {2}saved{3}."
+		"chi"		"存点 ({1}) {2}已保存{3}."
 	}
 	"MiscCheckpointsTeleported"
 	{
 		"#format"	"{1:d},{2:s},{3:s}"
 		"en"		"{2}Teleported{3} to checkpoint ({1})."
+		"chi"		"{2}已传送到{3} 存点({1})."
 	}
 	"MiscCheckpointsEmpty"
 	{
 		"#format"	"{1:d},{2:s},{3:s}"
 		"en"		"Checkpoint {1} is {2}empty{3}."
+		"chi"		"存点{1}为{2}空{3}。"
 	}
 	"MiscCheckpointsOverflow"
 	{
 		"en"		"Unable to save due to checkpoint overflow."
+		"chi"		"由于存点溢出，无法保存."
 	}
 	"MiscSegmentedCommand"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"Use {1}!cp{2} to re-open the segmented checkpoints menu."
+		"chi"		"输入{1}!CP{2}重新打开Segment存点菜单。"
 	}
 	// ---------- Menus ---------- //
 	"StopTimerWarning"
 	{
 		"en"		"Are you sure you want to stop your timer?"
+		"chi"		"您确定要停止计时器吗?"
 	}
 	"StopTimerYes"
 	{
 		"en"		"Yes, stop my timer."
+		"chi"		"是，停止我的计时器."
 	}
 	"StopTimerNo"
 	{
 		"en"		"No, keep my timer running."
+		"chi"		"否，让我的计时器保持运行."
 	}
 	"ClearCPWarning"
 	{
 		"en"		"Are you sure you want to clear your checkpoints?"
+		"chi"		"您确定要清除你的存点吗?"
 	}
 	"ClearCPYes"
 	{
 		"en"		"Yes, and I know this action cannot be reversed."
+		"chi"		"是的，我知道这么做是不能反悔的."
 	}
 	"ClearCPNo"
 	{
 		"en"		"No."
+		"chi"		"不."
 	}
 	"TeleportMenuTitle"
 	{
 		"en"		"Teleport to:"
+		"chi"		"传送到:"
 	}
 	"WeaponAlive"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"You need to be {1}alive{2} to spawn weapons."
+		"chi"		"您需要{1}活着{2}才能得到武器."
 	}
 	"MiscCheckpointMenu"
 	{
 		"en"		"Checkpoints"
+		"chi"		"存点菜单"
 	}
 	"MiscCheckpointMenuSegmented"
 	{
 		"en"		"Segmented Checkpoints"
+		"chi"		"Segmented 存点菜单"
 	}
 	"MiscCheckpointWarning"
 	{
 		"en"		"WARNING: Teleporting will stop your timer!"
+		"chi"		"警告：传送会停止你的计时器!"
 	}
 	"MiscCheckpointSave"
 	{
 		"#format"	"{1:d}"
 		"en"		"Save checkpoint ({1})"
+		"chi"		"保存了存点({1})"
 	}
 	"MiscCheckpointTeleport"
 	{
 		"#format"	"{1:d}"
 		"en"		"Teleport to checkpoint ({1})"
+		"chi"		"传送到存点({1})"
 	}
 	"MiscCheckpointPrevious"
 	{
 		"en"		"Previous"
+		"chi"		"上一个存点"
 	}
 	"MiscCheckpointNext"
 	{
 		"en"		"Next"
+		"chi"		"下一个存点"
 	}
 	"MiscCheckpointReset"
 	{
 		"en"		"Reset checkpoints"
+		"chi"		"重置存点"
 	}
 	"MiscCheckpointDeleteCurrent"
 	{
 		"en"		"Delete current checkpoint"
+		"chi"		"删除当前存点"
 	}
 	"MiscCheckpointPause"
 	{
 		"en"		"Pause"
+		"chi"		"暂停"
 	}
 	"MiscCheckpointUseAngles"
 	{
 		"en"		"Use angles"
+		"chi"		"保存视角"
 	}
 	"MiscCheckpointUseVelocity"
 	{
 		"en"		"Use velocity"
+		"chi"		"保存速度"
 	}
 	// ---------- Misc ---------- //
 	"BHStartZoneDisallowed"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"Bunnyhopping in the {1}start zone{2} is {3}not allowed{4}."
+		"chi"		"{1}在起点连跳{2}是{3}不允许的{4}."
 	}
 	"WRNotice"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"{1}NEW {2} WR!!!"
+		"chi"		"{1}新的 {2} 服务器记录!!!"
 	}
 	"AdvertisementsEnabled"
 	{
 		"en"		"Advertisements enabled"
+		"chi"		"已启用广告提示"
 	}
 	"AdvertisementsDisabled"
 	{
 		"en"		"Advertisements disabled"
+		"chi"		"已关闭广告提示"
 	}
 }

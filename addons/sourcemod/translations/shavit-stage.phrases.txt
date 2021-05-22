@@ -10,68 +10,82 @@
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"{1}Timer {2}{3}{4}."
+		"chi"		"{1}计时器 {2}{3}{4}."
 	}
 	"ZoneStagePrestrafe"
 	{
 		"#format"	"{1:s},{2:s},{3:.3f},{4:s}"
 		"en"		"{1}Prestrafe: {2}{3}{4}."
+		"chi"		"{1}Prestrafe: {2}{3}{4}."
 	}
 	"OnWRCP"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:d},{6:s},{7:s},{8:.3f},{9:s}"
 		"en"		"{1}{2}{3} beat a stage record! Stage:[{4}{5}{6}] Time: {7}{8}{9}."
+		"chi"		"{1}{2}{3} 打破了关卡纪录！关卡[{4}{5}{6}] 时间: {7}{8}{9}."
 	}
 	"Chat-WRCP"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:d},{6:s},{7:s},{8:.3f},{9:s}"
 		"en"		"{1}{2}{3} hold Stage [{4}{5}{6}] record! Time: {7}{8}{9}."
+		"chi"		"{1}{2}{3}维持住了关卡[{4}{5}{6}]记录! 时间：{7}{8}{9}."
 	}
 	"Chat-WRCP-NoRecord"
 	{
 		"#format"	"{1:s},{2:d},{3:s},{4:s},{5:d},{6:s}"
 		"en"		"No Records for Stage [{1}{2}{3}].(style:{4}{5}{6})"
+		"chi"		"关卡[{1}{2}{3}]没有记录。(模式：{4}{5}{6})"
 	}
 	"WRCPDeleteSuccessful"
 	{
 		"#format"	"{1:s},{2:s},{3:d},{4:s},{5:s},{6:d},{7:s}"
 		"en"		"{1}Stage [{2}{3}{4}] WR deleted successfuly (style:{5}{6}{7})"
+		"chi"		"{1}关卡[{2}{3}{4}] 最佳纪录已被删除 (模式:{5}{6}{7})"
 	}
 	"StageRecordDeleteSuccessful"
 	{
 		"#format"	"{1:s},{2:s},{3:d},{4:s},{5:s},{6:d},{7:s}"
 		"en"		"{1}A record of Stage [{2}{3}{4}] deleted successfuly (style:{5}{6}{7})"
+		"chi"		"{1}关卡[{2}{3}{4}]的记录删除成功 (模式:{5}{6}{7})"
 	}
 	/*-------------Menu Title-------------*/
 	"WrcpMenuTitle-Style"
 	{
 		"en"		"Choose a style: "
+		"chi"		"选择一个模式: "
 	}
 	"WrcpMenuTitle-Stage"
 	{
 		"en"		"Choose a stage: "
+		"chi"		"选择一个关卡: "
 	}
 	"WrcpMenuTitle-Maptop"
 	{
 		"#format"	"{1:s},{2:d}"
 		"en"		"{1} - Stage {2} - Top100"
+		"chi"		"{1} - 关卡 {2} - 前100"
 	}
 	"DeleteMaptopMenuTitle-Maptop"
 	{
 		"#format"	"{1:s},{2:d}"
 		"en"		"{1} - Stage {2} - Deleting Record"
+		"chi"		"{1} - 关卡 {2} - 删除记录中"
 	}
 	"DeleteWrcpMenuTitle-Confirm"
 	{
 		"#format"	"{1:d},{2:d}"
 		"en"		"Deleting Stage {1} (style:{2}), confirm?"
+		"chi"		"正在删除关卡{1}(模式：{2}), 确认吗?"
 	}
 	/*-------------Menu Item-------------*/
 	"WrcpMenuItem-Stage"
 	{
 		"en"		"Stage"
+		"chi"		"关卡"
 	}
 	"WrcpMenuItem-NoRecord"
 	{
 		"en"		"No Record..."
+		"chi"		"没有记录..."
 	}
 }

@@ -763,6 +763,13 @@ public Action Command_TogglePause(int client, int args)
 
 	if(gA_Timers[client].bPaused)
 	{
+		if(GetEntityMoveType(client) == MOVETYPE_NOCLIP)
+		{
+			Shavit_PrintToChat(client, "%T", "BlockNoclipResume", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+
+			return Plugin_Handled;
+		}
+
 		TeleportEntity(client, gF_PauseOrigin[client], gF_PauseAngles[client], gF_PauseVelocity[client]);
 		ResumeTimer(client);
 
@@ -3509,7 +3516,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 	int flags = GetEntityFlags(client);
 
-	if(gA_Timers[client].bPaused && IsPlayerAlive(client))
+	/* if(gA_Timers[client].bPaused && IsPlayerAlive(client))
 	{
 		buttons = 0;
 		vel = view_as<float>({0.0, 0.0, 0.0});
@@ -3519,7 +3526,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		//SetEntityMoveType(client, MOVETYPE_NONE);
 
 		return Plugin_Changed;
-	}
+	} */
 
 	SetEntityFlags(client, (flags & ~FL_ATCONTROLS));
 

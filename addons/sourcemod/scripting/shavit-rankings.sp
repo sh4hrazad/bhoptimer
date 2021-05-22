@@ -66,7 +66,9 @@ bool gB_Stats = false;
 bool gB_Late = false;
 bool gB_TierQueried = false;
 bool gB_Maplimitspeed;
+bool gB_Maplimitnoclip;
 bool gB_MenuMaplimitspeed[MAXPLAYERS+1];
+bool gB_MenuMaplimitnoclip[MAXPLAYERS+1];
 
 int gI_Tier = 1; // No floating numbers for tiers, sorry.
 int gI_MenuTier[MAXPLAYERS+1];
@@ -123,6 +125,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetMapTier", Native_GetMapTier);
 	CreateNative("Shavit_GetMapTiers", Native_GetMapTiers);
 	CreateNative("Shavit_GetMapLimitspeed", Native_GetMapLimitspeed);
+	CreateNative("Shavit_GetMapLimitnoclip", Native_GetMapLimitnoclip);
 	CreateNative("Shavit_GetMapMaxvelocity", Native_GetMapMaxvelocity);
 	CreateNative("Shavit_GetPoints", Native_GetPoints);
 	CreateNative("Shavit_GetRank", Native_GetRank);
@@ -239,7 +242,7 @@ void SQL_DBConnect()
 	}
 
 	char sQuery[512];
-	FormatEx(sQuery, 512, "CREATE TABLE IF NOT EXISTS `%smaptiers` (`map` VARCHAR(128), `tier` INT NOT NULL DEFAULT %d, `limitPrespeed` TINYINT(1) NOT NULL DEFAULT 1, `maxvelocity` FLOAT NOT NULL DEFAULT %f, PRIMARY KEY (`map`)) ENGINE=INNODB;", gS_MySQLPrefix, gCV_DefaultTier.IntValue, gCV_DefaultMaxvelocity.FloatValue);
+	FormatEx(sQuery, 512, "CREATE TABLE IF NOT EXISTS `%smaptiers` (`map` VARCHAR(128), `tier` INT NOT NULL DEFAULT %d, `limitPrespeed` TINYINT(1) NOT NULL DEFAULT 1, `limitNoclip` TINYINT(1) NOT NULL DEFAULT 0, `maxvelocity` FLOAT NOT NULL DEFAULT %f, PRIMARY KEY (`map`)) ENGINE=INNODB;", gS_MySQLPrefix, gCV_DefaultTier.IntValue, gCV_DefaultMaxvelocity.FloatValue);
 
 	gH_SQL.Query(SQL_CreateTable_Callback, sQuery, 0);
 }
@@ -411,7 +414,7 @@ public void OnMapStart()
 void GetMapSettings()
 {
 	char sQuery[256];
-	FormatEx(sQuery, 256, "SELECT tier, limitPrespeed, maxvelocity FROM %smaptiers WHERE map = '%s';", gS_MySQLPrefix, gS_Map);
+	FormatEx(sQuery, 256, "SELECT tier, limitPrespeed, limitNoclip, maxvelocity FROM %smaptiers WHERE map = '%s';", gS_MySQLPrefix, gS_Map);
 	gH_SQL.Query(SQL_GetMapSettings_Callback, sQuery);
 }
 
@@ -432,7 +435,8 @@ public void SQL_GetMapSettings_Callback(Database db, DBResultSet results, const 
 	{
 		gI_Tier = results.FetchInt(0);
 		gB_Maplimitspeed = view_as<bool>(results.FetchInt(1));
-		gF_Maxvelocity = results.FetchFloat(2);
+		gB_Maplimitnoclip = view_as<bool>(results.FetchFloat(2));
+		gF_Maxvelocity = results.FetchFloat(3);
 
 		#if defined DEBUG
 		PrintToServer("DEBUG: 3 (tier: %d) (SQL_GetMapSettings_Callback)", gI_Tier);
@@ -710,6 +714,7 @@ public Action Command_MapSettings(int client, int args)
 {
 	gI_MenuTier[client] = gI_Tier;
 	gB_MenuMaplimitspeed[client] = gB_Maplimitspeed;
+	gB_MenuMaplimitnoclip[client] = gB_Maplimitnoclip;
 	gF_MenuMaxvelocity[client] = gF_Maxvelocity;
 
 	SetMapSettings(client);
@@ -728,6 +733,9 @@ void SetMapSettings(int client)
 	menu.AddItem("", sItem);
 	
 	FormatEx(sItem, 32, "LimitSpeed: %s", (gB_MenuMaplimitspeed[client]) ? "Yes" : "No");
+	menu.AddItem("", sItem);
+
+	FormatEx(sItem, 32, "LimitNoclip: %s", (gB_MenuMaplimitnoclip[client]) ? "Yes" : "No");
 	menu.AddItem("", sItem);
 
 	FormatEx(sItem, 32, "Maxvelocity: %.2f", gF_MenuMaxvelocity[client]);
@@ -767,14 +775,25 @@ public int SetMapSettings_Handler(Menu menu, MenuAction action, int param1, int 
 			{
 				submenu.SetTitle("Do you want to limit current map's stage speed?");
 
-				submenu.AddItem("Yes", "Yes");
-				submenu.AddItem("No", "No");
+				submenu.AddItem("limitspeed_Yes", "Yes");
+				submenu.AddItem("limitspeed_No", "No");
 
 				submenu.ExitBackButton = true;
 				submenu.Display(param1, -1);
 			}
 
-			case 2:// maxvelocity
+			case 2:// limit noclip
+			{
+				submenu.SetTitle("Do you want to limit current map's noclip?");
+
+				submenu.AddItem("limitnoclip_Yes", "Yes");
+				submenu.AddItem("limitnoclip_No", "No");
+
+				submenu.ExitBackButton = true;
+				submenu.Display(param1, -1);
+			}
+
+			case 3:// maxvelocity
 			{
 				submenu.SetTitle("Set Map Maxvelocity");
 
@@ -786,7 +805,7 @@ public int SetMapSettings_Handler(Menu menu, MenuAction action, int param1, int 
 				submenu.Display(param1, -1);
 			}
 
-			case 3:// save mapsettings
+			case 4:// save mapsettings
 			{
 				SaveMapSettings(param1);
 			}
@@ -821,14 +840,24 @@ public int SetMapSettings2_Handler(Menu menu, MenuAction action, int param1, int
 			}
 		}
 
-		if(StrEqual(sInfo, "Yes"))//map stage limitspeed
+		if(StrEqual(sInfo, "limitspeed_Yes"))//map stage limitspeed
 		{
 			gB_MenuMaplimitspeed[param1] = true;
 		}
 
-		else if(StrEqual(sInfo, "No"))
+		else if(StrEqual(sInfo, "limitspeed_No"))
 		{
 			gB_MenuMaplimitspeed[param1] = false;
+		}
+
+		else if(StrEqual(sInfo, "limitnoclip_Yes"))//map limit noclip
+		{
+			gB_MenuMaplimitnoclip[param1] = true;
+		}
+
+		else if(StrEqual(sInfo, "limitnoclip_No"))
+		{
+			gB_MenuMaplimitnoclip[param1] = false;
 		}
 
 		else if(StrEqual(sInfo, "3500"))//map maxvelocity
@@ -865,8 +894,8 @@ public int SetMapSettings2_Handler(Menu menu, MenuAction action, int param1, int
 void SaveMapSettings(int client)
 {
 	char sQuery[256];
-	FormatEx(sQuery, 256, "UPDATE `%smaptiers` SET tier = %d, limitPrespeed = %d, maxvelocity = %f WHERE map = '%s';", gS_MySQLPrefix, 
-		gI_MenuTier[client], view_as<int>(gB_MenuMaplimitspeed[client]), gF_MenuMaxvelocity[client], gS_Map);
+	FormatEx(sQuery, 256, "UPDATE `%smaptiers` SET tier = %d, limitPrespeed = %d, limitNoclip = %d, maxvelocity = %f WHERE map = '%s';", gS_MySQLPrefix, 
+		gI_MenuTier[client], view_as<int>(gB_MenuMaplimitspeed[client]), view_as<int>(gB_MenuMaplimitnoclip[client]), gF_MenuMaxvelocity[client], gS_Map);
 
 	gH_SQL.Query(SQL_SetMapSettings_Callback, sQuery, GetClientSerial(client));
 }
@@ -1460,6 +1489,11 @@ public int Native_GetMapTiers(Handle handler, int numParams)
 public int Native_GetMapLimitspeed(Handle handler, int numParams)
 {
 	return gB_Maplimitspeed;
+}
+
+public int Native_GetMapLimitnoclip(Handle handler, int numParams)
+{
+	return gB_Maplimitnoclip;
 }
 
 public int Native_GetMapMaxvelocity(Handle handler, int numParams)

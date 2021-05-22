@@ -4,111 +4,137 @@
 	"DeleteReplayAdminMenu"
 	{
 		"en"		"Delete replay"
+		"chi"		"删除录像"
 	}
 	"DeleteReplayMenuTitle"
 	{
 		"en"		"Delete a replay:"
+		"chi"		"删除一个录像:"
 	}
 	"MenuResponseNo"
 	{
 		"en"		"NO!"
+		"chi"		"不!"
 	}
 	"MenuResponseYes"
 	{
 		"en"		"Yes, I understand this action cannot be reversed!"
+		"chi"		"是，我不反悔!"
 	}
 	"ReplayDeletionConfirmation"
 	{
 		"#format"	"{1:s}"
 		"en"		"Confirm deletion of {1} replay?"
+		"chi"		"确认删除 {1} 录像?"
 	}
 	"ReplaysUnavailable"
 	{
 		"en"		"No replays available."
+		"chi"		"没有录像."
 	}
 	// ---------- Replay Deletion ---------- //
 	"ReplayDeleted"
 	{
 		"#format"	"{1:s},{2:s},{3:s}"
 		"en"		"Deleted replay for {1}{2}{3}."
+		"chi"		"已删除{1}{2}{3}的录像."
 	}
 	"ReplayDeleteFailure"
 	{
 		"#format"	"{1:s},{2:s},{3:s}"
 		"en"		"Could not delete replay for {1}{2}{3}."
+		"chi"		"无法删除{1}{2}{3}的录像."
 	}
 	// ---------- Central Replay Menu ---------- //
 	"CentralReplayTitle"
 	{
 		"en"		"Select a replay style to play:"
+		"chi"		"选择要播放的录像模式:"
 	}
 	"CentralReplayPlaying"
 	{
 		"en"		"The replay bot is busy, try again when it's idle."
+		"chi"		"重放机器人正忙，请在空闲时重试."
 	}
 	"CentralReplayStop"
 	{
 		"en"		"Stop the current replay."
+		"chi"		"停止播放该录像."
 	}
 	"CentralReplayStopped"
 	{
 		"en"		"Forcibly stopped replay."
+		"chi"		"强制停止了回放."
 	}
 	"CentralReplayTrack"
 	{
 		"en"		"Select a track to play:"
+		"chi"		"选择一个track:"
 	}
 	"Replay_Central"
 	{
 		"en"		"!replay"
+		"chi"		"输入!replay"
 	}
 	"Replay_Dynamic"
 	{
 		"en"		"Dynamic"
+		"chi"		"动态"
 	}
 	"Replay_Looping"
 	{
 		"en"		"Looping"
+		"chi"		"循环中"
 	}
 	"Menu_ReplayBotType"
 	{
 		"en"		"Replay bot type:"
+		"chi"		"回放电脑的类型:"
 	}
 	"Menu_Replay_Central"
 	{
 		"en"		"Central !replay bot"
+		"chi"		"!replay名字的电脑"
 	}
 	"Menu_Replay_Dynamic"
 	{
 		"en"		"Spawn dynamic bot"
+		"chi"		"复活一个动态录像的电脑"
 	}
 	"Menu_Replay_Prop"
 	{
 		"en"		"Spawn physics prop bot"
+		"chi"		"复活一个不好看的实体电脑"
 	}
 	"TooManyDynamicBots"
 	{
 		"en"		"Too many dynamic bots are playing. Can't spawn more."
+		"chi"		"已经有很多动态录像的电脑了, 不能复活再多了."
 	}
 	"FailedToCreateReplay"
 	{
 		"en"		"Failed to create replay"
+		"chi"		"创建回放失败"
 	}
 	"Menu_Replay"
 	{
 		"en"		"Replay"
+		"chi"		"回放"
 	}
 	"Menu_SpawnReplay"
 	{
 		"en"		"Spawn replay"
+		"chi"		"复活一个回放电脑"
 	}
 	"Menu_Replay2X"
 	{
 		"#format"	"{1:s}"
 		"en"		"[{1}] Toggle 2x speed"
+		"chi"		"[{1}] 设置为2倍速"
 	}
 	"Menu_RefreshReplay"
 	{
 		"en"		"Refresh"
+		"chi"		"刷新"
 	}
 }

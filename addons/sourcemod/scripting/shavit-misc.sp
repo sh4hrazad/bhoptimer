@@ -172,6 +172,7 @@ bool gB_InZone[MAXPLAYERS+1];
 bool gB_StartTimer[MAXPLAYERS+1];
 int gI_LastTrack[MAXPLAYERS+1];
 int gI_Jumps[MAXPLAYERS+1];
+MoveType gMT_LastMoveType[MAXPLAYERS+1];
 
 public Plugin myinfo =
 {
@@ -1166,70 +1167,11 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 		}
 	}
 
-	// prestrafe message
-	if(!bNoclip && gCV_PrestrafeMessage.IntValue == 1)
-	{
-		if(!bInStart && gB_StartTimer[client] && gI_LastTrack[client] == track)
-		{
-			int stage = Shavit_GetClientStage(client);
-
-			if(stage == 1)
-			{
-				float fSpeed[3];
-				GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
-				float fSpeed3D = (SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0) + Pow(fSpeed[2], 2.0)));
-
-				float wrcpSpeed = Shavit_GetWRCheckpointSpeed(stage, style);
-				float diff = fSpeed3D - wrcpSpeed;
-
-				char sWRCPDiffSpeed[64];
-
-				if(wrcpSpeed <= 0.0)
-				{
-					strcopy(sWRCPDiffSpeed, 64, "N/A");
-				}
-
-				else
-				{
-					if(diff > 0.0)
-					{
-						FormatEx(sWRCPDiffSpeed, 64, "%s+%d u/s%s", gS_ChatStrings.sVariable10, RoundToFloor(diff), gS_ChatStrings.sText);
-					}
-
-					else if(diff == 0.0)
-					{
-						FormatEx(sWRCPDiffSpeed, 64, "%s%d u/s%s", gS_ChatStrings.sVariable2, RoundToFloor(diff), gS_ChatStrings.sText);
-					}
-
-					else
-					{
-						
-						FormatEx(sWRCPDiffSpeed, 64, "%s%d u/s%s", gS_ChatStrings.sVariable11, RoundToFloor(diff), gS_ChatStrings.sText);
-					}
-				}
-
-				char sPrestrafe[128];
-				FormatEx(sPrestrafe, 128, "%sStart: %s%d u/s %s| %sWR:%s %s", 
-					gS_ChatStrings.sStyle, 
-					gS_ChatStrings.sVariable5, RoundToFloor(fSpeed3D), gS_ChatStrings.sText, 
-					gS_ChatStrings.sVariable, gS_ChatStrings.sText, sWRCPDiffSpeed);
-				Shavit_PrintToChat(client, sPrestrafe);
-			}
-		}
-
-		else if(gEnum_LastStatus[client] == Timer_Stopped && status == Timer_Running)
-		{
-			//todo
-		}
-
-		gB_StartTimer[client] = bInStart;
-		gI_LastTrack[client] = track;
-	}
-
-	gEnum_LastStatus[client] = status;
 
 	// prespeed
 	int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
+	MoveType mt = GetEntityMoveType(client);
+	bool blockSpeed = false;
 
 	if(!bNoclip && Shavit_GetStyleSettingInt(gI_Style[client], "prespeed") == 0 && (bInStart || bInStage))
 	{
@@ -1324,7 +1266,79 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 		}
 	}
 
+	if(mt == MOVETYPE_WALK && gMT_LastMoveType[client] == MOVETYPE_NOCLIP)
+	{
+		if(Shavit_GetStyleSettingInt(gI_Style[client], "prespeed") == 0)
+		{
+			TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+			blockSpeed = true;
+		}
+	}
+
+
+	// prestrafe message
+	if(!bNoclip && gCV_PrestrafeMessage.IntValue == 1)
+	{
+		if(!bInStart && gB_StartTimer[client] && gI_LastTrack[client] == track && !blockSpeed)
+		{
+			int stage = Shavit_GetClientStage(client);
+
+			if(stage == 1)
+			{
+				float fSpeed[3];
+				GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
+				float fSpeed3D = (SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0) + Pow(fSpeed[2], 2.0)));
+
+				float wrcpSpeed = Shavit_GetWRCheckpointSpeed(stage, style);
+				float diff = fSpeed3D - wrcpSpeed;
+
+				char sWRCPDiffSpeed[64];
+
+				if(wrcpSpeed <= 0.0)
+				{
+					strcopy(sWRCPDiffSpeed, 64, "N/A");
+				}
+
+				else
+				{
+					if(diff > 0.0)
+					{
+						FormatEx(sWRCPDiffSpeed, 64, "%s+%d u/s%s", gS_ChatStrings.sVariable10, RoundToFloor(diff), gS_ChatStrings.sText);
+					}
+
+					else if(diff == 0.0)
+					{
+						FormatEx(sWRCPDiffSpeed, 64, "%s%d u/s%s", gS_ChatStrings.sVariable2, RoundToFloor(diff), gS_ChatStrings.sText);
+					}
+
+					else
+					{
+						
+						FormatEx(sWRCPDiffSpeed, 64, "%s%d u/s%s", gS_ChatStrings.sVariable11, RoundToFloor(diff), gS_ChatStrings.sText);
+					}
+				}
+
+				char sPrestrafe[128];
+				FormatEx(sPrestrafe, 128, "%sStart: %s%d u/s %s| %sWR:%s %s", 
+					gS_ChatStrings.sStyle, 
+					gS_ChatStrings.sVariable5, RoundToFloor(fSpeed3D), gS_ChatStrings.sText, 
+					gS_ChatStrings.sVariable, gS_ChatStrings.sText, sWRCPDiffSpeed);
+				Shavit_PrintToChat(client, sPrestrafe);
+			}
+		}
+
+		else if(gEnum_LastStatus[client] == Timer_Stopped && status == Timer_Running)
+		{
+			//todo
+		}
+
+		gB_StartTimer[client] = bInStart;
+		gI_LastTrack[client] = track;
+	}
+
+	gEnum_LastStatus[client] = status;
 	gI_GroundEntity[client] = iGroundEntity;
+	gMT_LastMoveType[client] = mt;
 	gB_InZone[client] = view_as<bool>(bInStart || bInStage);
 
 	return Plugin_Continue;
@@ -2718,7 +2732,7 @@ public Action Command_Noclip(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(gCV_NoclipMe.IntValue == 0)
+	if(gCV_NoclipMe.IntValue == 0 || Shavit_GetMapLimitnoclip())
 	{
 		Shavit_PrintToChat(client, "%T", "FeatureDisabled", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
 
@@ -2743,7 +2757,11 @@ public Action Command_Noclip(int client, int args)
 	{
 		if(!ShouldDisplayStopWarning(client))
 		{
-			Shavit_StopTimer(client);
+			if(Shavit_GetTimerStatus(client) != Timer_Paused)
+			{
+				Shavit_StopTimer(client);
+			}
+
 			SetEntityMoveType(client, MOVETYPE_NOCLIP);
 		}
 

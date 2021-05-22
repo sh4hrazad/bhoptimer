@@ -3259,6 +3259,11 @@ public void StartTouchPost(int entity, int other)
 	{
 		TimerStatus status = Shavit_GetTimerStatus(other);
 
+		if(status == Timer_Paused)
+		{
+			return;
+		}
+
 		int type = gA_ZoneCache[gI_EntityZone[entity]].iZoneType;
 
 		if(type == Zone_Start)
@@ -3386,7 +3391,7 @@ public void StartTouchPost_Bot(int entity, int other)
 
 public void EndTouchPost(int entity, int other)
 {
-	if(other < 1 || other > MaxClients || gI_EntityZone[entity] == -1 || gI_EntityZone[entity] >= sizeof(gA_ZoneCache) || IsFakeClient(other))
+	if(other < 1 || other > MaxClients || Shavit_GetTimerStatus(other) == Timer_Paused || gI_EntityZone[entity] == -1 || gI_EntityZone[entity] >= sizeof(gA_ZoneCache) || IsFakeClient(other))
 	{
 		return;
 	}
@@ -3410,7 +3415,7 @@ public void EndTouchPost(int entity, int other)
 
 public void TouchPost(int entity, int other)
 {
-	if(other < 1 || other > MaxClients || gI_EntityZone[entity] == -1 || IsFakeClient(other) ||
+	if(other < 1 || other > MaxClients || gI_EntityZone[entity] == -1 || IsFakeClient(other) || Shavit_GetTimerStatus(other) == Timer_Paused ||
 		(gCV_EnforceTracks.BoolValue && gA_ZoneCache[gI_EntityZone[entity]].iZoneType > Zone_End && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack != Shavit_GetClientTrack(other)))
 	{
 		return;

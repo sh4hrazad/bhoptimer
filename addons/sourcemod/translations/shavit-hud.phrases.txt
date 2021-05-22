@@ -10,6 +10,11 @@
 	{
 		"en"		"难度"
 	}
+	"Checkpoints"
+	{
+		"en"		"CPs"
+		"chi"		"检查点数"
+	}
 	"Stages"
 	{
 		"en"		"关卡数"
@@ -42,6 +47,11 @@
 	{
 		"#format"	"{1:s},{2:d}"
 		"en"		"\n\n\t\t\t{1}({2})"
+	}
+	"HudInStartZoneCSGO_Linearmap"
+	{
+		"#format"	"{1:s}"
+		"en"		"\n\n\t\t\t{1}"
 	}
 	"HudEndZone"
 	{
@@ -114,124 +124,143 @@
 	"HudTimeText"
 	{
 		"en"		"Time"
+		"chi"		"时间"
 	}
 	"HudBestText"
 	{
 		"en"		"Best"
+		"chi"		"最佳"
 	}
 	"HudJumpsText"
 	{
 		"en"		"Jumps"
+		"chi"		"跳跃数"
 	}
 	"HudStyleText"
 	{
 		"en"		"Style"
+		"chi"		"模式"
 	}
 	"HudSpeedText"
 	{
 		"en"		"Speed"
+		"chi"		"速度"
 	}
 	"HudStrafeText"
 	{
 		"en"		"Strafes"
+		"chi"		"加速数"
 	}
 	"HudTimeLeft"
 	{
 		"en"		"Time left"
+		"chi"		"剩下的时间"
 	}
 	"HudSync"
 	{
 		"en"		"Sync"
+		"chi"		"同步"
 	}
 	"HudPerfs"
 	{
 		"en"		"Perfect jumps"
+		"chi"		"完美的跳跃数"
 	}
 	"HudPracticeMode"
 	{
 		"en"		"[PRACTICE]"
-	}
-	"HudNoSpeedLimit"
-	{
-		"en"		"(No Speed Limit)"
-	}
-	"HudCustomSpeedLimit"
-	{
-		"#format"	"{1:d}"
-		"en"		"(Speed Limit: {1})"
+		"chi"		"[练习模式]"
 	}
 	// ---------- Menus ---------- //
 	"HUDMenuTitle"
 	{
 		"en"		"HUD settings:"
+		"chi"		"HUD设置:"
 	}
 	"HudMaster"
 	{
 		"en"		"Master"
+		"chi"		"总体"
 	}
 	"HudCenter"
 	{
 		"en"		"Center text"
+		"chi"		"中间的文本"
 	}
 	"HudZoneHud"
 	{
 		"en"		"Zone HUD"
+		"chi"		"区域 HUD"
 	}
 	"HudObserve"
 	{
 		"en"		"Spectate HUD"
+		"chi"		"观看者 HUD"
 	}
 	"HudSpectators"
 	{
 		"en"		"Spectator list"
+		"chi"		"观察者列表"
 	}
 	"HudKeyOverlay"
 	{
 		"en"		"Key display"
+		"chi"		"按键显示"
 	}
 	"HudHideWeapon"
 	{
 		"en"		"Hide weapons"
+		"chi"		"隐藏武器"
 	}
 	"HudTopLeft"
 	{
 		"en"		"Top left HUD (WR/PB)"
+		"chi"		"左上角HUD(SR/个人)"
 	}
 	"Hud2dVel"
 	{
 		"en"		"Use 2D Velocity"
+		"chi"		"使用2D速度(xy)"
 	}
 	"HudNoRecordSounds"
 	{
 		"en"		"No record sounds"
+		"chi"		"无破记录声音"
 	}
 	"HudPracticeModeAlert"
 	{
 		"en"		"No practice mode alert"
+		"chi"		"无练习模式警报"
 	}
 	"HudRankText"
 	{
 		"en"		"Expected rank"
+		"chi"		"期望排名"
 	}
 	"HudTrackText"
 	{
 		"en"		"Timer track"
+		"chi"		"计时器track"
 	}
 	"HudSplitPbText"
 	{
 		"en"		"Split PB"
+		"chi"		"拆分个人记录"
 	}
 	"HudMapTierText"
 	{
 		"en"		"Map tier"
+		"chi"		"地图难度"
 	}
 	"HudTimeDifference"
 	{
 		"en"		"Time Difference"
+		"chi"		"完成时间差异"
 	}
 	"HudTopLeftRankText"
 	{
 		"en"		"Top left Rank"
+		"chi"		"左上角排名"
 	}
 	"HudStage"
 	{
@@ -242,33 +271,35 @@
 	"ReplayText"
 	{
 		"en"		"Replay"
+		"chi"		"回放"
 	}
 	"NoReplayData"
 	{
 		"en"		"No replay data loaded\nPress USE or beat #1 to play"
-	}
-	"NoReplayDataTF2"
-	{
-		"en"		"No replay data loaded\n!replay or beat #1 to play"
+		"chi"		"未加载回放数据\n按E(使用键)或打败第一名来播放"
 	}
 	// ---------- Panels ---------- //
 	"SpectatorPersonal"
 	{
 		"en"		"Spectators"
+		"chi"		"观察者数"
 	}
 	"SpectatorWatching"
 	{
 		"en"		"Other Spectators"
+		"chi"		"其他的观察者"
 	}
 	// ---------- Commands ---------- //
 	"HudEnabledComponent"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s}"
 		"en"		"{1}{2} {3}HUD setting {4}enabled{5}."
+		"chi"		"{1}{2} {3}HUD设置{4}已启用{5}."
 	}
 	"HudDisabledComponent"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s}"
 		"en"		"{1}{2} {3}HUD setting {4}disabled{5}."
+		"chi"		"{1}{2} {3}HUD设置{4}已禁用{5}."
 	}
 }

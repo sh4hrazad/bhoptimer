@@ -205,7 +205,7 @@ public void OnPluginStart()
 	gCV_SpectatorList = new Convar("shavit_hud_speclist", "1", "Who to show in the specators list?\n0 - everyone\n1 - all admins (admin_speclisthide override to bypass)\n2 - players you can target", 0, true, 0.0, true, 2.0);
 	gCV_UseHUDFix = new Convar("shavit_hud_csgofix", "1", "Apply the csgo color fix to the center hud?\nThis will add a dollar sign and block sourcemod hooks to hint message", 0, true, 0.0, true, 1.0);
 	gCV_SpecNameSymbolLength = new Convar("shavit_hud_specnamesymbollength", "32", "Maximum player name length that should be displayed in spectators panel", 0, true, 0.0, true, float(MAX_NAME_LENGTH));
-	gCV_CheckpointDifferenceTime = new Convar("shavit_showtime_checkpointdiff", "3.0", "How long will the checkpoint difference time last?\n0 - will last to the next stage/checkpoint", 0, true, 0.0);
+	gCV_CheckpointDifferenceTime = new Convar("shavit_showtime_checkpointdiff", "3.0", "How long will the checkpoint difference time last?\n0 - Last to the next stage/checkpoint", 0, true, 0.0);
 
 	char defaultHUD[8];
 	IntToString(HUD_DEFAULT, defaultHUD, 8);
@@ -1304,9 +1304,11 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 					FormatEx(sZoneHUD, 64, "<span color='#%06X'>%d</span>", tierColor, Shavit_GetMapTier(gS_Map));
 					AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
 
-					FormatEx(sZoneHUD, 64, "| <span color='#00FF00'>%T</span> ", "Stages", client);
+					char sStageorCheckpoint[32];
+					FormatEx(sStageorCheckpoint, 32, "%T", (Shavit_IsLinearMap())?"Checkpoints":"Stages", client);
+					FormatEx(sZoneHUD, 64, "| <span color='#00FF00'>%s</span> ", sStageorCheckpoint);
 					AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
-					FormatEx(sZoneHUD, 64, "%d ", Shavit_GetMapStages());
+					FormatEx(sZoneHUD, 64, "%d ", (Shavit_IsLinearMap())?Shavit_GetMapCheckpoints():Shavit_GetMapStages());
 					AddHUDLine(buffer, maxlen, sZoneHUD, iLines);
 
 					FormatEx(sZoneHUD, 64, "| <span color='#00FFFF'>%T</span> ", "Bonuses", client);
@@ -1334,7 +1336,15 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 
 				char sStartZone[32];
 				FormatEx(sStartZone, 32, "%T", "InStartZone", client);
-				FormatEx(sZoneHUD, 64, "%T", "HudInStartZoneCSGO", client, sStartZone, data.iSpeed);
+				if(Shavit_IsLinearMap())
+				{
+					FormatEx(sZoneHUD, 64, "%T", "HudInStartZoneCSGO_Linearmap", client, sStartZone);
+				}
+
+				else
+				{
+					FormatEx(sZoneHUD, 64, "%T", "HudInStartZoneCSGO", client, sStartZone, data.iSpeed);
+				}
 				StrCat(buffer, maxlen, sZoneHUD);
 			}
 		}
@@ -1467,7 +1477,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			iLines++;
 		}
 
-		if(data.iTimerStatus != Timer_Stopped && data.iTrack != Track_Main && (gI_HUD2Settings[client] & HUD2_TRACK) == 0)
+		if(data.iTrack != Track_Main && (gI_HUD2Settings[client] & HUD2_TRACK) == 0)
 		{
 			char sTrack[32];
 			GetTrackName(client, data.iTrack, sTrack, 32);
@@ -1545,35 +1555,31 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 
 			iLines++;
 		}
+
+		if((gI_HUD2Settings[client] & HUD2_STAGE) == 0 && data.iTrack == Track_Main)
+		{
+			if(Shavit_IsLinearMap())
+			{
+				char sTransCheckpoint[16];
+				FormatEx(sTransCheckpoint, 16, "%T", "Checkpoint", client);
+				FormatEx(sLine, 128, "%s: %d/%d", sTransCheckpoint, data.iCheckpoint, Shavit_GetMapCheckpoints());
+			}
+
+			else
+			{
+				char sTransStage[16];
+				FormatEx(sTransStage, 16, "%T", "Stage", client);
+				FormatEx(sLine, 128, "%s: %d/%d", sTransStage, data.iStage, Shavit_GetMapStages());
+			}
+
+			AddHUDLine(buffer, maxlen, sLine, iLines);
+			iLines++;
+		}
 	}
 
 	else
 	{
 		Format(sLine, 128, "%s: <span color='#FF0000'>%T</span>", sTransTime, "TimerStopped", client);
-		AddHUDLine(buffer, maxlen, sLine, iLines);
-		iLines++;
-	}
-
-	if((gI_HUD2Settings[client] & HUD2_STAGE) == 0 && data.iTrack == Track_Main)
-	{
-		if(Shavit_IsLinearMap())
-		{
-			char sTransCheckpoint[16];
-			FormatEx(sTransCheckpoint, 16, "%T", "Checkpoint", client);
-
-			int cp = (Shavit_GetClientCheckpoint(client) > Shavit_GetMapCheckpoints()) ? Shavit_GetMapCheckpoints() : Shavit_GetClientCheckpoint(client);
-			FormatEx(sLine, 128, "%s: %d/%d", sTransCheckpoint, cp, Shavit_GetMapCheckpoints());
-		}
-
-		else
-		{
-			char sTransStage[16];
-			FormatEx(sTransStage, 16, "%T", "Stage", client);
-
-			int stage = (Shavit_GetClientStage(client) > Shavit_GetMapStages()) ? Shavit_GetMapStages() : Shavit_GetClientStage(client);
-			FormatEx(sLine, 128, "%s: %d/%d", sTransStage, stage, Shavit_GetMapStages());
-		}
-
 		AddHUDLine(buffer, maxlen, sLine, iLines);
 		iLines++;
 	}

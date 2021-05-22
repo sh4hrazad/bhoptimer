@@ -8,10 +8,12 @@
 	"Track_Unknown"
 	{
 		"en"		"UNKNOWN TRACK"
+		"chi"		"未知 TRACK"
 	}
 	"Track_Main"
 	{
 		"en"		"Main"
+		"chi"		"主线"
 	}
 	"Track_Bonus"
 	{
@@ -22,29 +24,35 @@
 	"NoCommandAccess"
 	{
 		"en"		"You do not have access to this command."
+		"chi"		"您无权访问此命令."
 	}
 	"NoConsole"
 	{
 		"en"		"Run this command from inside the game."
+		"chi"		"从游戏内部运行此命令."
 	}
 	"ArgumentsMissing"
 	{
 		"#format"	"{1:s}"
 		"en"		"Usage: {1}"
+		"chi"		"用法: {1}"
 	}
 	"TimerCommands"
 	{
 		"en"		"Timer Commands"
+		"chi"		"计时器命令"
 	}
 	// ---------- Timelimit ---------- //
 	"Minutes"
 	{
 		"#format"	"{1:s}"
 		"en"		"{1} minutes remaining."
+		"chi"		"剩余{1}分钟."
 	}	
 	"Seconds"
 	{
 		"#format"	"{1:s}"
 		"en"		"{1} seconds remaining."
+		"chi"		"剩余{1}秒"
 	}
 }

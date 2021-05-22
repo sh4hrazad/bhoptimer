@@ -2277,6 +2277,13 @@ native StringMap Shavit_GetMapTiers();
 native bool Shavit_GetMapLimitspeed();
 
 /**
+ * Detect current map if limitting noclip.
+ *
+ * @return							Boolean. 0 if no limit.
+ */
+native bool Shavit_GetMapLimitnoclip();
+
+/**
  * Get current map's maxvelocity.
  *
  * @return							Current map's maxvelocity.
@@ -2662,6 +2669,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetMapTier");
 	MarkNativeAsOptional("Shavit_GetMapTiers");
 	MarkNativeAsOptional("Shavit_GetMapLimitspeed");
+	MarkNativeAsOptional("Shavit_GetMapLimitnoclip");
 	MarkNativeAsOptional("Shavit_GetMapMaxvelocity");
 	MarkNativeAsOptional("Shavit_GetOrderedStyles");
 	MarkNativeAsOptional("Shavit_GetPerfectJumps");
