@@ -1138,6 +1138,9 @@ public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const c
 
 	float diff = time - gA_WRCP[stage][style].fStageTime;
 
+	char sTime[32];
+	FormatSeconds(time, sTime, 32, true);
+
 	char sDifftime[32];
 	FormatSeconds(diff, sDifftime, 32, true);
 
@@ -1157,12 +1160,12 @@ public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const c
 	FormatEx(sStage, 32, "%T", "Stage", client);
 
 	char sMessage[255];
-
 	FormatEx(sMessage, 255, "%T", "ZoneStageTime", client, 
-		gS_ChatStrings.sStyle, sStage, gS_ChatStrings.sText, 
-		gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, 
-		gS_ChatStrings.sVariable, gS_ChatStrings.sText, 
-		gS_ChatStrings.sVariable2, sDifftime, gS_ChatStrings.sText);
+			gS_ChatStrings.sStyle, sStage, gS_ChatStrings.sText, 
+			gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, 
+			gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, 
+			gS_ChatStrings.sVariable, gS_ChatStrings.sText, 
+			gS_ChatStrings.sVariable2, sDifftime, gS_ChatStrings.sText);
 	Shavit_PrintToChat(client, "%s", sMessage);
 
 	gH_SQL.Query(SQL_PrCheck_Callback2, sQuery, GetClientSerial(client), DBPrio_High);
@@ -1444,6 +1447,7 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 	int client = GetNativeCell(1);
 	bool bBypass = (numParams < 2 || view_as<bool>(GetNativeCell(2)));
 	int cpnum = (gB_LinearMap) ? Shavit_GetClientCheckpoint(client) : Shavit_GetClientStage(client);
+	int cpmax = (gB_LinearMap) ? Shavit_GetMapCheckpoints() : Shavit_GetMapStages();
 	int style = Shavit_GetBhopStyle(client);
 	float time = Shavit_GetClientTime(client);
 
@@ -1501,15 +1505,17 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 
 		strcopy(gS_DiffTime[client], 32, sDifftime);
 
-		char sMessage[255];
-
-		FormatEx(sMessage, 255, "%T", "ZoneCheckpointTime", client, 
-			gS_ChatStrings.sStyle, sCheckpoint, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable2, cpnum, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable2, sDifftime, gS_ChatStrings.sText);
-		Shavit_PrintToChat(client, "%s", sMessage);
+		if(cpnum <= cpmax)
+		{
+			char sMessage[255];
+			FormatEx(sMessage, 255, "%T", "ZoneCheckpointTime", client, 
+				gS_ChatStrings.sStyle, sCheckpoint, gS_ChatStrings.sText, 
+				gS_ChatStrings.sVariable2, cpnum, gS_ChatStrings.sText, 
+				gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, 
+				gS_ChatStrings.sVariable, gS_ChatStrings.sText, 
+				gS_ChatStrings.sVariable2, sDifftime, gS_ChatStrings.sText);
+			Shavit_PrintToChat(client, "%s", sMessage);
+		}
 
 		float fVelocity[3];
 		GetEntPropVector(client, Prop_Data, "m_vecVelocity", fVelocity);
