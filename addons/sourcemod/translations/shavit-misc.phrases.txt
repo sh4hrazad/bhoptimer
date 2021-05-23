@@ -187,13 +187,13 @@
 	{
 		"#format"	"{1:d}"
 		"en"		"Save checkpoint ({1})"
-		"chi"		"保存了存点({1})"
+		"chi"		"存点({1})"
 	}
 	"MiscCheckpointTeleport"
 	{
 		"#format"	"{1:d}"
 		"en"		"Teleport to checkpoint ({1})"
-		"chi"		"传送到存点({1})"
+		"chi"		"读点({1})"
 	}
 	"MiscCheckpointPrevious"
 	{
