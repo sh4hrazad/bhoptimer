@@ -2349,7 +2349,12 @@ void StartTimer(int client, int track)
 			gA_Timers[client].fAvgVelocity = curVel;
 			gA_Timers[client].fMaxVelocity = curVel;
 
-			if(gA_Timers[client].fTimescale != -1.0)
+			if(gA_Timers[client].fTimescale == 0.0)
+			{
+				SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", 1.0);
+			}
+
+			else if(gA_Timers[client].fTimescale != -1.0)
 			{
 				SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", gA_Timers[client].fTimescale);
 			}

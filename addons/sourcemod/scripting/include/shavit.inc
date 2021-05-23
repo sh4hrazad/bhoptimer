@@ -1807,9 +1807,10 @@ native float Shavit_GetReplayTime(int entity);
  * @param track						Track.
  * @param buffer					Buffer string.
  * @param length					String length.
+ * @param stage 					Stage. default 0 for main track
  * @noreturn
  */
-native void Shavit_GetReplayName(int style, int track, char[] buffer, int length);
+native void Shavit_GetReplayName(int style, int track, char[] buffer, int length, int stage = 0);
 
 /**
  * Hijack the replay data so that this view angle will be used for the next tick.
@@ -1827,9 +1828,10 @@ native void Shavit_HijackAngles(int client, float pitch, float yaw);
  *
  * @param style						Style.
  * @param track						Track.
+ * @param stage						Stage, default 0 for main track.
  * @return							Boolean value of if there's loaded replay data.
  */
-native bool Shavit_IsReplayDataLoaded(int style, int track);
+native bool Shavit_IsReplayDataLoaded(int style, int track, int stage = 0);
 
 /**
  * Gets player points.

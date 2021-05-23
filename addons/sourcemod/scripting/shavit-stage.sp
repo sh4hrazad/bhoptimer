@@ -1153,7 +1153,17 @@ public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const c
 		strcopy(sDifftime, 32, sBuffer);
 	}
 
-	Shavit_PrintToChat(client, "You finished stage [%d] | WR %s.", stage, sDifftime);
+	char sStage[32];
+	FormatEx(sStage, 32, "%T", "Stage", client);
+
+	char sMessage[255];
+
+	FormatEx(sMessage, 255, "%T", "ZoneStageTime", client, 
+		gS_ChatStrings.sStyle, sStage, gS_ChatStrings.sText, 
+		gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, 
+		gS_ChatStrings.sVariable, gS_ChatStrings.sText, 
+		gS_ChatStrings.sVariable2, sDifftime, gS_ChatStrings.sText);
+	Shavit_PrintToChat(client, "%s", sMessage);
 
 	gH_SQL.Query(SQL_PrCheck_Callback2, sQuery, GetClientSerial(client), DBPrio_High);
 }
@@ -1463,12 +1473,12 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 
 		if(gB_LinearMap)
 		{
-			FormatEx(sCheckpoint, 32, "Checkpoint");
+			FormatEx(sCheckpoint, 32, "%T", "Checkpoint", client);
 		}
 
 		else
 		{
-			FormatEx(sCheckpoint, 32, "Stage");
+			FormatEx(sCheckpoint, 32, "%T", "Stage", client);
 		}
 
 		char sTime[32];

@@ -955,7 +955,8 @@ public int Native_IsReplayDataLoaded(Handle handler, int numParams)
 {
 	int style = GetNativeCell(1);
 	int track = GetNativeCell(2);
-	return view_as<int>(ReplayEnabled(style) && gA_FrameCache[style][track].iFrameCount > 0);
+	int stage = GetNativeCell(3);
+	return view_as<int>(ReplayEnabled(style) && (stage == 0)?gA_FrameCache[style][track].iFrameCount > 0:gA_FrameCache_Stage[style][stage].iFrameCount > 0);
 }
 
 void StartReplay(bot_info_t info, int track, int style, int starter, float delay, int stage = 0)
@@ -1321,7 +1322,7 @@ public int Native_GetReplayBotLength(Handle handler, int numParams)
 // TODO: Add a native that'd return the replay name of a replay bot... because custom frames...
 public int Native_GetReplayName(Handle handler, int numParams)
 {
-	return SetNativeString(3, gA_FrameCache[GetNativeCell(1)][GetNativeCell(2)].sReplayName, GetNativeCell(4));
+	return SetNativeString(3, (GetNativeCell(5) == 0)?gA_FrameCache[GetNativeCell(1)][GetNativeCell(2)].sReplayName:gA_FrameCache_Stage[GetNativeCell(1)][GetNativeCell(5)].sReplayName, GetNativeCell(4));
 }
 
 public int Native_GetReplayStatus(Handle handler, int numParams)
@@ -3842,9 +3843,9 @@ void OpenReplayTypeMenu(int client)
 	IntToString(Replay_Dynamic, sInfo, sizeof(sInfo));
 	menu.AddItem(sInfo, sDisplay, (gI_DynamicBots < gCV_DynamicBotLimit.IntValue && !alreadyHaveBot) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 
-	FormatEx(sDisplay, sizeof(sDisplay), "%T", "Menu_Replay_Prop", client);
+	/* FormatEx(sDisplay, sizeof(sDisplay), "%T", "Menu_Replay_Prop", client);
 	IntToString(Replay_Prop, sInfo, sizeof(sInfo));
-	menu.AddItem(sInfo, sDisplay, (gCV_AllowPropBots.BoolValue && !alreadyHaveBot) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+	menu.AddItem(sInfo, sDisplay, (gCV_AllowPropBots.BoolValue && !alreadyHaveBot) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED); */
 
 	menu.ExitBackButton = true;
 	menu.DisplayAt(client, 0, MENU_TIME_FOREVER);

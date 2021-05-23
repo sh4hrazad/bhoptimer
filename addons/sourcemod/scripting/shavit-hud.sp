@@ -1218,27 +1218,38 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 {
 	int iLines = 0;
 	char sLine[128];
+	
+	char sTransTime[8];
+	FormatEx(sTransTime, 8, "%T", "Time", client);
+
+	char sSpeed[8];
+	FormatEx(sSpeed, 8, "%T", "Speed", client);
 
 	if(data.bReplay)
 	{
-		StrCat(buffer, maxlen, "<span class='fontSize-l'>");
-
-		if(data.iStyle != -1 && data.fTime <= data.fWR && Shavit_IsReplayDataLoaded(data.iStyle, data.iTrack))
+		if(data.iStyle != -1 && data.fTime <= data.fWR && Shavit_IsReplayDataLoaded(data.iStyle, data.iTrack, data.iStage))
 		{
-			char sPlayerName[MAX_NAME_LENGTH];
-			Shavit_GetReplayName(data.iStyle, data.iTrack, sPlayerName, MAX_NAME_LENGTH);
-
-			char sTrack[32];
-
-			if(data.iTrack != Track_Main && (gI_HUD2Settings[client] & HUD2_TRACK) == 0)
+			if((gI_HUD2Settings[client] & HUD2_TRACK) == 0)
 			{
-				GetTrackName(client, data.iTrack, sTrack, 32);
-				Format(sTrack, 32, "(%s) ", sTrack);
-			}
+				char sTrack[64];
+				if(data.iStage == 0)
+				{
+					GetTrackName(client, data.iTrack, sTrack, 64);
+				}
 
-			FormatEx(sLine, 128, "<u><span color='#%s'>%s %s%T</span></u> <span color='#DB88C2'>%s</span>", gS_StyleStrings[data.iStyle].sHTMLColor, gS_StyleStrings[data.iStyle].sStyleName, sTrack, "ReplayText", client, sPlayerName);
-			AddHUDLine(buffer, maxlen, sLine, iLines);
-			iLines++;
+				else
+				{
+					Format(sTrack, 64, "%T #%d", "Stage", client, data.iStage);
+				}
+
+				FormatEx(sLine, 128, "%T ", "ReplayText", client);
+				AddHUDLine(buffer, maxlen, sLine, iLines);
+				
+				FormatEx(sLine, 128, "[<span color='#%06X'>%s - %s</span>]", ((gI_Gradient.r << 16) + (gI_Gradient.g << 8) + (gI_Gradient.b)), sTrack, gS_StyleStrings[data.iStyle].sStyleName);
+				AddHUDLine(buffer, maxlen, sLine, iLines);
+
+				iLines++;
+			}
 
 			if((gI_HUD2Settings[client] & HUD2_TIME) == 0)
 			{	
@@ -1248,14 +1259,24 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 				char sWR[32];
 				FormatSeconds(data.fWR, sWR, 32, false);
 
-				FormatEx(sLine, 128, "%s / %s (%.1f％)", sTime, sWR, ((data.fTime < 0.0 ? 0.0 : data.fTime / data.fWR) * 100));
+				char sPlayerName[MAX_NAME_LENGTH];
+				Shavit_GetReplayName(data.iStyle, data.iTrack, sPlayerName, MAX_NAME_LENGTH, data.iStage);
+
+				FormatEx(sLine, 128, "%s: <span color='#FFFF00'>%s / %s</span> (%s)", sTransTime, sTime, sWR, sPlayerName);
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 				iLines++;
 			}
 
 			if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
 			{
-				FormatEx(sLine, 128, "%d u/s", data.iSpeed);
+				int iColor = 0xA0FFFF;
+		
+				if((data.iSpeed - gI_PreviousSpeed[client]) < 0)
+				{
+					iColor = 0xFFC966;
+				}
+				
+				FormatEx(sLine, 128, "%s: <span color='#%06X'>%d</span>", sSpeed, iColor, data.iSpeed);
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 				iLines++;
 			}
@@ -1263,6 +1284,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 
 		else
 		{
+			StrCat(buffer, maxlen, "<span class='fontSize-l'>");
 			FormatEx(sLine, 128, "%T", "NoReplayData", client);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 			iLines++;
@@ -1465,9 +1487,6 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 
 	StrCat(buffer, maxlen, "<span class='fontSize-l'>");
 
-	char sTransTime[8];
-	FormatEx(sTransTime, 8, "%T", "Time", client);
-
 	if(data.iTimerStatus != Timer_Stopped)
 	{
 		if(data.bPractice || data.iTimerStatus == Timer_Paused)
@@ -1592,9 +1611,6 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 		{
 			iColor = 0xFFC966;
 		}
-
-		char sSpeed[8];
-		FormatEx(sSpeed, 8, "%T", "Speed", client);
 
 		if(data.iTimerStatus != Timer_Stopped && gB_Replay && Shavit_GetReplayFrameCount(Shavit_GetClosestReplayStyle(data.iTarget), data.iTrack) != 0 && Shavit_GetClosestReplayTime(data.iTarget) != -1.0)
 		{

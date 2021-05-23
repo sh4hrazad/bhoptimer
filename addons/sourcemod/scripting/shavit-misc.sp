@@ -1318,12 +1318,15 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 					}
 				}
 
-				char sPrestrafe[128];
-				FormatEx(sPrestrafe, 128, "%sStart: %s%d u/s %s| %sWR:%s %s", 
-					gS_ChatStrings.sStyle, 
-					gS_ChatStrings.sVariable5, RoundToFloor(fSpeed3D), gS_ChatStrings.sText, 
-					gS_ChatStrings.sVariable, gS_ChatStrings.sText, sWRCPDiffSpeed);
-				Shavit_PrintToChat(client, sPrestrafe);
+				if(fSpeed3D != 0.0)
+				{
+					char sPrestrafe[128];
+					FormatEx(sPrestrafe, 128, "%T", "StartPrestrafe", client,
+						gS_ChatStrings.sStyle, 
+						gS_ChatStrings.sVariable5, RoundToFloor(fSpeed3D), gS_ChatStrings.sText, 
+						gS_ChatStrings.sVariable, gS_ChatStrings.sText, sWRCPDiffSpeed);
+					Shavit_PrintToChat(client, sPrestrafe);
+				}
 			}
 		}
 
