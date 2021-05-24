@@ -1037,6 +1037,9 @@ void KillZoneEntity(int index)
 	
 	if(entity > MaxClients && IsValidEntity(entity))
 	{
+		gA_ZoneCache[index].iEntityID = -1;
+		gI_EntityZone[entity] = -1;
+
 		for(int i = 1; i <= MaxClients; i++)
 		{
 			for(int j = 0; j < TRACKS_SIZE; j++)
@@ -1047,10 +1050,7 @@ void KillZoneEntity(int index)
 			gB_InsideZoneID[i][index] = false;
 		}
 
-		char sTargetname[32];
-		GetEntPropString(entity, Prop_Data, "m_iName", sTargetname, 32);
-
-		if(StrContains(sTargetname, "shavit_zones_") == -1)
+		if(!IsValidEntity(entity))
 		{
 			return;
 		}
@@ -3140,8 +3140,6 @@ void CreateZoneEntities()
 		if(gA_ZoneCache[i].iEntityID != -1)
 		{
 			KillZoneEntity(i);
-
-			gA_ZoneCache[i].iEntityID = -1;
 		}
 
 		if(!gA_ZoneCache[i].bZoneInitialized)

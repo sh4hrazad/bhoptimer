@@ -229,7 +229,7 @@ enum struct cp_cache_t
 	int iSteamID;
 	ArrayList aEvents;
 	ArrayList aOutputWaits;
-	float fLadderNormal[3];
+	float vecLadderNormal[3];
 }
 
 enum struct frame_t
@@ -1678,11 +1678,11 @@ native float Shavit_GetReplayBotFirstFrame(int entity);
 /**
  * Retrieve the replay bot's entity index.
  *
- * @param track						Trakc you want. -1 if you want the central bot. If no central bot, the first bot it finds it used.
  * @param style						Style you want. -1 if you want the central bot. If no central bot, the first bot it finds it used.
+ * @param track						Track you want. -1 if you want the central bot. If no central bot, the first bot it finds it used.
  * @return							Client index for the replay bot. -1 if not found.
  */
-native int Shavit_GetReplayBotIndex(int track, int style);
+native int Shavit_GetReplayBotIndex(int style, int track);
 
 /**
  * Retrieve the stage being played by the replay bot.
@@ -1750,12 +1750,12 @@ native int Shavit_GetReplayButtons(int ent);
 native int Shavit_GetReplayFrameCount(int style, int track);
 
 /**
- * Retrieves a replay bot's frame count.
+ * Retrieves the frame count from the currently running replay bot's framecache_t.
  *
  * @param bot						Replay bot entity.
  * @return							Frame count.
  */
-native int Shavit_GetReplayBotFrameCount(int bot);
+native int Shavit_GetReplayCacheFrameCount(int bot);
 
 /**
  * Retrieves the replay data for the given style and track.
@@ -1785,12 +1785,12 @@ native int Shavit_GetClientFrameCount(int client);
 native float Shavit_GetReplayLength(int style, int track, int stage = 0);
 
 /**
- * Retrieves a replay bot's total length in seconds.
+ * Retrieves the replay's total length in seconds from the currently running replay bot's framecache_t.
  *
  * @param bot						Replay bot entity.
  * @return							Replay length.
  */
-native float Shavit_GetReplayBotLength(int bot);
+native float Shavit_GetReplayCacheLength(int bot);
 
 /**
  * Retrieves an actively playing replay's time.
@@ -2780,7 +2780,8 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetReplayButtons");
 	MarkNativeAsOptional("Shavit_GetClosestReplayStyle");
 	MarkNativeAsOptional("Shavit_SetClosestReplayStyle");
-	MarkNativeAsOptional("Shavit_GetReplayBotFrameCount");
+	MarkNativeAsOptional("Shavit_GetReplayCacheFrameCount");
+	MarkNativeAsOptional("Shavit_GetReplayCacheLength");
 	MarkNativeAsOptional("Shavit_StartReplayFromFrameCache");
 	MarkNativeAsOptional("Shavit_StartReplayFromFile");
 	MarkNativeAsOptional("Shavit_GetMapBonuses");
