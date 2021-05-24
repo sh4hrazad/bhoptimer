@@ -22,7 +22,6 @@
 Database gH_SQL = null;
 bool gB_Connected = false;
 bool gB_MySQL = false;
-bool gB_LinearMap;
 
 enum struct cp_t
 {
@@ -166,7 +165,7 @@ public void OnClientPutInServer(int client)
 		return;
 	}
 
-	if(!gB_LinearMap)
+	if(!Shavit_IsLinearMap())
 	{
 		LoadPR(client);
 	}
@@ -191,16 +190,6 @@ public void OnMapStart()
 		chatstrings_t chatstrings;
 		Shavit_GetChatStringsStruct(chatstrings);
 		Shavit_OnChatConfigLoaded(chatstrings);
-
-		if(Shavit_GetMapStages() == 1)
-		{
-			gB_LinearMap = true;
-		}
-
-		else
-		{
-			gB_LinearMap = false;
-		}
 
 		for(int i = 1; i <= MaxClients; i++)
 		{
@@ -322,7 +311,7 @@ public Action Command_WRCP(int client, int args)
 
 	if(args == 0)
 	{
-		if(gB_LinearMap)
+		if(Shavit_IsLinearMap())
 		{
 			Shavit_PrintToChat(client, "This is a linear map");
 
@@ -353,7 +342,7 @@ public Action Command_DeleteWRCP(int client, int args)
 
 	if(args == 0)
 	{
-		if(gB_LinearMap)
+		if(Shavit_IsLinearMap())
 		{
 			Shavit_PrintToChat(client, "This is a linear map");
 
@@ -598,7 +587,7 @@ public Action Command_Maptop(int client, int args)
 
 	if(args == 0)
 	{
-		if(gB_LinearMap)
+		if(Shavit_IsLinearMap())
 		{
 			Shavit_PrintToChat(client, "This is a linear map");
 
@@ -629,7 +618,7 @@ public Action Command_DeleteMaptop(int client, int args)
 
 	if(args == 0)
 	{
-		if(gB_LinearMap)
+		if(Shavit_IsLinearMap())
 		{
 			Shavit_PrintToChat(client, "This is a linear map");
 
@@ -906,13 +895,13 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 
 	if(type == Zone_End)
 	{
-		int cpnum = (gB_LinearMap) ? Shavit_GetClientCheckpoint(client) : Shavit_GetClientStage(client);
+		int cpnum = (Shavit_IsLinearMap()) ? Shavit_GetClientCheckpoint(client) : Shavit_GetClientStage(client);
 		int style = Shavit_GetBhopStyle(client);
 		gA_PRCP[client][cpnum][style].fFinalspeed = finalSpeed;
 		gA_PRCP[client][cpnum][style].fPrespeed = finalSpeed;
 	}
 
-	if((type == Zone_Stage || type == Zone_Start || type == Zone_End) && !gB_LinearMap)
+	if((type == Zone_Stage || type == Zone_Start || type == Zone_End) && !Shavit_IsLinearMap())
 	{
 		int stage = Shavit_GetClientStage(client);
 		int style = Shavit_GetBhopStyle(client);
@@ -994,7 +983,7 @@ public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, i
 	// 2 - update
 	int maxCPs;
 
-	if(gB_LinearMap)
+	if(Shavit_IsLinearMap())
 	{
 		maxCPs = Shavit_GetMapCheckpoints() + 1;
 	}
@@ -1013,7 +1002,7 @@ public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, i
 		{
 			for(int cpnum = 1; cpnum <= maxCPs; cpnum++)
 			{
-				float speed = (gB_LinearMap) ? gA_PRCP[client][cpnum][style].fFinalspeed : gA_PRCP[client][cpnum][style].fPrespeed;
+				float speed = (Shavit_IsLinearMap()) ? gA_PRCP[client][cpnum][style].fFinalspeed : gA_PRCP[client][cpnum][style].fPrespeed;
 
 				FormatEx(sQuery, 512,
 					"INSERT INTO `%scp` (auth, map, time, style, cp, speed, date) VALUES (%d, '%s', %f, %d, %d, %f, %d);",
@@ -1027,7 +1016,7 @@ public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, i
 		{
 			for(int cpnum = 1; cpnum <= maxCPs; cpnum++)
 			{
-				float speed = (gB_LinearMap) ? gA_PRCP[client][cpnum][style].fFinalspeed : gA_PRCP[client][cpnum][style].fPrespeed;
+				float speed = (Shavit_IsLinearMap()) ? gA_PRCP[client][cpnum][style].fFinalspeed : gA_PRCP[client][cpnum][style].fPrespeed;
 
 				FormatEx(sQuery, 512,
 					"UPDATE `%scp` SET time = %f, style = %d, speed = %f, date = %d WHERE (auth = %d AND cp = %d ) AND map = '%s';",
@@ -1446,8 +1435,8 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 {
 	int client = GetNativeCell(1);
 	bool bBypass = (numParams < 2 || view_as<bool>(GetNativeCell(2)));
-	int cpnum = (gB_LinearMap) ? Shavit_GetClientCheckpoint(client) : Shavit_GetClientStage(client);
-	int cpmax = (gB_LinearMap) ? Shavit_GetMapCheckpoints() : Shavit_GetMapStages();
+	int cpnum = (Shavit_IsLinearMap()) ? Shavit_GetClientCheckpoint(client) : Shavit_GetClientStage(client);
+	int cpmax = (Shavit_IsLinearMap()) ? Shavit_GetMapCheckpoints() : Shavit_GetMapStages();
 	int style = Shavit_GetBhopStyle(client);
 	float time = Shavit_GetClientTime(client);
 
@@ -1475,7 +1464,7 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 
 		char sCheckpoint[32];
 
-		if(gB_LinearMap)
+		if(Shavit_IsLinearMap())
 		{
 			FormatEx(sCheckpoint, 32, "%T", "Checkpoint", client);
 		}
@@ -1560,7 +1549,7 @@ public int Native_GetStageRankForTime(Handle handler, int numParams)
 
 	if(gA_StageLeaderboard[style][stage] == null || gA_StageLeaderboard[style][stage].Length == 0)
 	{
-		return 1;
+		return 0;
 	}
 
 	return GetStageRankForTime(style, GetNativeCell(2), stage);

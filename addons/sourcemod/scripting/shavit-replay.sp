@@ -2871,29 +2871,6 @@ public Action Shavit_OnStage(int client)
 	return Plugin_Continue;
 }
 
-public bool Shavit_OnStopPre(int client, int track)
-{
-	if(gB_HasFinished[client])
-    {
-		gB_HasFinished[client] = false;
-		SaveReplayPre(client);
-	}
-
-	if(gB_HasFinished_Stage[client])
-    {
-		gB_HasFinished_Stage[client] = false;
-		SaveReplayPre_Stage(client);
-	}
-}
-
-public void Shavit_OnStop(int client)
-{
-	gB_HasFinished[client] = false;
-	gB_HasFinished_Stage[client] = false;
-	ClearFrames(client);
-	ClearFrames_Stage(client);
-}
-
 public void Shavit_OnLeaveZone(int client, int type, int track, int id, int entity)
 {
 	if(type == Zone_Start)

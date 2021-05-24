@@ -169,6 +169,7 @@ Convar gCV_BoxOffset = null;
 
 // handles
 Handle gH_DrawEverything = null;
+Handle gH_DrawZonesToClient = null;
 
 // table prefix
 char gS_MySQLPrefix[32];
@@ -187,6 +188,7 @@ int gI_LastCheckpoint[MAXPLAYERS+1];
 bool gB_IntoStage[MAXPLAYERS+1];
 bool gB_IntoCheckpoint[MAXPLAYERS+1];
 bool gB_LinearMap;
+int gI_LastEntityIndex = -1;
 
 public Plugin myinfo =
 {
@@ -972,7 +974,7 @@ public void SQL_GetStageZone_Callback(Database db, DBResultSet results, const ch
 void LoadCheckpointZones()
 {
 	char sQuery[256];
-	FormatEx(sQuery, 256, "SELECT id, data FROM mapzones WHERE type = %i AND map = '%s'", Zone_Checkpoint, gS_Map);
+	FormatEx(sQuery, 256, "SELECT id, data FROM mapzones WHERE type = %i AND map = '%s' ORDER BY data DESC", Zone_Checkpoint, gS_Map);
 	gH_SQL.Query(SQL_GetCheckpointZone_Callback, sQuery, 0, DBPrio_High);
 }
 
@@ -984,9 +986,9 @@ public void SQL_GetCheckpointZone_Callback(Database db, DBResultSet results, con
 		return;
 	}
 
-	while(results.FetchRow())
+	if(results.FetchRow())
 	{
-		gI_Checkpoints = results.RowCount;
+		gI_Checkpoints = results.FetchInt(1);
 	}
 
 	Shavit_ReloadWRCheckpoints();
@@ -3212,10 +3214,11 @@ void CreateZoneEntities()
 			for(int index = 0; index < gA_Triggers.Length; index++)
 			{
 				int iEnt = gA_Triggers.Get(index);
+
 				char sTriggerName[128];
 				GetEntPropString(iEnt, Prop_Send, "m_iName", sTriggerName, 128, 0);
 
-				if(StrEqual(gA_ZoneCache[i].sZoneHookname, sTriggerName))
+				if(StrEqual(gA_ZoneCache[i].sZoneHookname, sTriggerName) && gI_LastEntityIndex != iEnt)
 				{
 					if(gA_ZoneCache[i].iZoneType != Zone_Mark)
 					{
@@ -3237,6 +3240,7 @@ void CreateZoneEntities()
 
 					gI_EntityZone[iEnt] = i;
 					gA_ZoneCache[i].iEntityID = iEnt;
+					gI_LastEntityIndex = iEnt;
 
 					break;// stop looping from finding triggers to hook
 				}
@@ -3548,8 +3552,6 @@ void transmitTriggers(int client, bool btransmit)
 		SetEntData(entity, gI_Offset_m_fEffects, effectFlags);
 		ChangeEdictState(entity, gI_Offset_m_fEffects);
 		SetEdictFlags(entity, edictFlags);
-
-		static Handle gH_DrawZonesToClient = null;
 		
 		if(btransmit)
 		{
@@ -3588,6 +3590,11 @@ public Action Timer_DrawZonesToClient(Handle Timer, any data)
 	}
 
 	int client = GetClientFromSerial(data);
+
+	if(client == 0 || !gB_ShowTriggers[client])
+	{
+		return Plugin_Handled;
+	}
 
 	static int iCycle = 0;
 

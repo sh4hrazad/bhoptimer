@@ -1364,10 +1364,8 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 	int iSpace = 0;
 	StrCat(buffer, MAX_HINT_SIZE, "<font class='fontSize-m'>");
 
-
 	if(data.bReplay)
 	{
-		
 		if(data.iStyle != -1 && data.fTime <= data.fWR && Shavit_IsReplayDataLoaded(data.iStyle, data.iTrack, data.iStage))
 		{
 			if(true)//Track
