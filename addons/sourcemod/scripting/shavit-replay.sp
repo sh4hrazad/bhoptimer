@@ -90,7 +90,6 @@ enum struct bot_info_t
 	float fStartTick; // Shavit_GetReplayBotFirstFrame
 	bool bCustomFrames;
 	bool bIgnoreLimit;
-	bool b2x;
 	framecache_t aCache;
 }
 
@@ -3000,7 +2999,7 @@ public void Shavit_OnTimescaleChanged(int client, float oldtimescale, float newt
 	gF_NextFrameTime[client] = 0.0;
 }
 
-Action ReplayOnPlayerRunCmd(bot_info_t info, int &buttons, int &impulse, float vel[3])
+Action ReplayRunCmd(bot_info_t info, int &buttons, int &impulse, float vel[3])
 {
 	float vecCurrentPosition[3];
 	GetEntPropVector(info.iEnt, Prop_Send, "m_vecOrigin", vecCurrentPosition);
@@ -3043,9 +3042,7 @@ Action ReplayOnPlayerRunCmd(bot_info_t info, int &buttons, int &impulse, float v
 				return Plugin_Changed;
 			}
 
-			info.iTick += info.b2x ? 2 : 1;
-
-			if(info.iTick >= info.aCache.iFrameCount - 1)
+			if(++info.iTick >= info.aCache.iFrameCount - 1)
 			{
 				info.iStatus = Replay_End;
 				info.hTimer = CreateTimer((gCV_ReplayDelay.FloatValue / 2.0), Timer_EndReplay, info.iEnt, TIMER_FLAG_NO_MAPCHANGE);
@@ -3056,20 +3053,6 @@ Action ReplayOnPlayerRunCmd(bot_info_t info, int &buttons, int &impulse, float v
 			if(info.iTick == 1)
 			{
 				info.fStartTick = GetEngineTime();
-			}
-
-			float vecPreviousPos[3];
-
-			if (info.b2x)
-			{
-				frame_t aFramePrevious;
-				int previousTick = (info.iTick > 0) ? (info.iTick-1) : 0;
-				info.aCache.aFrames.GetArray(previousTick, aFramePrevious, (info.aCache.iReplayVersion >= 0x02) ? 8 : 6);
-				vecPreviousPos = aFramePrevious.pos;
-			}
-			else
-			{
-				vecPreviousPos = vecCurrentPosition;
 			}
 
 			frame_t aFrame;
@@ -3141,21 +3124,21 @@ Action ReplayOnPlayerRunCmd(bot_info_t info, int &buttons, int &impulse, float v
 			}
 
 			float vecVelocity[3];
-			MakeVectorFromPoints(vecPreviousPos, aFrame.pos, vecVelocity);
+			MakeVectorFromPoints(vecCurrentPosition, aFrame.pos, vecVelocity);
 			ScaleVector(vecVelocity, gF_Tickrate);
 
 			float ang[3];
 			ang[0] = aFrame.ang[0];
 			ang[1] = aFrame.ang[1];
 
-			if(info.b2x || (info.iTick > 1 &&
+			if(info.iTick > 1 &&
 				// replay is going above 50k speed, just teleport at this point
 				(GetVectorLength(vecVelocity) > 50000.0 ||
 				// bot is on ground.. if the distance between the previous position is much bigger (1.5x) than the expected according
 				// to the bot's velocity, teleport to avoid sync issues
-				(bWalk && GetVectorDistance(vecPreviousPos, aFrame.pos) > GetVectorLength(vecVelocity) / gF_Tickrate * 1.5))))
+				(bWalk && GetVectorDistance(vecCurrentPosition, aFrame.pos) > GetVectorLength(vecVelocity) / gF_Tickrate * 1.5)))
 			{
-				TeleportEntity(info.iEnt, aFrame.pos, ang, info.b2x ? vecVelocity : NULL_VECTOR);
+				TeleportEntity(info.iEnt, aFrame.pos, ang, NULL_VECTOR);
 			}
 			else
 			{
@@ -3181,7 +3164,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		{
 			if(!gB_Button[client] && GetSpectatorTarget(client) != -1)
 			{
-				OpenReplayMenu(client);
+				OpenReplayTypeMenu(client);
 			}
 
 			gB_Button[client] = true;
@@ -3198,7 +3181,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	{
 		if (gA_BotInfo[client].iEnt == client)
 		{
-			return ReplayOnPlayerRunCmd(gA_BotInfo[client], buttons, impulse, vel);
+			return ReplayRunCmd(gA_BotInfo[client], buttons, impulse, vel);
 		}
 	}
 	else
@@ -3700,112 +3683,8 @@ public Action Command_Replay(int client, int args)
 		}
 	}
 
-	OpenReplayMenu(client);
+	OpenReplayTypeMenu(client);
 	return Plugin_Handled;
-}
-
-void OpenReplayMenu(int client)
-{
-	Menu menu = new Menu(MenuHandler_Replay);
-	menu.SetTitle("%T\n ", "Menu_Replay", client);
-
-	char sDisplay[64];
-	bool alreadyHaveBot = (gA_BotInfo[client].iEnt > 0);
-	int index = GetControllableReplay(client);
-	bool canControlReplay = (index != -1);
-
-	FormatEx(sDisplay, 64, "%T", "CentralReplayStop", client);
-	menu.AddItem("stop", sDisplay, canControlReplay ? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
-
-	FormatEx(sDisplay, 64, "%T", "Menu_SpawnReplay", client);
-	menu.AddItem("spawn", sDisplay, !(alreadyHaveBot) ? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
-
-	FormatEx(sDisplay, 64, "+1s");
-	menu.AddItem("+1", sDisplay, canControlReplay ? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
-
-	FormatEx(sDisplay, 64, "-1s");
-	menu.AddItem("-1", sDisplay, canControlReplay ? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
-
-	FormatEx(sDisplay, 64, "+10s");
-	menu.AddItem("+10", sDisplay, canControlReplay ? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
-
-	FormatEx(sDisplay, 64, "-10s");
-	menu.AddItem("-10", sDisplay, canControlReplay ? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
-
-	FormatEx(sDisplay, 64, "%T", "Menu_Replay2X", client, (index != -1 && gA_BotInfo[index].b2x) ? "+" : "_");
-	menu.AddItem("2x", sDisplay, canControlReplay ? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
-
-	FormatEx(sDisplay, 64, "%T", "Menu_RefreshReplay", client);
-	menu.AddItem("refresh", sDisplay, ITEMDRAW_DEFAULT);
-
-	menu.Pagination = MENU_NO_PAGINATION;
-	menu.ExitButton = true;
-	menu.DisplayAt(client, 0, MENU_TIME_FOREVER);
-}
-
-public int MenuHandler_Replay(Menu menu, MenuAction action, int param1, int param2)
-{
-	if(action == MenuAction_Select)
-	{
-		char sInfo[16];
-		menu.GetItem(param2, sInfo, 16);
-
-		if (StrEqual(sInfo, "stop"))
-		{
-			int index = GetControllableReplay(param1);
-
-			if (index != -1)
-			{
-				Shavit_PrintToChat(param1, "%T", "CentralReplayStopped", param1);
-				FinishReplay(gA_BotInfo[index]);
-			}
-
-			OpenReplayMenu(param1);
-		}
-		else if (StrEqual(sInfo, "spawn"))
-		{
-			OpenReplayTypeMenu(param1);
-		}
-		else if (StrEqual(sInfo, "2x"))
-		{
-			int index = GetControllableReplay(param1);
-
-			if (index != -1)
-			{
-				gA_BotInfo[index].b2x = !gA_BotInfo[index].b2x;
-			}
-
-			OpenReplayMenu(param1);
-		}
-		else if (StrEqual(sInfo, "refresh"))
-		{
-			OpenReplayMenu(param1);
-		}
-		else if (sInfo[0] == '-' || sInfo[0] == '+')
-		{
-			int seconds = StringToInt(sInfo);
-
-			int index = GetControllableReplay(param1);
-
-			if (index != -1)
-			{
-				gA_BotInfo[index].iTick += RoundToFloor(seconds * gF_Tickrate);
-
-				if (gA_BotInfo[index].iTick < 0)
-				{
-					gA_BotInfo[index].iTick = 0;
-				}
-			}
-
-			OpenReplayMenu(param1);
-		}
-	}
-	else if(action == MenuAction_End)
-	{
-		delete menu;
-	}
-
-	return 0;
 }
 
 void OpenReplayTypeMenu(int client)
@@ -3825,11 +3704,27 @@ void OpenReplayTypeMenu(int client)
 	IntToString(Replay_Dynamic, sInfo, sizeof(sInfo));
 	menu.AddItem(sInfo, sDisplay, (gI_DynamicBots < gCV_DynamicBotLimit.IntValue && !alreadyHaveBot) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 
-	/* FormatEx(sDisplay, sizeof(sDisplay), "%T", "Menu_Replay_Prop", client);
+	FormatEx(sDisplay, sizeof(sDisplay), "%T", "Menu_Replay_Prop", client);
 	IntToString(Replay_Prop, sInfo, sizeof(sInfo));
-	menu.AddItem(sInfo, sDisplay, (gCV_AllowPropBots.BoolValue && !alreadyHaveBot) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED); */
+	menu.AddItem(sInfo, sDisplay, (gCV_AllowPropBots.BoolValue && !alreadyHaveBot) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 
-	menu.ExitBackButton = true;
+	bool canstop = false;
+	int target = GetSpectatorTarget(client);
+
+	if (target != -1)
+	{
+		int index = GetBotInfoIndex(target);
+
+		if (gA_BotInfo[index].iStatus == Replay_Start || gA_BotInfo[index].iStatus == Replay_Running)
+		{
+			canstop = CanStopReplay(client, gA_BotInfo[index]);
+		}
+	}
+
+	FormatEx(sDisplay, 64, "%T", "CentralReplayStop", client);
+	menu.AddItem("stop", sDisplay, canstop ? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+
+	menu.ExitButton = true;
 	menu.DisplayAt(client, 0, MENU_TIME_FOREVER);
 }
 
@@ -3839,6 +3734,24 @@ public int MenuHandler_ReplayType(Menu menu, MenuAction action, int param1, int 
 	{
 		char sInfo[16];
 		menu.GetItem(param2, sInfo, 16);
+
+		if(StrEqual(sInfo, "stop"))
+		{
+			int target = GetSpectatorTarget(param1);
+
+			if (target != -1)
+			{
+				int index = GetBotInfoIndex(target);
+
+				if ((gA_BotInfo[index].iStatus == Replay_Start || gA_BotInfo[index].iStatus == Replay_Running) && CanStopReplay(param1, gA_BotInfo[index]))
+				{
+					Shavit_PrintToChat(param1, "%T", "CentralReplayStopped", param1);
+					FinishReplay(gA_BotInfo[index]);
+				}
+			}
+
+			return 0;
+		}
 
 		int type = StringToInt(sInfo);
 
@@ -3857,10 +3770,6 @@ public int MenuHandler_ReplayType(Menu menu, MenuAction action, int param1, int 
 
 		gI_MenuType[param1] = type;
 		OpenReplayTrackMenu(param1);
-	}
-	else if(action == MenuAction_Cancel && param2 == MenuCancel_ExitBack)
-	{
-		OpenReplayMenu(param1);
 	}
 	else if(action == MenuAction_End)
 	{
@@ -4160,8 +4069,6 @@ public int MenuHandler_ReplayStyle(Menu menu, MenuAction action, int param1, int
 			Shavit_PrintToChat(param1, "%T", "FailedToCreateReplay", param1);
 			return 0;
 		}
-
-		OpenReplayMenu(param1);
 	}
 	else if(action == MenuAction_Cancel && param2 == MenuCancel_ExitBack)
 	{
@@ -4175,32 +4082,12 @@ public int MenuHandler_ReplayStyle(Menu menu, MenuAction action, int param1, int
 	return 0;
 }
 
-bool CanControlReplay(int client, bot_info_t info)
+bool CanStopReplay(int client, bot_info_t info)
 {
 	return (CheckCommandAccess(client, "sm_deletereplay", ADMFLAG_RCON) ||
 			(gCV_PlaybackCanStop.BoolValue &&
 			GetClientSerial(client) == info.iStarterSerial &&
 			GetEngineTime() - gF_LastInteraction[client] > gCV_PlaybackCooldown.FloatValue));
-}
-
-int GetControllableReplay(int client)
-{
-	int target = GetSpectatorTarget(client);
-
-	if (target != -1)
-	{
-		int index = GetBotInfoIndex(target);
-
-		if (gA_BotInfo[index].iStatus == Replay_Start || gA_BotInfo[index].iStatus == Replay_Running)
-		{
-			if (CanControlReplay(client, gA_BotInfo[index]))
-			{
-				return index;
-			}
-		}
-	}
-
-	return -1;
 }
 
 void TeleportToStart(bot_info_t info)
@@ -4238,7 +4125,6 @@ void ClearBotInfo(bot_info_t info)
 	info.fStartTick = -1.0;
 	info.bCustomFrames = false;
 	//info.bIgnoreLimit
-	info.b2x = false;
 
 	info.aCache.iFrameCount = -1;
 	info.aCache.fTime = -1.0;
@@ -4373,7 +4259,7 @@ public void OnGameFrame()
 		int buttons, impulse;
 		float vel[3];
 
-		ReplayOnPlayerRunCmd(gA_BotInfo[i], buttons, impulse, vel);
+		ReplayRunCmd(gA_BotInfo[i], buttons, impulse, vel);
 
 		/*
 		if (!IsPlayerAlive(i))

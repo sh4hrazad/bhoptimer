@@ -116,25 +116,4 @@
 		"en"		"Failed to create replay"
 		"chi"		"创建回放失败"
 	}
-	"Menu_Replay"
-	{
-		"en"		"Replay"
-		"chi"		"回放"
-	}
-	"Menu_SpawnReplay"
-	{
-		"en"		"Spawn replay"
-		"chi"		"复活一个回放电脑"
-	}
-	"Menu_Replay2X"
-	{
-		"#format"	"{1:s}"
-		"en"		"[{1}] Toggle 2x speed"
-		"chi"		"[{1}] 设置为2倍速"
-	}
-	"Menu_RefreshReplay"
-	{
-		"en"		"Refresh"
-		"chi"		"刷新"
-	}
 }
