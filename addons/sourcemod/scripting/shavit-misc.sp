@@ -170,10 +170,13 @@ chatstrings_t gS_ChatStrings;
 // ???
 TimerStatus gEnum_LastStatus[MAXPLAYERS+1];
 bool gB_InZone[MAXPLAYERS+1];
+bool gB_InStageZone[MAXPLAYERS+1];
 bool gB_StartTimer[MAXPLAYERS+1];
 int gI_LastTrack[MAXPLAYERS+1];
 int gI_Jumps[MAXPLAYERS+1];
 MoveType gMT_LastMoveType[MAXPLAYERS+1];
+int gI_OtherClientIndex[MAXPLAYERS+1];//other client's checkpoint
+int gI_OtherCurrentCheckpoint[MAXPLAYERS+1];
 
 public Plugin myinfo =
 {
@@ -244,18 +247,21 @@ public void OnPluginStart()
 
 	// checkpoints
 	RegConsoleCmd("sm_cpmenu", Command_Checkpoints, "Opens the checkpoints menu.");
-	RegConsoleCmd("sm_cp", Command_Checkpoints, "Opens the checkpoints menu. Alias for sm_cpmenu.");
+	RegConsoleCmd("sm_cps", Command_Checkpoints, "Opens the checkpoints menu. Alias for sm_cpmenu.");
+	RegConsoleCmd("sm_cpcaidan", Command_Checkpoints, "Opens the checkpoints menu. Alias for sm_cpmenu.");
 	RegConsoleCmd("sm_checkpoint", Command_Checkpoints, "Opens the checkpoints menu. Alias for sm_cpmenu.");
 	RegConsoleCmd("sm_checkpoints", Command_Checkpoints, "Opens the checkpoints menu. Alias for sm_cpmenu.");
 	RegConsoleCmd("sm_save", Command_Save, "Saves checkpoint.");
+	RegConsoleCmd("sm_saveloc", Command_Save, "Saves checkpoint.");
+	RegConsoleCmd("sm_cp", Command_Save, "Saves checkpoint. Alias for sm_save.");
 	RegConsoleCmd("sm_tele", Command_Tele, "Teleports to checkpoint. Usage: sm_tele [number]");
+	RegConsoleCmd("sm_p", Command_Tele, "Teleports to checkpoint. Usage: sm_tele [number]. Alias of sm_tele.");
+	RegConsoleCmd("sm_prac", Command_Tele, "Teleports to checkpoint. Usage: sm_tele [number]. Alias of sm_tele.");
+	RegConsoleCmd("sm_practice", Command_Tele, "Teleports to checkpoint. Usage: sm_tele [number]. Alias of sm_tele.");
 	gH_CheckpointsCookie = RegClientCookie("shavit_checkpoints", "Checkpoints settings", CookieAccess_Protected);
 	gA_PersistentData = new ArrayList(sizeof(persistent_data_t));
 
 	// noclip
-	RegConsoleCmd("sm_p", Command_Noclip, "Toggles noclip.");
-	RegConsoleCmd("sm_prac", Command_Noclip, "Toggles noclip. (sm_p alias)");
-	RegConsoleCmd("sm_practice", Command_Noclip, "Toggles noclip. (sm_p alias)");
 	RegConsoleCmd("sm_nc", Command_Noclip, "Toggles noclip. (sm_p alias)");
 	RegConsoleCmd("sm_noclipme", Command_Noclip, "Toggles noclip. (sm_p alias)");
 	AddCommandListener(CommandListener_Noclip, "+noclip");
@@ -1280,9 +1286,12 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 
 			if(!gB_InZone[client])
 			{
-				fSpeed[0] *= 0.1;
-				fSpeed[1] *= 0.1;
-				TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed);
+				if(gI_Jumps[client] >= 2 || fSpeedXY > 400)
+				{
+					fSpeed[0] *= 0.1;
+					fSpeed[1] *= 0.1;
+					TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed);
+				}
 			}
 
 			if(gI_GroundEntity[client] == 0 && iGroundEntity == -1)// 起跳 starts jump
@@ -1320,45 +1329,45 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 	// prestrafe message
 	if(!bNoclip && gCV_PrestrafeMessage.IntValue == 1)
 	{
+		int stage = Shavit_GetClientStage(client);
+
+		float fSpeed[3];
+		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
+		float fSpeed3D = (SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0) + Pow(fSpeed[2], 2.0)));
+
+		float wrcpSpeed = (Shavit_IsClientSingleStageTiming(client))?Shavit_GetWRCPPrespeed(stage, style):Shavit_GetWRCheckpointSpeed(stage, style);
+		float diff = fSpeed3D - wrcpSpeed;
+
+		char sWRCPDiffSpeed[64];
+
+		if(wrcpSpeed <= 0.0)
+		{
+			strcopy(sWRCPDiffSpeed, 64, "N/A");
+		}
+
+		else
+		{
+			if(diff > 0.0)
+			{
+				FormatEx(sWRCPDiffSpeed, 64, "%s+%d u/s%s", gS_ChatStrings.sVariable10, RoundToFloor(diff), gS_ChatStrings.sText);
+			}
+
+			else if(diff == 0.0)
+			{
+				FormatEx(sWRCPDiffSpeed, 64, "%s%d u/s%s", gS_ChatStrings.sVariable2, RoundToFloor(diff), gS_ChatStrings.sText);
+			}
+
+			else
+			{
+				
+				FormatEx(sWRCPDiffSpeed, 64, "%s%d u/s%s", gS_ChatStrings.sVariable11, RoundToFloor(diff), gS_ChatStrings.sText);
+			}
+		}
+
 		if(!bInStart && gB_StartTimer[client] && gI_LastTrack[client] == track && !blockSpeed)
 		{
-			int stage = Shavit_GetClientStage(client);
-
 			if(stage == 1)
 			{
-				float fSpeed[3];
-				GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
-				float fSpeed3D = (SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0) + Pow(fSpeed[2], 2.0)));
-
-				float wrcpSpeed = Shavit_GetWRCheckpointSpeed(stage, style);
-				float diff = fSpeed3D - wrcpSpeed;
-
-				char sWRCPDiffSpeed[64];
-
-				if(wrcpSpeed <= 0.0)
-				{
-					strcopy(sWRCPDiffSpeed, 64, "N/A");
-				}
-
-				else
-				{
-					if(diff > 0.0)
-					{
-						FormatEx(sWRCPDiffSpeed, 64, "%s+%d u/s%s", gS_ChatStrings.sVariable10, RoundToFloor(diff), gS_ChatStrings.sText);
-					}
-
-					else if(diff == 0.0)
-					{
-						FormatEx(sWRCPDiffSpeed, 64, "%s%d u/s%s", gS_ChatStrings.sVariable2, RoundToFloor(diff), gS_ChatStrings.sText);
-					}
-
-					else
-					{
-						
-						FormatEx(sWRCPDiffSpeed, 64, "%s%d u/s%s", gS_ChatStrings.sVariable11, RoundToFloor(diff), gS_ChatStrings.sText);
-					}
-				}
-
 				if(fSpeed3D != 0.0)
 				{
 					char sPrestrafe[128];
@@ -1366,6 +1375,37 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 						gS_ChatStrings.sStyle, 
 						gS_ChatStrings.sVariable5, RoundToFloor(fSpeed3D), gS_ChatStrings.sText, 
 						gS_ChatStrings.sVariable, gS_ChatStrings.sText, sWRCPDiffSpeed);
+					Shavit_PrintToChat(client, sPrestrafe);
+				}
+			}
+		}
+
+		else if(!bInStage && gB_InStageZone[client] && gI_LastTrack[client] == track && !blockSpeed)
+		{
+			if(stage > 1 && !Shavit_IsClientSingleStageTiming(client))
+			{
+				if(fSpeed3D != 0.0)
+				{
+					char sPrestrafe[128];
+					FormatEx(sPrestrafe, 128, "%T", "StageCPPrestrafe", client,
+						gS_ChatStrings.sStyle, 
+						gS_ChatStrings.sVariable5, RoundToFloor(fSpeed3D), gS_ChatStrings.sText, 
+						gS_ChatStrings.sVariable, gS_ChatStrings.sText, sWRCPDiffSpeed,
+						stage);
+					Shavit_PrintToChat(client, sPrestrafe);
+				}
+			}
+
+			else
+			{
+				if(fSpeed3D != 0.0)
+				{
+					char sPrestrafe[128];
+					FormatEx(sPrestrafe, 128, "%T", "StageWRCPPrestrafe", client,
+						gS_ChatStrings.sStyle, 
+						gS_ChatStrings.sVariable5, RoundToFloor(fSpeed3D), gS_ChatStrings.sText, 
+						gS_ChatStrings.sVariable, gS_ChatStrings.sText, sWRCPDiffSpeed,
+						stage);
 					Shavit_PrintToChat(client, sPrestrafe);
 				}
 			}
@@ -1383,7 +1423,8 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 	gEnum_LastStatus[client] = status;
 	gI_GroundEntity[client] = iGroundEntity;
 	gMT_LastMoveType[client] = mt;
-	gB_InZone[client] = view_as<bool>(bInStart || bInStage);
+	gB_InZone[client] = (bInStart || bInStage);
+	gB_InStageZone[client] = bInStage;
 
 	return Plugin_Continue;
 }
@@ -2164,7 +2205,9 @@ void OpenNormalCPMenu(int client)
 
 	FormatEx(sDisplay, 64, "%T", "MiscCheckpointReset", client);
 	menu.AddItem("reset", sDisplay);
-	if(!bSegmented)
+
+	menu.AddItem("useother", "使用他人存点");
+	/* if(!bSegmented)
 	{
 		char sInfo[16];
 		IntToString(CP_ANGLES, sInfo, 16);
@@ -2174,7 +2217,7 @@ void OpenNormalCPMenu(int client)
 		IntToString(CP_VELOCITY, sInfo, 16);
 		FormatEx(sDisplay, 64, "%T", "MiscCheckpointUseVelocity", client);
 		menu.AddItem(sInfo, sDisplay);
-	}
+	} */
 
 	menu.Pagination = MENU_NO_PAGINATION;
 	menu.ExitButton = true;
@@ -2257,6 +2300,12 @@ public int MenuHandler_Checkpoints(Menu menu, MenuAction action, int param1, int
 
 			return 0;
 		}
+		else if(StrEqual(sInfo, "useother"))
+		{
+			UseOtherCheckpoints(param1);
+
+			return 0;
+		}
 		else if(!StrEqual(sInfo, "spacer"))
 		{
 			char sCookie[8];
@@ -2290,6 +2339,171 @@ public int MenuHandler_Checkpoints(Menu menu, MenuAction action, int param1, int
 	}
 
 	return 0;
+}
+
+void UseOtherCheckpoints(int client)
+{
+	Menu menu = new Menu(OtherCheckpointMenu_handler);
+	for(int i = 1; i < MaxClients + 1; i++)
+    {
+		if(IsValidClient(i) && !IsFakeClient(i))
+		{
+			char sName[MAX_NAME_LENGTH];
+			GetClientName(i, sName, sizeof(sName));
+			
+			char sItem[16];
+			IntToString(i, sItem, 16);
+			menu.AddItem(sItem, sName);
+		}
+	}
+	
+	menu.Display(client, -1);
+}
+
+public int OtherCheckpointMenu_handler(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		char sInfo[16];
+		menu.GetItem(param2, sInfo, 16);
+
+		int other = StringToInt(sInfo);
+
+		gI_OtherClientIndex[param1] = other;
+		gI_OtherCurrentCheckpoint[param1] = gI_CurrentCheckpoint[other];
+
+		OpenOtherCPMenu(other, param1);
+	}
+	else if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
+}
+
+void OpenOtherCPMenu(int other, int client)
+{
+	bool bSegmented = CanSegment(other);
+
+	if(!gCV_Checkpoints.BoolValue && !bSegmented)
+	{
+		Shavit_PrintToChat(client, "%T", "FeatureDisabled", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+
+		return;
+	}
+
+	Menu menu = new Menu(MenuHandler_OtherCheckpoints, MENU_ACTIONS_DEFAULT|MenuAction_DisplayItem);
+
+	if(!bSegmented)
+	{
+		menu.SetTitle("%T\n%T\n ", "MiscCheckpointMenu", client, "MiscCheckpointWarning", client);
+	}
+
+	else
+	{
+		menu.SetTitle("%T\n ", "MiscCheckpointMenuSegmented", client);
+	}
+
+	char sDisplay[64];
+
+	if(gA_Checkpoints[other].Length > 0)
+	{
+		FormatEx(sDisplay, 64, "%T", "MiscCheckpointTeleport", client, gI_OtherCurrentCheckpoint[client]);
+		menu.AddItem("tele", sDisplay, ITEMDRAW_DEFAULT);
+	}
+	else
+	{
+		Format(sDisplay, 64, "这个B还没存点..");
+		menu.AddItem("", sDisplay, ITEMDRAW_DISABLED);
+	}
+
+	FormatEx(sDisplay, 64, "%T", "MiscCheckpointPrevious", client);
+	menu.AddItem("prev", sDisplay, (gI_OtherCurrentCheckpoint[client] > 1)? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+
+	FormatEx(sDisplay, 64, "%T\n ", "MiscCheckpointNext", client);
+	menu.AddItem("next", sDisplay, (gI_OtherCurrentCheckpoint[client] < gA_Checkpoints[other].Length)? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+
+	menu.Pagination = MENU_NO_PAGINATION;
+	menu.ExitButton = true;
+
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int MenuHandler_OtherCheckpoints(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		char sInfo[16];
+		menu.GetItem(param2, sInfo, 16);
+
+		int other = gI_OtherClientIndex[param1];
+
+		if(StrEqual(sInfo, "tele"))
+		{
+			TeleportToOtherCheckpoint(param1, other, gI_OtherCurrentCheckpoint[param1], true);
+		}
+		else if(StrEqual(sInfo, "prev"))
+		{
+			gI_OtherCurrentCheckpoint[param1]--;
+		}
+		else if(StrEqual(sInfo, "next"))
+		{
+			gI_OtherCurrentCheckpoint[param1]++;
+		}
+
+		OpenOtherCPMenu(other, param1);
+	}
+	else if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
+}
+
+void TeleportToOtherCheckpoint(int client, int other, int index, bool suppressMessage)
+{
+	if(index < 1 || index > gCV_MaxCP.IntValue || (!gCV_Checkpoints.BoolValue && !CanSegment(other)))
+	{
+		return;
+	}
+
+	if(index > gA_Checkpoints[other].Length)
+	{
+		Shavit_PrintToChat(client, "%T", "MiscCheckpointsEmpty", client, index, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+		return;
+	}
+
+	cp_cache_t cpcache;
+	gA_Checkpoints[other].GetArray(index - 1, cpcache, sizeof(cp_cache_t));
+
+	if(IsNullVector(cpcache.fPosition))
+	{
+		return;
+	}
+
+	if(!IsPlayerAlive(client))
+	{
+		Shavit_PrintToChat(client, "%T", "CommandAlive", client, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
+
+		return;
+	}
+
+	gI_TimesTeleported[client]++;
+
+	if(Shavit_InsideZone(client, Zone_Start, -1))
+	{
+		Shavit_StopTimer(client);
+	}
+
+	LoadCheckpointCache(client, cpcache, false);
+	Shavit_ResumeTimer(client);
+
+	if(!suppressMessage)
+	{
+		Shavit_PrintToChat(client, "%T", "MiscCheckpointsTeleported", client, index, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
+	}
 }
 
 void ConfirmCheckpointsDeleteMenu(int client)
