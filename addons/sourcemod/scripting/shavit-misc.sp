@@ -167,16 +167,17 @@ stylestrings_t gS_StyleStrings[STYLE_LIMIT];
 // chat settings
 chatstrings_t gS_ChatStrings;
 
-// ???
+// misc
 TimerStatus gEnum_LastStatus[MAXPLAYERS+1];
 bool gB_InZone[MAXPLAYERS+1];
 bool gB_InStageZone[MAXPLAYERS+1];
 bool gB_StartTimer[MAXPLAYERS+1];
 int gI_LastTrack[MAXPLAYERS+1];
 int gI_Jumps[MAXPLAYERS+1];
-MoveType gMT_LastMoveType[MAXPLAYERS+1];
 int gI_OtherClientIndex[MAXPLAYERS+1];//other client's checkpoint
 int gI_OtherCurrentCheckpoint[MAXPLAYERS+1];
+bool gB_UsingOtherCheckpoint[MAXPLAYERS+1];
+bool gB_CanTouchTrigger[MAXPLAYERS+1];
 
 public Plugin myinfo =
 {
@@ -255,7 +256,6 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_saveloc", Command_Save, "Saves checkpoint.");
 	RegConsoleCmd("sm_cp", Command_Save, "Saves checkpoint. Alias for sm_save.");
 	RegConsoleCmd("sm_tele", Command_Tele, "Teleports to checkpoint. Usage: sm_tele [number]");
-	RegConsoleCmd("sm_p", Command_Tele, "Teleports to checkpoint. Usage: sm_tele [number]. Alias of sm_tele.");
 	RegConsoleCmd("sm_prac", Command_Tele, "Teleports to checkpoint. Usage: sm_tele [number]. Alias of sm_tele.");
 	RegConsoleCmd("sm_practice", Command_Tele, "Teleports to checkpoint. Usage: sm_tele [number]. Alias of sm_tele.");
 	gH_CheckpointsCookie = RegClientCookie("shavit_checkpoints", "Checkpoints settings", CookieAccess_Protected);
@@ -264,6 +264,8 @@ public void OnPluginStart()
 	// noclip
 	RegConsoleCmd("sm_nc", Command_Noclip, "Toggles noclip. (sm_p alias)");
 	RegConsoleCmd("sm_noclipme", Command_Noclip, "Toggles noclip. (sm_p alias)");
+	RegConsoleCmd("sm_nctrigger", Command_NoclipIgnoreTrigger);
+	RegConsoleCmd("sm_nctriggers", Command_NoclipIgnoreTrigger);
 	AddCommandListener(CommandListener_Noclip, "+noclip");
 	AddCommandListener(CommandListener_Noclip, "-noclip");
 
@@ -328,14 +330,14 @@ public void OnPluginStart()
 	gCV_RemoveRagdolls = new Convar("shavit_misc_removeragdolls", "1", "Remove ragdolls after death?\n0 - Disabled\n1 - Only remove replay bot ragdolls.\n2 - Remove all ragdolls.", 0, true, 0.0, true, 2.0);
 	gCV_ClanTag = new Convar("shavit_misc_clantag", "{tr}{styletag} :: {time}", "Custom clantag for players.\n0 - Disabled\n{styletag} - style tag.\n{style} - style name.\n{time} - formatted time.\n{tr} - first letter of track.\n{rank} - player rank.\n{cr} - player's chatrank from shavit-chat, trimmed, with no colors", 0);
 	gCV_DropAll = new Convar("shavit_misc_dropall", "1", "Allow all weapons to be dropped?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
-	gCV_ResetTargetname = new Convar("shavit_misc_resettargetname", "1", "Reset the player's targetname and eventqueue upon timer start?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
+	gCV_ResetTargetname = new Convar("shavit_misc_resettargetname", "0", "Reset the player's targetname and eventqueue upon timer start?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_RestoreStates = new Convar("shavit_misc_restorestates", "1", "Save the players' timer/position etc.. when they die/change teams,\nand load the data when they spawn?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_JointeamHook = new Convar("shavit_misc_jointeamhook", "1", "Hook `jointeam`?\n0 - Disabled\n1 - Enabled, players can instantly change teams.", 0, true, 0.0, true, 1.0);
 	gCV_SpectatorList = new Convar("shavit_misc_speclist", "1", "Who to show in !specs?\n0 - everyone\n1 - all admins (admin_speclisthide override to bypass)\n2 - players you can target", 0, true, 0.0, true, 2.0);
 	gCV_MaxCP = new Convar("shavit_misc_maxcp", "1000", "Maximum amount of checkpoints.\nNote: Very high values will result in high memory usage!", 0, true, 1.0, true, 10000.0);
 	gCV_MaxCP_Segmented = new Convar("shavit_misc_maxcp_seg", "10", "Maximum amount of segmented checkpoints. Make this less or equal to shavit_misc_maxcp.\nNote: Very high values will result in HUGE memory usage! Segmented checkpoints contain frame data!", 0, true, 1.0, true, 50.0);
 	gCV_HideChatCommands = new Convar("shavit_misc_hidechatcmds", "1", "Hide commands from chat?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
-	gCV_PersistData = new Convar("shavit_misc_persistdata", "1", "How long to persist timer data for disconnected users in seconds?\n-1 - Until map change\n0 - Disabled");
+	gCV_PersistData = new Convar("shavit_misc_persistdata", "-1", "How long to persist timer data for disconnected users in seconds?\n-1 - Until map change\n0 - Disabled");
 	gCV_StopTimerWarning = new Convar("shavit_misc_stoptimerwarning", "180", "Time in seconds to display a warning before stopping the timer with noclip or !stop.\n0 - Disabled");
 	gCV_WRMessages = new Convar("shavit_misc_wrmessages", "3", "How many \"NEW <style> WR!!!\" messages to print?\n0 - Disabled", 0,  true, 0.0, true, 100.0);
 	gCV_BhopSounds = new Convar("shavit_misc_bhopsounds", "1", "Should bhop (landing and jumping) sounds be muted?\n0 - Disabled\n1 - Blocked while !hide is enabled\n2 - Always blocked", 0,  true, 0.0, true, 2.0);
@@ -1217,8 +1219,6 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 
 	// prespeed
 	int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
-	MoveType mt = GetEntityMoveType(client);
-	bool blockSpeed = false;
 
 	if(!bNoclip && Shavit_GetStyleSettingInt(gI_Style[client], "prespeed") == 0 && (bInStart || bInStage))
 	{
@@ -1286,7 +1286,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 
 			if(!gB_InZone[client])
 			{
-				if(gI_Jumps[client] >= 2 || fSpeedXY > 400)
+				if(gI_Jumps[client] >= 2 || fSpeedXY > 600)
 				{
 					fSpeed[0] *= 0.1;
 					fSpeed[1] *= 0.1;
@@ -1316,15 +1316,30 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 		}
 	}
 
-	if(mt == MOVETYPE_WALK && gMT_LastMoveType[client] == MOVETYPE_NOCLIP)
+	/* else if(!bInStart && !bInStage && Shavit_GetClientTime(client) > 0.0 && Shavit_GetClientTime(client) < 1.5)
 	{
-		if(Shavit_GetStyleSettingInt(gI_Style[client], "prespeed") == 0)
+		if(gCV_PreSpeed.IntValue == 6)
 		{
-			TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
-			blockSpeed = true;
-		}
-	}
+			if(gI_GroundEntity[client] == 0 && iGroundEntity == -1)// 起跳 starts jump
+			{
+				if(++gI_Jumps[client] >= 2)
+				{
+					float fSpeed[3];
+					GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
+					float fSpeedXY = SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0));
 
+					float fScale = 260.0 / fSpeedXY;
+
+					if(fScale < 1.0)
+					{
+						fSpeed[0] *= fScale;
+						fSpeed[1] *= fScale;
+						TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed);
+					}
+				}
+			}
+		}
+	} */
 
 	// prestrafe message
 	if(!bNoclip && gCV_PrestrafeMessage.IntValue == 1)
@@ -1364,7 +1379,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 			}
 		}
 
-		if(!bInStart && gB_StartTimer[client] && gI_LastTrack[client] == track && !blockSpeed)
+		if(!bInStart && gB_StartTimer[client] && gI_LastTrack[client] == track && status == Timer_Running)
 		{
 			if(stage == 1)
 			{
@@ -1376,11 +1391,19 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 						gS_ChatStrings.sVariable5, RoundToFloor(fSpeed3D), gS_ChatStrings.sText, 
 						gS_ChatStrings.sVariable, gS_ChatStrings.sText, sWRCPDiffSpeed);
 					Shavit_PrintToChat(client, sPrestrafe);
+
+					for(int i = 1; i <= MaxClients; i++)
+					{
+						if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
+						{
+							Shavit_PrintToChat(i, sPrestrafe);
+						}
+					}
 				}
 			}
 		}
 
-		else if(!bInStage && gB_InStageZone[client] && gI_LastTrack[client] == track && !blockSpeed)
+		else if(!bInStage && gB_InStageZone[client] && gI_LastTrack[client] == track && status == Timer_Running)
 		{
 			if(stage > 1 && !Shavit_IsClientSingleStageTiming(client))
 			{
@@ -1393,6 +1416,14 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 						gS_ChatStrings.sVariable, gS_ChatStrings.sText, sWRCPDiffSpeed,
 						stage);
 					Shavit_PrintToChat(client, sPrestrafe);
+
+					for(int i = 1; i <= MaxClients; i++)
+					{
+						if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
+						{
+							Shavit_PrintToChat(i, sPrestrafe);
+						}
+					}
 				}
 			}
 
@@ -1407,6 +1438,14 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 						gS_ChatStrings.sVariable, gS_ChatStrings.sText, sWRCPDiffSpeed,
 						stage);
 					Shavit_PrintToChat(client, sPrestrafe);
+
+					for(int i = 1; i <= MaxClients; i++)
+					{
+						if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
+						{
+							Shavit_PrintToChat(i, sPrestrafe);
+						}
+					}
 				}
 			}
 		}
@@ -1422,7 +1461,6 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 
 	gEnum_LastStatus[client] = status;
 	gI_GroundEntity[client] = iGroundEntity;
-	gMT_LastMoveType[client] = mt;
 	gB_InZone[client] = (bInStart || bInStage);
 	gB_InStageZone[client] = bInStage;
 
@@ -1471,6 +1509,7 @@ public void OnClientPutInServer(int client)
 	}
 
 	gB_SaveStates[client] = false;
+	gB_CanTouchTrigger[client] = false;
 }
 
 void RemoveAllWeapons(int client)
@@ -1486,6 +1525,34 @@ void RemoveAllWeapons(int client)
 			AcceptEntityInput(weapon, "Kill");
 		}
 	}
+}
+
+public void OnEntityCreated(int entity, const char[] classname)
+{	
+	if(StrEqual(classname, "trigger_multiple") || StrEqual(classname, "trigger_once") || StrEqual(classname, "trigger_hurt") || StrEqual(classname, "trigger_teleport") || StrEqual(classname, "trigger_gravity"))
+	{
+		SDKHook(entity, SDKHook_StartTouch, Trigger_Ignore);
+		SDKHook(entity, SDKHook_EndTouch, Trigger_Ignore);
+		SDKHook(entity, SDKHook_Touch, Trigger_Ignore);
+	}
+}
+
+public Action Trigger_Ignore(int entity, int other)
+{
+    if(IsValidClient(other))
+    {
+		if(gB_CanTouchTrigger[other] && GetEntityMoveType(other) & MOVETYPE_NOCLIP)
+		{
+			return Plugin_Continue;
+		}
+		
+		if(GetEntityMoveType(other) & MOVETYPE_NOCLIP)
+		{
+			return Plugin_Handled;
+		}
+    }
+    
+    return Plugin_Continue;
 }
 
 public void OnClientDisconnect(int client)
@@ -2126,22 +2193,22 @@ public Action Command_Tele(int client, int args)
 		return Plugin_Handled;
 	}
 
-	int index = gI_CurrentCheckpoint[client];
-
 	if(args > 0)
 	{
 		char arg[8];
 		GetCmdArg(1, arg, sizeof(arg));
 
+		ReplaceString(arg, 8, "#", " ");
+
 		int parsed = StringToInt(arg);
 
 		if(0 < parsed <= gCV_MaxCP.IntValue)
 		{
-			index = parsed;
+			gI_CurrentCheckpoint[client] = parsed;
 		}
 	}
 
-	TeleportToCheckpoint(client, index, true);
+	TeleportToCheckpoint(client, gI_CurrentCheckpoint[client], true);
 
 	return Plugin_Handled;
 }
@@ -2499,11 +2566,23 @@ void TeleportToOtherCheckpoint(int client, int other, int index, bool suppressMe
 
 	LoadCheckpointCache(client, cpcache, false);
 	Shavit_ResumeTimer(client);
+	gB_UsingOtherCheckpoint[client] = CanSegment(other);
 
 	if(!suppressMessage)
 	{
 		Shavit_PrintToChat(client, "%T", "MiscCheckpointsTeleported", client, index, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
 	}
+}
+
+public Action Shavit_OnFinishPre(int client, timer_snapshot_t snapshot)
+{
+	if(gB_UsingOtherCheckpoint[client] && StrContains(gS_StyleStrings[Shavit_GetBhopStyle(client)].sSpecialString, "segments") != -1)
+	{
+		gB_UsingOtherCheckpoint[client] = false;
+		return Plugin_Handled;
+	}
+
+	return Plugin_Continue;
 }
 
 void ConfirmCheckpointsDeleteMenu(int client)
@@ -3020,6 +3099,7 @@ public Action Command_Noclip(int client, int args)
 			}
 
 			SetEntityMoveType(client, MOVETYPE_NOCLIP);
+			Shavit_PrintToChat(client, "你的穿墙设置为: %s%s%s (输入!nctrigger修改)", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"可传送":"不可传送", gS_ChatStrings.sText);
 		}
 
 		else
@@ -3047,8 +3127,12 @@ public Action CommandListener_Noclip(int client, const char[] command, int args)
 	{
 		if(!ShouldDisplayStopWarning(client))
 		{
-			Shavit_StopTimer(client);
+			if(Shavit_GetTimerStatus(client) != Timer_Paused)
+			{
+				Shavit_StopTimer(client);
+			}
 			SetEntityMoveType(client, MOVETYPE_NOCLIP);
+			Shavit_PrintToChat(client, "你的穿墙设置为: %s%s%s (输入!nctrigger修改)", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"可传送":"不可传送", gS_ChatStrings.sText);
 		}
 
 		else
@@ -3065,9 +3149,16 @@ public Action CommandListener_Noclip(int client, const char[] command, int args)
 	return Plugin_Handled;
 }
 
+public Action Command_NoclipIgnoreTrigger(int client, int args)
+{
+	gB_CanTouchTrigger[client] = !gB_CanTouchTrigger[client];
+	Shavit_PrintToChat(client, "你的穿墙设置为: %s%s%s", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"可传送":"不可传送", gS_ChatStrings.sText);
+
+	return Plugin_Handled;
+}
+
 public Action Command_Test(int client, int args)
 {
-	Shavit_PrintToChat(client, "gI_GroundEntity[client] ---> %d", gI_GroundEntity[client]);
 
 	return Plugin_Handled;
 }
@@ -3639,7 +3730,7 @@ public Action NormalSound(int clients[MAXPLAYERS], int &numClients, char sample[
 
 		return Plugin_Changed;
 	}
-   
+	
 	return Plugin_Continue;
 }
 

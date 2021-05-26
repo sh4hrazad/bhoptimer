@@ -88,6 +88,7 @@ Convar gCV_MVPRankOnes = null;
 Convar gCV_MVPRankOnes_Main = null;
 Convar gCV_DefaultTier = null;
 Convar gCV_DefaultMaxvelocity = null;
+ConVar gCV_Maxvelocity = null;
 
 ranking_t gA_Rankings[MAXPLAYERS+1];
 
@@ -160,8 +161,10 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_tier", Command_Tier, "Prints the map's tier to chat.");
 	RegConsoleCmd("sm_maptier", Command_Tier, "Prints the map's tier to chat. (sm_tier alias)");
 
-	RegConsoleCmd("sm_rank", Command_Rank, "Show your or someone else's rank. Usage: sm_rank [name]");
-	RegConsoleCmd("sm_top", Command_Top, "Show the top 100 players.");
+	RegConsoleCmd("sm_rankme", Command_Rank, "Show your or someone else's rank. Usage: sm_rank [name]");
+	RegConsoleCmd("sm_rank", Command_Top, "Show the top 100 players.");
+	RegConsoleCmd("sm_st", Command_Top, "Show the top 100 players.");
+	RegConsoleCmd("sm_surftop", Command_Top, "Show the top 100 players.");
 
 	RegAdminCmd("sm_settier", Command_SetTier, ADMFLAG_RCON, "Change the map's tier. Usage: sm_settier <tier>");
 	RegAdminCmd("sm_setmaptier", Command_SetTier, ADMFLAG_RCON, "Change the map's tier. Usage: sm_setmaptier <tier> (sm_settier alias)");
@@ -194,6 +197,9 @@ public void OnPluginStart()
 	// tier cache
 	gA_ValidMaps = new ArrayList(128);
 	gA_MapTiers = new StringMap();
+
+	// maxvelocity
+	gCV_Maxvelocity = FindConVar("sv_maxvelocity");
 
 	if(gB_Late)
 	{
@@ -437,6 +443,7 @@ public void SQL_GetMapSettings_Callback(Database db, DBResultSet results, const 
 		gB_Maplimitspeed = view_as<bool>(results.FetchInt(1));
 		gB_Maplimitnoclip = view_as<bool>(results.FetchFloat(2));
 		gF_Maxvelocity = results.FetchFloat(3);
+		gCV_Maxvelocity.SetFloat(gF_Maxvelocity, true, true);
 
 		#if defined DEBUG
 		PrintToServer("DEBUG: 3 (tier: %d) (SQL_GetMapSettings_Callback)", gI_Tier);

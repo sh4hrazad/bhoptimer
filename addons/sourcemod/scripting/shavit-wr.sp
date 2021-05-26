@@ -143,9 +143,11 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_wr", Command_WorldRecord, "View the leaderboard of a map. Usage: sm_wr [map]");
 	RegConsoleCmd("sm_worldrecord", Command_WorldRecord, "View the leaderboard of a map. Usage: sm_worldrecord [map]");
 
-	RegConsoleCmd("sm_bwr", Command_WorldRecord, "View the leaderboard of a map. Usage: sm_bwr [map] [bonus number]");
-	RegConsoleCmd("sm_bworldrecord", Command_WorldRecord, "View the leaderboard of a map. Usage: sm_bworldrecord [map] [bonus number]");
-	RegConsoleCmd("sm_bonusworldrecord", Command_WorldRecord, "View the leaderboard of a map. Usage: sm_bonusworldrecord [map] [bonus number]");
+	RegConsoleCmd("sm_btop", Command_BonusWorldRecord);
+	RegConsoleCmd("sm_wrb", Command_BonusWorldRecord);
+	RegConsoleCmd("sm_bwr", Command_BonusWorldRecord, "View the leaderboard of a map. Usage: sm_bwr [map] [bonus number]");
+	RegConsoleCmd("sm_bworldrecord", Command_BonusWorldRecord, "View the leaderboard of a map. Usage: sm_bworldrecord [map] [bonus number]");
+	RegConsoleCmd("sm_bonusworldrecord", Command_BonusWorldRecord, "View the leaderboard of a map. Usage: sm_bonusworldrecord [map] [bonus number]");
 
 	RegConsoleCmd("sm_recent", Command_RecentRecords, "View the recent #1 times set.");
 	RegConsoleCmd("sm_recentrecords", Command_RecentRecords, "View the recent #1 times set.");
@@ -1409,7 +1411,7 @@ public Action Command_WorldRecord(int client, int args)
 	int track = Track_Main;
 	bool havemap = false;
 
-	if(StrContains(sCommand, "sm_b", false) == 0)
+	if(StrContains(sCommand, "sm_b", false) == 0 || StrEqual(sCommand, "sm_wrb"))
 	{
 		if (args >= 1)
 		{
@@ -1454,6 +1456,77 @@ public Action Command_WorldRecord(int client, int args)
 
 	RetrieveWRMenu(client, track);
 	return Plugin_Handled;
+}
+
+public Action Command_BonusWorldRecord(int client, int args)
+{
+	if(!IsValidClient(client))
+	{
+		return Plugin_Handled;
+	}
+
+	char sCommand[16];
+	GetCmdArg(0, sCommand, 16);
+
+	bool havemap = (args >= 1);
+
+	// if the track doesn't fit in the bonus track range then assume it's a map name
+	if (args > 1)
+	{
+		havemap = true;
+	}
+
+	if(!havemap)
+	{
+		strcopy(gA_WRCache[client].sClientMap, 128, gS_Map);
+	}
+
+	else
+	{
+		GetCmdArg(1, gA_WRCache[client].sClientMap, 128);
+		if (!GuessBestMapName(gA_ValidMaps, gA_WRCache[client].sClientMap, gA_WRCache[client].sClientMap, 128))
+		{
+			Shavit_PrintToChat(client, "%t", "Map was not found", gA_WRCache[client].sClientMap);
+			return Plugin_Handled;
+		}
+	}
+
+	Menu menu = new Menu(BonusWRMenu_Handler);
+	menu.SetTitle("选择一个奖励关");
+
+	for(int i = 1; i <= Track_Bonus_Last; i++)
+	{
+		char sTrack[32];
+		GetTrackName(client, i, sTrack, 32);
+
+		char sItem[8];
+		IntToString(i, sItem, 8);
+		menu.AddItem(sItem, sTrack);
+	}
+
+	menu.Display(client, -1);
+
+	return Plugin_Handled;
+}
+
+public int BonusWRMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		char sInfo[8];
+		menu.GetItem(param2, sInfo, 8);
+
+		int track = StringToInt(sInfo);
+		gA_WRCache[param1].iLastTrack = track;
+		RetrieveWRMenu(param1, track);
+	}
+
+	else if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
 }
 
 void RetrieveWRMenu(int client, int track)
@@ -2094,8 +2167,8 @@ void SQL_DBConnect()
 	if(gB_MySQL)
 	{
 		FormatEx(sQuery, 1024,
-			"CREATE TABLE IF NOT EXISTS `%splayertimes` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `jumps` INT, `style` TINYINT, `date` INT, `strafes` INT, `sync` FLOAT, `points` FLOAT NOT NULL DEFAULT 0, `track` TINYINT NOT NULL DEFAULT 0, `perfs` FLOAT DEFAULT 0, `completions` SMALLINT DEFAULT 1, PRIMARY KEY (`id`), INDEX `map` (`map`, `style`, `track`, `time`), INDEX `auth` (`auth`, `date`, `points`), INDEX `time` (`time`), CONSTRAINT `%spt_auth` FOREIGN KEY (`auth`) REFERENCES `%susers` (`auth`) ON UPDATE CASCADE ON DELETE CASCADE) ENGINE=INNODB;",
-			gS_MySQLPrefix, gS_MySQLPrefix, gS_MySQLPrefix);
+			"CREATE TABLE IF NOT EXISTS `%splayertimes` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `jumps` INT, `style` TINYINT, `date` INT, `strafes` INT, `sync` FLOAT, `points` FLOAT NOT NULL DEFAULT 0, `track` TINYINT NOT NULL DEFAULT 0, `perfs` FLOAT DEFAULT 0, `completions` SMALLINT DEFAULT 1, PRIMARY KEY (`id`), INDEX `map` (`map`, `style`, `track`, `time`), INDEX `auth` (`auth`, `date`, `points`), INDEX `time` (`time`)) ENGINE=INNODB;",
+			gS_MySQLPrefix);
 	}
 
 	else

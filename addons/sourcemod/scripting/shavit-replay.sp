@@ -416,8 +416,8 @@ public void OnPluginStart()
 	gCV_PlaybackPreRunTime_Stage = new Convar("shavit_replay_preruntime_stage", "3.0", "Time (in seconds) to record before a player leaves stage zone. (The value should NOT be too high)", 0, true, 0.0);
 	gCV_PlaybackPostRunTime = new Convar("shavit_replay_postruntime", "3.0", "Time (in seconds) to record after a player finishes their run. (The value should NOT be too high)", 0, true, 0.0);
 	gCV_PlaybackPostRunTime_Stage = new Convar("shavit_replay_postruntime_stage", "3.0", "Time (in seconds) to record after a player finishes their stage run. (The value should NOT be too high)", 0, true, 0.0);
-	gCV_ClearPreRun = new Convar("shavit_replay_prerun_always", "1", "Record prerun frames outside the start zone?", 0, true, 0.0, true, 1.0);
-	gCV_ClearPreRun_Stage = new Convar("shavit_replay_prerun_stage_always", "1", "Record prerun frames outside the stage zone?", 0, true, 0.0, true, 1.0);
+	gCV_ClearPreRun = new Convar("shavit_replay_prerun_always", "0", "Record prerun frames outside the start zone?", 0, true, 0.0, true, 1.0);
+	gCV_ClearPreRun_Stage = new Convar("shavit_replay_prerun_stage_always", "0", "Record prerun frames outside the stage zone?", 0, true, 0.0, true, 1.0);
 	gCV_RecordPostRun = new Convar("shavit_replay_postrun_always", "1", "Record postrun frames after a player finishes their run?", 0, true, 0.0, true, 1.0);
 	gCV_RecordPostRun_Stage = new Convar("shavit_replay_postrun_stage_always", "1", "Record postrun frames after a player finishes their stage run?", 0, true, 0.0, true, 1.0);
 	gCV_DynamicTimeCheap = new Convar("shavit_replay_timedifference_cheap", "0.0", "0 - Disabled\n1 - only clip the search ahead to shavit_replay_timedifference_search\n2 - only clip the search behind to players current frame\n3 - clip the search to +/- shavit_replay_timedifference_search seconds to the players current frame", 0, true, 0.0, true, 3.0);
@@ -584,6 +584,8 @@ void KickAllReplays()
 			KickReplay(gA_BotInfo[i]);
 		}
 	}
+	gB_HasMainBot = false;
+	gB_HasStageBot = false;
 }
 
 public void OnLibraryAdded(const char[] name)
@@ -1313,7 +1315,7 @@ public int Native_GetReplayLength(Handle handler, int numParams)
 	int track = GetNativeCell(2);
 	int stage = GetNativeCell(3);
 	bool bStage = view_as<bool>(stage);
-	return view_as<int>(GetReplayLength(style, track, !bStage?gA_FrameCache[style][track]:gA_FrameCache_Stage[style][stage]));
+	return view_as<int>(GetReplayLength(style, track, !bStage?gA_FrameCache[style][track]:gA_FrameCache_Stage[style][stage], stage));
 }
 
 public int Native_GetReplayCacheLength(Handle handler, int numParams)
@@ -2421,6 +2423,8 @@ public void OnClientPutInServer(int client)
 		ClearBotInfo(gA_BotInfo[client]);
 		ClearFrames(client);
 		ClearFrames_Stage(client);
+		gB_ClearFrame[client] = false;
+		gB_ClearFrame_Stage[client] = false;
 
 		SDKHook(client, SDKHook_PostThink, ForceObserveProp);
 
@@ -2841,6 +2845,11 @@ public Action Shavit_OnStart(int client)
 
 public Action Shavit_OnStage(int client)
 {
+	if(StrContains(gS_StyleStrings[Shavit_GetBhopStyle(client)].sSpecialString, "segments") != -1)
+	{
+		return Plugin_Handled;
+	}
+
 	if(gB_HasFinished_Stage[client])// Prevent players from messing up the data if they get a record and immediately teleport to stage zone
 	{
 		return Plugin_Handled;
@@ -2960,12 +2969,26 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 	gB_makeReplay = makeReplay;
 }
 
-public void Shavit_OnWRCP(int client, int stage, int style, int steamid, float time, float prespeed, const char[] mapname)
+public void Shavit_OnFinishStage(int client, int stage, int style, float time)
 {
 	if(Shavit_IsPracticeMode(client) || !gCV_Enabled.BoolValue || gI_PlayerFrames_Stage[client] == 0)
 	{
 		return;
 	}
+
+	bool isTooLong = (gCV_TimeLimit.FloatValue > 0.0 && time > gCV_TimeLimit.FloatValue);
+
+	float length = GetReplayLength(style, 0, gA_FrameCache_Stage[style][stage], stage);
+	bool isBestReplay = (length == 0.0 || time < length);
+
+	bool makeReplay = (isBestReplay && !isTooLong);
+
+	if(!makeReplay)
+	{
+		return;
+	}
+
+	int iSteamID = GetSteamAccountID(client);
 
 	char sName[MAX_NAME_LENGTH];
 	GetClientName(client, sName, MAX_NAME_LENGTH);
@@ -2978,7 +3001,7 @@ public void Shavit_OnWRCP(int client, int stage, int style, int steamid, float t
 	gA_PlayerInfo_Stage[client].iStage = stage;
 	gA_PlayerInfo_Stage[client].iTrack = 0;
 	gA_PlayerInfo_Stage[client].fTime = time;
-	gA_PlayerInfo_Stage[client].iSteamID = steamid;
+	gA_PlayerInfo_Stage[client].iSteamID = iSteamID;
 	strcopy(gA_PlayerInfo_Stage[client].sName, MAX_NAME_LENGTH, sName);
 }
 
@@ -3184,7 +3207,8 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 			return ReplayRunCmd(gA_BotInfo[client], buttons, impulse, vel);
 		}
 	}
-	else
+	
+	else if(IsValidClient(client) && !IsFakeClient(client))
 	{
 		if(gB_HasFinished[client])
         {
@@ -4195,7 +4219,7 @@ void KickReplay(bot_info_t info)
 	info.iType = -1;
 }
 
-float GetReplayLength(int style, int track, framecache_t aCache)
+float GetReplayLength(int style, int track, framecache_t aCache, int stage = 0)
 {
 	if(aCache.iFrameCount <= 0)
 	{
@@ -4207,7 +4231,15 @@ float GetReplayLength(int style, int track, framecache_t aCache)
 		return aCache.fTime;
 	}
 
-	return Shavit_GetWorldRecord(style, track) * Shavit_GetStyleSettingFloat(style, "speed");
+	if(stage == 0)
+	{
+		return Shavit_GetWorldRecord(style, track) * Shavit_GetStyleSettingFloat(style, "speed");
+	}
+
+	else
+	{
+		return Shavit_GetWRCPTime(stage, style) * Shavit_GetStyleSettingFloat(style, "speed");
+	}
 }
 
 void GetReplayName(int style, int track, char[] buffer, int length, int stage = 0)
@@ -4432,23 +4464,15 @@ bool WriteNavMesh(const char[] map, bool skipExistsCheck = false)
 
 		if(file != null)
 		{
-			static int defaultNavMesh[205] = {
-				0xCE, 0xFA, 0xED, 0xFE, 0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x58, 0xF6, 0x01, 0x00, 
-				0x01, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-				0x00, 0x80, 0xED, 0xC3, 0x00, 0x00, 0x48, 0x42, 0xFF, 0x1F, 0x00, 0x42, 0x00, 0x00, 0x48, 0xC2, 
-				0x00, 0x80, 0xED, 0x43, 0xFF, 0x1F, 0x00, 0x42, 0xFF, 0x1F, 0x00, 0x42, 0xFF, 0x1F, 0x00, 0x42, 
-				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-				0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0xE7, 0xC3, 0x00, 0x00, 0x7A, 0x42, 0xFF, 0x1F, 0x00, 
-				0x42, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7A, 0xC2, 0x00, 0x00, 0x7A, 0x42, 0xFF, 0x1F, 
-				0x00, 0x42, 0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7A, 0xC2, 0x00, 0x40, 0xE7, 0x43, 0xFF, 
-				0x1F, 0x00, 0x42, 0x01, 0x03, 0x00, 0x00, 0x00, 0x00, 0x40, 0xE7, 0xC3, 0x00, 0x40, 0xE7, 0x43, 
-				0xFF, 0x1F, 0x00, 0x42, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-				0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x42, 0x00, 0x00, 0xF0, 0x42, 0x00, 0x00, 0x80, 0x3F, 0x00, 
-				0x00, 0x80, 0x3F, 0x00, 0x00, 0x80, 0x3F, 0x00, 0x00, 0x80, 0x3F, 0x01, 0x00, 0x00, 0x00, 0x01, 
-				0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+			static int defaultNavMesh[51] = {
+				-17958194, 16, 1, 128600, 16777217, 1, 1, 0, -1007845376, 1112014848, 1107304447, -1035468800,
+				1139638272, 1107304447, 1107304447, 1107304447, 0, 0, 0, 0, 4, -415236096, 2046820547, 2096962, 
+				65858, 0, 49786, 536822394, 33636864, 0, 12745216, -12327104, 21102623, 3, -1008254976, 1139228672,
+				1107304447, 1, 0, 0, 0, 4386816, 4386816, 4161536, 4161536, 4161536, 20938752, 16777216, 33554432, 0, 0
 			};
-
-			file.Write(defaultNavMesh, 205, 1);
+			file.Write(defaultNavMesh, 51, 4);
+			int zero[1] = {0};
+			file.Write(zero, 1, 1); // defaultNavMesh is missing one byte...
 			delete file;
 		}
 

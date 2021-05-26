@@ -133,8 +133,8 @@ int gI_MapZones = 0;
 float gV_MapZones[MAX_ZONES][2][3];
 float gV_MapZones_Visual[MAX_ZONES][8][3];
 float gV_Destinations[MAX_ZONES][3];
+float gV_CustomDestinations[MAXPLAYERS+1][MAX_ZONES][3];
 float gV_ZoneCenter[MAX_ZONES][3];
-float gV_ZoneCenter_Angle[MAX_ZONES][3];
 int gI_EntityZone[4096];
 ArrayList gA_Triggers;
 ArrayList gA_HookTriggers;
@@ -272,11 +272,11 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_back", Command_Back, "Go back to the current stage zone.");
 	RegConsoleCmd("sm_teleport", Command_Back, "Go back to the current stage zone. Alias of sm_back");
 
-	RegConsoleCmd("sm_test", Command_Test);
+	RegConsoleCmd("sm_setstart", Command_Startpos);
+	RegConsoleCmd("sm_startpos", Command_Startpos, "Set track/stage startzones position. Alias of sm_setstart.");
 
 	// events
 	HookEvent("round_start", Round_Start);
-	HookEvent("player_spawn", Player_Spawn);
 
 	// forwards
 	gH_Forwards_EnterZone = CreateGlobalForward("Shavit_OnEnterZone", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
@@ -290,9 +290,9 @@ public void OnPluginStart()
 	gCV_TeleportToEnd = new Convar("shavit_zones_teleporttoend", "1", "Teleport players to the end zone on sm_end?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_UseCustomSprite = new Convar("shavit_zones_usecustomsprite", "1", "Use custom sprite for zone drawing?\nSee `configs/shavit-zones.cfg`.\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_Height = new Convar("shavit_zones_height", "128.0", "Height to use for the start zone.", 0, true, 0.0, false);
-	gCV_Offset = new Convar("shavit_zones_offset", "0.5", "When calculating a zone's *VISUAL* box, by how many units, should we scale it to the center?\n0.0 - no downscaling. Values above 0 will scale it inward and negative numbers will scale it outwards.\nAdjust this value if the zones clip into walls.");
+	gCV_Offset = new Convar("shavit_zones_offset", "0", "When calculating a zone's *VISUAL* box, by how many units, should we scale it to the center?\n0.0 - no downscaling. Values above 0 will scale it inward and negative numbers will scale it outwards.\nAdjust this value if the zones clip into walls.");
 	gCV_EnforceTracks = new Convar("shavit_zones_enforcetracks", "1", "Enforce zone tracks upon entry?\n0 - allow every zone except for start/end to affect users on every zone.\n1 - require the user's track to match the zone's track.", 0, true, 0.0, true, 1.0);
-	gCV_BoxOffset = new Convar("shavit_zones_box_offset", "16", "Offset zone trigger boxes by this many unit\n0 - matches players bounding box\n16 - matches players center");
+	gCV_BoxOffset = new Convar("shavit_zones_box_offset", "0", "Offset zone trigger boxes by this many unit\n0 - matches players bounding box\n16 - matches players center");
 
 	gCV_Interval.AddChangeHook(OnConVarChanged);
 	gCV_UseCustomSprite.AddChangeHook(OnConVarChanged);
@@ -784,43 +784,6 @@ void LoadZoneSettings()
 	}
 }
 
-void InitTeleDestinations()
-{
-	int iEnt = -1;
-
-	ArrayList aTeleDestination = new ArrayList();
-
-	while ((iEnt = FindEntityByClassname(iEnt, "info_teleport_destination")) != -1)
-	{
-		aTeleDestination.Push(iEnt);
-	}
-
-	for(int i = 0; i < gI_MapZones; i++)
-	{
-		for(int j = 0; j < aTeleDestination.Length; j++)
-		{
-			int entity = aTeleDestination.Get(j);
-
-			if(IsEntityInsideZone(entity, gV_MapZones_Visual[i]))
-			{
-				float origin[3];
-				GetEntPropVector(entity, Prop_Send, "m_vecOrigin", origin);
-				gV_ZoneCenter[i][0] = origin[0];
-				gV_ZoneCenter[i][1] = origin[1];
-				gV_ZoneCenter[i][2] = origin[2];
-
-				float ang[3];
-				GetEntPropVector(iEnt, Prop_Send, "m_angRotation", ang);
-				gV_ZoneCenter_Angle[i][0] = ang[0];
-				gV_ZoneCenter_Angle[i][1] = ang[1];
-				gV_ZoneCenter_Angle[i][2] = ang[2];
-
-				break;
-			}
-		}
-	}
-}
-
 void FindTriggers()
 {
 	delete gA_Triggers;
@@ -903,10 +866,7 @@ public void OnMapStart()
 	LoadBonusZones();
 	LoadStageZones();
 	LoadCheckpointZones();
-	
 	LoadZoneSettings();
-
-	InitTeleDestinations();
 	
 	PrecacheModel("models/props/cs_office/vending_machine.mdl");
 
@@ -1037,9 +997,6 @@ void KillZoneEntity(int index)
 	
 	if(entity > MaxClients && IsValidEntity(entity))
 	{
-		gA_ZoneCache[index].iEntityID = -1;
-		gI_EntityZone[entity] = -1;
-
 		for(int i = 1; i <= MaxClients; i++)
 		{
 			for(int j = 0; j < TRACKS_SIZE; j++)
@@ -1050,7 +1007,10 @@ void KillZoneEntity(int index)
 			gB_InsideZoneID[i][index] = false;
 		}
 
-		if(!IsValidEntity(entity))
+		char sTargetname[32];
+		GetEntPropString(entity, Prop_Data, "m_iName", sTargetname, 32);
+
+		if(StrContains(sTargetname, "shavit_zones_") == -1)
 		{
 			return;
 		}
@@ -1136,12 +1096,9 @@ public void SQL_RefreshZones_Callback(Database db, DBResultSet results, const ch
 		gV_ZoneCenter[gI_MapZones][1] = (gV_MapZones[gI_MapZones][0][1] + gV_MapZones[gI_MapZones][1][1]) / 2.0;
 		gV_ZoneCenter[gI_MapZones][2] = (gV_MapZones[gI_MapZones][0][2] + gV_MapZones[gI_MapZones][1][2]) / 2.0;
 
-		if(type == Zone_Teleport || type == Zone_Stage)
-		{
-			gV_Destinations[gI_MapZones][0] = results.FetchFloat(7);
-			gV_Destinations[gI_MapZones][1] = results.FetchFloat(8);
-			gV_Destinations[gI_MapZones][2] = results.FetchFloat(9);
-		}
+		gV_Destinations[gI_MapZones][0] = results.FetchFloat(7);
+		gV_Destinations[gI_MapZones][1] = results.FetchFloat(8);
+		gV_Destinations[gI_MapZones][2] = results.FetchFloat(9);
 
 		gA_ZoneCache[gI_MapZones].bZoneInitialized = true;
 		gA_ZoneCache[gI_MapZones].iZoneType = type;
@@ -1172,6 +1129,9 @@ public void OnClientPutInServer(int client)
 	for(int i = 0; i < MAX_ZONES; i++)
 	{
 		gB_InsideZoneID[client][i] = false;
+		gV_CustomDestinations[client][i][0] = 0.0;
+		gV_CustomDestinations[client][i][1] = 0.0;
+		gV_CustomDestinations[client][i][2] = 0.0;
 	}
 	gB_ZoneDataInput[client] = false;
 	gB_CommandToEdit[client] = false;
@@ -1243,9 +1203,57 @@ public Action Command_ReloadZoneSettings(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action Command_Test(int client, int args)
+public Action Command_Startpos(int client, int args)
 {
-	
+	if(!IsValidClient(client))
+	{
+		return Plugin_Handled;
+	}
+
+	if(!IsPlayerAlive(client))
+	{
+		Shavit_PrintToChat(client, "%T", "StageCommandAlive", client, gS_ChatStrings.sVariable2, gS_ChatStrings.sText);
+
+		return Plugin_Handled;
+	}
+
+	if(Shavit_GetTimerStatus(client) != Timer_Running)
+	{
+		Shavit_PrintToChat(client, "你必须要恢复计时才能自定义起点");
+
+		return Plugin_Handled;
+	}
+
+	if(!(GetEntityFlags(client) & FL_ONGROUND))
+	{
+		Shavit_PrintToChat(client, "你必须站在地面上才能自定义起点");
+
+		return Plugin_Handled;
+	}
+
+	if(!Shavit_InsideZone(client, Zone_Start, -1) && !Shavit_InsideZone(client, Zone_Stage, -1))
+	{
+		Shavit_PrintToChat(client, "你必须在起点区域内才能自定义起点");
+
+		return Plugin_Handled;
+	}
+
+	float origin[3];
+	GetClientAbsOrigin(client, origin);
+	gV_CustomDestinations[client][gI_InsideZoneIndex[client]][0] = origin[0];
+	gV_CustomDestinations[client][gI_InsideZoneIndex[client]][1] = origin[1];
+	gV_CustomDestinations[client][gI_InsideZoneIndex[client]][2] = origin[2];
+
+	if(Shavit_InsideZone(client, Zone_Start, -1))
+	{
+		Shavit_PrintToChat(client, "自定义主线起点成功!");
+	}
+
+	else if(Shavit_InsideZone(client, Zone_Stage, -1))
+	{
+		Shavit_PrintToChat(client, "自定义关卡起点成功!");
+	}
+
 	return Plugin_Handled;
 }
 
@@ -1263,14 +1271,19 @@ public Action Command_Back(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!EmptyVector(gV_Destinations[gI_InsideZoneIndex[client]]))
+	if(!EmptyVector(gV_CustomDestinations[client][gI_InsideZoneIndex[client]]) && gB_SingleStageTiming[client])
+	{
+		TeleportEntity(client, gV_CustomDestinations[client][gI_InsideZoneIndex[client]], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+	}
+
+	else if(!EmptyVector(gV_Destinations[gI_InsideZoneIndex[client]]))
 	{
 		TeleportEntity(client, gV_Destinations[gI_InsideZoneIndex[client]], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
 	}
 
 	else
 	{
-		TeleportEntity(client, gV_ZoneCenter[gI_InsideZoneIndex[client]], gV_ZoneCenter_Angle[gI_InsideZoneIndex[client]], view_as<float>({0.0, 0.0, 0.0}));
+		TeleportEntity(client, gV_ZoneCenter[gI_InsideZoneIndex[client]], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
 	}
 
 	return Plugin_Handled;
@@ -1303,6 +1316,10 @@ public Action Command_Stages(int client, int args)
 		char arg1[8];
 		GetCmdArg(1, arg1, 8);
 		iStage = StringToInt(arg1);
+		if(iStage > gI_Stages || iStage < 1)
+		{
+			Shavit_PrintToChat(client, "???what are you doing");
+		}
 	}
 
 	if (iStage > -1)
@@ -1320,7 +1337,12 @@ public Action Command_Stages(int client, int args)
 				Shavit_StopTimer(client);
 				gB_SingleStageTiming[client] = true;
 
-				if(!EmptyVector(gV_Destinations[i]))
+				if(!EmptyVector(gV_CustomDestinations[client][i]))
+				{
+					TeleportEntity(client, gV_CustomDestinations[client][i], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+				}
+
+				else if(!EmptyVector(gV_Destinations[i]))
 				{
 					TeleportEntity(client, gV_Destinations[i], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
 				}
@@ -1372,7 +1394,12 @@ public int MenuHandler_SelectStage(Menu menu, MenuAction action, int param1, int
 		Shavit_StopTimer(param1);
 		gB_SingleStageTiming[param1] = true;
 
-		if(!EmptyVector(gV_Destinations[iIndex]))
+		if(!EmptyVector(gV_CustomDestinations[param1][iIndex]))
+		{
+			TeleportEntity(param1, gV_CustomDestinations[param1][iIndex], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+		}
+
+		else if(!EmptyVector(gV_Destinations[iIndex]))
 		{
 			TeleportEntity(param1, gV_Destinations[iIndex], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
 		}
@@ -2542,37 +2569,9 @@ void UpdateTeleportZone(int client)
 	GetClientAbsOrigin(client, vTeleport);
 	vTeleport[2] += 2.0;
 
-	if(gI_ZoneType[client] == Zone_Stage)
-	{
-		gV_Teleport[client] = vTeleport;
+	gV_Teleport[client] = vTeleport;
 
-		Shavit_PrintToChat(client, "%T", "ZoneTeleportUpdated", client);
-	}
-
-	else
-	{
-		bool bInside = true;
-
-		for(int i = 0; i < 3; i++)
-		{
-			if(gV_Point1[client][i] >= vTeleport[i] == gV_Point2[client][i] >= vTeleport[i])
-			{
-				bInside = false;
-			}
-		}
-
-		if(bInside)
-		{
-			Shavit_PrintToChat(client, "%T", "ZoneTeleportInsideZone", client);
-		}
-
-		else
-		{
-			gV_Teleport[client] = vTeleport;
-
-			Shavit_PrintToChat(client, "%T", "ZoneTeleportUpdated", client);
-		}
-	}
+	Shavit_PrintToChat(client, "%T", "ZoneTeleportUpdated", client);
 }
 
 void CreateEditMenu(int client)
@@ -2592,31 +2591,13 @@ void CreateEditMenu(int client)
 			FormatEx(sMenuItem, 64, "%T", "ZoneSetTP", client);
 			menu.AddItem("-1", sMenuItem, ITEMDRAW_DISABLED);
 		}
-
-		else
-		{
-			FormatEx(sMenuItem, 64, "%T", "ZoneSetYes", client);
-			menu.AddItem("yes", sMenuItem);
-		}
-
-		FormatEx(sMenuItem, 64, "%T", "ZoneSetTPZone", client);
-		menu.AddItem("tpzone", sMenuItem);
 	}
 
-	else if(gI_ZoneType[client] == Zone_Stage)
-	{
-		FormatEx(sMenuItem, 64, "%T", "ZoneSetYes", client);
-		menu.AddItem("yes", sMenuItem);
+	FormatEx(sMenuItem, 64, "%T", "ZoneSetYes", client);
+	menu.AddItem("yes", sMenuItem);
 
-		FormatEx(sMenuItem, 64, "%T", "ZoneSetTPZone", client);
-		menu.AddItem("tpzone", sMenuItem);
-	}
-
-	else
-	{
-		FormatEx(sMenuItem, 64, "%T", "ZoneSetYes", client);
-		menu.AddItem("yes", sMenuItem);
-	}
+	FormatEx(sMenuItem, 64, "%T", "ZoneSetTPZone", client);
+	menu.AddItem("tpzone", sMenuItem);
 
 	FormatEx(sMenuItem, 64, "%T", "ZoneSetNo", client);
 	menu.AddItem("no", sMenuItem);
@@ -3032,13 +3013,22 @@ public void Shavit_OnRestart(int client, int track)
 		// standard zoning
 		if((iIndex = GetZoneIndex(Zone_Start, track)) != -1)
 		{
-			float fCenter[3];
 			iIndex = GetZoneIndex(Zone_Start, track);
-			fCenter[0] = gV_ZoneCenter[iIndex][0];
-			fCenter[1] = gV_ZoneCenter[iIndex][1];
-			fCenter[2] = gV_MapZones[iIndex][0][2] + 2.0;
 
-			TeleportEntity(client, fCenter, NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+			if(!EmptyVector(gV_CustomDestinations[client][iIndex]))
+			{
+				TeleportEntity(client, gV_CustomDestinations[client][iIndex], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+			}
+
+			else if(!EmptyVector(gV_Destinations[iIndex]))
+			{
+				TeleportEntity(client, gV_Destinations[iIndex], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+			}
+
+			else
+			{
+				TeleportEntity(client, gV_ZoneCenter[iIndex], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+			}
 		}
 
 		Shavit_StartTimer(client, track);
@@ -3053,13 +3043,17 @@ public void Shavit_OnEnd(int client, int track)
 
 		if((iIndex = GetZoneIndex(Zone_End, track)) != -1)
 		{
-			float fCenter[3];
 			iIndex = GetZoneIndex(Zone_End, track);
-			fCenter[0] = gV_ZoneCenter[iIndex][0];
-			fCenter[1] = gV_ZoneCenter[iIndex][1];
-			fCenter[2] = gV_MapZones[iIndex][0][2];
 
-			TeleportEntity(client, fCenter, NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+			if(!EmptyVector(gV_Destinations[iIndex]))
+			{
+				TeleportEntity(client, gV_Destinations[iIndex], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+			}
+
+			else
+			{
+				TeleportEntity(client, gV_ZoneCenter[iIndex], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+			}
 		}
 	}
 }
@@ -3086,11 +3080,6 @@ int GetZoneIndex(int type, int track, int start = 0)
 	}
 
 	return -1;
-}
-
-public void Player_Spawn(Event event, const char[] name, bool dontBroadcast)
-{
-	Reset(GetClientOfUserId(event.GetInt("userid")));
 }
 
 public void Round_Start(Event event, const char[] name, bool dontBroadcast)
@@ -3122,6 +3111,15 @@ void CreateZoneEntities()
 		return;
 	}
 
+	int iTeledesEnt = -1;
+
+	ArrayList aTeleDestination = new ArrayList();
+
+	while ((iTeledesEnt = FindEntityByClassname(iTeledesEnt, "info_teleport_destination")) != -1)
+	{
+		aTeleDestination.Push(iTeledesEnt);
+	}
+
 	delete gA_HookTriggers;
 	gA_HookTriggers = new ArrayList();
 
@@ -3140,6 +3138,8 @@ void CreateZoneEntities()
 		if(gA_ZoneCache[i].iEntityID != -1)
 		{
 			KillZoneEntity(i);
+
+			gA_ZoneCache[i].iEntityID = -1;
 		}
 
 		if(!gA_ZoneCache[i].bZoneInitialized)
@@ -3242,6 +3242,21 @@ void CreateZoneEntities()
 
 					break;// stop looping from finding triggers to hook
 				}
+			}
+		}
+
+		for(int j = 0; j < aTeleDestination.Length; j++)
+		{
+			int entity = aTeleDestination.Get(j);
+			float origin[3];
+			GetEntPropVector(entity, Prop_Send, "m_vecOrigin", origin);
+
+			if(IsEntityInsideZone(origin, gV_MapZones[i]))
+			{
+				gV_ZoneCenter[i][0] = origin[0];
+				gV_ZoneCenter[i][1] = origin[1];
+				gV_ZoneCenter[i][2] = origin[2];
+				break;
 			}
 		}
 
@@ -3430,13 +3445,13 @@ public void TouchPost(int entity, int other)
 	{
 		// start timer instantly for main track, but require bonuses to have the current timer stopped
 		// so you don't accidentally step on those while running
-		if(Shavit_GetTimerStatus(other) == Timer_Stopped || Shavit_GetClientTrack(other) != Track_Main)
+		if(Shavit_GetTimerStatus(other) != Timer_Stopped && Shavit_GetClientTrack(other) != Track_Main)
 		{
 			gB_SingleStageTiming[other] = false;
 			Shavit_StartTimer(other, gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack);
 		}
 
-		else if(gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack == Track_Main)
+		else if(Shavit_GetTimerStatus(other) != Timer_Stopped && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack == Track_Main)
 		{
 			gB_SingleStageTiming[other] = false;
 			Shavit_StartTimer(other, Track_Main);
@@ -3497,16 +3512,11 @@ public void TouchPost(int entity, int other)
 }
 
 // Reference: https://forums.alliedmods.net/showpost.php?p=2007420&postcount=1
-bool IsEntityInsideZone(int entity, float point[8][3])
+bool IsEntityInsideZone(float origin[3], float point[2][3])
 {
-    float entityPos[3];
-    
-    GetEntPropVector(entity, Prop_Send, "m_vecOrigin", entityPos);
-    entityPos[2] += 5.0;
-    
     for(int i = 0; i < 3; i++)
     {
-        if((point[0][i] >= entityPos[i]) == (point[7][i] >= entityPos[i]))
+        if((point[0][i] >= origin[i]) == (point[1][i] >= origin[i]))
         {
             return false;
         }

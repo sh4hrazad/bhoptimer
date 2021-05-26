@@ -157,6 +157,7 @@ public void OnClientPutInServer(int client)
 		for(int j = 0; j < gI_Styles; j++)
 		{
 			gA_PRCP[client][i][j].fStageTime = 0.0;
+			gA_PRCP[client][i][j].fCheckpointTime = 0.0;
 		}
 	}
 
@@ -259,6 +260,7 @@ void ResetStage(int stage, int style, bool all = false)
 			for(int j = 0; j < style; j++)
 			{
 				gA_WRCP[i][j].fStageTime = -1.0;
+				gA_WRCP[i][j].fPrespeed = 0.0;
 				strcopy(gA_WRCP[i][j].sName, 16, gS_None);
 			}
 		}
@@ -282,6 +284,7 @@ void ResetCPs(int cpnum, int style, bool all = false)
 			for(int j = 0; j < style; j++)
 			{
 				gA_WRCP[i][j].fCheckpointTime = -1.0;
+				gA_WRCP[i][j].fFinalspeed = 0.0;
 			}
 		}
 	}
@@ -439,13 +442,14 @@ public int WRCPMenu2_Handler(Menu menu, MenuAction action, int param1, int param
 				FormatEx(sMessage, 255, "%T", "Chat-WRCP", param1, 
 					gS_ChatStrings.sVariable, sName, gS_ChatStrings.sText, 
 					gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, 
-					gS_ChatStrings.sVariable2, time, gS_ChatStrings.sText);
+					gS_ChatStrings.sVariable2, time, gS_ChatStrings.sText,
+					gS_ChatStrings.sVariable3, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText);
 			}
 			else
 			{
 				FormatEx(sMessage, 255, "%T", "Chat-WRCP-NoRecord", param1, 
 				gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, 
-				gS_ChatStrings.sVariable, style, gS_ChatStrings.sText);
+				gS_ChatStrings.sVariable3, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText);
 			}
 			Shavit_PrintToChat(param1, "%s", sMessage);
 		}
@@ -469,7 +473,7 @@ void DeleteWRCPConfirm(int client)
 	Menu menu = new Menu(DeleteWRCPMenu_Handler);
 
 	char sTitle[64];
-	FormatEx(sTitle, 64, "%T", "DeleteWrcpMenuTitle-Confirm", client, gI_StageChoice[client], gI_StyleChoice[client]);
+	FormatEx(sTitle, 64, "%T", "DeleteWrcpMenuTitle-Confirm", client, gI_StageChoice[client], gS_StyleStrings[gI_StyleChoice[client]].sStyleName);
 	menu.SetTitle(sTitle);
 
 	menu.AddItem("", "Yes");
@@ -573,7 +577,7 @@ public void SQL_DeleteWRCP_Callback2(Database db, DBResultSet results, const cha
 
 	Shavit_PrintToChat(client, "%T", "WRCPDeleteSuccessful", client, gS_ChatStrings.sText, 
 		gS_ChatStrings.sVariable, stage, gS_ChatStrings.sText, 
-		gS_ChatStrings.sVariable2, style, gS_ChatStrings.sText);
+		gS_ChatStrings.sVariable3, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText);
 }
 
 public Action Command_Maptop(int client, int args)
@@ -868,7 +872,7 @@ public void SQL_DeleteMaptop_Callback(Database db, DBResultSet results, const ch
 
 	Shavit_PrintToChat(client, "%T", "StageRecordDeleteSuccessful", client, gS_ChatStrings.sText, 
 		gS_ChatStrings.sVariable, stage, gS_ChatStrings.sText, 
-		gS_ChatStrings.sVariable2, style, gS_ChatStrings.sText);
+		gS_ChatStrings.sVariable3, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText);
 }
 
 public void Shavit_OnRestart(int client, int track)
@@ -977,6 +981,10 @@ public void Shavit_OnLeaveZone(int client, int type, int track, int id, int enti
 
 public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, int strafes, float sync, int rank, int overwrite, int track, float oldtime, float perfs, float avgvel, float maxvel, int timestamp)
 {
+	if(track != Track_Main)
+	{
+		return;
+	}
 	// overwrite
 	// 0 - no query
 	// 1 - insert
@@ -1005,7 +1013,7 @@ public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, i
 				float speed = (Shavit_IsLinearMap()) ? gA_PRCP[client][cpnum][style].fFinalspeed : gA_PRCP[client][cpnum][style].fPrespeed;
 
 				FormatEx(sQuery, 512,
-					"INSERT INTO `%scp` (auth, map, time, style, cp, speed, date) VALUES (%d, '%s', %f, %d, %d, %f, %d);",
+					"REPLACE INTO `%scp` (auth, map, time, style, cp, speed, date) VALUES (%d, '%s', %f, %d, %d, %f, %d);",
 					gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, gA_PRCP[client][cpnum][style].fCheckpointTime, style, cpnum, speed, GetTime());
 				
 				hTransaction.AddQuery(sQuery);
@@ -1050,7 +1058,8 @@ void OnWRCPCheck(int client, int stage, int style, float time)
 		FormatEx(sMessage, 255, "%T", "OnWRCP", client, 
 			gS_ChatStrings.sVariable, sName, gS_ChatStrings.sText, 
 			gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable2, time, gS_ChatStrings.sText);
+			gS_ChatStrings.sVariable2, time, gS_ChatStrings.sText,
+			gS_ChatStrings.sVariable3, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText);
 		Shavit_PrintToChatAll("%s", sMessage);
 
 
@@ -1121,7 +1130,7 @@ public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const c
 	else
 	{
 		FormatEx(sQuery, 512,
-		"INSERT INTO `%sstage` (auth, map, time, style, stage, prespeed, date, completions) VALUES (%d, '%s', %f, %d, %d, %f, %d, 1);",
+		"REPLACE INTO `%sstage` (auth, map, time, style, stage, prespeed, date, completions) VALUES (%d, '%s', %f, %d, %d, %f, %d, 1);",
 		gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, time, style, stage, prespeed, GetTime());
 	}
 
@@ -1398,6 +1407,11 @@ public int Native_FinishStage(Handle handler, int numParams)
 	int stage = Shavit_GetClientStage(client);
 	int style = Shavit_GetBhopStyle(client);
 
+	if(style == 8 || Shavit_IsPracticeMode(client))//segment
+	{
+		return;
+	}
+
 	if(!bBypass)
 	{
 		bool bResult = true;
@@ -1424,7 +1438,7 @@ public int Native_FinishStage(Handle handler, int numParams)
 
 		Call_StartForward(gH_Forwards_OnFinishStage);
 		Call_PushCell(client);
-		Call_PushCell(stage);
+		Call_PushCell(stage - 1);
 		Call_PushCell(style);
 		Call_PushFloat(time);
 		Call_Finish();
