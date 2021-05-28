@@ -4,4 +4,4 @@
 [![Build status](https://travis-ci.org/shavitush/bhoptimer.svg?branch=master)](https://travis-ci.org/shavitush/bhoptimer)
 
 # shavit's surf timer
-WIP
+No longer update.
