@@ -1294,7 +1294,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 				}
 			}
 
-			if(gI_GroundEntity[client] == 0 && iGroundEntity == -1)// 起跳 starts jump
+			if(gB_OnGround[client] && !onGround)// 起跳 starts jump
 			{
 				if(++gI_Jumps[client] >= 2)
 				{
@@ -1309,7 +1309,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 				}
 			}
 
-			else if(gI_GroundEntity[client] == 0 && iGroundEntity == 0)// 不跳 not jumping
+			else if(gB_OnGround[client] && onGround)// 不跳 not jumping
 			{
 				gI_Jumps[client] = 0;
 			}
