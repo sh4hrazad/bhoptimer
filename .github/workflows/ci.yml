@@ -1,0 +1,49 @@
+name: ci
+
+on: 
+  push:
+    branches:
+     - master
+  pull_request:
+    branches:
+     - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sm_version: [ "1.11" ]
+
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Set environment variables
+        run: |
+          SCRIPTING_PATH=$GITHUB_WORKSPACE/addons/sourcemod/scripting
+          echo "SCRIPTING_PATH=$SCRIPTING_PATH" >> $GITHUB_ENV
+          echo "INCLUDE_PATH=$SCRIPTING_PATH/include" >> $GITHUB_ENV
+
+      - name: Setup SourcePawn Compiler ${{ matrix.SM_VERSION }}
+        uses: rumblefrog/setup-sp@master
+        with:
+          version: ${{ matrix.SM_VERSION }}
+
+      - name: Compile shavit plugin
+        run: |
+          echo -e "\nCompiling shavit plugin..."
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-core.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-chat.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-hud.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-mapchooser.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-misc.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-rankings.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-replay.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-sounds.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-stats.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-timelimit.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-wr.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-zones.sp
+        working-directory: ${{ env.SCRIPTING_PATH }}/
