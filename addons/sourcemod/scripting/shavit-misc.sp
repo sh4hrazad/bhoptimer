@@ -139,7 +139,6 @@ Convar gCV_WRMessages = null;
 Convar gCV_BhopSounds = null;
 Convar gCV_RestrictNoclip = null;
 Convar gCV_BotFootsteps = null;
-Convar gCV_PrestrafeMessage = null;
 Convar gCV_SpecScoreboardOrder = null;
 ConVar gCV_ExperimentalSegmentedEyeAngleFix = null;
 ConVar gCV_PauseMovement = null;
@@ -182,16 +181,13 @@ stylestrings_t gS_StyleStrings[STYLE_LIMIT];
 chatstrings_t gS_ChatStrings;
 
 // misc
-TimerStatus gEnum_LastStatus[MAXPLAYERS+1];
-bool gB_InZone[MAXPLAYERS+1];
-bool gB_InStageZone[MAXPLAYERS+1];
-bool gB_StartTimer[MAXPLAYERS+1];
-int gI_LastTrack[MAXPLAYERS+1];
 int gI_Jumps[MAXPLAYERS+1];
-int gI_OtherClientIndex[MAXPLAYERS+1];//other client's checkpoint
+bool gB_CanTouchTrigger[MAXPLAYERS+1];
+
+// other client's checkpoint
+int gI_OtherClientIndex[MAXPLAYERS+1];
 int gI_OtherCurrentCheckpoint[MAXPLAYERS+1];
 bool gB_UsingOtherCheckpoint[MAXPLAYERS+1];
-bool gB_CanTouchTrigger[MAXPLAYERS+1];
 
 public Plugin myinfo =
 {
@@ -368,7 +364,6 @@ public void OnPluginStart()
 	gCV_BhopSounds = new Convar("shavit_misc_bhopsounds", "1", "Should bhop (landing and jumping) sounds be muted?\n0 - Disabled\n1 - Blocked while !hide is enabled\n2 - Always blocked", 0,  true, 0.0, true, 2.0);
 	gCV_RestrictNoclip = new Convar("shavit_misc_restrictnoclip", "0", "Should noclip be be restricted\n0 - Disabled\n1 - No vertical velocity while in noclip in start zone\n2 - No noclip in start zone", 0, true, 0.0, true, 2.0);
 	gCV_BotFootsteps = new Convar("shavit_misc_botfootsteps", "1", "Enable footstep sounds for replay bots. Only works if shavit_misc_bhopsounds is less than 2.", 0, true, 0.0, true, 1.0);
-	gCV_PrestrafeMessage = new Convar("shavit_misc_prestrafemessage", "1", "Enable prestrafe message. Only works when player leave start/stage/checkpoint zone.", 0, true, 0.0, true, 1.0);
 	gCV_ExperimentalSegmentedEyeAngleFix = new Convar("shavit_misc_experimental_segmented_eyeangle_fix", "1", "When teleporting to a segmented checkpoint, the player's old eye-angles persist in replay-frames for as many ticks they're behind the server in latency. This applies the teleport-position angles to the replay-frame for that many ticks.", 0, true, 0.0, true, 1.0);
 	gCV_SpecScoreboardOrder = new Convar("shavit_misc_spec_scoreboard_order", "1", "Use scoreboard ordering for players when changing target when spectating.", 0, true, 0.0, true, 1.0);
 
@@ -1513,7 +1508,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 			GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
 			float fSpeedXY = SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0));
 
-			if(!gB_InZone[client])
+			if(!bInStage && !bInStart)
 			{
 				if(gI_Jumps[client] >= 2 || fSpeedXY > 600)
 				{
@@ -1545,154 +1540,8 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 		}
 	}
 
-	/* else if(!bInStart && !bInStage && Shavit_GetClientTime(client) > 0.0 && Shavit_GetClientTime(client) < 1.5)
-	{
-		if(gCV_PreSpeed.IntValue == 6)
-		{
-			if(gI_GroundEntity[client] == 0 && iGroundEntity == -1)// 起跳 starts jump
-			{
-				if(++gI_Jumps[client] >= 2)
-				{
-					float fSpeed[3];
-					GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
-					float fSpeedXY = SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0));
-
-					float fScale = 260.0 / fSpeedXY;
-
-					if(fScale < 1.0)
-					{
-						fSpeed[0] *= fScale;
-						fSpeed[1] *= fScale;
-						TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed);
-					}
-				}
-			}
-		}
-	} */
-
-	// prestrafe message
-	if(!bNoclip && gCV_PrestrafeMessage.IntValue == 1)
-	{
-		int stage = Shavit_GetClientStage(client);
-
-		float fSpeed[3];
-		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
-		float fSpeed3D = (SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0) + Pow(fSpeed[2], 2.0)));
-
-		float wrcpSpeed = (Shavit_IsClientSingleStageTiming(client))?Shavit_GetWRCPPrespeed(stage, style):Shavit_GetWRCheckpointSpeed(stage, style);
-		float diff = fSpeed3D - wrcpSpeed;
-
-		char sWRCPDiffSpeed[64];
-
-		if(wrcpSpeed <= 0.0)
-		{
-			strcopy(sWRCPDiffSpeed, 64, "N/A");
-		}
-
-		else
-		{
-			if(diff > 0.0)
-			{
-				FormatEx(sWRCPDiffSpeed, 64, "%s+%d u/s%s", gS_ChatStrings.sVariable10, RoundToFloor(diff), gS_ChatStrings.sText);
-			}
-
-			else if(diff == 0.0)
-			{
-				FormatEx(sWRCPDiffSpeed, 64, "%s%d u/s%s", gS_ChatStrings.sVariable2, RoundToFloor(diff), gS_ChatStrings.sText);
-			}
-
-			else
-			{
-				
-				FormatEx(sWRCPDiffSpeed, 64, "%s%d u/s%s", gS_ChatStrings.sVariable11, RoundToFloor(diff), gS_ChatStrings.sText);
-			}
-		}
-
-		if(!bInStart && gB_StartTimer[client] && gI_LastTrack[client] == track && status == Timer_Running)
-		{
-			if(stage == 1)
-			{
-				if(fSpeed3D != 0.0)
-				{
-					char sPrestrafe[128];
-					FormatEx(sPrestrafe, 128, "%T", "StartPrestrafe", client,
-						gS_ChatStrings.sStyle, 
-						gS_ChatStrings.sVariable5, RoundToFloor(fSpeed3D), gS_ChatStrings.sText, 
-						gS_ChatStrings.sVariable, gS_ChatStrings.sText, sWRCPDiffSpeed);
-					Shavit_PrintToChat(client, sPrestrafe);
-
-					for(int i = 1; i <= MaxClients; i++)
-					{
-						if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
-						{
-							Shavit_PrintToChat(i, sPrestrafe);
-						}
-					}
-				}
-			}
-		}
-
-		else if(!bInStage && gB_InStageZone[client] && gI_LastTrack[client] == track && status == Timer_Running)
-		{
-			if(stage > 1 && !Shavit_IsClientSingleStageTiming(client))
-			{
-				if(fSpeed3D != 0.0)
-				{
-					char sPrestrafe[128];
-					FormatEx(sPrestrafe, 128, "%T", "StageCPPrestrafe", client,
-						gS_ChatStrings.sStyle, 
-						gS_ChatStrings.sVariable5, RoundToFloor(fSpeed3D), gS_ChatStrings.sText, 
-						gS_ChatStrings.sVariable, gS_ChatStrings.sText, sWRCPDiffSpeed,
-						stage);
-					Shavit_PrintToChat(client, sPrestrafe);
-
-					for(int i = 1; i <= MaxClients; i++)
-					{
-						if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
-						{
-							Shavit_PrintToChat(i, sPrestrafe);
-						}
-					}
-				}
-			}
-
-			else
-			{
-				if(fSpeed3D != 0.0)
-				{
-					char sPrestrafe[128];
-					FormatEx(sPrestrafe, 128, "%T", "StageWRCPPrestrafe", client,
-						gS_ChatStrings.sStyle, 
-						gS_ChatStrings.sVariable5, RoundToFloor(fSpeed3D), gS_ChatStrings.sText, 
-						gS_ChatStrings.sVariable, gS_ChatStrings.sText, sWRCPDiffSpeed,
-						stage);
-					Shavit_PrintToChat(client, sPrestrafe);
-
-					for(int i = 1; i <= MaxClients; i++)
-					{
-						if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
-						{
-							Shavit_PrintToChat(i, sPrestrafe);
-						}
-					}
-				}
-			}
-		}
-
-		else if(gEnum_LastStatus[client] == Timer_Stopped && status == Timer_Running)
-		{
-			//todo
-		}
-
-		gB_StartTimer[client] = bInStart;
-		gI_LastTrack[client] = track;
-	}
-
-	gEnum_LastStatus[client] = status;
 	gI_GroundEntity[client] = (iGroundEntity != -1) ? EntIndexToEntRef(iGroundEntity) : -1;
 	gB_OnGround[client] = onGround;
-	gB_InZone[client] = (bInStart || bInStage);
-	gB_InStageZone[client] = bInStage;
 
 	return Plugin_Continue;
 }

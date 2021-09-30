@@ -36,6 +36,7 @@ ArrayList gA_PersonalSounds = null;
 ArrayList gA_WorldSounds = null;
 ArrayList gA_WorstSounds = null;
 ArrayList gA_NoImprovementSounds = null;
+ArrayList gA_WRCPSounds = null;
 StringMap gSM_RankSounds = null;
 
 // cvars
@@ -78,6 +79,7 @@ public void OnPluginStart()
 	gA_WorldSounds = new ArrayList(cells);
 	gA_WorstSounds = new ArrayList(cells);
 	gA_NoImprovementSounds = new ArrayList(cells);
+	gA_WRCPSounds = new ArrayList(cells);
 	gSM_RankSounds = new StringMap();
 
 	// modules
@@ -115,6 +117,7 @@ public void OnMapStart()
 	gA_WorldSounds.Clear();
 	gA_WorstSounds.Clear();
 	gA_NoImprovementSounds.Clear();
+	gA_WRCPSounds.Clear();
 	gSM_RankSounds.Clear();
 
 	char sFile[PLATFORM_MAX_PATH];
@@ -169,6 +172,11 @@ public void OnMapStart()
 			else if(StrEqual(sExploded[0], "worse") || StrEqual(sExploded[0], "noimprovement"))
 			{
 				gA_NoImprovementSounds.PushString(sExploded[1]);
+			}
+
+			else if(StrEqual(sExploded[0], "wrcp"))
+			{
+				gA_WRCPSounds.PushString(sExploded[1]);
 			}
 
 			else
@@ -266,6 +274,25 @@ public void Shavit_OnWorstRecord(int client, int style, float time, int jumps, i
 		if(StrContains(sSound, ".") != -1)
 		{
 			PlayEventSound(client, false, sSound);
+		}
+	}
+}
+
+public void Shavit_OnWRCP(int client, int stage, int style, int steamid, float time, float prespeed, const char[] mapname)
+{
+	if(!gCV_Enabled.BoolValue)
+	{
+		return;
+	}
+
+	if(gA_WRCPSounds.Length != 0)
+	{
+		char sSound[PLATFORM_MAX_PATH];
+		gA_WRCPSounds.GetString(GetRandomInt(0, gA_WRCPSounds.Length - 1), sSound, PLATFORM_MAX_PATH);
+
+		if(StrContains(sSound, ".") != -1)
+		{
+			PlayEventSound(client, true, sSound);
 		}
 	}
 }

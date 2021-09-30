@@ -306,4 +306,23 @@
 		"en"		"{1}{2} {3}HUD setting {4}disabled{5}."
 		"chi"		"{1}{2} {3}HUD设置{4}已禁用{5}."
 	}
+	// ---------- Misc ---------- //
+	"StartPrestrafe"
+	{
+		"#format"	"{1:s},{2:s},{3:d},{4:s},{5:s},{6:s},{7:s}"
+		"en"		"{1}Start: {2}{3} u/s {4}| {5}WR:{6} {7}"
+		"chi"		"{1}起点 Prestrafe: {2}{3} u/s {4}| {5}WR:{6} {7}"
+	}
+	"StageCPPrestrafe"
+	{
+		"#format"	"{1:s},{2:s},{3:d},{4:s},{5:s},{6:s},{7:s},{8:d}"
+		"en"		"{1}Stage{8}: {2}{3} u/s {4}| {5}WR:{6} {7}"
+		"chi"		"{1}关卡[{8}] Prestrafe: {2}{3} u/s {4}| {5}WR:{6} {7}"
+	}
+	"StageWRCPPrestrafe"
+	{
+		"#format"	"{1:s},{2:s},{3:d},{4:s},{5:s},{6:s},{7:s},{8:d}"
+		"en"		"{1}Stage{8}: {2}{3} u/s {4}| {5}WR:{6} {7}"
+		"chi"		"{1}关卡[{8}] Prestrafe: {2}{3} u/s {4}| {5}WRCP:{6} {7}"
+	}
 }

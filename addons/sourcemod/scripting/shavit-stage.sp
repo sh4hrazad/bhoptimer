@@ -19,9 +19,8 @@
 
 #define gS_None "N/A"
 
-Database gH_SQL = null;
+Database2 gH_SQL = null;
 bool gB_Connected = false;
-bool gB_MySQL = false;
 
 enum struct cp_t
 {
@@ -132,7 +131,6 @@ public void OnPluginStart()
 	RegAdminCmd("sm_delmaptop", Command_DeleteMaptop, ADMFLAG_RCON, "Alias of sm_delmtop");
 	RegAdminCmd("sm_deletemtop", Command_DeleteMaptop, ADMFLAG_RCON, "Alias of sm_delmtop");
 	RegAdminCmd("sm_deletemaptop", Command_DeleteMaptop, ADMFLAG_RCON, "Alias of sm_delmtop");
-	//TODO:i dont care how many reg has, just need it if neccessary xD
 
 	RegAdminCmd("sm_test", Command_Test, ADMFLAG_RCON, "do stuff");
 
@@ -147,7 +145,7 @@ public void OnPluginStart()
 	gH_Forwards_OnFinishCheckpointPre = CreateGlobalForward("Shavit_OnFinishCheckpointPre", ET_Event, Param_Cell, Param_Cell, Param_Cell);
 	gH_Forwards_OnFinishCheckpoint = CreateGlobalForward("Shavit_OnFinishCheckpoint", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_Float);
 
-	if (gB_Late)
+	if(gB_Late)
 	{
 		Shavit_OnChatConfigLoaded();
 		Shavit_OnDatabaseLoaded();
@@ -895,7 +893,7 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 	}
 
 	float fVelocity[3];
-	GetEntPropVector(client, Prop_Data, "m_vecVelocity", fVelocity);
+	GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fVelocity);
 	float finalSpeed = SquareRoot(Pow(fVelocity[0], 2.0) + Pow(fVelocity[1], 2.0) + Pow(fVelocity[2], 2.0));
 
 	if(type == Zone_End)
@@ -947,7 +945,7 @@ public void Shavit_OnLeaveZone(int client, int type, int track, int id, int enti
 	}
 
 	float fVelocity[3];
-	GetEntPropVector(client, Prop_Data, "m_vecVelocity", fVelocity);
+	GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fVelocity);
 	float prespeed = SquareRoot(Pow(fVelocity[0], 2.0) + Pow(fVelocity[1], 2.0) + Pow(fVelocity[2], 2.0));
 
 	if(type == Zone_Stage || type == Zone_Start)
@@ -986,6 +984,7 @@ public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, i
 	{
 		return;
 	}
+
 	// overwrite
 	// 0 - no query
 	// 1 - insert
@@ -1041,7 +1040,7 @@ public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, i
 
 public void Trans_InsertCP_PR_Success(Database db, any data, int numQueries, DBResultSet[] results, any[] queryData)
 {
-	LoadWRCheckpoints();
+	ResetCPs(MAX_CPZONES, STYLE_LIMIT, true);
 }
 
 public void Trans_InsertCP_PR_Failed(Database db, any data, int numQueries, const char[] error, int failIndex, any[] queryData)
@@ -1373,12 +1372,12 @@ public void SQL_LoadPRCheckpoint_Callback(Database db, DBResultSet results, cons
 
 public int Native_ReloadWRCPs(Handle handler, int numParams)
 {
-	OnMapStart();
+	ResetStage(MAX_STAGES, STYLE_LIMIT, true);
 }
 
 public int Native_ReloadWRCheckpoints(Handle handler, int numParams)
 {
-	OnMapStart();
+	ResetCPs(MAX_CPZONES, STYLE_LIMIT, true);
 }
 
 public int Native_GetWRCPName(Handle handler, int numParams)
@@ -1522,7 +1521,7 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 		}
 
 		float fVelocity[3];
-		GetEntPropVector(client, Prop_Data, "m_vecVelocity", fVelocity);
+		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fVelocity);
 		float finalSpeed = SquareRoot(Pow(fVelocity[0], 2.0) + Pow(fVelocity[1], 2.0) + Pow(fVelocity[2], 2.0));
 
 		Call_StartForward(gH_Forwards_OnFinishCheckpoint);
@@ -1573,21 +1572,20 @@ public int Native_GetStageRankForTime(Handle handler, int numParams)
 public void Shavit_OnDatabaseLoaded()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
-	gH_SQL = GetTimerDatabaseHandle();
-	gB_MySQL = IsMySQLDatabase(gH_SQL);
+	gH_SQL = view_as<Database2>(Shavit_GetDatabase());
 
 	Transaction hTransaction = new Transaction();
 
 	char sQuery[1024];
 	FormatEx(sQuery, 1024, 
 			"CREATE TABLE IF NOT EXISTS `%sstage` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `style` TINYINT, `stage` INT, `prespeed` FLOAT, `date` INT, `completions` INT, PRIMARY KEY (`id`))%s;",
-			gS_MySQLPrefix, (gB_MySQL) ? " ENGINE=INNODB" : "");
+			gS_MySQLPrefix, (IsMySQLDatabase(gH_SQL)) ? " ENGINE=INNODB" : "");
 
 	hTransaction.AddQuery(sQuery);
 
 	FormatEx(sQuery, 1024, 
 			"CREATE TABLE IF NOT EXISTS `%scp` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `style` TINYINT, `cp` INT, `speed` FLOAT, `date` INT, PRIMARY KEY (`id`))%s;",
-			gS_MySQLPrefix, (gB_MySQL) ? " ENGINE=INNODB" : "");
+			gS_MySQLPrefix, (IsMySQLDatabase(gH_SQL)) ? " ENGINE=INNODB" : "");
 
 	hTransaction.AddQuery(sQuery);
 

@@ -1650,6 +1650,14 @@ native int Shavit_GetBhopStyle(int client);
 native TimerStatus Shavit_GetTimerStatus(int client);
 
 /**
+ * Retrieve the former stage ID for client.
+ *
+ * @param client					Client index.
+ * @return                          former stage ID.
+ */
+native int Shavit_GetClientLastStage(int client);
+
+/**
  * Retrieve the current stage ID for client.
  *
  * @param client					Client index.
@@ -1658,12 +1666,30 @@ native TimerStatus Shavit_GetTimerStatus(int client);
 native int Shavit_GetClientStage(int client);
 
 /**
+ * Set the current stage ID for client.
+ *
+ * @param client					Client index.
+ * @param stage						Stage ID.
+ * @noreturn
+ */
+native void Shavit_SetClientStage(int client, int stage);
+
+/**
  * Retrieve the current checkpoint ID for client.
  *
  * @param client					Client index.
- * @return                          checkpoint ID.
+ * @return                          Checkpoint ID.
  */
 native int Shavit_GetClientCheckpoint(int client);
+
+/**
+ * Set the current checkpoint ID for client.
+ *
+ * @param client					Client index.
+ * @param cp						Checkpoint ID
+ * @noreturn
+ */
+native void Shavit_SetClientCheckpoint(int client, int cp);
 
 /**
  * Retrieve the map's bonus numbers.
@@ -3048,8 +3074,11 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetClientPB");
 	MarkNativeAsOptional("Shavit_GetClientTime");
 	MarkNativeAsOptional("Shavit_GetClientTrack");
+	MarkNativeAsOptional("Shavit_GetClientLastStage");
 	MarkNativeAsOptional("Shavit_GetClientStage");
+	MarkNativeAsOptional("Shavit_SetClientStage");
 	MarkNativeAsOptional("Shavit_GetClientCheckpoint");
+	MarkNativeAsOptional("Shavit_SetClientCheckpoint");
 	MarkNativeAsOptional("Shavit_GetDatabase");
 	MarkNativeAsOptional("Shavit_GetHUDSettings");
 	MarkNativeAsOptional("Shavit_GetMapTier");

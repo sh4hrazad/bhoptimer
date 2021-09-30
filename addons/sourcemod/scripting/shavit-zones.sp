@@ -39,7 +39,7 @@
 
 EngineVersion gEV_Type = Engine_Unknown;
 
-Database gH_SQL = null;
+Database2 gH_SQL = null;
 bool gB_Connected = false;
 bool gB_MySQL = false;
 
@@ -169,7 +169,7 @@ Convar gCV_BoxOffset = null;
 
 // handles
 Handle gH_DrawEverything = null;
-Handle gH_DrawZonesToClient = null;
+Handle gH_DrawZonesToClient[MAXPLAYERS+1] = {null, ...};
 
 // table prefix
 char gS_MySQLPrefix[32];
@@ -204,8 +204,11 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	// zone natives
 	CreateNative("Shavit_GetZoneData", Native_GetZoneData);
 	CreateNative("Shavit_GetZoneFlags", Native_GetZoneFlags);
+	CreateNative("Shavit_GetClientLastStage", Native_GetClientLastStage);
 	CreateNative("Shavit_GetClientStage", Native_GetClientStage);
+	CreateNative("Shavit_SetClientStage", Native_SetClientStage);
 	CreateNative("Shavit_GetClientCheckpoint", Native_GetClientCheckpoint);
+	CreateNative("Shavit_SetClientCheckpoint", Native_SetClientCheckpoint);
 	CreateNative("Shavit_GetMapBonuses", Native_GetMapBonuses);
 	CreateNative("Shavit_GetMapStages", Native_GetMapStages);
 	CreateNative("Shavit_GetMapCheckpoints", Native_GetMapCheckpoints);
@@ -356,7 +359,7 @@ public void OnLibraryRemoved(const char[] name)
 		gH_AdminMenu = null;
 		gH_TimerCommands = INVALID_TOPMENUOBJECT;
 	}
-} 
+}
 
 public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
@@ -619,14 +622,29 @@ public int Native_IntoCheckpoint(Handle handler, int numParams)
 	return false;
 }
 
+public int Native_GetClientLastStage(Handle handler, int numParams)
+{
+	return (gI_LastStage[GetNativeCell(1)]);
+}
+
 public int Native_GetClientStage(Handle handler, int numParams)
 {
 	return (gI_ClientCurrentStage[GetNativeCell(1)]);
 }
 
+public int Native_SetClientStage(Handle handler, int numParams)
+{
+	gI_ClientCurrentStage[GetNativeCell(1)] = GetNativeCell(2);
+}
+
 public int Native_GetClientCheckpoint(Handle handler, int numParams)
 {
 	return (gI_ClientCurrentCP[GetNativeCell(1)]);
+}
+
+public int Native_SetClientCheckpoint(Handle handler, int numParams)
+{
+	gI_ClientCurrentCP[GetNativeCell(1)] = GetNativeCell(2);
 }
 
 public int Native_GetMapBonuses(Handle handler, int numParams)
@@ -983,7 +1001,6 @@ void ClearZone(int index)
 void UnhookEntity(int entity)
 {
 	SDKUnhook(entity, SDKHook_StartTouchPost, StartTouchPost);
-	SDKUnhook(entity, SDKHook_StartTouchPost, StartTouchPost_Bot);
 	SDKUnhook(entity, SDKHook_EndTouchPost, EndTouchPost);
 	SDKUnhook(entity, SDKHook_TouchPost, TouchPost);
 }
@@ -1130,9 +1147,6 @@ public void OnClientConnected(int client)
 		gV_CustomDestinations[client][i][1] = 0.0;
 		gV_CustomDestinations[client][i][2] = 0.0;
 	}
-	gB_ZoneDataInput[client] = false;
-	gB_CommandToEdit[client] = false;
-	gB_ShowTriggers[client] = false;
 
 	Reset(client);
 }
@@ -1140,7 +1154,7 @@ public void OnClientConnected(int client)
 public void OnClientDisconnect_Post(int client)
 {
 	gB_ShowTriggers[client] = false;
-	transmitTriggers(client, false);
+	TransmitTriggers(client, false);
 }
 
 public Action Command_Modifier(int client, int args)
@@ -1433,7 +1447,7 @@ public Action Command_Showzones(int client, int args)
 		Shavit_PrintToChat(client, "Stopped showing zones.");
 	}
 	
-	transmitTriggers(client, gB_ShowTriggers[client]);
+	TransmitTriggers(client, gB_ShowTriggers[client]);
 
 	return Plugin_Handled;
 }
@@ -2197,10 +2211,14 @@ void Reset(int client)
 	gB_HookZoneConfirm[client] = false;
 	strcopy(gS_ZoneHookname[client], 128, "NONE");
 	gI_ZoneID[client] = -1;
-	gI_LastStage[client] = 1;
-	gI_LastCheckpoint[client] = (gB_LinearMap) ? 0 : 1;
+	gI_ClientCurrentStage[client] = 0;
+	gI_LastStage[client] = 0;
+	gI_LastCheckpoint[client] = 0;
 	gB_IntoStage[client] = false;
 	gB_IntoCheckpoint[client] = false;
+	gB_ZoneDataInput[client] = false;
+	gB_CommandToEdit[client] = false;
+	gB_ShowTriggers[client] = false;
 
 	for(int i = 0; i < 3; i++)
 	{
@@ -2976,7 +2994,7 @@ void CreateZonePoints(float point[8][3], float offset = 0.0)
 public void Shavit_OnDatabaseLoaded()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
-	gH_SQL = GetTimerDatabaseHandle();
+	gH_SQL = view_as<Database2>(Shavit_GetDatabase());
 	gB_MySQL = IsMySQLDatabase(gH_SQL);
 
 	char sQuery[1024];
@@ -3144,7 +3162,7 @@ void CreateZoneEntities()
 			continue;
 		}
 
-		if(StrEqual(gA_ZoneCache[i].sZoneHookname, "NONE"))//create non-hooked zones
+		if(StrEqual(gA_ZoneCache[i].sZoneHookname, "NONE"))// create non-hooked zones
 		{
 			int entity = CreateEntityByName("trigger_multiple");
 
@@ -3192,7 +3210,6 @@ void CreateZoneEntities()
 			SetEntProp(entity, Prop_Send, "m_nSolidType", 2);
 
 			SDKHook(entity, SDKHook_StartTouchPost, StartTouchPost);
-			SDKHook(entity, SDKHook_StartTouchPost, StartTouchPost_Bot);
 			SDKHook(entity, SDKHook_EndTouchPost, EndTouchPost);
 			SDKHook(entity, SDKHook_TouchPost, TouchPost);
 
@@ -3204,7 +3221,7 @@ void CreateZoneEntities()
 			DispatchKeyValue(entity, "targetname", sTargetname);
 		}
 
-		else//create hookzones
+		else// create hookzones
 		{
 			for(int index = 0; index < gA_Triggers.Length; index++)
 			{
@@ -3221,15 +3238,14 @@ void CreateZoneEntities()
 						{
 							for(int k = 0; k < 3; k++)
 							{
-								gV_MapZones_Visual[i][j][k] = 0.0;//do not set their visual point, use trigger material instead
+								gV_MapZones_Visual[i][j][k] = 0.0;// do not set their visual point, use trigger material instead
 							}
 						}
 
-						gA_HookTriggers.Push(iEnt);//do not push markzone index to arraylist
+						gA_HookTriggers.Push(iEnt);// do not push markzone index to arraylist
 					}
 
 					SDKHook(iEnt, SDKHook_StartTouchPost, StartTouchPost);
-					SDKHook(iEnt, SDKHook_StartTouchPost, StartTouchPost_Bot);
 					SDKHook(iEnt, SDKHook_EndTouchPost, EndTouchPost);
 					SDKHook(iEnt, SDKHook_TouchPost, TouchPost);
 
@@ -3269,6 +3285,10 @@ public void StartTouchPost(int entity, int other)
 		return;
 	}
 
+	int type = gA_ZoneCache[gI_EntityZone[entity]].iZoneType;
+	int track = gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack;
+	int data = gA_ZoneCache[gI_EntityZone[entity]].iZoneData;
+
 	if(!IsFakeClient(other))
 	{
 		TimerStatus status = Shavit_GetTimerStatus(other);
@@ -3278,127 +3298,126 @@ public void StartTouchPost(int entity, int other)
 			return;
 		}
 
-		int type = gA_ZoneCache[gI_EntityZone[entity]].iZoneType;
-
-		if(type == Zone_Start)
+		switch(type)
 		{
-			gI_ClientCurrentStage[other] = 1;
-			gI_LastStage[other] = 1;
-			gI_ClientCurrentCP[other] = 0;
-			gI_LastCheckpoint[other] = (gB_LinearMap) ? 0 : 1;
-			gI_InsideZoneIndex[other] = gI_EntityZone[entity];
-		}
-
-		else if(type == Zone_End)
-		{
-			if(gI_Stages > 1)//prevent no stages.
+			case Zone_Start:
 			{
-				gI_ClientCurrentStage[other] = gI_Stages + 1;//a hack that record the last stage's time
+				gI_ClientCurrentStage[other] = 1;
+				gI_ClientCurrentCP[other] = 0;
+				gI_LastStage[other] = 1;
+				gI_LastCheckpoint[other] = (gB_LinearMap) ? 0 : 1;
+				gI_InsideZoneIndex[other] = gI_EntityZone[entity];
+			}
 
-				if(gI_ClientCurrentStage[other] > gI_LastStage[other] && gI_ClientCurrentStage[other] - gI_LastStage[other] == 1 && !gB_LinearMap)
+			case Zone_End:
+			{
+				if(gI_Stages > 1)//prevent no stages.
+				{
+					gI_ClientCurrentStage[other] = gI_Stages + 1;//a hack that record the last stage's time
+
+					if(gI_ClientCurrentStage[other] > gI_LastStage[other] && gI_ClientCurrentStage[other] - gI_LastStage[other] == 1 && !gB_LinearMap)
+					{
+						gB_IntoStage[other] = true;
+						Shavit_FinishStage(other);
+					}
+
+					gI_LastStage[other] = gI_Stages + 1;
+				}
+
+				gI_ClientCurrentCP[other] = (gB_LinearMap) ? gI_Checkpoints + 1 : gI_Stages + 1;
+
+				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && gI_ClientCurrentCP[other] - gI_LastCheckpoint[other] == 1 && !gB_SingleStageTiming[other])
+				{
+					gB_IntoCheckpoint[other] = true;
+					Shavit_FinishCheckpoint(other);
+				}
+
+				gI_LastCheckpoint[other] = (gB_LinearMap) ? gI_Checkpoints + 1 : gI_Stages + 1;
+				
+				if(status != Timer_Stopped && !Shavit_IsPaused(other) && !gB_SingleStageTiming[other] && Shavit_GetClientTrack(other) == track)
+				{
+					Shavit_FinishMap(other, track);
+				}
+			}
+
+			case Zone_Stage:
+			{
+				gI_InsideZoneIndex[other] = gI_EntityZone[entity];
+				gI_ClientCurrentStage[other] = data;
+				gI_ClientCurrentCP[other] = data;
+
+				if(gI_ClientCurrentStage[other] > gI_LastStage[other] && gI_ClientCurrentStage[other] - gI_LastStage[other] == 1)
 				{
 					gB_IntoStage[other] = true;
 					Shavit_FinishStage(other);
 				}
 
-				gI_LastStage[other] = gI_Stages + 1;
+				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && gI_ClientCurrentCP[other] - gI_LastCheckpoint[other] == 1 && !gB_SingleStageTiming[other])
+				{
+					gB_IntoCheckpoint[other] = true;
+					Shavit_FinishCheckpoint(other);
+				}
+
+				gI_LastStage[other] = data;
+				gI_LastCheckpoint[other] = data;
 			}
 
-			gI_ClientCurrentCP[other] = (gB_LinearMap) ? gI_Checkpoints + 1 : gI_Stages + 1;
-
-			if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && gI_ClientCurrentCP[other] - gI_LastCheckpoint[other] == 1 && !gB_SingleStageTiming[other])
+			case Zone_Checkpoint:
 			{
-				gB_IntoCheckpoint[other] = true;
-				Shavit_FinishCheckpoint(other);
+				gI_ClientCurrentCP[other] = data;
+
+				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && gI_ClientCurrentCP[other] - gI_LastCheckpoint[other] == 1)
+				{
+					gB_IntoCheckpoint[other] = true;
+					Shavit_FinishCheckpoint(other);
+				}
+
+				gI_LastCheckpoint[other] = data;
 			}
 
-			gI_LastCheckpoint[other] = (gB_LinearMap) ? gI_Checkpoints + 1 : gI_Stages + 1;
-			
-			if(status != Timer_Stopped && !Shavit_IsPaused(other) && !gB_SingleStageTiming[other] && Shavit_GetClientTrack(other) == gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack)
+			case Zone_Stop:
 			{
-				Shavit_FinishMap(other, gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack);
+				if(status != Timer_Stopped)
+				{
+					Shavit_StopTimer(other);
+					Shavit_PrintToChat(other, "%T", "ZoneStopEnter", other, gS_ChatStrings.sWarning, gS_ChatStrings.sVariable2, gS_ChatStrings.sWarning);
+				}
+			}
+
+			case Zone_Teleport:
+			{
+				TeleportEntity(other, gV_Destinations[gI_EntityZone[entity]], NULL_VECTOR, NULL_VECTOR);
+			}
+
+			case Zone_Mark:
+			{
+				return;//cant do anything in mark zone, insidezone or else are not permitted.
 			}
 		}
 
-		else if(type == Zone_Stage)
-		{
-			gI_InsideZoneIndex[other] = gI_EntityZone[entity];
-			gI_ClientCurrentStage[other] = gA_ZoneCache[gI_EntityZone[entity]].iZoneData;
-			gI_ClientCurrentCP[other] = gA_ZoneCache[gI_EntityZone[entity]].iZoneData;
-
-			if(gI_ClientCurrentStage[other] > gI_LastStage[other] && gI_ClientCurrentStage[other] - gI_LastStage[other] == 1)
-			{
-				gB_IntoStage[other] = true;
-				Shavit_FinishStage(other);
-			}
-
-			if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && gI_ClientCurrentCP[other] - gI_LastCheckpoint[other] == 1 && !gB_SingleStageTiming[other])
-			{
-				gB_IntoCheckpoint[other] = true;
-				Shavit_FinishCheckpoint(other);
-			}
-
-			gI_LastStage[other] = gA_ZoneCache[gI_EntityZone[entity]].iZoneData;
-			gI_LastCheckpoint[other] = gA_ZoneCache[gI_EntityZone[entity]].iZoneData;
-		}
-
-		else if(type == Zone_Checkpoint)
-		{
-			gI_ClientCurrentCP[other] = gA_ZoneCache[gI_EntityZone[entity]].iZoneData;
-
-			if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && gI_ClientCurrentCP[other] - gI_LastCheckpoint[other] == 1)
-			{
-				gB_IntoCheckpoint[other] = true;
-				Shavit_FinishCheckpoint(other);
-			}
-
-			gI_LastCheckpoint[other] = gA_ZoneCache[gI_EntityZone[entity]].iZoneData;
-		}
-
-		else if(type == Zone_Stop)
-		{
-			if(status != Timer_Stopped)
-			{
-				Shavit_StopTimer(other);
-				Shavit_PrintToChat(other, "%T", "ZoneStopEnter", other, gS_ChatStrings.sWarning, gS_ChatStrings.sVariable2, gS_ChatStrings.sWarning);
-			}
-		}
-
-		else if(type == Zone_Teleport)
-		{
-			TeleportEntity(other, gV_Destinations[gI_EntityZone[entity]], NULL_VECTOR, NULL_VECTOR);
-		}
-
-		else if(type == Zone_Mark)
-		{
-			return;//cant do anything in mark zone, insidezone or else are not permitted.
-		}
-
-		gB_InsideZone[other][gA_ZoneCache[gI_EntityZone[entity]].iZoneType][gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack] = true;
+		gB_InsideZone[other][type][track] = true;
 		gB_InsideZoneID[other][gI_EntityZone[entity]] = true;
 
 		Call_StartForward(gH_Forwards_EnterZone);
 		Call_PushCell(other);
-		Call_PushCell(gA_ZoneCache[gI_EntityZone[entity]].iZoneType);
-		Call_PushCell(gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack);
+		Call_PushCell(type);
+		Call_PushCell(track);
 		Call_PushCell(gI_EntityZone[entity]);
 		Call_PushCell(entity);
-		Call_PushCell(gA_ZoneCache[gI_EntityZone[entity]].iZoneData);
+		Call_PushCell(data);
 		Call_Finish();
 	}
-}
 
-public void StartTouchPost_Bot(int entity, int other)
-{
-	if(IsFakeClient(other))
+	else
 	{
-		if(gA_ZoneCache[gI_EntityZone[entity]].iZoneType == Zone_Start)
+		if(type == Zone_Start)
 		{
 			gI_ClientCurrentCP[other] = 0;
 		}
-		else if(gA_ZoneCache[gI_EntityZone[entity]].iZoneType == Zone_Checkpoint)
+
+		else if(type == Zone_Checkpoint)
 		{
-			gI_ClientCurrentCP[other] = gA_ZoneCache[gI_EntityZone[entity]].iZoneData;
+			gI_ClientCurrentCP[other] = data;
 		}
 	}
 }
@@ -3438,70 +3457,73 @@ public void TouchPost(int entity, int other)
 	// do precise stuff here, this will be called *A LOT*
 	int type = gA_ZoneCache[gI_EntityZone[entity]].iZoneType;
 
-	if(type == Zone_Start)
+	switch(type)
 	{
-		// start timer instantly for main track, but require bonuses to have the current timer stopped
-		// so you don't accidentally step on those while running
-		if(Shavit_GetTimerStatus(other) != Timer_Stopped && Shavit_GetClientTrack(other) != Track_Main)
+		case Zone_Start:
 		{
-			gB_SingleStageTiming[other] = false;
-			Shavit_StartTimer(other, gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack);
+			// start timer instantly for main track, but require bonuses to have the current timer stopped
+			// so you don't accidentally step on those while running
+			if(Shavit_GetTimerStatus(other) != Timer_Stopped && Shavit_GetClientTrack(other) != Track_Main)
+			{
+				gB_SingleStageTiming[other] = false;
+				Shavit_StartTimer(other, gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack);
+			}
+
+			else if(Shavit_GetTimerStatus(other) != Timer_Stopped && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack == Track_Main)
+			{
+				gB_SingleStageTiming[other] = false;
+				Shavit_StartTimer(other, Track_Main);
+			}
 		}
 
-		else if(Shavit_GetTimerStatus(other) != Timer_Stopped && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack == Track_Main)
-		{
-			gB_SingleStageTiming[other] = false;
-			Shavit_StartTimer(other, Track_Main);
-		}
-	}
-
-	else if(type == Zone_End)
-	{
-		Action result = Plugin_Continue;
-		Call_StartForward(gH_Forwards_OnEndZone);
-		Call_PushCell(other);
-		Call_Finish(result);
-
-		if(result != Plugin_Continue)
-		{
-			return;
-		}
-	}
-
-	else if(type == Zone_Stage)
-	{
-		if(Shavit_GetClientTrack(other) == Track_Main)
+		case Zone_End:
 		{
 			Action result = Plugin_Continue;
-			Call_StartForward(gH_Forwards_OnStage);
+			Call_StartForward(gH_Forwards_OnEndZone);
 			Call_PushCell(other);
-			Call_PushCell(gA_ZoneCache[gI_EntityZone[entity]].iZoneData);
 			Call_Finish(result);
 
 			if(result != Plugin_Continue)
 			{
 				return;
 			}
+		}
 
-			if(gB_SingleStageTiming[other])
+		case Zone_Stage:
+		{
+			if(Shavit_GetClientTrack(other) == Track_Main)
 			{
-				Shavit_StartTimer(other, Track_Main);
+				Action result = Plugin_Continue;
+				Call_StartForward(gH_Forwards_OnStage);
+				Call_PushCell(other);
+				Call_PushCell(gA_ZoneCache[gI_EntityZone[entity]].iZoneData);
+				Call_Finish(result);
+
+				if(result != Plugin_Continue)
+				{
+					return;
+				}
+
+				if(gB_SingleStageTiming[other])
+				{
+					Shavit_StartTimer(other, Track_Main);
+				}
 			}
 		}
-	}
 
-	else if(type == Zone_Stop)
-	{
-		if(Shavit_GetTimerStatus(other) != Timer_Stopped)
+		case Zone_Stop:
 		{
-			Shavit_StopTimer(other);
-			Shavit_PrintToChat(other, "%T", "ZoneStopEnter", other, gS_ChatStrings.sWarning, gS_ChatStrings.sVariable2, gS_ChatStrings.sWarning);
+			if(Shavit_GetTimerStatus(other) != Timer_Stopped)
+			{
+				Shavit_StopTimer(other);
+				Shavit_PrintToChat(other, "%T", "ZoneStopEnter", other, gS_ChatStrings.sWarning, gS_ChatStrings.sVariable2, gS_ChatStrings.sWarning);
+			}
 		}
-	}
 
-	else if(type == Zone_Teleport)
-	{
-		TeleportEntity(other, gV_Destinations[gI_EntityZone[entity]], NULL_VECTOR, NULL_VECTOR);
+		case Zone_Teleport:
+		{
+			TeleportEntity(other, gV_Destinations[gI_EntityZone[entity]], NULL_VECTOR, NULL_VECTOR);
+		}
 	}
 
 	gB_InsideZone[other][gA_ZoneCache[gI_EntityZone[entity]].iZoneType][gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack] = true;
@@ -3522,16 +3544,9 @@ bool IsEntityInsideZone(float origin[3], float point[2][3])
     return true;
 }
 
-void transmitTriggers(int client, bool btransmit)
+void TransmitTriggers(int client, bool btransmit)
 {
 	if(!IsValidClient(client))
-	{
-		return;
-	}
-
-	static bool bHooked = false;
-	
-	if(bHooked == btransmit)
 	{
 		return;
 	}
@@ -3561,20 +3576,26 @@ void transmitTriggers(int client, bool btransmit)
 		if(btransmit)
 		{
 			SDKHook(entity, SDKHook_SetTransmit, Hook_SetTransmit);
-			if(gH_DrawZonesToClient == null)
-			{
-				gH_DrawZonesToClient = CreateTimer(gCV_Interval.FloatValue, Timer_DrawZonesToClient, GetClientSerial(client), TIMER_REPEAT);
-			}
 		}
 
 		else
 		{
 			SDKUnhook(entity, SDKHook_SetTransmit, Hook_SetTransmit);
-			delete gH_DrawZonesToClient;
 		}
 	}
 
-	bHooked = btransmit;
+	if(btransmit)
+	{
+		if(gH_DrawZonesToClient[client] == null)
+		{
+			gH_DrawZonesToClient[client] = CreateTimer(gCV_Interval.FloatValue, Timer_DrawZonesToClient, GetClientSerial(client), TIMER_REPEAT);
+		}
+	}
+
+	else
+	{
+		delete gH_DrawZonesToClient[client];
+	}
 }
 
 public Action Hook_SetTransmit(int entity, int other)
@@ -3617,7 +3638,7 @@ public Action Timer_DrawZonesToClient(Handle Timer, any data)
 
 			if(gA_ZoneSettings[type][track].bVisible || (gA_ZoneCache[i].iZoneFlags & ZF_ForceRender) > 0)
 			{
-				continue;//already draw to everyone, find next undrawn
+				continue;// already drew to everyone, find next undrawn
 			}
 
 			DrawZoneToSingleClient(client, 
