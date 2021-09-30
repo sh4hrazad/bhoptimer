@@ -1,4 +1,3 @@
-//find . -name "shavit-*" -exec spcomp64 -O2 -i $INCLUDE_PATH {} ;
 [![Discord server](https://discordapp.com/api/guilds/389675819959844865/widget.png?style=shield)](https://discord.gg/jyA9q5k)
 
 ### RECOMPILE ALL YOUR PLUGINS THAT USE `#include <shavit>` OR STUFF WILL BREAK
