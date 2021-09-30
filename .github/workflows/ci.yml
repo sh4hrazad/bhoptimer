@@ -2,13 +2,9 @@ name: ci
 
 on: 
   push:
-    branches:
-     - master
-     - surf
+    branches: [ master, surf ]
   pull_request:
-    branches:
-     - master
-     - surf
+    branches: [ master, surf ]
 
 jobs:
   build:
