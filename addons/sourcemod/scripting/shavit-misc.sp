@@ -69,6 +69,7 @@ char gS_RadioCommands[][] = { "coverme", "takepoint", "holdpos", "regroup", "fol
 
 bool gB_Hide[MAXPLAYERS+1];
 bool gB_Late = false;
+bool gB_OnGround[MAXPLAYERS+1];
 int gI_GroundEntity[MAXPLAYERS+1];
 int gI_LastShot[MAXPLAYERS+1];
 ArrayList gA_Advertisements = null;
@@ -236,7 +237,7 @@ public void OnPluginStart()
 	sv_cheats = FindConVar("sv_cheats");
 	sv_disable_immunity_alpha = FindConVar("sv_disable_immunity_alpha");
 
-	RegConsoleCmd("sm_test", Command_Test);
+	//RegConsoleCmd("sm_test", Command_Test);
 
 	// spectator list
 	RegConsoleCmd("sm_specs", Command_Specs, "Show a list of spectators.");
@@ -1450,6 +1451,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 
 	// prespeed
 	int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
+	bool onGround = view_as<bool>(GetEntityFlags(client) & FL_ONGROUND);
 
 	if(!bNoclip && Shavit_GetStyleSettingInt(gI_Style[client], "prespeed") == 0 && (bInStart || bInStage))
 	{
@@ -1688,6 +1690,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 
 	gEnum_LastStatus[client] = status;
 	gI_GroundEntity[client] = (iGroundEntity != -1) ? EntIndexToEntRef(iGroundEntity) : -1;
+	gB_OnGround[client] = onGround;
 	gB_InZone[client] = (bInStart || bInStage);
 	gB_InStageZone[client] = bInStage;
 
@@ -1751,34 +1754,6 @@ void RemoveAllWeapons(int client)
 			AcceptEntityInput(weapon, "Kill");
 		}
 	}
-}
-
-public void OnEntityCreated(int entity, const char[] classname)
-{	
-	if(StrEqual(classname, "trigger_multiple") || StrEqual(classname, "trigger_once") || StrEqual(classname, "trigger_hurt") || StrEqual(classname, "trigger_teleport") || StrEqual(classname, "trigger_gravity"))
-	{
-		SDKHook(entity, SDKHook_StartTouch, Trigger_Ignore);
-		SDKHook(entity, SDKHook_EndTouch, Trigger_Ignore);
-		SDKHook(entity, SDKHook_Touch, Trigger_Ignore);
-	}
-}
-
-public Action Trigger_Ignore(int entity, int other)
-{
-    if(IsValidClient(other))
-    {
-		if(gB_CanTouchTrigger[other] && GetEntityMoveType(other) & MOVETYPE_NOCLIP)
-		{
-			return Plugin_Continue;
-		}
-		
-		if(GetEntityMoveType(other) & MOVETYPE_NOCLIP)
-		{
-			return Plugin_Handled;
-		}
-    }
-    
-    return Plugin_Continue;
 }
 
 public void OnClientDisconnect(int client)
@@ -2327,6 +2302,31 @@ public void OnEntityCreated(int entity, const char[] classname)
 	{
 		SDKHook(entity, SDKHook_Touch, Hook_GunTouch);
 	}
+
+	if(StrEqual(classname, "trigger_multiple") || StrEqual(classname, "trigger_once") || StrEqual(classname, "trigger_hurt") || StrEqual(classname, "trigger_teleport") || StrEqual(classname, "trigger_gravity"))
+	{
+		SDKHook(entity, SDKHook_StartTouch, Trigger_Ignore);
+		SDKHook(entity, SDKHook_EndTouch, Trigger_Ignore);
+		SDKHook(entity, SDKHook_Touch, Trigger_Ignore);
+	}
+}
+
+public Action Trigger_Ignore(int entity, int other)
+{
+    if(IsValidClient(other))
+    {
+		if(gB_CanTouchTrigger[other] && GetEntityMoveType(other) & MOVETYPE_NOCLIP)
+		{
+			return Plugin_Continue;
+		}
+		
+		if(GetEntityMoveType(other) & MOVETYPE_NOCLIP)
+		{
+			return Plugin_Handled;
+		}
+    }
+    
+    return Plugin_Continue;
 }
 
 public Action Command_Weapon(int client, int args)
@@ -3950,7 +3950,7 @@ public Action Shotgun_Shot(const char[] te_name, const int[] Players, int numCli
 	return Plugin_Stop;
 }
 
-public Action EffectDispatch(const char[] te_name, const Players[], int numClients, float delay)
+public Action EffectDispatch(const char[] te_name, const int[] Players, int numClients, float delay)
 {
 	if(!gCV_NoBlood.BoolValue)
 	{
@@ -3982,7 +3982,7 @@ public Action EffectDispatch(const char[] te_name, const Players[], int numClien
 	return Plugin_Continue;
 }
 
-public Action WorldDecal(const char[] te_name, const Players[], int numClients, float delay)
+public Action WorldDecal(const char[] te_name, const int[] Players, int numClients, float delay)
 {
 	if(!gCV_NoBlood.BoolValue)
 	{

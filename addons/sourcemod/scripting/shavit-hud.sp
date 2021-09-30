@@ -147,8 +147,9 @@ Convar gCV_DefaultHUD2 = null;
 stylestrings_t gS_StyleStrings[STYLE_LIMIT];
 chatstrings_t gS_ChatStrings;
 
-// ?
+// stuff
 float gF_LastCPTime[MAXPLAYERS+1];
+char gS_Map[160];
 
 public Plugin myinfo =
 {
@@ -302,6 +303,11 @@ public void OnPluginStart()
 			}
 		}
 	}
+}
+
+public void OnMapStart()
+{
+	GetCurrentMap(gS_Map, 160);
 }
 
 public void OnLibraryAdded(const char[] name)
@@ -771,10 +777,6 @@ Action ShowHUDMenu(int client, int item)
 		FormatEx(sInfo, 16, "@%d", HUD2_TIMEDIFFERENCE);
 		FormatEx(sHudItem, 64, "%T", "HudTimeDifference", client);
 		menu.AddItem(sInfo, sHudItem);
-
-		FormatEx(sInfo, 16, "@%d", HUD2_VELOCITYDIFFERENCE);
-		FormatEx(sHudItem, 64, "%T", "HudVelocityDifference", client);
-		menu.AddItem(sInfo, sHudItem);
 	}
 
 	FormatEx(sInfo, 16, "@%d", HUD2_SPEED);
@@ -1021,17 +1023,7 @@ void TriggerHUDUpdate(int client, bool keysonly = false) // keysonly because CS:
 		SetEntProp(client, Prop_Data, "m_bDrawViewmodel", ((gI_HUDSettings[client] & HUD_HIDEWEAPON) > 0)? 0:1);
 	}
 
-	if(IsSource2013(gEV_Type))
-	{
-		if(!keysonly)
-		{
-			UpdateKeyHint(client);
-		}
-
-		UpdateCenterKeys(client);
-	}
-
-	else if(((gI_HUDSettings[client] & HUD_KEYOVERLAY) > 0 || (gI_HUDSettings[client] & HUD_SPECTATORS) > 0) && (!gB_Zones || !Shavit_IsClientCreatingZone(client)) && (GetClientMenu(client, null) == MenuSource_None || GetClientMenu(client, null) == MenuSource_RawPanel))
+	if(((gI_HUDSettings[client] & HUD_KEYOVERLAY) > 0 || (gI_HUDSettings[client] & HUD_SPECTATORS) > 0) && (!gB_Zones || !Shavit_IsClientCreatingZone(client)) && (GetClientMenu(client, null) == MenuSource_None || GetClientMenu(client, null) == MenuSource_RawPanel))
 	{
 		bool bShouldDraw = false;
 		Panel pHUD = new Panel();
@@ -1239,7 +1231,7 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 		// no timer: straight up number
 		if(data.iTimerStatus != Timer_Stopped)
 		{
-			if(gB_Replay && Shavit_GetReplayFrameCount(Shavit_GetClosestReplayStyle(data.iTarget), data.iTrack) != 0 && Shavit_GetClosestReplayTime(data.iTarget) != -1.0 && (gI_HUD2Settings[client] & HUD2_VELOCITYDIFFERENCE) == 0)
+			if(gB_Replay && Shavit_GetReplayFrameCount(Shavit_GetClosestReplayStyle(data.iTarget), data.iTrack) != 0)
 			{
 				float res = Shavit_GetClosestReplayVelocityDifference(data.iTarget, (gI_HUDSettings[client] & HUD_2DVEL) == 0);
 				FormatEx(sLine, 128, "%T: %d (%s%.0f)", "HudSpeedText", client, data.iSpeed, (res >= 0.0) ? "+":"", res);
@@ -1950,70 +1942,6 @@ public void Bunnyhop_OnJumpPressed(int client)
 	gI_ScrollCount[client] = BunnyhopStats.GetScrollCount(client);
 }
 
-void UpdateCenterKeys(int client)
-{
-	if((gI_HUDSettings[client] & HUD_KEYOVERLAY) == 0)
-	{
-		return;
-	}
-
-	int target = GetSpectatorTarget(client, client);
-
-	if((gI_HUDSettings[client] & HUD_OBSERVE) == 0 && client != target)
-	{
-		return;
-	}
-
-	if (IsValidClient(target))
-	{
-		if (IsClientObserver(target))
-		{
-			return;
-		}
-	}
-	else if (!(gB_Replay && Shavit_IsReplayEntity(target)))
-	{
-		return;
-	}
-
-	float fAngleDiff;
-	int buttons;
-
-	if (IsValidClient(target))
-	{
-		fAngleDiff = gF_AngleDiff[target];
-		buttons = gI_Buttons[target];
-	}
-	else
-	{
-		buttons = Shavit_GetReplayButtons(target, fAngleDiff);
-	}
-
-	char sCenterText[80];
-	FormatEx(sCenterText, sizeof(sCenterText), "　%s　　%s\n%s   %s   %s\n%s　 %s 　%s\n　%s　　%s",
-		(buttons & IN_JUMP) > 0? "Ｊ":"ｰ", (buttons & IN_DUCK) > 0? "Ｃ":"ｰ",
-		(fAngleDiff > 0) ? "<":"  ", (buttons & IN_FORWARD) > 0 ? "Ｗ":" ｰ", (fAngleDiff < 0) ? ">":"",
-		(buttons & IN_MOVELEFT) > 0? "Ａ":"ｰ", (buttons & IN_BACK) > 0? "Ｓ":"ｰ", (buttons & IN_MOVERIGHT) > 0? "Ｄ":"ｰ",
-		(buttons & IN_LEFT) > 0? "Ｌ":" ", (buttons & IN_RIGHT) > 0? "Ｒ":" ");
-
-	int style = (gB_Replay && Shavit_IsReplayEntity(target))? Shavit_GetReplayBotStyle(target):Shavit_GetBhopStyle(target);
-
-	if(!(0 <= style < gI_Styles))
-	{
-		style = 0;
-	}
-
-	char autobhop[4];
-	Shavit_GetStyleSetting(style, "autobhop", autobhop, 4);
-
-	if(gB_BhopStats && !StringToInt(autobhop) && IsValidClient(target))
-	{
-		Format(sCenterText, sizeof(sCenterText), "%s\n　　%d　%d", sCenterText, gI_ScrollCount[target], gI_LastScrollCount[target]);
-	}
-
-	PrintCenterText(client, "%s", sCenterText);
-}
-
 void UpdateSpectatorList(int client, Panel panel, bool &draw)
 {
 	if((gI_HUDSettings[client] & HUD_SPECTATORS) == 0)
@@ -2074,101 +2002,6 @@ void UpdateSpectatorList(int client, Panel panel, bool &draw)
 		}
 
 		draw = true;
-	}
-}
-
-void UpdateKeyHint(int client)
-{
-	if((gI_Cycle % 10) == 0 && ((gI_HUDSettings[client] & HUD_SYNC) > 0 || (gI_HUDSettings[client] & HUD_TIMELEFT) > 0))
-	{
-		char sMessage[256];
-		int iTimeLeft = -1;
-
-		if((gI_HUDSettings[client] & HUD_TIMELEFT) > 0 && GetMapTimeLeft(iTimeLeft) && iTimeLeft > 0)
-		{
-			FormatEx(sMessage, 256, (iTimeLeft > 60)? "%T: %d minutes":"%T: %d seconds", "HudTimeLeft", client, (iTimeLeft > 60) ? (iTimeLeft / 60) : iTimeLeft);
-		}
-
-		int target = GetSpectatorTarget(client, client);
-
-		if(target == client || (gI_HUDSettings[client] & HUD_OBSERVE) > 0)
-		{
-			int bReplay = gB_Replay && Shavit_IsReplayEntity(target);
-			int style = bReplay ? Shavit_GetReplayBotStyle(target) : Shavit_GetBhopStyle(target);
-
-			if(!(0 <= style < gI_Styles))
-			{
-				style = 0;
-			}
-
-			char sync[4];
-			Shavit_GetStyleSetting(style, "sync", sync, 4);
-
-			char autobhop[4];
-			Shavit_GetStyleSetting(style, "autobhop", autobhop, 4);
-
-			if(!bReplay && (gI_HUDSettings[client] & HUD_SYNC) > 0 && Shavit_GetTimerStatus(target) == Timer_Running && StringToInt(sync) && (!gB_Zones || !Shavit_InsideZone(target, Zone_Start, track)))
-			{
-				Format(sMessage, 256, "%s%s%T: %.01f", sMessage, (strlen(sMessage) > 0)? "\n\n":"", "HudSync", client, Shavit_GetSync(target));
-
-				if(!StringToInt(autobhop) && (gI_HUD2Settings[client] & HUD2_PERFS) == 0)
-				{	
-					Format(sMessage, 256, "%s\n%T: %.1f", sMessage, "HudPerfs", client, Shavit_GetPerfectJumps(target));
-				}
-			}
-
-			if((gI_HUDSettings[client] & HUD_SPECTATORS) > 0)
-			{
-				int iSpectatorClients[MAXPLAYERS+1];
-				int iSpectators = 0;
-				bool bIsAdmin = CheckCommandAccess(client, "admin_speclisthide", ADMFLAG_KICK);
-
-				for(int i = 1; i <= MaxClients; i++)
-				{
-					if(i == client || !IsValidClient(i) || IsFakeClient(i) || !IsClientObserver(i) || GetClientTeam(i) < 1 || GetSpectatorTarget(i, i) != target)
-					{
-						continue;
-					}
-
-					if((gCV_SpectatorList.IntValue == 1 && !bIsAdmin && CheckCommandAccess(i, "admin_speclisthide", ADMFLAG_KICK)) ||
-						(gCV_SpectatorList.IntValue == 2 && !CanUserTarget(client, i)))
-					{
-						continue;
-					}
-
-					iSpectatorClients[iSpectators++] = i;
-				}
-
-				if(iSpectators > 0)
-				{
-					Format(sMessage, 256, "%s%s%spectators (%d):", sMessage, (strlen(sMessage) > 0)? "\n\n":"", (client == target)? "S":"Other S", iSpectators);
-					char sName[MAX_NAME_LENGTH];
-					
-					for(int i = 0; i < iSpectators; i++)
-					{
-						if(i == 7)
-						{
-							Format(sMessage, 256, "%s\n...", sMessage);
-
-							break;
-						}
-
-						GetClientName(iSpectatorClients[i], sName, sizeof(sName));
-						ReplaceString(sName, sizeof(sName), "#", "?");
-						TrimDisplayString(sName, sName, sizeof(sName), gCV_SpecNameSymbolLength.IntValue);
-						Format(sMessage, 256, "%s\n%s", sMessage, sName);
-					}
-				}
-			}
-		}
-
-		if(strlen(sMessage) > 0)
-		{
-			Handle hKeyHintText = StartMessageOne("KeyHintText", client);
-			BfWriteByte(hKeyHintText, 1);
-			BfWriteString(hKeyHintText, sMessage);
-			EndMessage();
-		}
 	}
 }
 

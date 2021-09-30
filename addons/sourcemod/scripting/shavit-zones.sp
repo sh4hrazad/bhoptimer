@@ -316,13 +316,17 @@ public void OnPluginStart()
 
 	for(int i = 1; i <= MaxClients; i++)
 	{
-		if(IsValidClient(i) && !IsFakeClient(i))
+		if(IsClientConnected(i) && IsClientInGame(i))
 		{
-			OnClientPutInServer(i);
+			OnClientConnected(i);
 		}
 	}
 
-	SQL_DBConnect();
+	if (gB_Late)
+	{
+		Shavit_OnChatConfigLoaded();
+		Shavit_OnDatabaseLoaded();
+	}
 }
 
 public void OnAllPluginsLoaded()
@@ -876,13 +880,6 @@ public void OnMapStart()
 	{
 		gH_DrawEverything = CreateTimer(gCV_Interval.FloatValue, Timer_DrawEverything, INVALID_HANDLE, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 	}
-
-	if(gB_Late)
-	{
-		chatstrings_t chatstrings;
-		Shavit_GetChatStringsStruct(chatstrings);
-		Shavit_OnChatConfigLoaded(chatstrings);
-	}
 }
 
 void LoadBonusZones()
@@ -959,9 +956,9 @@ public void OnMapEnd()
 	delete gH_DrawEverything;
 }
 
-public void Shavit_OnChatConfigLoaded(chatstrings_t strings)
+public void Shavit_OnChatConfigLoaded()
 {
-	gS_ChatStrings = strings;
+	Shavit_GetChatStringsStruct(gS_ChatStrings);
 }
 
 void ClearZone(int index)
@@ -1116,7 +1113,7 @@ public void SQL_RefreshZones_Callback(Database db, DBResultSet results, const ch
 	CreateZoneEntities();
 }
 
-public void OnClientPutInServer(int client)
+public void OnClientConnected(int client)
 {
 	for(int i = 0; i < TRACKS_SIZE; i++)
 	{
@@ -1309,7 +1306,7 @@ public Action Command_Stages(int client, int args)
 
 	if ('0' <= sCommand[4] <= '9')
 	{
-		iStage = sCommand[4] - '0';
+		iStage = view_as<int>(sCommand[4] - '0');
 	}
 	else if (args > 0)
 	{
@@ -2976,7 +2973,7 @@ void CreateZonePoints(float point[8][3], float offset = 0.0)
 	}
 }
 
-void SQL_DBConnect()
+public void Shavit_OnDatabaseLoaded()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
 	gH_SQL = GetTimerDatabaseHandle();

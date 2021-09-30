@@ -425,9 +425,6 @@ public void OnPluginStart()
 	}
 #endif
 
-	sv_airaccelerate = FindConVar("sv_airaccelerate");
-	sv_airaccelerate.Flags &= ~(FCVAR_NOTIFY | FCVAR_REPLICATED);
-
 	sv_enablebunnyhopping = FindConVar("sv_enablebunnyhopping");
 
 	if(sv_enablebunnyhopping != null)
@@ -709,7 +706,7 @@ public Action Command_StartTimer(int client, int args)
 		// Pull out bonus number for commands like sm_b1 and sm_b2.
 		if ('1' <= sCommand[4] <= ('0' + Track_Bonus_Last))
 		{
-			track = sCommand[4] - '0';
+			track = view_as<int>(sCommand[4] - '0');
 		}
 		else if (args < 1)
 		{

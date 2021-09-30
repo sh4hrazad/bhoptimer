@@ -147,7 +147,11 @@ public void OnPluginStart()
 	gH_Forwards_OnFinishCheckpointPre = CreateGlobalForward("Shavit_OnFinishCheckpointPre", ET_Event, Param_Cell, Param_Cell, Param_Cell);
 	gH_Forwards_OnFinishCheckpoint = CreateGlobalForward("Shavit_OnFinishCheckpoint", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_Float);
 
-	SQL_DBConnect();
+	if (gB_Late)
+	{
+		Shavit_OnChatConfigLoaded();
+		Shavit_OnDatabaseLoaded();
+	}
 }
 
 public void OnClientPutInServer(int client)
@@ -188,9 +192,6 @@ public void OnMapStart()
 	if(gB_Late)
 	{
 		Shavit_OnStyleConfigLoaded(Shavit_GetStyleCount());
-		chatstrings_t chatstrings;
-		Shavit_GetChatStringsStruct(chatstrings);
-		Shavit_OnChatConfigLoaded(chatstrings);
 
 		for(int i = 1; i <= MaxClients; i++)
 		{
@@ -246,9 +247,9 @@ public void Shavit_OnStyleConfigLoaded(int styles)
 	gI_Styles = styles;
 }
 
-public void Shavit_OnChatConfigLoaded(chatstrings_t strings)
+public void Shavit_OnChatConfigLoaded()
 {
-	gS_ChatStrings = strings;
+	Shavit_GetChatStringsStruct(gS_ChatStrings);
 }
 
 void ResetStage(int stage, int style, bool all = false)
@@ -1569,7 +1570,7 @@ public int Native_GetStageRankForTime(Handle handler, int numParams)
 	return GetStageRankForTime(style, GetNativeCell(2), stage);
 }
 
-void SQL_DBConnect()
+public void Shavit_OnDatabaseLoaded()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
 	gH_SQL = GetTimerDatabaseHandle();
