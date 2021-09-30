@@ -4,9 +4,11 @@ on:
   push:
     branches:
      - master
+     - surf
   pull_request:
     branches:
      - master
+     - surf
 
 jobs:
   build:
