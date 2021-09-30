@@ -1,4 +1,4 @@
-//find . -name "shavit-*" -exec spcomp64 -O2 -i $INCLUDE_PATH {} \;
+//find . -name "shavit-*" -exec spcomp64 -O2 -i $INCLUDE_PATH {} \; windwos
 
 [![Discord server](https://discordapp.com/api/guilds/389675819959844865/widget.png?style=shield)](https://discord.gg/jyA9q5k)
 
