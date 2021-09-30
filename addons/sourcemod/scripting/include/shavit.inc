@@ -1460,6 +1460,8 @@ forward bool Shavit_OnFinishCheckpointPre(int client, int stage, int style);
  * @noreturn
  */
 forward void Shavit_OnFinishCheckpoint(int client, int style, int cpnum, float time, float diff, float finalspeed);
+
+/**
  * Called when a player RTV's.
  * Requires shavit-mapchooser.
  *
