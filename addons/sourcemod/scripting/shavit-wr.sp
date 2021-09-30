@@ -20,6 +20,7 @@
 
 #include <sourcemod>
 #include <convar_class>
+#include <dhooks>
 
 #undef REQUIRE_PLUGIN
 #include <shavit>
@@ -34,9 +35,10 @@ enum struct wrcache_t
 {
 	int iLastStyle;
 	int iLastTrack;
+	int iPagePosition;
+	bool bForceStyle;
 	bool bPendingMenu;
-	bool bLoadedCache;
-	char sClientMap[128];
+	char sClientMap[PLATFORM_MAX_PATH];
 	float fWRs[STYLE_LIMIT];
 }
 
@@ -52,14 +54,15 @@ Handle gH_OnWorstRecord = null;
 Handle gH_OnFinishMessage = null;
 
 // database handle
-Database gH_SQL = null;
+Database2 gH_SQL = null;
 bool gB_Connected = false;
 bool gB_MySQL = false;
 
 // cache
 wrcache_t gA_WRCache[MAXPLAYERS+1];
+StringMap gSM_StyleCommands = null;
 
-char gS_Map[160]; // blame workshop paths being so fucking long
+char gS_Map[PLATFORM_MAX_PATH];
 ArrayList gA_ValidMaps = null;
 
 // current wr stats
@@ -67,6 +70,7 @@ float gF_WRTime[STYLE_LIMIT][TRACKS_SIZE];
 int gI_WRRecordID[STYLE_LIMIT][TRACKS_SIZE];
 char gS_WRName[STYLE_LIMIT][TRACKS_SIZE][MAX_NAME_LENGTH];
 ArrayList gA_Leaderboard[STYLE_LIMIT][TRACKS_SIZE];
+bool gB_LoadedCache[MAXPLAYERS+1];
 float gF_PlayerRecord[MAXPLAYERS+1][STYLE_LIMIT][TRACKS_SIZE];
 int gI_PlayerCompletion[MAXPLAYERS+1][STYLE_LIMIT][TRACKS_SIZE];
 
@@ -132,12 +136,15 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_printleaderboards", Command_PrintLeaderboards);
 	#endif
 
+	gSM_WRNames = new StringMap();
+	gSM_StyleCommands = new StringMap();
+
 	// forwards
 	gH_OnWorldRecord = CreateGlobalForward("Shavit_OnWorldRecord", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
 	gH_OnFinish_Post = CreateGlobalForward("Shavit_OnFinish_Post", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
 	gH_OnWRDeleted = CreateGlobalForward("Shavit_OnWRDeleted", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_String);
 	gH_OnWorstRecord = CreateGlobalForward("Shavit_OnWorstRecord", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
-	gH_OnFinishMessage = CreateGlobalForward("Shavit_OnFinishMessage", ET_Event, Param_Cell, Param_CellByRef, Param_Array, Param_Cell, Param_Cell, Param_String, Param_Cell);
+	gH_OnFinishMessage = CreateGlobalForward("Shavit_OnFinishMessage", ET_Event, Param_Cell, Param_CellByRef, Param_Array, Param_Cell, Param_Cell, Param_String, Param_Cell, Param_String, Param_Cell);
 
 	// player commands
 	RegConsoleCmd("sm_wr", Command_WorldRecord, "View the leaderboard of a map. Usage: sm_wr [map]");
@@ -170,10 +177,16 @@ public void OnPluginStart()
 	gB_Stats = LibraryExists("shavit-stats");
 
 	// cache
-	gA_ValidMaps = new ArrayList(192);
+	gA_ValidMaps = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
 
-	// database
-	SQL_DBConnect();
+	if(gB_Late)
+	{
+		Shavit_OnStyleConfigLoaded(Shavit_GetStyleCount());
+		Shavit_OnChatConfigLoaded();
+		Shavit_OnDatabaseLoaded();
+	}
+
+	CreateTimer(2.5, Timer_Dominating, 0, TIMER_REPEAT);
 }
 
 
@@ -294,6 +307,59 @@ public void OnLibraryRemoved(const char[] name)
 	}
 }
 
+public Action Timer_Dominating(Handle timer)
+{
+	bool bHasWR[MAXPLAYERS+1];
+
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsValidClient(i))
+		{
+			char sSteamID[20];
+			IntToString(GetSteamAccountID(i), sSteamID, sizeof(sSteamID));
+			bHasWR[i] = gSM_WRNames.GetString(sSteamID, sSteamID, sizeof(sSteamID));
+		}
+	}
+
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (!IsValidClient(i))
+		{
+			continue;
+		}
+
+		for (int x = 1; x <= MaxClients; x++)
+		{
+			SetEntProp(i, Prop_Send, "m_bPlayerDominatingMe", bHasWR[x], 1, x);
+		}
+	}
+}
+
+void ResetWRs()
+{
+	gSM_WRNames.Clear();
+
+	any empty_cells[TRACKS_SIZE];
+
+	for(int i = 0; i < gI_Styles; i++)
+	{
+		gF_WRTime[i] = empty_cells;
+		gI_WRRecordID[i] = empty_cells;
+		gI_WRSteamID[i] = empty_cells;
+	}
+}
+
+void ResetLeaderboards()
+{
+	for(int i = 0; i < gI_Styles; i++)
+	{
+		for(int j = 0; j < TRACKS_SIZE; j++)
+		{
+			gA_Leaderboard[i][j].Clear();
+		}
+	}
+}
+
 public void OnMapStart()
 {
 	if(!gB_Connected)
@@ -301,36 +367,29 @@ public void OnMapStart()
 		return;
 	}
 
-	GetCurrentMap(gS_Map, 160);
-	GetMapDisplayName(gS_Map, gS_Map, 160);
+	GetLowercaseMapName(gS_Map);
 
 	UpdateWRCache();
 
-	char sLowerCase[160];
-	strcopy(sLowerCase, 160, gS_Map);
-
-	for(int i = 0; i < strlen(sLowerCase); i++)
-	{
-		if(!IsCharUpper(sLowerCase[i]))
-		{
-			sLowerCase[i] = CharToLower(sLowerCase[i]);
-		}
-	}
-
 	gA_ValidMaps.Clear();
-	gA_ValidMaps.PushString(sLowerCase);
+	gA_ValidMaps.PushString(gS_Map);
 
 	char sQuery[128];
 	FormatEx(sQuery, 128, "SELECT map FROM %smapzones GROUP BY map;", gS_MySQLPrefix);
 	gH_SQL.Query(SQL_UpdateMaps_Callback, sQuery, 0, DBPrio_Low);
 
-	if(gB_Late)
+	for(int i = 1; i <= MaxClients; i++)
 	{
-		Shavit_OnStyleConfigLoaded(Shavit_GetStyleCount());
-		chatstrings_t chatstrings;
-		Shavit_GetChatStringsStruct(chatstrings);
-		Shavit_OnChatConfigLoaded(chatstrings);
+		if(IsValidClient(i) && IsClientAuthorized(i))
+		{
+			OnClientAuthorized(i, "");
+		}
 	}
+}
+
+public void OnMapEnd()
+{
+	ResetWRs();
 }
 
 public void SQL_UpdateMaps_Callback(Database db, DBResultSet results, const char[] error, any data)
@@ -344,56 +403,70 @@ public void SQL_UpdateMaps_Callback(Database db, DBResultSet results, const char
 
 	while(results.FetchRow())
 	{
-		char sMap[192];
-		results.FetchString(0, sMap, 192);
+		char sMap[PLATFORM_MAX_PATH];
+		results.FetchString(0, sMap, sizeof(sMap));
+		LowercaseString(sMap);
 
-		char sLowerCase[128];
-		strcopy(sLowerCase, 128, sMap);
-
-		for(int i = 0; i < strlen(sLowerCase); i++)
+		if(gA_ValidMaps.FindString(sMap) == -1)
 		{
-			if(!IsCharUpper(sLowerCase[i]))
-			{
-				sLowerCase[i] = CharToLower(sLowerCase[i]);
-			}
-		}
-
-		if(gA_ValidMaps.FindString(sLowerCase) == -1)
-		{
-			gA_ValidMaps.PushString(sLowerCase);
+			gA_ValidMaps.PushString(sMap);
 		}
 	}
 
 	SortADTArray(gA_ValidMaps, Sort_Ascending, Sort_String);
 }
 
+void RegisterWRCommands(int style)
+{
+	char sStyleCommands[32][32];
+	int iCommands = ExplodeString(gS_StyleStrings[style].sChangeCommand, ";", sStyleCommands, 32, 32, false);
+
+	char sDescription[128];
+	FormatEx(sDescription, 128, "View the leaderboard of a map on style %s.", gS_StyleStrings[style].sStyleName);
+
+	for (int x = 0; x < iCommands; x++)
+	{
+		TrimString(sStyleCommands[x]);
+		StripQuotes(sStyleCommands[x]);
+
+		if (strlen(sStyleCommands[x]) < 1)
+		{
+			continue;
+		}
+
+
+		char sCommand[40];
+		FormatEx(sCommand, sizeof(sCommand), "sm_wr%s", sStyleCommands[x]);
+		gSM_StyleCommands.SetValue(sCommand, style);
+		RegConsoleCmd(sCommand, Command_WorldRecord_Style, sDescription);
+
+		FormatEx(sCommand, sizeof(sCommand), "sm_bwr%s", sStyleCommands[x]);
+		gSM_StyleCommands.SetValue(sCommand, style);
+		RegConsoleCmd(sCommand, Command_WorldRecord_Style, sDescription);
+	}
+}
+
 public void Shavit_OnStyleConfigLoaded(int styles)
 {
-	if(styles == -1)
-	{
-		styles = Shavit_GetStyleCount();
-	}
-
-	for(int i = 0; i < styles; i++)
-	{
-		Shavit_GetStyleStringsStruct(i, gS_StyleStrings[i]);
-	}
-
-	// arrays
 	for(int i = 0; i < STYLE_LIMIT; i++)
 	{
-		for(int j = 0; j < TRACKS_SIZE; j++)
+		if (i < styles)
 		{
-			if(i < styles)
+			Shavit_GetStyleStringsStruct(i, gS_StyleStrings[i]);
+			RegisterWRCommands(i);
+		}
+
+		for (int j = 0; j < TRACKS_SIZE; j++)
+		{
+			if (i < styles)
 			{
-				if(gA_Leaderboard[i][j] == null)
+				if (gA_Leaderboard[i][j] == null)
 				{
 					gA_Leaderboard[i][j] = new ArrayList();
 				}
 
 				gA_Leaderboard[i][j].Clear();
 			}
-
 			else
 			{
 				delete gA_Leaderboard[i][j];
@@ -404,32 +477,33 @@ public void Shavit_OnStyleConfigLoaded(int styles)
 	gI_Styles = styles;
 }
 
-public void Shavit_OnChatConfigLoaded(chatstrings_t strings)
+public void Shavit_OnChatConfigLoaded()
 {
-	gS_ChatStrings = strings;
+	Shavit_GetChatStringsStruct(gS_ChatStrings);
 }
 
-public void OnClientPutInServer(int client)
+public void OnClientConnected(int client)
 {
-	gA_WRCache[client].bPendingMenu = false;
-	gA_WRCache[client].bLoadedCache = false;
+	wrcache_t empty_cache;
+	gA_WRCache[client] = empty_cache;
+
+	gB_LoadedCache[client] = false;
+
+	any empty_cells[TRACKS_SIZE];
 
 	for(int i = 0; i < gI_Styles; i++)
 	{
-		gA_WRCache[client].fWRs[i] = 0.0;
-		for(int j = 0; j < TRACKS_SIZE; j++)
-		{
-			gF_PlayerRecord[client][i][j] = 0.0;
-			gI_PlayerCompletion[client][i][j] = 0;
-		}
+		gF_PlayerRecord[client][i] = empty_cells;
+		gI_PlayerCompletion[client][i] = empty_cells;
 	}
+}
 
-	if(!IsClientConnected(client) || IsFakeClient(client))
+public void OnClientAuthorized(int client)
+{
+	if (gB_Connected && !IsFakeClient(client))
 	{
-		return;
+		UpdateClientCache(client);
 	}
-
-	UpdateClientCache(client);
 }
 
 void UpdateClientCache(int client)
@@ -441,8 +515,8 @@ void UpdateClientCache(int client)
 		return;
 	}
 
-	char sQuery[256];
-	FormatEx(sQuery, 256, "SELECT time, style, track, completions FROM %splayertimes WHERE map = '%s' AND auth = %d;", gS_MySQLPrefix, gS_Map, iSteamID);
+	char sQuery[512];
+	FormatEx(sQuery, sizeof(sQuery), "SELECT time, style, track, completions, exact_time_int FROM %splayertimes WHERE map = '%s' AND auth = %d;", gS_MySQLPrefix, gS_Map, iSteamID);
 	gH_SQL.Query(SQL_UpdateCache_Callback, sQuery, GetClientSerial(client), DBPrio_High);
 }
 
@@ -462,6 +536,8 @@ public void SQL_UpdateCache_Callback(Database db, DBResultSet results, const cha
 		return;
 	}
 
+	OnClientConnected(client);
+
 	while(results.FetchRow())
 	{
 		int style = results.FetchInt(1);
@@ -472,12 +548,12 @@ public void SQL_UpdateCache_Callback(Database db, DBResultSet results, const cha
 			continue;
 		}
 
-		gF_PlayerRecord[client][style][track] = results.FetchFloat(0);
+		gF_PlayerRecord[client][style][track] = ExactTimeMaybe(results.FetchFloat(0), results.FetchInt(4));
 		gI_PlayerCompletion[client][style][track] = results.FetchInt(3);
 		
 	}
 
-	gA_WRCache[client].bLoadedCache = true;
+	gB_LoadedCache[client] = true;
 }
 
 void UpdateWRCache(int client = -1)
@@ -486,17 +562,28 @@ void UpdateWRCache(int client = -1)
 	{
 		for (int i = 1; i <= MaxClients; i++)
 		{
-			OnClientPutInServer(i);
+			if (IsValidClient(i) && !IsFakeClient(i))
+			{
+				UpdateClientCache(i);
+			}
 		}
 	}
 	else
 	{
-		OnClientPutInServer(client);
+		UpdateClientCache(client);
 	}
 
 	char sQuery[512];
-	
-	if(gB_MySQL)
+
+	FormatEx(sQuery, sizeof(sQuery),
+		"SELECT p.id, p.auth, p.style, p.track, p.time, u.name, p.exact_time_int FROM %swrs p JOIN %susers u ON p.auth = u.auth WHERE p.map = '%s';",
+		gS_MySQLPrefix, gS_MySQLPrefix, gS_Map);
+
+	gH_SQL.Query(SQL_UpdateWRCache_Callback, sQuery, client);
+
+	UpdateLeaderboards();
+
+	if (client != -1)
 	{
 		FormatEx(sQuery, 512,
 			"SELECT p1.id, p1.style, p1.track, p1.time, u.name FROM %splayertimes p1 " ...
@@ -525,15 +612,7 @@ public void SQL_UpdateWRCache_Callback(Database db, DBResultSet results, const c
 		return;
 	}
 
-	// reset cache
-	for(int i = 0; i < gI_Styles; i++)
-	{
-		for(int j = 0; j < TRACKS_SIZE; j++)
-		{
-			strcopy(gS_WRName[i][j], MAX_NAME_LENGTH, "invalid");
-			gF_WRTime[i][j] = 0.0;
-		}
-	}
+	ResetWRs();
 
 	// setup cache again, dynamically and not hardcoded
 	while(results.FetchRow())
@@ -547,12 +626,17 @@ public void SQL_UpdateWRCache_Callback(Database db, DBResultSet results, const c
 		}
 
 		gI_WRRecordID[iStyle][iTrack] = results.FetchInt(0);
-		gF_WRTime[iStyle][iTrack] = results.FetchFloat(3);
-		results.FetchString(4, gS_WRName[iStyle][iTrack], MAX_NAME_LENGTH);
-		ReplaceString(gS_WRName[iStyle][iTrack], MAX_NAME_LENGTH, "#", "?");
-	}
+		gF_WRTime[iStyle][iTrack] = ExactTimeMaybe(results.FetchFloat(4), results.FetchInt(6));
+		gI_WRSteamID[iStyle][iTrack] = results.FetchInt(1);
 
-	UpdateLeaderboards();
+		char sSteamID[20];
+		IntToString(gI_WRSteamID[iStyle][iTrack], sSteamID, sizeof(sSteamID));
+
+		char sName[MAX_NAME_LENGTH];
+		results.FetchString(5, sName, MAX_NAME_LENGTH);
+		ReplaceString(sName, MAX_NAME_LENGTH, "#", "?");
+		gSM_WRNames.SetString(sSteamID, sName, false);
+	}
 }
 
 public int Native_GetWorldRecord(Handle handler, int numParams)
@@ -562,7 +646,6 @@ public int Native_GetWorldRecord(Handle handler, int numParams)
 
 public int Native_ReloadLeaderboards(Handle handler, int numParams)
 {
-	//UpdateLeaderboards(); // Called by UpdateWRCache->SQL_UpdateWRCache_Callback
 	UpdateWRCache();
 }
 
@@ -639,11 +722,12 @@ public int Native_GetTimeForRank(Handle handler, int numParams)
 
 public int Native_WR_DeleteMap(Handle handler, int numParams)
 {
-	char sMap[160];
-	GetNativeString(1, sMap, 160);
+	char sMap[PLATFORM_MAX_PATH];
+	GetNativeString(1, sMap, sizeof(sMap));
+	LowercaseString(sMap);
 
-	char sQuery[256];
-	FormatEx(sQuery, 256, "DELETE FROM %splayertimes WHERE map = '%s';", gS_MySQLPrefix, sMap);
+	char sQuery[512];
+	FormatEx(sQuery, sizeof(sQuery), "DELETE FROM %splayertimes WHERE map = '%s';", gS_MySQLPrefix, sMap);
 	gH_SQL.Query(SQL_DeleteMap_Callback, sQuery, StrEqual(gS_Map, sMap, false), DBPrio_High);
 }
 
@@ -745,6 +829,7 @@ public int Native_DeleteWR(Handle handle, int numParams)
 	int track = GetNativeCell(2);
 	char map[PLATFORM_MAX_PATH];
 	GetNativeString(3, map, sizeof(map));
+	LowercaseString(map);
 	int steamid = GetNativeCell(4);
 	int recordid = GetNativeCell(5);
 	bool delete_sql = view_as<bool>(GetNativeCell(6));
@@ -772,8 +857,8 @@ public void SQL_DeleteMap_Callback(Database db, DBResultSet results, const char[
 // debug
 public Action Command_Junk(int client, int args)
 {
-	char sQuery[256];
-	FormatEx(sQuery, 256,
+	char sQuery[512];
+	FormatEx(sQuery, sizeof(sQuery),
 		"INSERT INTO %splayertimes (auth, map, time, jumps, date, style, strafes, sync) VALUES (%d, '%s', %f, %d, %d, 0, %d, %.02f);",
 		gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, GetRandomFloat(10.0, 20.0), GetRandomInt(5, 15), GetTime(), GetRandomInt(5, 15), GetRandomFloat(50.0, 99.99));
 
@@ -1056,8 +1141,8 @@ public int MenuHandler_DeleteAll(Menu menu, MenuAction action, int param1, int p
 		Shavit_LogMessage("%L - deleted all %s track and %s style records from map `%s`.",
 			param1, sTrack, gS_StyleStrings[gA_WRCache[param1].iLastStyle].sStyleName, gS_Map);
 
-		char sQuery[256];
-		FormatEx(sQuery, 256, "DELETE FROM %splayertimes WHERE map = '%s' AND style = %d AND track = %d;",
+		char sQuery[512];
+		FormatEx(sQuery, sizeof(sQuery), "DELETE FROM %splayertimes WHERE map = '%s' AND style = %d AND track = %d;",
 			gS_MySQLPrefix, gS_Map, gA_WRCache[param1].iLastStyle, gA_WRCache[param1].iLastTrack);
 
 		DataPack hPack = new DataPack();
@@ -1085,8 +1170,6 @@ public int MenuHandler_Delete(Menu menu, MenuAction action, int param1, int para
 		gA_WRCache[param1].iLastStyle = StringToInt(info);
 
 		OpenDelete(param1);
-
-		UpdateLeaderboards();
 	}
 
 	else if(action == MenuAction_End)
@@ -1276,8 +1359,8 @@ public void GetRecordDetails_Callback(Database db, DBResultSet results, const ch
 		char sName[MAX_NAME_LENGTH];
 		results.FetchString(1, sName, MAX_NAME_LENGTH);
 
-		char sMap[160];
-		results.FetchString(2, sMap, 160);
+		char sMap[PLATFORM_MAX_PATH];
+		results.FetchString(2, sMap, sizeof(sMap));
 
 		float fTime = results.FetchFloat(3);
 		float fSync = results.FetchFloat(4);
@@ -1329,8 +1412,8 @@ public void DeleteConfirm_Callback(Database db, DBResultSet results, const char[
 	char sName[MAX_NAME_LENGTH];
 	hPack.ReadString(sName, MAX_NAME_LENGTH);
 
-	char sMap[160];
-	hPack.ReadString(sMap, 160);
+	char sMap[PLATFORM_MAX_PATH];
+	hPack.ReadString(sMap, sizeof(sMap));
 
 	float fTime = view_as<float>(hPack.ReadCell());
 	float fSync = view_as<float>(hPack.ReadCell());
@@ -1356,6 +1439,17 @@ public void DeleteConfirm_Callback(Database db, DBResultSet results, const char[
 	if(bWRDeleted)
 	{
 		DeleteWR(iStyle, iTrack, sMap, iSteamID, iRecordID, false, true);
+	}
+	else
+	{
+		for (int i = 1; i <= MaxClients; i++)
+		{
+			if (IsValidClient(i) && GetSteamAccountID(i) == iSteamID)
+			{
+				UpdateClientCache(i);
+				break;
+			}
+		}
 	}
 
 	int client = GetClientFromSerial(iSerial);
@@ -1398,6 +1492,23 @@ public void DeleteAll_Callback(Database db, DBResultSet results, const char[] er
 	Shavit_PrintToChat(client, "%T", "DeletedRecordsMap", client, gS_ChatStrings.sVariable, gS_Map, gS_ChatStrings.sText);
 }
 
+public Action Command_WorldRecord_Style(int client, int args)
+{
+	char sCommand[128];
+	GetCmdArg(0, sCommand, sizeof(sCommand));
+
+	int style = 0;
+
+	if (gSM_StyleCommands.GetValue(sCommand, style))
+	{
+		gA_WRCache[client].bForceStyle = true;
+		gA_WRCache[client].iLastStyle = style;
+		Command_WorldRecord(client, args);
+	}
+
+	return Plugin_Handled;
+}
+
 public Action Command_WorldRecord(int client, int args)
 {
 	if(!IsValidClient(client))
@@ -1431,7 +1542,6 @@ public Action Command_WorldRecord(int client, int args)
 			track = Track_Bonus;
 		}
 	}
-
 	else
 	{
 		havemap = (args >= 1);
@@ -1439,13 +1549,14 @@ public Action Command_WorldRecord(int client, int args)
 
 	if(!havemap)
 	{
-		strcopy(gA_WRCache[client].sClientMap, 128, gS_Map);
+		gA_WRCache[client].sClientMap = gS_Map;
 	}
-
 	else
 	{
-		GetCmdArg(1, gA_WRCache[client].sClientMap, 128);
-		if (!GuessBestMapName(gA_ValidMaps, gA_WRCache[client].sClientMap, gA_WRCache[client].sClientMap, 128))
+		GetCmdArg(1, gA_WRCache[client].sClientMap, sizeof(wrcache_t::sClientMap));
+		LowercaseString(gA_WRCache[client].sClientMap);
+
+		if (!GuessBestMapName(gA_ValidMaps, gA_WRCache[client].sClientMap, gA_WRCache[client].sClientMap))
 		{
 			Shavit_PrintToChat(client, "%t", "Map was not found", gA_WRCache[client].sClientMap);
 			return Plugin_Handled;
@@ -1542,7 +1653,15 @@ void RetrieveWRMenu(int client, int track)
 		{
 			gA_WRCache[client].fWRs[i] = gF_WRTime[i][track];
 		}
-		ShowWRStyleMenu(client);
+
+		if (gA_WRCache[client].bForceStyle)
+		{
+			StartWRMenu(client);
+		}
+		else
+		{
+			ShowWRStyleMenu(client);
+		}
 	}
 	else
 	{
@@ -1584,10 +1703,17 @@ public void SQL_RetrieveWRMenu_Callback(Database db, DBResultSet results, const 
 		gA_WRCache[client].fWRs[style] = time;
 	}
 
-	ShowWRStyleMenu(client);
+	if (gA_WRCache[client].bForceStyle)
+	{
+		StartWRMenu(client);
+	}
+	else
+	{
+		ShowWRStyleMenu(client);
+	}
 }
 
-void ShowWRStyleMenu(int client)
+void ShowWRStyleMenu(int client, int first_item=0)
 {
 	Menu menu = new Menu(MenuHandler_StyleChooser);
 	menu.SetTitle("%T", "WRMenuTitle", client);
@@ -1633,7 +1759,7 @@ void ShowWRStyleMenu(int client)
 	}
 
 	menu.ExitButton = true;
-	menu.Display(client, 300);
+	menu.DisplayAt(client, first_item, MENU_TIME_FOREVER);
 }
 
 public int MenuHandler_StyleChooser(Menu menu, MenuAction action, int param1, int param2)
@@ -1658,8 +1784,9 @@ public int MenuHandler_StyleChooser(Menu menu, MenuAction action, int param1, in
 		}
 
 		gA_WRCache[param1].iLastStyle = iStyle;
+		gA_WRCache[param1].iPagePosition = GetMenuSelectionPosition();
 
-		StartWRMenu(param1, gA_WRCache[param1].sClientMap, iStyle, gA_WRCache[param1].iLastTrack);
+		StartWRMenu(param1);
 	}
 
 	else if(action == MenuAction_End)
@@ -1670,19 +1797,21 @@ public int MenuHandler_StyleChooser(Menu menu, MenuAction action, int param1, in
 	return 0;
 }
 
-void StartWRMenu(int client, const char[] map, int style, int track)
+void StartWRMenu(int client)
 {
+	gA_WRCache[client].bForceStyle = false;
+
 	DataPack dp = new DataPack();
 	dp.WriteCell(GetClientSerial(client));
-	dp.WriteCell(track);
-	dp.WriteString(map);
+	dp.WriteCell(gA_WRCache[client].iLastTrack);
+	dp.WriteString(gA_WRCache[client].sClientMap);
 
-	int iLength = ((strlen(map) * 2) + 1);
+	int iLength = ((strlen(gA_WRCache[client].sClientMap) * 2) + 1);
 	char[] sEscapedMap = new char[iLength];
-	gH_SQL.Escape(map, sEscapedMap, iLength);
+	gH_SQL.Escape(gA_WRCache[client].sClientMap, sEscapedMap, iLength);
 
 	char sQuery[512];
-	FormatEx(sQuery, 512, "SELECT p.id, u.name, p.time, p.jumps, p.auth FROM %splayertimes p JOIN %susers u ON p.auth = u.auth WHERE map = '%s' AND style = %d AND track = %d ORDER BY time ASC, date ASC;", gS_MySQLPrefix, gS_MySQLPrefix, sEscapedMap, style, track);
+	FormatEx(sQuery, 512, "SELECT p.id, u.name, p.time, p.jumps, p.auth FROM %splayertimes p JOIN %susers u ON p.auth = u.auth WHERE map = '%s' AND style = %d AND track = %d ORDER BY time ASC, date ASC;", gS_MySQLPrefix, gS_MySQLPrefix, sEscapedMap, gA_WRCache[client].iLastStyle, gA_WRCache[client].iLastTrack);
 	gH_SQL.Query(SQL_WR_Callback, sQuery, dp);
 }
 
@@ -1692,8 +1821,8 @@ public void SQL_WR_Callback(Database db, DBResultSet results, const char[] error
 	int serial = data.ReadCell();
 	int track = data.ReadCell();
 
-	char sMap[192];
-	data.ReadString(sMap, 192);
+	char sMap[PLATFORM_MAX_PATH];
+	data.ReadString(sMap, sizeof(sMap));
 
 	delete data;
 
@@ -1814,7 +1943,7 @@ public int WRMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
 
 	else if(action == MenuAction_Cancel && param2 == MenuCancel_ExitBack)
 	{
-		ShowWRStyleMenu(param1);
+		ShowWRStyleMenu(param1, gA_WRCache[param1].iPagePosition);
 	}
 
 	else if(action == MenuAction_End)
@@ -1871,16 +2000,12 @@ public void SQL_RR_Callback(Database db, DBResultSet results, const char[] error
 
 	while(results.FetchRow())
 	{
-		char sMap[192];
-		results.FetchString(1, sMap, 192);
-		
-		char sName[MAX_NAME_LENGTH];
-		results.FetchString(2, sName, 10);
+		char sMap[PLATFORM_MAX_PATH];
+		results.FetchString(1, sMap, sizeof(sMap));
 
-		if(strlen(sName) >= 9)
-		{
-			Format(sName, MAX_NAME_LENGTH, "%s...", sName);
-		}
+		char sName[MAX_NAME_LENGTH];
+		results.FetchString(2, sName, sizeof(sName));
+		TrimDisplayString(sName, sName, sizeof(sName), 9);
 
 		char sTime[16];
 		float fTime = results.FetchFloat(3);
@@ -1990,12 +2115,7 @@ public void SQL_SubMenu_Callback(Database db, DBResultSet results, const char[] 
 	char sName[MAX_NAME_LENGTH];
 	int iSteamID = 0;
 	char sTrack[32];
-	char sMap[192];
-	
-	for (int i = 0; i < gI_Styles; i++)
-	{
-		gA_WRCache[client].fWRs[i] = 0.0;
-	}
+	char sMap[PLATFORM_MAX_PATH];
 
 	if(results.FetchRow())
 	{
@@ -2012,8 +2132,6 @@ public void SQL_SubMenu_Callback(Database db, DBResultSet results, const char[] 
 		int iStyle = results.FetchInt(3);
 		int iJumps = results.FetchInt(2);
 		float fPerfs = results.FetchFloat(9);
-
-		gA_WRCache[client].fWRs[iStyle] = fTime;
 
 		if(Shavit_GetStyleSettingInt(iStyle, "autobhop"))
 		{
@@ -2033,8 +2151,8 @@ public void SQL_SubMenu_Callback(Database db, DBResultSet results, const char[] 
 		FormatEx(sDisplay, 128, "%T: %s", "WRStyle", client, gS_StyleStrings[iStyle].sStyleName);
 		hMenu.AddItem("-1", sDisplay);
 
-		results.FetchString(6, sMap, 192);
-		
+		results.FetchString(6, sMap, sizeof(sMap));
+
 		float fPoints = results.FetchFloat(10);
 
 		if(gB_Rankings && fPoints > 0.0)
@@ -2138,13 +2256,13 @@ public int SubMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
 
 		else
 		{
-			StartWRMenu(param1, gA_WRCache[param1].sClientMap, gA_WRCache[param1].iLastStyle, gA_WRCache[param1].iLastTrack);
+			StartWRMenu(param1);
 		}
 	}
 
 	else if(action == MenuAction_Cancel && param2 == MenuCancel_ExitBack)
 	{
-		StartWRMenu(param1, gA_WRCache[param1].sClientMap, gA_WRCache[param1].iLastStyle, gA_WRCache[param1].iLastTrack);
+		StartWRMenu(param1);
 	}
 
 	else if(action == MenuAction_End)
@@ -2155,26 +2273,26 @@ public int SubMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
 	return 0;
 }
 
-void SQL_DBConnect()
+public void Shavit_OnDatabaseLoaded()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
-	gH_SQL = GetTimerDatabaseHandle();
+	gH_SQL = view_as<Database2>(Shavit_GetDatabase());
 	gB_MySQL = IsMySQLDatabase(gH_SQL);
 
 	char sQuery[1024];
-	Transaction hTransaction = new Transaction();
+	Transaction2 hTransaction = new Transaction2();
 
 	if(gB_MySQL)
 	{
-		FormatEx(sQuery, 1024,
-			"CREATE TABLE IF NOT EXISTS `%splayertimes` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `jumps` INT, `style` TINYINT, `date` INT, `strafes` INT, `sync` FLOAT, `points` FLOAT NOT NULL DEFAULT 0, `track` TINYINT NOT NULL DEFAULT 0, `perfs` FLOAT DEFAULT 0, `completions` SMALLINT DEFAULT 1, PRIMARY KEY (`id`), INDEX `map` (`map`, `style`, `track`, `time`), INDEX `auth` (`auth`, `date`, `points`), INDEX `time` (`time`)) ENGINE=INNODB;",
-			gS_MySQLPrefix);
+		FormatEx(sQuery, sizeof(sQuery),
+			"CREATE TABLE IF NOT EXISTS `%splayertimes` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `jumps` INT, `style` TINYINT, `date` INT, `strafes` INT, `sync` FLOAT, `points` FLOAT NOT NULL DEFAULT 0, `track` TINYINT NOT NULL DEFAULT 0, `perfs` FLOAT DEFAULT 0, `completions` SMALLINT DEFAULT 1, `exact_time_int` INT DEFAULT 0, PRIMARY KEY (`id`), INDEX `map` (`map`, `style`, `track`, `time`), INDEX `auth` (`auth`, `date`, `points`), INDEX `time` (`time`), CONSTRAINT `%spt_auth` FOREIGN KEY (`auth`) REFERENCES `%susers` (`auth`) ON UPDATE CASCADE ON DELETE CASCADE) ENGINE=INNODB;",
+			gS_MySQLPrefix, gS_MySQLPrefix, gS_MySQLPrefix);
 	}
 
 	else
 	{
-		FormatEx(sQuery, 1024,
-			"CREATE TABLE IF NOT EXISTS `%splayertimes` (`id` INTEGER PRIMARY KEY, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `jumps` INT, `style` TINYINT, `date` INT, `strafes` INT, `sync` FLOAT, `points` FLOAT NOT NULL DEFAULT 0, `track` TINYINT NOT NULL DEFAULT 0, `perfs` FLOAT DEFAULT 0, `completions` SMALLINT DEFAULT 1, CONSTRAINT `%spt_auth` FOREIGN KEY (`auth`) REFERENCES `%susers` (`auth`) ON UPDATE CASCADE ON DELETE CASCADE);",
+		FormatEx(sQuery, sizeof(sQuery),
+			"CREATE TABLE IF NOT EXISTS `%splayertimes` (`id` INTEGER PRIMARY KEY, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `jumps` INT, `style` TINYINT, `date` INT, `strafes` INT, `sync` FLOAT, `points` FLOAT NOT NULL DEFAULT 0, `track` TINYINT NOT NULL DEFAULT 0, `perfs` FLOAT DEFAULT 0, `completions` SMALLINT DEFAULT 1, `exact_time_int` INT DEFAULT 0, CONSTRAINT `%spt_auth` FOREIGN KEY (`auth`) REFERENCES `%susers` (`auth`) ON UPDATE CASCADE ON DELETE CASCADE);",
 			gS_MySQLPrefix, gS_MySQLPrefix, gS_MySQLPrefix);
 	}
 
@@ -2191,6 +2309,18 @@ void SQL_DBConnect()
 		gB_MySQL ? "CREATE OR REPLACE VIEW" : "CREATE VIEW IF NOT EXISTS",
 		gS_MySQLPrefix, gS_MySQLPrefix, gS_MySQLPrefix);
 	hTransaction.AddQuery(sQuery);
+#else
+	FormatEx(sQuery, sizeof(sQuery),
+		"DROP VIEW IF EXISTS %swrs_min;",
+		gS_MySQLPrefix);
+	hTransaction.AddQuery(sQuery);
+
+	FormatEx(sQuery, sizeof(sQuery),
+		"%s %swrs AS SELECT MIN(time) time, MIN(id) id, MIN(auth) auth, MIN(exact_time_int) exact_time_int, MIN(date) date, map, track, style FROM %splayertimes GROUP BY map, track, style;",
+		gB_MySQL ? "CREATE OR REPLACE VIEW" : "CREATE VIEW IF NOT EXISTS",
+		gS_MySQLPrefix, gS_MySQLPrefix, gS_MySQLPrefix);
+	hTransaction.AddQuery(sQuery);
+#endif
 
 	gH_SQL.Execute(hTransaction, Trans_CreateTable_Success, Trans_CreateTable_Error, 0, DBPrio_High);
 }
@@ -2210,10 +2340,17 @@ public void Trans_CreateTable_Error(Database db, any data, int numQueries, const
 public void Shavit_OnFinish(int client, int style, float time, int jumps, int strafes, float sync, int track, float oldtime, float perfs, float avgvel, float maxvel, int timestamp)
 {
 	// do not risk overwriting the player's data if their PB isn't loaded to cache yet
-	if(!gA_WRCache[client].bLoadedCache)
+	if (!gB_LoadedCache[client])
 	{
 		return;
 	}
+
+#if 0
+	time = view_as<float>(0x43611FB3); // 225.123825; // this value loses accuracy and becomes 0x43611FBE \ 225.123992 once it's returned from mysql
+	PrintToServer("time = %f %X record = %f %X", time, time, gF_WRTime[style][track], gF_WRTime[style][track]);
+#endif
+
+	int iSteamID = GetSteamAccountID(client);
 
 	char sTime[32];
 	FormatSeconds(time, sTime, 32);
@@ -2245,6 +2382,7 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 
 	bool bEveryone = (iOverwrite > 0);
 	char sMessage[255];
+	char sMessage2[255];
 
 	if(iOverwrite > 0 && (time < gF_WRTime[style][track] || gF_WRTime[style][track] == 0.0)) // WR?
 	{
@@ -2309,26 +2447,26 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 
 	if(iOverwrite > 0)
 	{
-		char sQuery[512];
+		char sQuery[1024];
 
 		if(iOverwrite == 1) // insert
 		{
 			FormatEx(sMessage, 255, "%s[%s]%s %T",
-				gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "FirstCompletion", LANG_SERVER, gS_ChatStrings.sVariable2, client, gS_ChatStrings.sText, gS_ChatStrings.sStyle, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, gS_ChatStrings.sVariable, iRank, gS_ChatStrings.sText, jumps, strafes, sSync, gS_ChatStrings.sText, gS_ChatStrings.sVariable, avgvel, maxvel, gS_ChatStrings.sText);
+				gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "FirstCompletion", LANG_SERVER, gS_ChatStrings.sVariable2, client, gS_ChatStrings.sText, gS_ChatStrings.sStyle, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, gS_ChatStrings.sVariable, iRank, gS_ChatStrings.sText, jumps, strafes, sSync, gS_ChatStrings.sText);
 
-			FormatEx(sQuery, 512,
-				"INSERT INTO %splayertimes (auth, map, time, jumps, date, style, strafes, sync, points, track, perfs) VALUES (%d, '%s', %f, %d, %d, %d, %d, %.2f, 0.0, %d, %.2f);",
-				gS_MySQLPrefix, iSteamID, gS_Map, time, jumps, timestamp, style, strafes, sync, track, perfs);
+			FormatEx(sQuery, sizeof(sQuery),
+				"INSERT INTO %splayertimes (auth, map, time, jumps, date, style, strafes, sync, points, track, perfs, exact_time_int) VALUES (%d, '%s', %f, %d, %d, %d, %d, %.2f, 0.0, %d, %.2f, %d);",
+				gS_MySQLPrefix, iSteamID, gS_Map, time, jumps, timestamp, style, strafes, sync, track, perfs, view_as<int>(time));
 		}
 
 		else // update
 		{
 			FormatEx(sMessage, 255, "%s[%s]%s %T",
-				gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "NotFirstCompletion", LANG_SERVER, gS_ChatStrings.sVariable2, client, gS_ChatStrings.sText, gS_ChatStrings.sStyle, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, gS_ChatStrings.sVariable, iRank, gS_ChatStrings.sText, jumps, strafes, sSync, gS_ChatStrings.sText, gS_ChatStrings.sVariable, avgvel, maxvel, gS_ChatStrings.sWarning, sDifference);
+				gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "NotFirstCompletion", LANG_SERVER, gS_ChatStrings.sVariable2, client, gS_ChatStrings.sText, gS_ChatStrings.sStyle, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, gS_ChatStrings.sVariable, iRank, gS_ChatStrings.sText, jumps, strafes, sSync, gS_ChatStrings.sText, gS_ChatStrings.sWarning, sDifference);
 
-			FormatEx(sQuery, 512,
-				"UPDATE %splayertimes SET time = %f, jumps = %d, date = %d, strafes = %d, sync = %.02f, points = 0.0, perfs = %.2f WHERE map = '%s' AND auth = %d AND style = %d AND track = %d;",
-				gS_MySQLPrefix, time, jumps, timestamp, strafes, sync, perfs, gS_Map, iSteamID, style, track);
+			FormatEx(sQuery, sizeof(sQuery),
+				"UPDATE %splayertimes SET time = %f, jumps = %d, date = %d, strafes = %d, sync = %.02f, points = 0.0, perfs = %.2f, exact_time_int = %d, completions = completions + 1 WHERE map = '%s' AND auth = %d AND style = %d AND track = %d;",
+				gS_MySQLPrefix, time, jumps, timestamp, strafes, sync, perfs, view_as<int>(time), gS_Map, iSteamID, style, track);
 		}
 
 		gH_SQL.Query(SQL_OnFinish_Callback, sQuery, GetClientSerial(client), DBPrio_High);
@@ -2353,30 +2491,38 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 
 	if(bIncrementCompletions)
 	{
-		char sQuery[256];
-		FormatEx(sQuery, 256,
-			"UPDATE %splayertimes SET completions = completions + 1 WHERE map = '%s' AND auth = %d AND style = %d AND track = %d;",
-			gS_MySQLPrefix, gS_Map, iSteamID, style, track);
+		if (iOverwrite == 0)
+		{
+			char sQuery[512];
+			FormatEx(sQuery, sizeof(sQuery),
+				"UPDATE %splayertimes SET completions = completions + 1 WHERE map = '%s' AND auth = %d AND style = %d AND track = %d;",
+				gS_MySQLPrefix, gS_Map, iSteamID, style, track);
 
-		gH_SQL.Query(SQL_OnIncrementCompletions_Callback, sQuery, 0, DBPrio_Low);
-		
+			gH_SQL.Query(SQL_OnIncrementCompletions_Callback, sQuery, 0, DBPrio_Low);
+		}
+
 		gI_PlayerCompletion[client][style][track]++;
 		
 		if(iOverwrite == 0 && !Shavit_GetStyleSettingInt(style, "unranked"))
 		{
 			FormatEx(sMessage, 255, "%s[%s]%s %T",
-				gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "WorseTime", client, gS_ChatStrings.sStyle, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, jumps, strafes, sSync, gS_ChatStrings.sText, gS_ChatStrings.sVariable, avgvel, maxvel, gS_ChatStrings.sText, sDifference);
+				gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "WorseTime", client, gS_ChatStrings.sStyle, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, jumps, strafes, sSync, gS_ChatStrings.sText, sDifference);
 		}
 	}
 
 	else
 	{
 		FormatEx(sMessage, 255, "%s[%s]%s %T",
-			gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "UnrankedTime", client, gS_ChatStrings.sStyle, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, jumps, strafes, sSync, gS_ChatStrings.sText, gS_ChatStrings.sVariable, avgvel, maxvel, gS_ChatStrings.sText);
+			gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "UnrankedTime", client, gS_ChatStrings.sStyle, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, jumps, strafes, sSync, gS_ChatStrings.sText);
 	}
 
 	timer_snapshot_t aSnapshot;
 	Shavit_SaveSnapshot(client, aSnapshot);
+
+	if (!Shavit_GetStyleSettingBool(style, "autobhop"))
+	{
+		FormatEx(sMessage2, sizeof(sMessage2), "%s[%s]%s %T", gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "CompletionExtraInfo", LANG_SERVER, gS_ChatStrings.sVariable, avgvel, gS_ChatStrings.sText, gS_ChatStrings.sVariable, maxvel, gS_ChatStrings.sText, gS_ChatStrings.sVariable, perfs, gS_ChatStrings.sText);
+	}
 
 	Action aResult = Plugin_Continue;
 	Call_StartForward(gH_OnFinishMessage);
@@ -2387,6 +2533,8 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 	Call_PushCell(iRank);
 	Call_PushStringEx(sMessage, 255, SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	Call_PushCell(255);
+	Call_PushStringEx(sMessage2, sizeof(sMessage2), SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_PushCell(sizeof(sMessage2));
 	Call_Finish(aResult);
 
 	if(aResult < Plugin_Handled)
@@ -2403,11 +2551,19 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 			{
 				if(client != i && IsValidClient(i) && GetSpectatorTarget(i) == client)
 				{
-					FormatEx(sMessage, 255, "%s[%s]%s %T",
-						gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "NotFirstCompletionWorse", i, gS_ChatStrings.sVariable2, client, gS_ChatStrings.sText, gS_ChatStrings.sStyle, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, gS_ChatStrings.sVariable, iRank, gS_ChatStrings.sText, jumps, strafes, sSync, gS_ChatStrings.sText, gS_ChatStrings.sVariable, avgvel, maxvel, gS_ChatStrings.sText, sDifference);
 					Shavit_PrintToChat(i, "%s", sMessage);
+
+					if (sMessage2[0] != 0)
+					{
+						Shavit_PrintToChat(i, "%s", sMessage2);
+					}
 				}
 			}
+		}
+
+		if (sMessage2[0] != 0)
+		{
+			Shavit_PrintToChat(client, "%s", sMessage2);
 		}
 	}
 
@@ -2449,8 +2605,8 @@ public void SQL_OnFinish_Callback(Database db, DBResultSet results, const char[]
 
 void UpdateLeaderboards()
 {
-	char sQuery[192];
-	FormatEx(sQuery, 192, "SELECT style, track, time FROM %splayertimes WHERE map = '%s' ORDER BY time ASC, date ASC;", gS_MySQLPrefix, gS_Map);
+	char sQuery[512];
+	FormatEx(sQuery, sizeof(sQuery), "SELECT style, track, time, exact_time_int FROM %splayertimes WHERE map = '%s' ORDER BY time ASC, date ASC;", gS_MySQLPrefix, gS_Map);
 	gH_SQL.Query(SQL_UpdateLeaderboards_Callback, sQuery);
 }
 
@@ -2463,13 +2619,7 @@ public void SQL_UpdateLeaderboards_Callback(Database db, DBResultSet results, co
 		return;
 	}
 
-	for(int i = 0; i < gI_Styles; i++)
-	{
-		for(int j = 0; j < TRACKS_SIZE; j++)
-		{
-			gA_Leaderboard[i][j].Clear();
-		}
-	}
+	ResetLeaderboards();
 
 	while(results.FetchRow())
 	{
@@ -2481,12 +2631,12 @@ public void SQL_UpdateLeaderboards_Callback(Database db, DBResultSet results, co
 			continue;
 		}
 
-		gA_Leaderboard[style][track].Push(results.FetchFloat(2));
+		gA_Leaderboard[style][track].Push(ExactTimeMaybe(results.FetchFloat(2), results.FetchInt(3)));
 	}
 
 	for(int i = 0; i < gI_Styles; i++)
 	{
-		if(i >= gI_Styles || Shavit_GetStyleSettingInt(i, "unranked"))
+		if (Shavit_GetStyleSettingInt(i, "unranked"))
 		{
 			continue;
 		}
@@ -2529,4 +2679,9 @@ int GetRankForTime(int style, float time, int track)
 	}
 
 	return (iRecords + 1);
+}
+
+float ExactTimeMaybe(float time, int exact_time)
+{
+	return (exact_time != 0) ? view_as<float>(exact_time) : time;
 }

@@ -99,6 +99,14 @@
 		"en"		"Rank"
 		"chi"		"排名"
 	}
+	"Playtime"
+	{
+		"en"		"Play time"
+	}
+	"YourPlaytime"
+	{
+		"en"		"Yours"
+	}
 	"Points"
 	{
 		"en"		"Points"
@@ -116,7 +124,7 @@
 	}
 	"WorldRecords"
 	{
-		"en"		"world records"
+		"en"		"World records"
 		"chi"		"服务器记录数"
 	}
 	// ---------- Record Data ---------- //

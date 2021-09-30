@@ -126,6 +126,11 @@
 		"en"		"{1}You {2}cannot{3} pause in the {4}start zone{5}."
 		"chi"		"{1}您{2}无法在{4}开始区域{5}中{3}暂停."
 	}
+	"PauseEndZone"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s}"
+		"en"		"{1}You {2}cannot{3} pause in the {4}end zone{5}."
+	}
 	"PauseMoving"
 	{
 		"#format"	"{1:s},{2:s}"
@@ -166,12 +171,12 @@
 	"DebugOffsets"
 	{
 		"#format"	"{1:f},{2:s}"
-		"en"		"Your time offset was {1}. The distance was {2} units."
+		"en"		"Your zone offset was {1}. The distance was {2} units."
 	}
 	"TrackChangeFromMain"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"Use {1}!r{2}/{3}!main{4} go to back to the main track."
-		"chi"		"输入 {1}!r{2}或者{3}!main{4} 回到主线."
+		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s},{6:s}"
+		"en"		"Use {1}!m{2}/{3}!main{4} go to back to the main track. Or {5}!ihate!main{6}."
+		"chi"		"输入 {1}!r{2}或者{3}!main{4} 回到主线. 或者 {5}!ihate!main{6}."
 	}
 }

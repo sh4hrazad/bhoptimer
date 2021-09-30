@@ -267,6 +267,10 @@
 		"en"		"Stage message"
 		"chi"		"关卡信息"
 	}
+	"HudVelocityDifference"
+	{
+		"en"		"Velocity Difference"
+	}
 	// ---------- Record Bots ---------- //
 	"ReplayText"
 	{

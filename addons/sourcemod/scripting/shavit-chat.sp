@@ -23,6 +23,7 @@
 #include <sourcemod>
 #include <clientprefs>
 #include <convar_class>
+#include <dhooks>
 
 #undef REQUIRE_PLUGIN
 #define USES_CHAT_COLORS
@@ -114,8 +115,8 @@ Convar gCV_CustomChat = null;
 Convar gCV_Colon = null;
 ConVar gCV_TimeInMessages = null;
 
-// cache
 EngineVersion gEV_Type = Engine_Unknown;
+bool gB_Late = false;
 
 Handle gH_ChatCookie = null;
 
@@ -154,6 +155,8 @@ public Plugin myinfo =
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
+	gB_Late = late;
+
 	CreateNative("Shavit_GetPlainChatrank", Native_GetPlainChatrank);
 
 	RegPluginLibrary("shavit-chat");
@@ -194,6 +197,11 @@ public void OnPluginStart()
 	gH_ChatCookie = RegClientCookie("shavit_chat_selection", "Chat settings", CookieAccess_Protected);
 	gA_ChatRanks = new ArrayList(sizeof(chatranks_cache_t));
 
+	if (gB_Late)
+	{
+		Shavit_OnDatabaseLoaded();
+	}
+
 	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(IsClientInGame(i) && !IsFakeClient(i))
@@ -206,8 +214,6 @@ public void OnPluginStart()
 	}
 
 	gB_RTLer = LibraryExists("rtler");
-
-	SQL_DBConnect();
 }
 
 public void OnAllPluginsLoaded()
@@ -681,7 +687,10 @@ public void OnClientDisconnect(int client)
 
 public void OnClientPostAdminCheck(int client)
 {
-	LoadFromDatabase(client);
+	if (gH_SQL)
+	{
+		LoadFromDatabase(client);
+	}
 }
 
 public Action Command_CCHelp(int client, int args)
@@ -1275,12 +1284,9 @@ public Action Command_CCAdd(int client, int args)
 	char sArgString[32];
 	GetCmdArgString(sArgString, 32);
 
-	ReplaceString(sArgString, 32, "[U:1:", "");
-	ReplaceString(sArgString, 32, "]", "");
+	int iSteamID = SteamIDToAuth(sArgString);
 
-	int iSteamID = StringToInt(sArgString);
-
-	if (iSteamID == 0)
+	if (iSteamID < 1)
 	{
 		ReplyToCommand(client, "Invalid steamid");
 		return Plugin_Handled;
@@ -1298,7 +1304,7 @@ public Action Command_CCAdd(int client, int args)
 		}
 	}
 
-	ReplyToCommand(client, "Added CC access for [U:1:%d]", iSteamID);
+	ReplyToCommand(client, "Added CC access for %s", sArgString);
 
 	return Plugin_Handled;
 }
@@ -1314,12 +1320,9 @@ public Action Command_CCDelete(int client, int args)
 	char sArgString[32];
 	GetCmdArgString(sArgString, 32);
 
-	ReplaceString(sArgString, 32, "[U:1:", "");
-	ReplaceString(sArgString, 32, "]", "");
+	int iSteamID = SteamIDToAuth(sArgString);
 
-	int iSteamID = StringToInt(sArgString);
-
-	if (iSteamID == 0)
+	if (iSteamID < 1)
 	{
 		ReplyToCommand(client, "Invalid steamid");
 		return Plugin_Handled;
@@ -1337,7 +1340,7 @@ public Action Command_CCDelete(int client, int args)
 		}
 	}
 
-	ReplyToCommand(client, "Deleted CC access for [U:1:%d]", iSteamID);
+	ReplyToCommand(client, "Deleted CC access for %s", sArgString);
 
 	return Plugin_Handled;
 }
@@ -1441,10 +1444,10 @@ void FormatChat(int client, char[] buffer, int size)
 	ReplaceString(buffer, size, "{name}", temp);
 }
 
-void SQL_DBConnect()
+public void Shavit_OnDatabaseLoaded()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
-	gH_SQL = GetTimerDatabaseHandle();
+	gH_SQL = view_as<Database2>(Shavit_GetDatabase());
 
 	char sQuery[512];
 
@@ -1454,7 +1457,6 @@ void SQL_DBConnect()
 			"CREATE TABLE IF NOT EXISTS `%schat` (`auth` INT NOT NULL, `name` INT NOT NULL DEFAULT 0, `ccname` VARCHAR(128) COLLATE 'utf8mb4_unicode_ci', `message` INT NOT NULL DEFAULT 0, `ccmessage` VARCHAR(16) COLLATE 'utf8mb4_unicode_ci', `ccaccess` INT NOT NULL DEFAULT 0, PRIMARY KEY (`auth`), CONSTRAINT `%sch_auth` FOREIGN KEY (`auth`) REFERENCES `%susers` (`auth`) ON UPDATE CASCADE ON DELETE CASCADE) ENGINE=INNODB;",
 			gS_MySQLPrefix, gS_MySQLPrefix, gS_MySQLPrefix);
 	}
-
 	else
 	{
 		FormatEx(sQuery, 512,
@@ -1580,10 +1582,18 @@ public void SQL_GetChat_Callback(Database db, DBResultSet results, const char[] 
 
 void RemoveFromString(char[] buf, char[] thing, int extra)
 {
-	int index;
+	int index, len = strlen(buf);
 	extra += strlen(thing);
+	
 	while ((index = StrContains(buf, thing, true)) != -1)
 	{
+		// Search sequence is in the end of the string, so just cut it and exit
+		if(index + extra >= len)
+		{
+			buf[index] = '\0';
+			break;
+		}
+		
 		while (buf[index] != 0)
 		{
 			buf[index] = buf[index+extra];

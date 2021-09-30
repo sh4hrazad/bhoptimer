@@ -29,6 +29,7 @@
 #undef REQUIRE_PLUGIN
 #define USES_CHAT_COLORS
 #include <shavit>
+#include <eventqueuefix>
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -50,7 +51,6 @@ enum struct playertimer_t
 	float fLastAngle;
 	int iTotalMeasures;
 	int iGoodGains;
-	bool bDoubleSteps;
 	float fStrafeWarning;
 	bool bPracticeMode;
 	int iSHSWCombination;
@@ -63,10 +63,11 @@ enum struct playertimer_t
 	int iLandingTick;
 	bool bOnGround;
 	float fTimescale;
-	float fTimeOffset[2];
+	float fZoneOffset[2];
 	float fDistanceOffset[2];
 	// convert to array for per zone offsets
 	int iZoneIncrement;
+	float fTimescaledTicks;
 	float fAvgVelocity;
 	float fMaxVelocity;
 }
@@ -80,15 +81,19 @@ DynamicHook gH_AcceptInput; // used for hooking player_speedmod's AcceptInput
 Handle gH_PhysicsCheckForEntityUntouch;
 
 // database handle
-Database gH_SQL = null;
+Database2 gH_SQL = null;
 bool gB_MySQL = false;
+int gI_MigrationsRequired;
+int gI_MigrationsFinished;
 
 // forwards
 Handle gH_Forwards_Start = null;
+Handle gH_Forwards_StartPre = null;
 Handle gH_Forwards_Stop = null;
 Handle gH_Forwards_StopPre = null;
 Handle gH_Forwards_FinishPre = null;
 Handle gH_Forwards_Finish = null;
+Handle gH_Forwards_OnRestartPre = null;
 Handle gH_Forwards_OnRestart = null;
 Handle gH_Forwards_OnEnd = null;
 Handle gH_Forwards_OnPause = null;
@@ -124,11 +129,13 @@ float gF_Fraction[MAXPLAYERS + 1];
 // cookies
 Handle gH_StyleCookie = null;
 Handle gH_AutoBhopCookie = null;
+Cookie gH_IHateMain = null;
 
 // late load
 bool gB_Late = false;
 
 // modules
+bool gB_Eventqueuefix = false;
 bool gB_Zones = false;
 bool gB_WR = false;
 bool gB_Replay = false;
@@ -138,6 +145,7 @@ bool gB_HUD = false;
 // cvars
 Convar gCV_Restart = null;
 Convar gCV_Pause = null;
+Convar gCV_PauseMovement = null;
 Convar gCV_AllowTimerWithoutZone = null;
 Convar gCV_BlockPreJump = null;
 Convar gCV_NoZAxisSpeed = null;
@@ -147,9 +155,8 @@ Convar gCV_NoChatSound = null;
 Convar gCV_SimplerLadders = null;
 Convar gCV_UseOffsets = null;
 Convar gCV_TimeInMessages;
-#if DEBUG
 Convar gCV_DebugOffsets = null;
-#endif
+Convar gCV_DisableSvCheats = null;
 // cached cvars
 int gI_DefaultStyle = 0;
 bool gB_StyleCookies = true;
@@ -175,7 +182,7 @@ chatstrings_t gS_ChatStrings;
 bool gB_StopChatSound = false;
 bool gB_HookedJump = false;
 char gS_LogPath[PLATFORM_MAX_PATH];
-char gS_DeleteMap[MAXPLAYERS+1][160];
+char gS_DeleteMap[MAXPLAYERS+1][PLATFORM_MAX_PATH];
 int gI_WipePlayerID[MAXPLAYERS+1];
 char gS_Verification[MAXPLAYERS+1][8];
 bool gB_CookiesRetrieved[MAXPLAYERS+1];
@@ -183,6 +190,25 @@ bool gB_CookiesRetrieved[MAXPLAYERS+1];
 // flags
 int gI_StyleFlag[STYLE_LIMIT];
 char gS_StyleOverride[STYLE_LIMIT][32];
+
+#if !DEBUG
+ConVar sv_cheats = null;
+
+char gS_CheatCommands[][] = {
+	"ent_setpos",
+	"setpos",
+	"setpos_exact",
+	"setpos_player",
+
+	// can be used to kill other players
+	"explode",
+	"explodevector",
+	"kill",
+	"killvector",
+
+	"give",
+};
+#endif
 
 public Plugin myinfo =
 {
@@ -217,8 +243,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetStyleStrings", Native_GetStyleStrings);
 	CreateNative("Shavit_GetStyleStringsStruct", Native_GetStyleStringsStruct);
 	CreateNative("Shavit_GetSync", Native_GetSync);
-	CreateNative("Shavit_GetTimeOffset", Native_GetTimeOffset);
-	CreateNative("Shavit_GetDistanceOffset", Native_GetTimeOffsetDistance);
+	CreateNative("Shavit_GetZoneOffset", Native_GetZoneOffset);
+	CreateNative("Shavit_GetDistanceOffset", Native_GetDistanceOffset);
 	CreateNative("Shavit_GetTimerStatus", Native_GetTimerStatus);
 	CreateNative("Shavit_HasStyleAccess", Native_HasStyleAccess);
 	CreateNative("Shavit_IsPaused", Native_IsPaused);
@@ -257,12 +283,14 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 public void OnPluginStart()
 {
 	// forwards
-	gH_Forwards_Start = CreateGlobalForward("Shavit_OnStart", ET_Event, Param_Cell, Param_Cell);
+	gH_Forwards_Start = CreateGlobalForward("Shavit_OnStart", ET_Ignore, Param_Cell, Param_Cell);
+	gH_Forwards_StartPre = CreateGlobalForward("Shavit_OnStartPre", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_Stop = CreateGlobalForward("Shavit_OnStop", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_StopPre = CreateGlobalForward("Shavit_OnStopPre", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_FinishPre = CreateGlobalForward("Shavit_OnFinishPre", ET_Event, Param_Cell, Param_Array);
 	gH_Forwards_Finish = CreateGlobalForward("Shavit_OnFinish", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
-	gH_Forwards_OnRestart = CreateGlobalForward("Shavit_OnRestart", ET_Event, Param_Cell, Param_Cell);
+	gH_Forwards_OnRestartPre = CreateGlobalForward("Shavit_OnRestartPre", ET_Event, Param_Cell, Param_Cell);
+	gH_Forwards_OnRestart = CreateGlobalForward("Shavit_OnRestart", ET_Ignore, Param_Cell, Param_Cell);
 	gH_Forwards_OnEnd = CreateGlobalForward("Shavit_OnEnd", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_OnPause = CreateGlobalForward("Shavit_OnPause", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_OnResume = CreateGlobalForward("Shavit_OnResume", ET_Event, Param_Cell, Param_Cell);
@@ -270,7 +298,7 @@ public void OnPluginStart()
 	gH_Forwards_OnTrackChanged = CreateGlobalForward("Shavit_OnTrackChanged", ET_Event, Param_Cell, Param_Cell, Param_Cell);
 	gH_Forwards_OnStyleConfigLoaded = CreateGlobalForward("Shavit_OnStyleConfigLoaded", ET_Event, Param_Cell);
 	gH_Forwards_OnDatabaseLoaded = CreateGlobalForward("Shavit_OnDatabaseLoaded", ET_Event);
-	gH_Forwards_OnChatConfigLoaded = CreateGlobalForward("Shavit_OnChatConfigLoaded", ET_Event, Param_Array);
+	gH_Forwards_OnChatConfigLoaded = CreateGlobalForward("Shavit_OnChatConfigLoaded", ET_Event);
 	gH_Forwards_OnUserCmdPre = CreateGlobalForward("Shavit_OnUserCmdPre", ET_Event, Param_Cell, Param_CellByRef, Param_CellByRef, Param_Array, Param_Array, Param_Cell, Param_Cell, Param_Cell, Param_Array, Param_Array);
 	gH_Forwards_OnTimerIncrement = CreateGlobalForward("Shavit_OnTimeIncrement", ET_Event, Param_Cell, Param_Array, Param_CellByRef, Param_Array);
 	gH_Forwards_OnTimerIncrementPost = CreateGlobalForward("Shavit_OnTimeIncrementPost", ET_Event, Param_Cell, Param_Cell, Param_Array);
@@ -317,6 +345,8 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_r", Command_StartTimer, "Start your timer.");
 	RegConsoleCmd("sm_restart", Command_StartTimer, "Start your timer.");
 	RegConsoleCmd("sm_main", Command_StartTimer, "Start your timer on the main track.");
+	RegConsoleCmd("sm_ihate!main", Command_IHateMain, "If you really hate !main :(((");
+	gH_IHateMain = new Cookie("shavit_mainhater", "If you really hate !main :(((", CookieAccess_Protected);
 
 	RegConsoleCmd("sm_b", Command_StartTimer, "Start your timer on the bonus track.");
 	RegConsoleCmd("sm_bonus", Command_StartTimer, "Start your timer on the bonus track.");
@@ -348,10 +378,6 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_autobhop", Command_AutoBhop, "Toggle autobhop.");
 	gH_AutoBhopCookie = RegClientCookie("shavit_autobhop", "Autobhop cookie", CookieAccess_Protected);
 
-	// doublestep fixer
-	AddCommandListener(Command_DoubleStep, "+ds");
-	AddCommandListener(Command_DoubleStep, "-ds");
-
 	// style commands
 	gSM_StyleCommands = new StringMap();
 
@@ -374,6 +400,7 @@ public void OnPluginStart()
 	gCV_Restart = new Convar("shavit_core_restart", "1", "Allow commands that restart the timer?", 0, true, 0.0, true, 1.0);
 	gCV_Pause = new Convar("shavit_core_pause", "1", "Allow pausing?", 0, true, 0.0, true, 1.0);
 	gCV_AllowTimerWithoutZone = new Convar("shavit_core_timernozone", "0", "Allow the timer to start if there's no start zone?", 0, true, 0.0, true, 1.0);
+	gCV_PauseMovement = new Convar("shavit_core_pause_movement", "0", "Allow movement/noclip while paused?", 0, true, 0.0, true, 1.0);
 	gCV_BlockPreJump = new Convar("shavit_core_blockprejump", "0", "Prevents jumping in the start zone.", 0, true, 0.0, true, 1.0);
 	gCV_NoZAxisSpeed = new Convar("shavit_core_nozaxisspeed", "0", "Don't start timer if vertical speed exists (btimes style).", 0, true, 0.0, true, 1.0);
 	gCV_VelocityTeleport = new Convar("shavit_core_velocityteleport", "0", "Teleport the client when changing its velocity? (for special styles)", 0, true, 0.0, true, 1.0);
@@ -382,13 +409,24 @@ public void OnPluginStart()
 	gCV_SimplerLadders = new Convar("shavit_core_simplerladders", "1", "Allows using all keys on limited styles (such as sideways) after touching ladders\nTouching the ground enables the restriction again.", 0, true, 0.0, true, 1.0);
 	gCV_UseOffsets = new Convar("shavit_core_useoffsets", "1", "Calculates more accurate times by subtracting/adding tick offsets from the time the server uses to register that a player has left or entered a trigger", 0, true, 0.0, true, 1.0);
 	gCV_TimeInMessages = new Convar("shavit_core_timeinmessages", "0", "Whether to prefix SayText2 messages with the time.", 0, true, 0.0, true, 1.0);
-	#if DEBUG
 	gCV_DebugOffsets = new Convar("shavit_core_debugoffsets", "0", "Print offset upon leaving or entering a zone?", 0, true, 0.0, true, 1.0);
-	#endif
+	gCV_DisableSvCheats = new Convar("shavit_core_disable_sv_cheats", "1", "Force sv_cheats to 0.", 0, true, 0.0, true, 1.0);
 	gCV_DefaultStyle.AddChangeHook(OnConVarChanged);
 
 	Convar.AutoExecConfig();
 
+#if !DEBUG
+	sv_cheats = FindConVar("sv_cheats");
+	sv_cheats.AddChangeHook(sv_cheats_hook);
+
+	for (int i = 0; i < sizeof(gS_CheatCommands); i++)
+	{
+		AddCommandListener(Command_Cheats, gS_CheatCommands[i]);
+	}
+#endif
+
+	sv_airaccelerate = FindConVar("sv_airaccelerate");
+	sv_airaccelerate.Flags &= ~(FCVAR_NOTIFY | FCVAR_REPLICATED);
 
 	sv_enablebunnyhopping = FindConVar("sv_enablebunnyhopping");
 
@@ -397,6 +435,7 @@ public void OnPluginStart()
 		sv_enablebunnyhopping.Flags &= ~(FCVAR_NOTIFY | FCVAR_REPLICATED);
 	}
 
+	gB_Eventqueuefix = LibraryExists("eventqueuefix");
 	gB_Zones = LibraryExists("shavit-zones");
 	gB_WR = LibraryExists("shavit-wr");
 	gB_Replay = LibraryExists("shavit-replay");
@@ -516,6 +555,42 @@ public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] n
 	gI_DefaultStyle = StringToInt(newValue[1]);
 }
 
+#if !DEBUG
+public void sv_cheats_hook(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+	if (gCV_DisableSvCheats.BoolValue)
+	{
+		sv_cheats.SetInt(0);
+	}
+}
+
+public Action Command_Cheats(int client, const char[] command, int args)
+{
+	if (!sv_cheats.BoolValue || client == 0)
+	{
+		return Plugin_Continue;
+	}
+
+	if (StrContains(command, "kill") != -1 || StrContains(command, "explode") != -1)
+	{
+		bool bVector = StrContains(command, "vector") != -1;
+		bool bKillOther = args > (bVector ? 3 : 0);
+
+		if (!bKillOther)
+		{
+			return Plugin_Continue;
+		}
+	}
+
+	if (!(GetUserFlagBits(client) & ADMFLAG_ROOT))
+	{
+		return Plugin_Handled;
+	}
+
+	return Plugin_Continue;
+}
+#endif
+
 public void OnLibraryAdded(const char[] name)
 {
 	if(StrEqual(name, "shavit-zones"))
@@ -541,6 +616,11 @@ public void OnLibraryAdded(const char[] name)
 	else if(StrEqual(name, "shavit-hud"))
 	{
 		gB_HUD = true;
+	}
+
+	else if(StrEqual(name, "eventqueuefix"))
+	{
+		gB_Eventqueuefix = true;
 	}
 }
 
@@ -570,6 +650,11 @@ public void OnLibraryRemoved(const char[] name)
 	{
 		gB_HUD = false;
 	}
+
+	else if(StrEqual(name, "eventqueuefix"))
+	{
+		gB_Eventqueuefix = false;
+	}
 }
 
 public void OnMapStart()
@@ -584,6 +669,16 @@ public void OnMapStart()
 	if(!LoadMessages())
 	{
 		SetFailState("Could not load the chat messages configuration file. Make sure it exists (addons/sourcemod/configs/shavit-messages.cfg) and follows the proper syntax!");
+	}
+}
+
+public void OnConfigsExecuted()
+{
+	if (gCV_DisableSvCheats.BoolValue)
+	{
+#if !DEBUG
+		sv_cheats.SetInt(0);
+#endif
 	}
 }
 
@@ -634,9 +729,18 @@ public Action Command_StartTimer(int client, int args)
 	}
 	else if(StrContains(sCommand, "sm_r", false) == 0)
 	{
-		gA_Timers[client].iTrack = 0;
-		
-		track = gA_Timers[client].iTrack;
+		track = (DoIHateMain(client)) ? Track_Main : gA_Timers[client].iTrack;
+
+		Action result = Plugin_Continue;
+		Call_StartForward(gH_Forwards_OnRestartPre);
+		Call_PushCell(client);
+		Call_PushCell(track);
+		Call_Finish(result);
+
+		if (result > Plugin_Continue)
+		{
+			return Plugin_Handled;
+		}
 	}
 
 	if(gCV_AllowTimerWithoutZone.BoolValue || (gB_Zones && Shavit_ZoneExists(Zone_Start, track)))
@@ -656,7 +760,6 @@ public Action Command_StartTimer(int client, int args)
 			StartTimer(client, track);
 		}
 	}
-
 	else
 	{
 		char sTrack[32];
@@ -664,6 +767,27 @@ public Action Command_StartTimer(int client, int args)
 
 		Shavit_PrintToChat(client, "%T", "StartZoneUndefined", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTrack, gS_ChatStrings.sText);
 	}
+
+	return Plugin_Handled;
+}
+
+bool DoIHateMain(int client)
+{
+	char data[2];
+	gH_IHateMain.Get(client, data, sizeof(data));
+	return (data[0] == '1');
+}
+
+public Action Command_IHateMain(int client, int args)
+{
+	if (!IsValidClient(client))
+	{
+		return Plugin_Handled;
+	}
+
+	bool bIHateMain = DoIHateMain(client);
+	gH_IHateMain.Set(client, (bIHateMain) ? "0" : "1");
+	Shavit_PrintToChat(client, (bIHateMain) ? ":)" : ":(");
 
 	return Plugin_Handled;
 }
@@ -747,6 +871,13 @@ public Action Command_TogglePause(int client, int args)
 	if((iFlags & CPR_InStartZone) > 0)
 	{
 		Shavit_PrintToChat(client, "%T", "PauseStartZone", client, gS_ChatStrings.sText, gS_ChatStrings.sWarning, gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
+
+		return Plugin_Handled;
+	}
+
+	if((iFlags & CPR_InEndZone) > 0)
+	{
+		Shavit_PrintToChat(client, "%T", "PauseEndZone", client, gS_ChatStrings.sText, gS_ChatStrings.sWarning, gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
 
 		return Plugin_Handled;
 	}
@@ -838,8 +969,9 @@ public Action Command_DeleteMap(int client, int args)
 		return Plugin_Handled;
 	}
 
-	char sArgs[160];
-	GetCmdArgString(sArgs, 160);
+	char sArgs[PLATFORM_MAX_PATH];
+	GetCmdArgString(sArgs, sizeof(sArgs));
+	LowercaseString(sArgs);
 
 	if(StrEqual(sArgs, "confirm") && strlen(gS_DeleteMap[client]) > 0)
 	{
@@ -868,12 +1000,11 @@ public Action Command_DeleteMap(int client, int args)
 		}
 
 		ReplyToCommand(client, "Finished deleting data for %s.", gS_DeleteMap[client]);
-		strcopy(gS_DeleteMap[client], 160, "");
+		gS_DeleteMap[client] = "";
 	}
-
 	else
 	{
-		strcopy(gS_DeleteMap[client], 160, sArgs);
+		gS_DeleteMap[client] = sArgs;
 		ReplyToCommand(client, "Map to delete is now %s.\nRun \"sm_deletemap confirm\" to delete all data regarding the map %s.", gS_DeleteMap[client], gS_DeleteMap[client]);
 	}
 
@@ -938,19 +1069,16 @@ public Action Command_WipePlayer(int client, int args)
 
 	if(strlen(gS_Verification[client]) == 0 || !StrEqual(sArgString, gS_Verification[client]))
 	{
-		ReplaceString(sArgString, 32, "[U:1:", "");
-		ReplaceString(sArgString, 32, "]", "");
-
-		gI_WipePlayerID[client] = StringToInt(sArgString);
+		gI_WipePlayerID[client] = SteamIDToAuth(sArgString);
 
 		if(gI_WipePlayerID[client] <= 0)
 		{
-			Shavit_PrintToChat(client, "Entered SteamID ([U:1:%s]) is invalid. The range for valid SteamIDs is [U:1:1] to [U:1:2147483647].", sArgString);
+			Shavit_PrintToChat(client, "Entered SteamID (%s) is invalid. The range for valid SteamIDs is [U:1:1] to [U:1:2147483647].", sArgString);
 
 			return Plugin_Handled;
 		}
 
-		char sAlphabet[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#";
+		char sAlphabet[] = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#";
 		strcopy(gS_Verification[client], 8, "");
 
 		for(int i = 0; i < 5; i++)
@@ -1003,7 +1131,7 @@ public void Trans_DeleteRestOfUserFailed(Database db, DataPack hPack, int numQue
 
 void DeleteRestOfUser(int iSteamID, DataPack hPack)
 {
-	Transaction hTransaction = new Transaction();
+	Transaction2 hTransaction = new Transaction2();
 	char sQuery[256];
 
 	FormatEx(sQuery, 256, "DELETE FROM %splayertimes WHERE auth = %d;", gS_MySQLPrefix, iSteamID);
@@ -1087,13 +1215,6 @@ public Action Command_AutoBhop(int client, int args)
 	SetClientCookie(client, gH_AutoBhopCookie, sAutoBhop);
 
 	UpdateStyleSettings(client);
-
-	return Plugin_Handled;
-}
-
-public Action Command_DoubleStep(int client, const char[] command, int args)
-{
-	gA_Timers[client].bDoubleSteps = (command[0] == '+');
 
 	return Plugin_Handled;
 }
@@ -1218,31 +1339,46 @@ void CallOnTrackChanged(int client, int oldtrack, int newtrack)
 	Call_PushCell(newtrack);
 	Call_Finish();
 
-	if (oldtrack == Track_Main && oldtrack != newtrack)
+	if (oldtrack == Track_Main && oldtrack != newtrack && !DoIHateMain(client))
 	{
-		Shavit_PrintToChat(client, "%T", "TrackChangeFromMain", client, gS_ChatStrings.sVariable, gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "TrackChangeFromMain", client, gS_ChatStrings.sVariable, gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
 	}
 }
 
-void CallOnStyleChanged(int client, int oldstyle, int newstyle, bool manual)
+void CallOnStyleChanged(int client, int oldstyle, int newstyle, bool manual, bool nofoward=false)
 {
-	Call_StartForward(gH_Forwards_OnStyleChanged);
-	Call_PushCell(client);
-	Call_PushCell(oldstyle);
-	Call_PushCell(newstyle);
-	Call_PushCell(gA_Timers[client].iTrack);
-	Call_PushCell(manual);
-	Call_Finish();
+	if (!nofoward)
+	{
+		Call_StartForward(gH_Forwards_OnStyleChanged);
+		Call_PushCell(client);
+		Call_PushCell(oldstyle);
+		Call_PushCell(newstyle);
+		Call_PushCell(gA_Timers[client].iTrack);
+		Call_PushCell(manual);
+		Call_Finish();
+	}
 
 	gA_Timers[client].iStyle = newstyle;
 
-	if(gA_Timers[client].fTimescale != -1.0)
+	float fNewTimescale = GetStyleSettingFloat(newstyle, "timescale");
+
+	if (gA_Timers[client].fTimescale != fNewTimescale && fNewTimescale > 0.0)
 	{
-		CallOnTimescaleChanged(client, gA_Timers[client].fTimescale, -1.0);
-		gA_Timers[client].fTimescale = -1.0;
+		CallOnTimescaleChanged(client, gA_Timers[client].fTimescale, fNewTimescale);
+		gA_Timers[client].fTimescale = fNewTimescale;
 	}
 
 	UpdateStyleSettings(client);
+
+	float newLaggedMovement = fNewTimescale * GetStyleSettingFloat(newstyle, "speed");
+	SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", newLaggedMovement); // might be problematic with the shavit-kz stuff TODO
+
+	if (gB_Eventqueuefix)
+	{
+		SetEventsTimescale(client, newLaggedMovement);
+	}
+
+	SetEntityGravity(client, GetStyleSettingFloat(newstyle, "gravity"));
 }
 
 void CallOnTimescaleChanged(int client, float oldtimescale, float newtimescale)
@@ -1315,7 +1451,6 @@ public void Bunnyhop_OnLeaveGround(int client, bool jumped, bool ladder)
 	}
 
 	DoJump(client);
-	gA_Timers[client].bJumped = true;
 }
 
 public void Player_Jump(Event event, const char[] name, bool dontBroadcast)
@@ -1323,14 +1458,14 @@ public void Player_Jump(Event event, const char[] name, bool dontBroadcast)
 	int client = GetClientOfUserId(event.GetInt("userid"));
 
 	DoJump(client);
-	gA_Timers[client].bJumped = true;
 }
 
 void DoJump(int client)
 {
-	if(gA_Timers[client].bEnabled)
+	if(gA_Timers[client].bEnabled && !gA_Timers[client].bPaused)
 	{
 		gA_Timers[client].iJumps++;
+		gA_Timers[client].bJumped = true;
 	}
 
 	// TF2 doesn't use stamina
@@ -1355,14 +1490,12 @@ void VelocityChanges(int data)
 
 	if(GetStyleSettingBool(style, "force_timescale"))
 	{
-		if(gA_Timers[client].fTimescale != -1.0)
+		float mod = gA_Timers[client].fTimescale * GetStyleSettingFloat(gA_Timers[client].iStyle, "speed");
+		SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", mod);
+
+		if (gB_Eventqueuefix)
 		{
-			SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", gA_Timers[client].fTimescale);
-		}
-		
-		else if(GetStyleSettingFloat(style, "speed") != 1.0)
-		{
-			SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", GetStyleSettingFloat(style, "speed"));
+			SetEventsTimescale(client, mod);
 		}
 	}
 
@@ -1532,6 +1665,11 @@ public int Native_CanPause(Handle handler, int numParams)
 		iFlags |= CPR_InStartZone;
 	}
 
+	if(Shavit_InsideZone(client, Zone_End, gA_Timers[client].iTrack))
+	{
+		iFlags |= CPR_InEndZone;
+	}
+
 	if(GetEntPropEnt(client, Prop_Send, "m_hGroundEntity") == -1 && GetEntityMoveType(client) != MOVETYPE_LADDER)
 	{
 		iFlags |= CPR_NotOnGround;
@@ -1583,23 +1721,7 @@ public int Native_ChangeClientStyle(Handle handler, int numParams)
 
 	if(force || Shavit_HasStyleAccess(client, style))
 	{
-		if(noforward)
-		{
-			gA_Timers[client].iStyle = style;
-
-			if(gA_Timers[client].fTimescale != -1.0)
-			{
-				CallOnTimescaleChanged(client, gA_Timers[client].fTimescale, -1.0);
-				gA_Timers[client].fTimescale = -1.0;
-			}
-
-			UpdateStyleSettings(client);
-		}
-
-		else
-		{
-			CallOnStyleChanged(client, gA_Timers[client].iStyle, style, manual);
-		}
+		CallOnStyleChanged(client, gA_Timers[client].iStyle, style, manual, noforward);
 
 		return true;
 	}
@@ -1610,25 +1732,23 @@ public int Native_ChangeClientStyle(Handle handler, int numParams)
 public int Native_FinishMap(Handle handler, int numParams)
 {
 	int client = GetNativeCell(1);
+	int timestamp = GetTime();
 
 	if(gCV_UseOffsets.BoolValue)
 	{
 		CalculateTickIntervalOffset(client, Zone_End);
-		gA_Timers[client].fTimer += gA_Timers[client].fTimeOffset[Zone_Start];
-		gA_Timers[client].fTimer -= GetTickInterval();
-		gA_Timers[client].fTimer += gA_Timers[client].fTimeOffset[Zone_End];
 
-		#if DEBUG
 		if(gCV_DebugOffsets.BoolValue)
 		{
-			char sOffsetMessage[64];
+			char sOffsetMessage[100];
 			char sOffsetDistance[8];
 			FormatEx(sOffsetDistance, 8, "%.1f", gA_Timers[client].fDistanceOffset[Zone_End]);
-			FormatEx(sOffsetMessage, 64, "[END]%T", "DebugOffsets", client, gA_Timers[client].fTimeOffset[Zone_End], sOffsetDistance);
-			PrintToConsole(client, "%s", sOffsetMessage);
+			FormatEx(sOffsetMessage, sizeof(sOffsetMessage), "[END] %T %d", "DebugOffsets", client, gA_Timers[client].fZoneOffset[Zone_End], sOffsetDistance, gA_Timers[client].iZoneIncrement);
+			Shavit_PrintToChat(client, "%s", sOffsetMessage);
 		}
-		#endif
 	}
+
+	gA_Timers[client].fTimer = (gA_Timers[client].fTimescaledTicks + gA_Timers[client].fZoneOffset[Zone_Start] + gA_Timers[client].fZoneOffset[Zone_End]) * GetTickInterval();
 
 	timer_snapshot_t snapshot;
 	BuildSnapshot(client, snapshot);
@@ -1643,6 +1763,11 @@ public int Native_FinishMap(Handle handler, int numParams)
 	{
 		return;
 	}
+
+#if DEBUG
+	float offset = (gA_Timers[client].fZoneOffset[Zone_Start] + gA_Timers[client].fZoneOffset[Zone_End]) * GetTickInterval();
+	PrintToServer("0x%X %f -- ticks*interval -- offsettime=%f ticks=%.0f", snapshot.fCurrentTime, snapshot.fCurrentTime, offset, snapshot.fTimescaledTicks);
+#endif
 
 	Call_StartForward(gH_Forwards_Finish);
 	Call_PushCell(client);
@@ -1662,7 +1787,6 @@ public int Native_FinishMap(Handle handler, int numParams)
 		Call_PushCell(track = gA_Timers[client].iTrack);
 		perfs = (gA_Timers[client].iMeasuredJumps == 0)? 100.0:(gA_Timers[client].iPerfectJumps / float(gA_Timers[client].iMeasuredJumps) * 100.0);
 	}
-
 	else
 	{
 		Call_PushCell(style = snapshot.bsStyle);
@@ -1696,7 +1820,7 @@ public int Native_FinishMap(Handle handler, int numParams)
 		Call_PushCell(snapshot.fMaxVelocity);
 	}
 
-	Call_PushCell(GetTime());
+	Call_PushCell(timestamp);
 	Call_Finish();
 
 	StopTimer(client);
@@ -1713,7 +1837,7 @@ public int Native_PauseTimer(Handle handler, int numParams)
 	PauseTimer(client);
 }
 
-public any Native_GetTimeOffset(Handle handler, int numParams)
+public any Native_GetZoneOffset(Handle handler, int numParams)
 {
 	int client = GetNativeCell(1);
 	int zonetype = GetNativeCell(2);
@@ -1722,10 +1846,11 @@ public any Native_GetTimeOffset(Handle handler, int numParams)
 	{
 		return ThrowNativeError(32, "ZoneType is out of bounds");
 	}
-	return gA_Timers[client].fTimeOffset[zonetype];
+
+	return gA_Timers[client].fZoneOffset[zonetype];
 }
 
-public any Native_GetTimeOffsetDistance(Handle handler, int numParams)
+public any Native_GetDistanceOffset(Handle handler, int numParams)
 {
 	int client = GetNativeCell(1);
 	int zonetype = GetNativeCell(2);
@@ -2058,7 +2183,7 @@ public int Native_LoadSnapshot(Handle handler, int numParams)
 	}
 
 	gA_Timers[client].bEnabled = snapshot.bTimerEnabled;
-	gA_Timers[client].bPaused = snapshot.bClientPaused;
+	gA_Timers[client].bPaused = snapshot.bClientPaused && snapshot.bTimerEnabled;
 	gA_Timers[client].iJumps = snapshot.iJumps;
 	gA_Timers[client].iStyle = snapshot.bsStyle;
 	gA_Timers[client].iStrafes = snapshot.iStrafes;
@@ -2068,11 +2193,13 @@ public int Native_LoadSnapshot(Handle handler, int numParams)
 	gA_Timers[client].iSHSWCombination = snapshot.iSHSWCombination;
 	gA_Timers[client].iMeasuredJumps = snapshot.iMeasuredJumps;
 	gA_Timers[client].iPerfectJumps = snapshot.iPerfectJumps;
-	gA_Timers[client].fTimeOffset = snapshot.fTimeOffset;
+	gA_Timers[client].fZoneOffset = snapshot.fZoneOffset;
 	gA_Timers[client].fDistanceOffset = snapshot.fDistanceOffset;
 	gA_Timers[client].fAvgVelocity = snapshot.fAvgVelocity;
 	gA_Timers[client].fMaxVelocity = snapshot.fMaxVelocity;
-	gA_Timers[client].fTimescale = snapshot.fTimescale;
+	gA_Timers[client].fTimescale = (snapshot.fTimescale > 0.0) ? snapshot.fTimescale : 1.0;
+	gA_Timers[client].iZoneIncrement = snapshot.iZoneIncrement;
+	gA_Timers[client].fTimescaledTicks = snapshot.fTimescaledTicks;
 
 	return 0;
 }
@@ -2096,7 +2223,14 @@ public int Native_LogMessage(Handle plugin, int numParams)
 
 public int Native_GetClientTimescale(Handle handler, int numParams)
 {
-	return view_as<int>(gA_Timers[GetNativeCell(1)].fTimescale);
+	int client = GetNativeCell(1);
+
+	if (gA_Timers[client].fTimescale == GetStyleSettingFloat(gA_Timers[client].iStyle, "timescale"))
+	{
+		return view_as<int>(-1.0);
+	}
+
+	return view_as<int>(gA_Timers[client].fTimescale);
 }
 
 public int Native_SetClientTimescale(Handle handler, int numParams)
@@ -2104,7 +2238,7 @@ public int Native_SetClientTimescale(Handle handler, int numParams)
 	int client = GetNativeCell(1);
 	float timescale = GetNativeCell(2);
 
-	if(timescale != gA_Timers[client].fTimescale)
+	if (timescale != gA_Timers[client].fTimescale && timescale > 0.0)
 	{
 		CallOnTimescaleChanged(client, gA_Timers[client].fTimescale, timescale);
 		gA_Timers[client].fTimescale = timescale;
@@ -2210,9 +2344,6 @@ public any Native_SetMaxVelocity(Handle plugin, int numParams)
 bool HasStyleSetting(int style, char[] key)
 {
 	char sValue[1];
-	gSM_StyleKeys[style].GetString(key, sValue, 1);
-	
-
 	return gSM_StyleKeys[style].GetString(key, sValue, 1);
 }
 
@@ -2279,6 +2410,16 @@ public any Native_SetStyleSettingInt(Handle handler, int numParams)
 	return gSM_StyleKeys[style].SetString(sKey, sValue, replace);
 }
 
+public Action Shavit_OnStartPre(int client, int track)
+{
+	if (GetTimerStatus(client) == view_as<int>(Timer_Paused) && gCV_PauseMovement.BoolValue)
+	{
+		return Plugin_Stop;
+	}
+
+	return Plugin_Continue;
+}
+
 int GetTimerStatus(int client)
 {
 	if(!gA_Timers[client].bEnabled)
@@ -2310,19 +2451,25 @@ void StartTimer(int client, int track)
 		(fSpeed[2] == 0.0 && (GetStyleSettingInt(gA_Timers[client].iStyle, "prespeed") == 2 || curVel <= 290.0)))
 	{
 		Action result = Plugin_Continue;
-		Call_StartForward(gH_Forwards_Start);
+		Call_StartForward(gH_Forwards_StartPre);
 		Call_PushCell(client);
 		Call_PushCell(track);
 		Call_Finish(result);
 
 		if(result == Plugin_Continue)
 		{
+			Call_StartForward(gH_Forwards_Start);
+			Call_PushCell(client);
+			Call_PushCell(track);
+			Call_Finish(result);
+
 			if(gA_Timers[client].bPaused)
 			{
 				//SetEntityMoveType(client, MOVETYPE_WALK);
 			}
 
 			gA_Timers[client].iZoneIncrement = 0;
+			gA_Timers[client].fTimescaledTicks = 0.0;
 			gA_Timers[client].bPaused = false;
 			gA_Timers[client].iStrafes = 0;
 			gA_Timers[client].iJumps = 0;
@@ -2342,35 +2489,29 @@ void StartTimer(int client, int track)
 			gA_Timers[client].iMeasuredJumps = 0;
 			gA_Timers[client].iPerfectJumps = 0;
 			gA_Timers[client].bCanUseAllKeys = false;
-			gA_Timers[client].fTimeOffset[Zone_Start] = 0.0;
-			gA_Timers[client].fTimeOffset[Zone_End] = 0.0;
+			gA_Timers[client].fZoneOffset[Zone_Start] = 0.0;
+			gA_Timers[client].fZoneOffset[Zone_End] = 0.0;
 			gA_Timers[client].fDistanceOffset[Zone_Start] = 0.0;
 			gA_Timers[client].fDistanceOffset[Zone_End] = 0.0;
 			gA_Timers[client].fAvgVelocity = curVel;
 			gA_Timers[client].fMaxVelocity = curVel;
 
-			if(gA_Timers[client].fTimescale == 0.0)
-			{
-				SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", 1.0);
-			}
+			float mod = gA_Timers[client].fTimescale * GetStyleSettingFloat(gA_Timers[client].iStyle, "speed");
+			SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", mod);
 
-			else if(gA_Timers[client].fTimescale != -1.0)
+			if (gB_Eventqueuefix)
 			{
-				SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", gA_Timers[client].fTimescale);
-			}
-
-			else
-			{
-				SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", GetStyleSettingFloat(gA_Timers[client].iStyle, "speed"));
+				SetEventsTimescale(client, mod);
 			}
 
 			SetEntityGravity(client, GetStyleSettingFloat(gA_Timers[client].iStyle, "gravity"));
 		}
-
+#if 0
 		else if(result == Plugin_Handled || result == Plugin_Stop)
 		{
 			gA_Timers[client].bEnabled = false;
 		}
+#endif
 	}
 }
 
@@ -2479,14 +2620,15 @@ public void OnClientPutInServer(int client)
 	}
 
 	gA_Timers[client].bAuto = true;
-	gA_Timers[client].bDoubleSteps = false;
 	gA_Timers[client].fStrafeWarning = 0.0;
 	gA_Timers[client].bPracticeMode = false;
 	gA_Timers[client].iSHSWCombination = -1;
 	gA_Timers[client].iTrack = 0;
 	gA_Timers[client].iStyle = 0;
-	gA_Timers[client].fTimescale = -1.0;
-	strcopy(gS_DeleteMap[client], 160, "");
+	gA_Timers[client].fTimescale = 1.0;
+	gA_Timers[client].fTimescaledTicks = 0.0;
+	gA_Timers[client].iZoneIncrement = 0;
+	gS_DeleteMap[client][0] = 0;
 
 	gB_CookiesRetrieved[client] = false;
 
@@ -2583,6 +2725,14 @@ bool LoadStyles()
 	parser.ParseFile(sPath);
 	delete parser;
 
+	for (int i = 0; i < gI_Styles; i++)
+	{
+		if (gSM_StyleKeys[i] == null)
+		{
+			SetFailState("Missing style index %d. Highest index is %d. Fix addons/sourcemod/configs/shavit-styles.cfg", i, gI_Styles-1);
+		}
+	}
+
 	gB_Registered = true;
 
 	SortCustom1D(gI_OrderedStyles, gI_Styles, SortAscending_StyleOrder);
@@ -2604,12 +2754,21 @@ public SMCResult OnStyleEnterSection(SMCParser smc, const char[] name, bool opt_
 
 	gI_CurrentParserIndex = StringToInt(name);
 
+	if (gSM_StyleKeys[gI_CurrentParserIndex] != null)
+	{
+		SetFailState("Style index %d (%s) already parsed. Stop using the same index for multiple styles. Fix addons/sourcemod/configs/shavit-styles.cfg", gI_CurrentParserIndex, name);
+	}
+
+	if (gI_CurrentParserIndex >= STYLE_LIMIT)
+	{
+		SetFailState("Style index %d (%s) too high (limit %d). Fix addons/sourcemod/configs/shavit-styles.cfg", gI_CurrentParserIndex, name, STYLE_LIMIT);
+	}
+
 	if(gI_Styles <= gI_CurrentParserIndex)
 	{
 		gI_Styles = gI_CurrentParserIndex + 1;
 	}
 
-	delete gSM_StyleKeys[gI_CurrentParserIndex];
 	gSM_StyleKeys[gI_CurrentParserIndex] = new StringMap();
 
 	gSM_StyleKeys[gI_CurrentParserIndex].SetString("name", "<MISSING STYLE NAME>");
@@ -2688,6 +2847,11 @@ public SMCResult OnStyleLeaveSection(SMCParser smc)
 	if(GetStyleSettingBool(gI_CurrentParserIndex, "halftime"))
 	{
 		gSM_StyleKeys[gI_CurrentParserIndex].SetString("timescale", "0.5");
+	}
+
+	if (GetStyleSettingFloat(gI_CurrentParserIndex, "timescale") <= 0.0)
+	{
+		gSM_StyleKeys[gI_CurrentParserIndex].SetString("timescale", "1.0");
 	}
 
 	// Setting it here so that we can reference the timescale setting.
@@ -2874,7 +3038,6 @@ bool LoadMessages()
 	ReplaceColors(gS_ChatStrings.sStyle, sizeof(chatstrings_t::sStyle));
 
 	Call_StartForward(gH_Forwards_OnChatConfigLoaded);
-	Call_PushArray(gS_ChatStrings, sizeof(gS_ChatStrings));
 	Call_Finish();
 
 	return true;
@@ -2883,22 +3046,13 @@ bool LoadMessages()
 void SQL_DBConnect()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
-	gH_SQL = GetTimerDatabaseHandle();
+	gH_SQL = GetTimerDatabaseHandle2();
 	gB_MySQL = IsMySQLDatabase(gH_SQL);
 
 	// support unicode names
 	if(!gH_SQL.SetCharset("utf8mb4"))
 	{
 		gH_SQL.SetCharset("utf8");
-	}
-
-	// migrations will only exist for mysql. sorry sqlite users
-	if(gB_MySQL)
-	{
-		char sQuery[128];
-		FormatEx(sQuery, 128, "CREATE TABLE IF NOT EXISTS `%smigrations` (`code` TINYINT NOT NULL, UNIQUE INDEX `code` (`code`));", gS_MySQLPrefix);
-
-		gH_SQL.Query(SQL_CreateMigrationsTable_Callback, sQuery, 0, DBPrio_High);
 	}
 
 	CreateUsersTable();
@@ -2940,9 +3094,16 @@ public void SQL_SelectMigrations_Callback(Database db, DBResultSet results, cons
 	{
 		if(!bMigrationApplied[i])
 		{
+			gI_MigrationsRequired++;
 			PrintToServer("--- Applying database migration %d ---", i);
 			ApplyMigration(i);
 		}
+	}
+
+	if (!gI_MigrationsRequired)
+	{
+		Call_StartForward(gH_Forwards_OnDatabaseLoaded);
+		Call_Finish();
 	}
 }
 
@@ -2960,6 +3121,15 @@ void ApplyMigration(int migration)
 		case Migration_AddZonesFlagsAndData: ApplyMigration_AddZonesFlagsAndData();
 		case Migration_AddPlayertimesCompletions: ApplyMigration_AddPlayertimesCompletions();
 		case Migration_AddCustomChatAccess: ApplyMigration_AddCustomChatAccess();
+		case Migration_AddPlayertimesExactTimeInt: ApplyMigration_AddPlayertimesExactTimeInt();
+		case Migration_FixOldCompletionCounts: ApplyMigration_FixOldCompletionCounts();
+		case Migration_AddPrebuiltToMapZonesTable: ApplyMigration_AddPrebuiltToMapZonesTable();
+		case Migration_AddPlaytime: ApplyMigration_AddPlaytime();
+		case Migration_Lowercase_maptiers: ApplyMigration_LowercaseMaps("maptiers", migration);
+		case Migration_Lowercase_mapzones: ApplyMigration_LowercaseMaps("mapzones", migration);
+		case Migration_Lowercase_playertimes: ApplyMigration_LowercaseMaps("playertimes", migration);
+		case Migration_Lowercase_stagetimeswr: ApplyMigration_LowercaseMaps("stagetimewrs", migration);
+		case Migration_Lowercase_startpositions: ApplyMigration_LowercaseMaps("startpositions", migration);
 	}
 }
 
@@ -3003,6 +3173,49 @@ void ApplyMigration_AddCustomChatAccess()
 	char sQuery[192];
 	FormatEx(sQuery, 192, "ALTER TABLE `%schat` ADD COLUMN `ccaccess` INT NOT NULL DEFAULT 0 AFTER `ccmessage`;", gS_MySQLPrefix);
 	gH_SQL.Query(SQL_TableMigrationSingleQuery_Callback, sQuery, Migration_AddCustomChatAccess, DBPrio_High);
+}
+
+void ApplyMigration_AddPlayertimesExactTimeInt()
+{
+	char sQuery[192];
+	FormatEx(sQuery, 192, "ALTER TABLE `%splayertimes` ADD COLUMN `exact_time_int` INT NOT NULL DEFAULT 0 AFTER `completions`;", gS_MySQLPrefix);
+	gH_SQL.Query(SQL_TableMigrationSingleQuery_Callback, sQuery, Migration_AddPlayertimesExactTimeInt, DBPrio_High);
+}
+
+void ApplyMigration_FixOldCompletionCounts()
+{
+	char sQuery[192];
+	FormatEx(sQuery, 192, "UPDATE `%splayertimes` SET completions = completions - 1 WHERE completions > 1;", gS_MySQLPrefix);
+	gH_SQL.Query(SQL_TableMigrationSingleQuery_Callback, sQuery, Migration_FixOldCompletionCounts, DBPrio_High);
+}
+
+void ApplyMigration_AddPrebuiltToMapZonesTable()
+{
+	char sQuery[192];
+	FormatEx(sQuery, 192, "ALTER TABLE `%smapzones` ADD COLUMN `prebuilt` BOOL;", gS_MySQLPrefix);
+	gH_SQL.Query(SQL_TableMigrationSingleQuery_Callback, sQuery, Migration_AddPrebuiltToMapZonesTable, DBPrio_High);
+}
+
+// double up on this migration because some people may have used shavit-playtime which uses INT but I want FLOAT
+void ApplyMigration_AddPlaytime()
+{
+	char sQuery[192];
+	FormatEx(sQuery, 192, "ALTER TABLE `%susers` MODIFY COLUMN `playtime` FLOAT NOT NULL DEFAULT 0;", gS_MySQLPrefix);
+	gH_SQL.Query(SQL_Migration_AddPlaytime2222222_Callback, sQuery, Migration_AddPlaytime, DBPrio_High);
+}
+
+public void SQL_Migration_AddPlaytime2222222_Callback(Database db, DBResultSet results, const char[] error, any data)
+{
+	char sQuery[192];
+	FormatEx(sQuery, 192, "ALTER TABLE `%susers` ADD COLUMN `playtime` FLOAT NOT NULL DEFAULT 0 AFTER `points`;", gS_MySQLPrefix);
+	gH_SQL.Query(SQL_TableMigrationSingleQuery_Callback, sQuery, Migration_AddPlaytime, DBPrio_High);
+}
+
+void ApplyMigration_LowercaseMaps(const char[] table, int migration)
+{
+	char sQuery[192];
+	FormatEx(sQuery, 192, "UPDATE `%s%s` SET map = LOWER(map);", gS_MySQLPrefix, table);
+	gH_SQL.Query(SQL_TableMigrationSingleQuery_Callback, sQuery, migration, DBPrio_High);
 }
 
 public void SQL_TableMigrationSingleQuery_Callback(Database db, DBResultSet results, const char[] error, any data)
@@ -3059,7 +3272,7 @@ public void SQL_TableMigrationIPAddresses_Callback(Database db, DBResultSet resu
 		return;
 	}
 
-	Transaction hTransaction = new Transaction();
+	Transaction2 hTransaction = new Transaction2();
 	int iQueries = 0;
 
 	while(results.FetchRow())
@@ -3183,15 +3396,15 @@ public void SQL_TableMigrationWorkshop_Callback(Database db, DBResultSet results
 		return;
 	}
 
-	Transaction hTransaction = new Transaction();
+	Transaction2 hTransaction = new Transaction2();
 
 	while(results.FetchRow())
 	{
-		char sMap[160];
-		results.FetchString(0, sMap, 160);
+		char sMap[PLATFORM_MAX_PATH];
+		results.FetchString(0, sMap, sizeof(sMap));
 
-		char sDisplayMap[160];
-		GetMapDisplayName(sMap, sDisplayMap, 160);
+		char sDisplayMap[PLATFORM_MAX_PATH];
+		GetMapDisplayName(sMap, sDisplayMap, sizeof(sDisplayMap));
 
 		char sQuery[256];
 		FormatEx(sQuery, 256, "UPDATE %s%s SET map = '%s' WHERE map = '%s';", gS_MySQLPrefix, sTable, sDisplayMap, sMap);
@@ -3216,7 +3429,12 @@ void InsertMigration(int migration)
 
 public void SQL_MigrationApplied_Callback(Database db, DBResultSet results, const char[] error, any data)
 {
-	// nothing
+	if (++gI_MigrationsFinished >= gI_MigrationsRequired)
+	{
+		gI_MigrationsRequired = gI_MigrationsFinished = 0;
+		Call_StartForward(gH_Forwards_OnDatabaseLoaded);
+		Call_Finish();
+	}
 }
 
 void CreateUsersTable()
@@ -3226,14 +3444,14 @@ void CreateUsersTable()
 	if(gB_MySQL)
 	{
 		FormatEx(sQuery, 512,
-			"CREATE TABLE IF NOT EXISTS `%susers` (`auth` INT NOT NULL, `name` VARCHAR(32) COLLATE 'utf8mb4_general_ci', `ip` INT, `lastlogin` INT NOT NULL DEFAULT -1, `points` FLOAT NOT NULL DEFAULT 0, PRIMARY KEY (`auth`), INDEX `points` (`points`), INDEX `lastlogin` (`lastlogin`)) ENGINE=INNODB;",
+			"CREATE TABLE IF NOT EXISTS `%susers` (`auth` INT NOT NULL, `name` VARCHAR(32) COLLATE 'utf8mb4_general_ci', `ip` INT, `lastlogin` INT NOT NULL DEFAULT -1, `points` FLOAT NOT NULL DEFAULT 0, `playtime` FLOAT NOT NULL DEFAULT 0, PRIMARY KEY (`auth`), INDEX `points` (`points`), INDEX `lastlogin` (`lastlogin`)) ENGINE=INNODB;",
 			gS_MySQLPrefix);
 	}
 
 	else
 	{
 		FormatEx(sQuery, 512,
-			"CREATE TABLE IF NOT EXISTS `%susers` (`auth` INT NOT NULL PRIMARY KEY, `name` VARCHAR(32), `ip` INT, `lastlogin` INTEGER NOT NULL DEFAULT -1, `points` FLOAT NOT NULL DEFAULT 0);",
+			"CREATE TABLE IF NOT EXISTS `%susers` (`auth` INT NOT NULL PRIMARY KEY, `name` VARCHAR(32), `ip` INT, `lastlogin` INTEGER NOT NULL DEFAULT -1, `points` FLOAT NOT NULL DEFAULT 0, `playtime` FLOAT NOT NULL DEFAULT 0);",
 			gS_MySQLPrefix);
 	}
 
@@ -3249,8 +3467,19 @@ public void SQL_CreateUsersTable_Callback(Database db, DBResultSet results, cons
 		return;
 	}
 
-	Call_StartForward(gH_Forwards_OnDatabaseLoaded);
-	Call_Finish();
+	// migrations will only exist for mysql. sorry sqlite users
+	if(gB_MySQL)
+	{
+		char sQuery[128];
+		FormatEx(sQuery, 128, "CREATE TABLE IF NOT EXISTS `%smigrations` (`code` TINYINT NOT NULL, UNIQUE INDEX `code` (`code`));", gS_MySQLPrefix);
+
+		gH_SQL.Query(SQL_CreateMigrationsTable_Callback, sQuery, 0, DBPrio_High);
+	}
+	else
+	{
+		Call_StartForward(gH_Forwards_OnDatabaseLoaded);
+		Call_Finish();
+	}
 }
 
 public void PreThinkPost(int client)
@@ -3279,6 +3508,7 @@ public void PostThinkPost(int client)
 {
 	gF_Origin[client][1] = gF_Origin[client][0];
 	GetEntPropVector(client, Prop_Data, "m_vecOrigin", gF_Origin[client][0]);
+
 	if(gA_Timers[client].iZoneIncrement == 1 && gCV_UseOffsets.BoolValue)
 	{
 		float fVel[3];
@@ -3296,16 +3526,14 @@ public void PostThinkPost(int client)
 			CalculateTickIntervalOffset(client, Zone_Start);
 		}
 
-		#if DEBUG
 		if(gCV_DebugOffsets.BoolValue)
 		{
-			char sOffsetMessage[64];
+			char sOffsetMessage[100];
 			char sOffsetDistance[8];
 			FormatEx(sOffsetDistance, 8, "%.1f", gA_Timers[client].fDistanceOffset[Zone_Start]);
-			FormatEx(sOffsetMessage, 64, "[START]%T", "DebugOffsets", client, gA_Timers[client].fTimeOffset[Zone_Start], sOffsetDistance);
-			PrintToConsole(client, "%s", sOffsetMessage);
+			FormatEx(sOffsetMessage, sizeof(sOffsetMessage), "[START] %T", "DebugOffsets", client, gA_Timers[client].fZoneOffset[Zone_Start], sOffsetDistance);
+			Shavit_PrintToChat(client, "%s", sOffsetMessage);
 		}
-		#endif
 	}
 }
 
@@ -3340,7 +3568,7 @@ public MRESReturn DHook_AcceptInput_player_speedmod(int pThis, DHookReturn hRetu
 	float speed = StringToFloat(buf);
 	int style = gA_Timers[activator].iStyle;
 
-	speed *= (gA_Timers[activator].fTimescale != -1.0) ? gA_Timers[activator].fTimescale : GetStyleSettingFloat(style, "speed");
+	speed *= gA_Timers[activator].fTimescale * GetStyleSettingFloat(style, "speed");
 	SetEntPropFloat(activator, Prop_Data, "m_flLaggedMovementValue", speed);
 
 	#if DEBUG
@@ -3384,23 +3612,14 @@ public MRESReturn DHook_ProcessMovementPost(Handle hParams)
 	Call_PushCell(client);
 	Call_Finish();
 
-	float frametime = GetGameFrameTime();
-
 	if(gA_Timers[client].bPaused || !gA_Timers[client].bEnabled)
 	{
 		return MRES_Ignored;
 	}
 
-	float time;
-	if(gA_Timers[client].fTimescale != -1.0)
-	{
-		time = frametime * gA_Timers[client].fTimescale;
-	}
-
-	else
-	{
-		time = frametime * GetStyleSettingFloat(gA_Timers[client].iStyle, "timescale");
-	}
+	float interval = GetTickInterval();
+	float time = interval * gA_Timers[client].fTimescale;
+	float timeOrig = time;
 
 	gA_Timers[client].iZoneIncrement++;
 
@@ -3413,7 +3632,16 @@ public MRESReturn DHook_ProcessMovementPost(Handle hParams)
 	Call_PushCellRef(time);
 	Call_Finish();
 
-	gA_Timers[client].fTimer += time;
+	if (time == timeOrig)
+	{
+		gA_Timers[client].fTimescaledTicks += gA_Timers[client].fTimescale;
+	}
+	else
+	{
+		gA_Timers[client].fTimescaledTicks += time / interval;
+	}
+
+	gA_Timers[client].fTimer = interval * gA_Timers[client].fTimescaledTicks;
 
 	Call_StartForward(gH_Forwards_OnTimerIncrementPost);
 	Call_PushCell(client);
@@ -3448,7 +3676,7 @@ void CalculateTickIntervalOffset(int client, int zonetype)
 
 	float offset = gF_Fraction[client] * GetTickInterval();
 
-	gA_Timers[client].fTimeOffset[zonetype] = offset;
+	gA_Timers[client].fZoneOffset[zonetype] = gF_Fraction[client];
 	gA_Timers[client].fDistanceOffset[zonetype] = gF_SmallestDist[client];
 
 	Call_StartForward(gH_Forwards_OnTimeOffsetCalculated);
@@ -3505,11 +3733,13 @@ void BuildSnapshot(int client, timer_snapshot_t snapshot)
 	snapshot.iTimerTrack = gA_Timers[client].iTrack;
 	snapshot.iMeasuredJumps = gA_Timers[client].iMeasuredJumps;
 	snapshot.iPerfectJumps = gA_Timers[client].iPerfectJumps;
-	snapshot.fTimeOffset = gA_Timers[client].fTimeOffset;
+	snapshot.fZoneOffset = gA_Timers[client].fZoneOffset;
 	snapshot.fDistanceOffset = gA_Timers[client].fDistanceOffset;
 	snapshot.fAvgVelocity = gA_Timers[client].fAvgVelocity;
 	snapshot.fMaxVelocity = gA_Timers[client].fMaxVelocity;
-	snapshot.fTimescale = gA_Timers[client].fTimescale;
+	snapshot.fTimescale = (gA_Timers[client].fTimescale > 0.0) ? gA_Timers[client].fTimescale : 1.0;
+	snapshot.iZoneIncrement = gA_Timers[client].iZoneIncrement;
+	snapshot.fTimescaledTicks = gA_Timers[client].fTimescaledTicks;
 }
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
@@ -3519,26 +3749,28 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		return Plugin_Continue;
 	}
 
-	int flags = GetEntityFlags(client);
-
-	/* if(gA_Timers[client].bPaused && IsPlayerAlive(client))
+#if !DEBUG
+	if (impulse && sv_cheats.BoolValue && !(GetUserFlagBits(client) & ADMFLAG_ROOT))
 	{
-		buttons = 0;
-		vel = view_as<float>({0.0, 0.0, 0.0});
+		// Block cheat impulses
+		switch (impulse)
+		{
+			case 76, 81, 82, 83, 102, 195, 196, 197, 202, 203:
+			{
+				impulse = 0;
+			}
+		}
+	}
+#endif
 
-		SetEntityFlags(client, (flags | FL_ATCONTROLS));
-
-		//SetEntityMoveType(client, MOVETYPE_NONE);
-
-		return Plugin_Changed;
-	} */
+	int flags = GetEntityFlags(client);
 
 	SetEntityFlags(client, (flags & ~FL_ATCONTROLS));
 
 	// Wait till now to return so spectators can free-cam while paused...
 	if(!IsPlayerAlive(client))
 	{
-		return Plugin_Continue;
+		return Plugin_Changed;
 	}
 
 	Action result = Plugin_Continue;
@@ -3615,29 +3847,33 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 	int iPButtons = buttons;
 
-	if(GetStyleSettingBool(gA_Timers[client].iStyle, "strafe_count_w") && !GetStyleSettingBool(gA_Timers[client].iStyle, "block_w") &&
+	if (!gA_Timers[client].bPaused)
+	{
+		if(GetStyleSettingBool(gA_Timers[client].iStyle, "strafe_count_w") && !GetStyleSettingBool(gA_Timers[client].iStyle, "block_w") &&
 		(gA_Timers[client].iLastButtons & IN_FORWARD) == 0 && (buttons & IN_FORWARD) > 0)
-	{
-		gA_Timers[client].iStrafes++;
+		{
+			gA_Timers[client].iStrafes++;
+		}
+
+		if(GetStyleSettingBool(gA_Timers[client].iStyle, "strafe_count_a") && !GetStyleSettingBool(gA_Timers[client].iStyle, "block_a") && (gA_Timers[client].iLastButtons & IN_MOVELEFT) == 0 &&
+			(buttons & IN_MOVELEFT) > 0 && (GetStyleSettingInt(gA_Timers[client].iStyle, "force_hsw") > 0 || ((buttons & IN_FORWARD) == 0 && (buttons & IN_BACK) == 0)))
+		{
+			gA_Timers[client].iStrafes++;
+		}
+
+		if(GetStyleSettingBool(gA_Timers[client].iStyle, "strafe_count_s") && !GetStyleSettingBool(gA_Timers[client].iStyle, "block_s") &&
+			(gA_Timers[client].iLastButtons & IN_BACK) == 0 && (buttons & IN_BACK) > 0)
+		{
+			gA_Timers[client].iStrafes++;
+		}
+
+		if(GetStyleSettingBool(gA_Timers[client].iStyle, "strafe_count_d") && !GetStyleSettingBool(gA_Timers[client].iStyle, "block_d") && (gA_Timers[client].iLastButtons & IN_MOVERIGHT) == 0 &&
+			(buttons & IN_MOVERIGHT) > 0 && (GetStyleSettingInt(gA_Timers[client].iStyle, "force_hsw") > 0 || ((buttons & IN_FORWARD) == 0 && (buttons & IN_BACK) == 0)))
+		{
+			gA_Timers[client].iStrafes++;
+		}
 	}
 
-	if(GetStyleSettingBool(gA_Timers[client].iStyle, "strafe_count_a") && !GetStyleSettingBool(gA_Timers[client].iStyle, "block_a") && (gA_Timers[client].iLastButtons & IN_MOVELEFT) == 0 &&
-		(buttons & IN_MOVELEFT) > 0 && (GetStyleSettingInt(gA_Timers[client].iStyle, "force_hsw") > 0 || ((buttons & IN_FORWARD) == 0 && (buttons & IN_BACK) == 0)))
-	{
-		gA_Timers[client].iStrafes++;
-	}
-
-	if(GetStyleSettingBool(gA_Timers[client].iStyle, "strafe_count_s") && !GetStyleSettingBool(gA_Timers[client].iStyle, "block_s") &&
-		(gA_Timers[client].iLastButtons & IN_BACK) == 0 && (buttons & IN_BACK) > 0)
-	{
-		gA_Timers[client].iStrafes++;
-	}
-
-	if(GetStyleSettingBool(gA_Timers[client].iStyle, "strafe_count_d") && !GetStyleSettingBool(gA_Timers[client].iStyle, "block_d") && (gA_Timers[client].iLastButtons & IN_MOVERIGHT) == 0 &&
-		(buttons & IN_MOVERIGHT) > 0 && (GetStyleSettingInt(gA_Timers[client].iStyle, "force_hsw") > 0 || ((buttons & IN_FORWARD) == 0 && (buttons & IN_BACK) == 0)))
-	{
-		gA_Timers[client].iStrafes++;
-	}
 
 	MoveType mtMoveType = GetEntityMoveType(client);
 
@@ -3695,10 +3931,10 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 				bool bSHSW = (GetStyleSettingInt(gA_Timers[client].iStyle, "force_hsw") == 2) && !bInStart; // don't decide on the first valid input until out of start zone!
 				int iCombination = -1;
 
-				bool bForward = ((buttons & IN_FORWARD) > 0 && vel[0] >= 100.0);
-				bool bMoveLeft = ((buttons & IN_MOVELEFT) > 0 && vel[1] <= -100.0);
-				bool bBack = ((buttons & IN_BACK) > 0 && vel[0] <= -100.0);
-				bool bMoveRight = ((buttons & IN_MOVERIGHT) > 0 && vel[1] >= 100.0);
+				bool bForward = ((buttons & IN_FORWARD) > 0 && vel[0] > 0.0);
+				bool bMoveLeft = ((buttons & IN_MOVELEFT) > 0 && vel[1] < 0.0);
+				bool bBack = ((buttons & IN_BACK) > 0 && vel[0] < 0.0);
+				bool bMoveRight = ((buttons & IN_MOVERIGHT) > 0 && vel[1] > 0.0);
 
 				if(bSHSW)
 				{
@@ -3706,7 +3942,6 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					{
 						iCombination = 0;
 					}
-
 					else if((bForward && bMoveRight || bBack && bMoveLeft))
 					{
 						iCombination = 1;
@@ -3735,7 +3970,6 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 						buttons &= ~IN_BACK;
 					}
 				}
-
 				else
 				{
 					if(bBack && (bMoveLeft || bMoveRight))
@@ -3774,7 +4008,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		float fSpeed[3];
 		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
 
-		fSpeed[2] = 271.0;
+		fSpeed[2] = 289.0;
 		SetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
 	}
 
@@ -3797,7 +4031,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		}
 	}
 
-	else if(!bOnGround && gA_Timers[client].bOnGround && gA_Timers[client].bJumped)
+	else if(!bOnGround && gA_Timers[client].bOnGround && gA_Timers[client].bJumped && !gA_Timers[client].bPaused)
 	{
 		int iDifference = (tickcount - gA_Timers[client].iLandingTick);
 
@@ -3818,19 +4052,9 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		buttons &= ~IN_JUMP;
 	}
 
-	float fAngle = (angles[1] - gA_Timers[client].fLastAngle);
+	float fAngle = GetAngleDiff(angles[1], gA_Timers[client].fLastAngle);
 
-	while(fAngle > 180.0)
-	{
-		fAngle -= 360.0;
-	}
-
-	while(fAngle < -180.0)
-	{
-		fAngle += 360.0;
-	}
-
-	if(iGroundEntity == -1 && (GetEntityFlags(client) & FL_INWATER) == 0 && fAngle != 0.0)
+	if(!gA_Timers[client].bPaused && iGroundEntity == -1 && (GetEntityFlags(client) & FL_INWATER) == 0 && fAngle != 0.0)
 	{
 		float fAbsVelocity[3];
 		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fAbsVelocity);
@@ -3853,9 +4077,13 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 	if (GetTimerStatus(client) == view_as<int>(Timer_Running) && gA_Timers[client].fTimer != 0.0)
 	{
+#if 0
 		float frameCount = gB_Replay
-			? float(Shavit_GetClientFrameCount(client) - Shavit_GetPlayerTimerFrame(client)) + 1
+			? float(Shavit_GetClientFrameCount(client) - Shavit_GetPlayerPreFrames(client)) + 1
 			: (gA_Timers[client].fTimer / GetTickInterval());
+#else
+		float frameCount = float(gA_Timers[client].iZoneIncrement);
+#endif
 		float fAbsVelocity[3];
 		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fAbsVelocity);
 		float curVel = SquareRoot(Pow(fAbsVelocity[0], 2.0) + Pow(fAbsVelocity[1], 2.0));

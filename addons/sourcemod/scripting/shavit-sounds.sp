@@ -21,6 +21,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <convar_class>
+#include <dhooks>
 
 #undef REQUIRE_PLUGIN
 #include <shavit>
@@ -71,11 +72,12 @@ public void OnAllPluginsLoaded()
 public void OnPluginStart()
 {
 	// cache
-	gA_FirstSounds = new ArrayList(PLATFORM_MAX_PATH);
-	gA_PersonalSounds = new ArrayList(PLATFORM_MAX_PATH);
-	gA_WorldSounds = new ArrayList(PLATFORM_MAX_PATH);
-	gA_WorstSounds = new ArrayList(PLATFORM_MAX_PATH);
-	gA_NoImprovementSounds = new ArrayList(PLATFORM_MAX_PATH);
+	int cells = ByteCountToCells(PLATFORM_MAX_PATH);
+	gA_FirstSounds = new ArrayList(cells);
+	gA_PersonalSounds = new ArrayList(cells);
+	gA_WorldSounds = new ArrayList(cells);
+	gA_WorstSounds = new ArrayList(cells);
+	gA_NoImprovementSounds = new ArrayList(cells);
 	gSM_RankSounds = new StringMap();
 
 	// modules
@@ -280,17 +282,7 @@ void PlayEventSound(int client, bool everyone, char sound[PLATFORM_MAX_PATH])
 			continue;
 		}
 
-		if(everyone)
-		{
-			clients[count++] = i;
-
-			continue;
-		}
-
-		int iObserverMode = GetEntProp(client, Prop_Send, "m_iObserverMode");
-
-		// add player and their spectators
-		if(i == client || (IsClientObserver(i) && (iObserverMode >= 3 || iObserverMode <= 5) && GetEntPropEnt(i, Prop_Send, "m_hObserverTarget") == client))
+		if (everyone || i == client || GetSpectatorTarget(i) == client)
 		{
 			clients[count++] = i;
 		}
