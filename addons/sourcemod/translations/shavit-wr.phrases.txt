@@ -101,7 +101,7 @@
 	"MenuResponseYesSingle"
 	{
 		"en"		"YES!!! DELETE THE RECORD!!!"
-		"chi"		"是的!!! 删除所有记录!!!"
+		"chi"		"是的!!! 删除该记录!!!"
 	}
 	"MenuResponseYes"
 	{

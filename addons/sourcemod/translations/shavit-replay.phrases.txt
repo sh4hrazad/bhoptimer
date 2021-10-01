@@ -78,13 +78,19 @@
 	}
 	"Replay_Dynamic"
 	{
-		"en"		"Dynamic"
-		"chi"		"动态"
+		"en"		"动态"
 	}
 	"Replay_Looping"
 	{
-		"en"		"Looping"
-		"chi"		"循环中"
+		"en"		"循环中"
+	}
+	"Replay_Track_Looping"
+	{
+		"en"		"主线"
+	}
+	"Replay_Stage_Looping"
+	{
+		"en"		"关卡"
 	}
 	"Menu_ReplayBotType"
 	{
