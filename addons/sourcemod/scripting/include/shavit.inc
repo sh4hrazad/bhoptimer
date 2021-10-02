@@ -2997,7 +2997,7 @@ native void Shavit_ReloadWRCheckpoints();
  * @param client					Client index
  * @return							true if client type !stage and stuff.
  */
-native bool Shavit_IsClientSingleStageTiming(int client);
+native bool Shavit_IsClientStageTimer(int client);
 
 /**
  * Detect stage conditions first.
@@ -3139,7 +3139,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_InsideZoneGetID");
 	MarkNativeAsOptional("Shavit_IsLinearMap");
 	MarkNativeAsOptional("Shavit_IsClientCreatingZone");
-	MarkNativeAsOptional("Shavit_IsClientSingleStageTiming");
+	MarkNativeAsOptional("Shavit_IsClientStageTimer");
 	MarkNativeAsOptional("Shavit_IsPaused");
 	MarkNativeAsOptional("Shavit_IsPracticeMode");
 	MarkNativeAsOptional("Shavit_IsReplayDataLoaded");
