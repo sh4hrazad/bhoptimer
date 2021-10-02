@@ -48,6 +48,12 @@
 		"en"		"You have to be {1}alive{2} to use this command."
 		"chi"		"您必须{1}活着{2}才能使用此命令."
 	}
+	"InvalidStage"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"Your input stage is {1}invalid{2}"
+		"chi"		"{1}无效{2}关卡."
+	}
 	"ModifierCommandNoArgs"
 	{
 		"en"		"Usage: sm_modifier <decimal number>"

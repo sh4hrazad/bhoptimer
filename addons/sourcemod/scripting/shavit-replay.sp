@@ -461,7 +461,7 @@ public void OnPluginStart()
 	gCV_PlaybackCanStop = new Convar("shavit_replay_pbcanstop", "1", "Allow players to stop playback if they requested it?", 0, true, 0.0, true, 1.0);
 	gCV_PlaybackCooldown = new Convar("shavit_replay_pbcooldown", "3.5", "Cooldown in seconds to apply for players between each playback they request/stop.\nDoes not apply to RCON admins.", 0, true, 0.0);
 	gCV_PlaybackPreRunTime = new Convar("shavit_replay_preruntime", "1.5", "Time (in seconds) to record before a player leaves start zone.", 0, true, 0.0, true, 2.0);
-	gCV_PlaybackPostRunTime = new Convar("shavit_replay_postruntime", "1.5", "Time (in seconds) to record after a player enters the end zone.", 0, true, 0.0, true, 2.0);
+	gCV_PlaybackPostRunTime = new Convar("shavit_replay_postruntime", "2.0", "Time (in seconds) to record after a player enters the end zone.", 0, true, 0.0, true, 2.0);
 	gCV_StagePlaybackPreRunTime = new Convar("shavit_stage_replay_preruntime", "1.5", "Time (in seconds) to record before a player leaves stage zone.", 0, true, 0.0, true, 2.0);
 	gCV_StagePlaybackPostRunTime = new Convar("shavit_stage_replay_postruntime", "1.5", "Time (in seconds) to record after a player finished a stage.", 0, true, 0.0, true, 2.0);
 	gCV_PreRunAlways = new Convar("shavit_replay_prerun_always", "1", "Record prerun frames outside the start zone?", 0, true, 0.0, true, 1.0);
@@ -2581,8 +2581,16 @@ void FormatStyle(int bot, const char[] source, int style, int track, char dest[M
 	{
 		FormatSeconds(GetReplayLength(style, track, aCache), sTime, 16);
 		GetReplayName(style, track, sName, sizeof(sName), stage);
-		ReplaceString(temp, sizeof(temp), "{style}", gS_StyleStrings[style].sStyleName);
-		ReplaceString(temp, sizeof(temp), "{styletag}", gS_StyleStrings[style].sClanTag);
+		if(type == Replay_Looping)
+		{
+			ReplaceString(temp, sizeof(temp), "{style}", "");
+			ReplaceString(temp, sizeof(temp), "{styletag}", "");
+		}
+		else
+		{
+			ReplaceString(temp, sizeof(temp), "{style}", gS_StyleStrings[style].sStyleName);
+			ReplaceString(temp, sizeof(temp), "{styletag}", gS_StyleStrings[style].sClanTag);
+		}
 	}
 
 	char sType[32];
@@ -2978,6 +2986,15 @@ public Action Shavit_OnStart(int client)
 	return Plugin_Continue;
 }
 
+/* public void Shavit_OnEnterStage(int client, int stage, int style, float finalspeed)
+{
+	if(!gB_GrabbingPostFrames_Stage[client] && Shavit_IsClientStageTimer(client))
+	{
+		PrintToChatAll("onenterstage");
+		ClearFrames(client);
+	}
+} */
+
 public void Shavit_OnLeaveStage(int client, int stage, int style, float prespeed)
 {
 	if(gB_GrabbingPostFrames_Stage[client])
@@ -2987,6 +3004,10 @@ public void Shavit_OnLeaveStage(int client, int stage, int style, float prespeed
 
 	int iMaxPreFrames = RoundToFloor(gCV_StagePlaybackPreRunTime.FloatValue * gF_Tickrate / Shavit_GetStyleSettingFloat(Shavit_GetBhopStyle(client), "speed"));
 	gI_PlayerPrerunFrames_Stage[client] = gI_PlayerFrames[client] - iMaxPreFrames;
+	if(gI_PlayerPrerunFrames_Stage[client] < 0)
+	{
+		gI_PlayerPrerunFrames_Stage[client] = 0;
+	}
 }
 
 public void Shavit_OnStop(int client)
@@ -2996,7 +3017,10 @@ public void Shavit_OnStop(int client)
 		FinishGrabbingPostFrames(client, gA_FinishedRunInfo[client]);
 	}
 
-	ClearFrames(client);
+	if(!gB_GrabbingPostFrames_Stage[client])
+	{
+		ClearFrames(client);
+	}
 }
 
 public Action Timer_StagePostFrames(Handle timer, int client)
@@ -3008,10 +3032,10 @@ public Action Timer_StagePostFrames(Handle timer, int client)
 
 void FinishGrabbingPostFrames_Stage(int client, wrcp_run_info info)
 {
-	gB_GrabbingPostFrames_Stage[client] = false;
 	delete gH_PostFramesTimer_Stage[client];
 
 	SaveStageReplayPre(client, info.iStage, info.iStyle, info.iSteamid, info.fTime);
+	gB_GrabbingPostFrames_Stage[client] = false;
 }
 
 void SaveStageReplayPre(int client, int stage, int style, int steamid, float time)

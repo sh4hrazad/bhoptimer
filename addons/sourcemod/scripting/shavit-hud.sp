@@ -399,7 +399,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 	if(!bNoclip && gCV_PrestrafeMessage.IntValue == 1 && Shavit_GetClientTime(client) != 0.0 && track == Track_Main && status == Timer_Running)
 	{
 		int stage = Shavit_GetClientStage(client);
-		bool bStageTimer = Shavit_IsClientSingleStageTiming(client);
+		bool bStageTimer = Shavit_IsClientStageTimer(client);
 
 		float fSpeed[3];
 		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
@@ -1146,7 +1146,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
 			float fTimer = GetGameTime() - gF_LastCPTime[client];
-			if(0 < fTimer <= 5.0 && GetGameTime() > 5.0 && data.fTime != 0.0 && !Shavit_IsClientSingleStageTiming(client))
+			if(0 < fTimer <= 5.0 && GetGameTime() > 5.0 && data.fTime != 0.0 && !Shavit_IsClientStageTimer(client))
 			{
 				char sDifftime[64];
 				FormatHUDSeconds(Shavit_GetWRCheckpointDiffTime(data.iTarget), sDifftime, 64);
@@ -1172,6 +1172,17 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			if(data.bFinishCP)
 			{
 				gF_LastCPTime[client] = GetGameTime();
+			}
+
+			if(data.bPractice)
+			{
+				FormatEx(sLine, 128, "[练习模式]");
+				AddHUDLine(buffer, maxlen, sLine, iLines);
+			}
+			else if(data.iTimerStatus == Timer_Paused)
+			{
+				FormatEx(sLine, 128, "[暂停中]");
+				AddHUDLine(buffer, maxlen, sLine, iLines);
 			}
 
 			iLines++;
@@ -1337,7 +1348,7 @@ void UpdateMainHUD(int client)
 			iZoneHUD = ZoneHUD_End;
 		}
 
-		else if(Shavit_InsideZone(target, Zone_Stage, -1) && Shavit_IsClientSingleStageTiming(target))
+		else if(Shavit_InsideZone(target, Zone_Stage, -1) && Shavit_IsClientStageTimer(target))
 		{
 			iZoneHUD = ZoneHUD_Stage;
 		}

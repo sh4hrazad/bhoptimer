@@ -906,17 +906,20 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 
 	if((type == Zone_Stage || type == Zone_Start || type == Zone_End) && !Shavit_IsLinearMap())
 	{
-		int stage = Shavit_GetClientStage(client);
-		int style = Shavit_GetBhopStyle(client);
+		if(type == Zone_Stage || type == Zone_Start)
+		{
+			int stage = Shavit_GetClientStage(client);
+			int style = Shavit_GetBhopStyle(client);
 
-		Call_StartForward(gH_Forwards_EnterStage);
-		Call_PushCell(client);
-		Call_PushCell(stage);
-		Call_PushCell(style);
-		Call_PushFloat(finalSpeed);
-		Call_Finish();
+			Call_StartForward(gH_Forwards_EnterStage);
+			Call_PushCell(client);
+			Call_PushCell(stage);
+			Call_PushCell(style);
+			Call_PushFloat(finalSpeed);
+			Call_Finish();
+		}
 
-		if(type == Zone_End && Shavit_IsClientSingleStageTiming(client))
+		if(type == Zone_End && Shavit_IsClientStageTimer(client))
 		{
 			Shavit_StopTimer(client);
 		}

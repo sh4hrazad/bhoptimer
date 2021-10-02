@@ -134,6 +134,7 @@ float gV_MapZones[MAX_ZONES][2][3];
 float gV_MapZones_Visual[MAX_ZONES][8][3];
 float gV_Destinations[MAX_ZONES][3];
 float gV_CustomDestinations[MAXPLAYERS+1][MAX_ZONES][3];
+float gV_CustomDestinationsAngle[MAXPLAYERS+1][MAX_ZONES][3];
 float gV_ZoneCenter[MAX_ZONES][3];
 int gI_EntityZone[4096];
 ArrayList gA_Triggers;
@@ -216,7 +217,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_InsideZoneGetID", Native_InsideZoneGetID);
 	CreateNative("Shavit_IsLinearMap", Native_IsLinearMap);
 	CreateNative("Shavit_IsClientCreatingZone", Native_IsClientCreatingZone);
-	CreateNative("Shavit_IsClientSingleStageTiming", Native_IsClientSingleStageTiming);
+	CreateNative("Shavit_IsClientStageTimer", Native_IsClientStageTimer);
 	CreateNative("Shavit_IntoStage", Native_IntoStage);
 	CreateNative("Shavit_IntoCheckpoint", Native_IntoCheckpoint);
 	CreateNative("Shavit_ZoneExists", Native_ZoneExists);
@@ -275,7 +276,7 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_back", Command_Back, "Go back to the current stage zone.");
 	RegConsoleCmd("sm_teleport", Command_Back, "Go back to the current stage zone. Alias of sm_back");
 
-	RegConsoleCmd("sm_setstart", Command_Startpos);
+	RegConsoleCmd("sm_setstart", Command_Startpos, "Set track/stage startzones position.");
 	RegConsoleCmd("sm_startpos", Command_Startpos, "Set track/stage startzones position. Alias of sm_setstart.");
 
 	// events
@@ -589,7 +590,7 @@ public int Native_IsClientCreatingZone(Handle handler, int numParams)
 	return (gI_MapStep[GetNativeCell(1)] != 0);
 }
 
-public int Native_IsClientSingleStageTiming(Handle handler, int numParams)
+public int Native_IsClientStageTimer(Handle handler, int numParams)
 {
 	return gB_SingleStageTiming[GetNativeCell(1)];
 }
@@ -1146,6 +1147,9 @@ public void OnClientConnected(int client)
 		gV_CustomDestinations[client][i][0] = 0.0;
 		gV_CustomDestinations[client][i][1] = 0.0;
 		gV_CustomDestinations[client][i][2] = 0.0;
+		gV_CustomDestinationsAngle[client][i][0] = 0.0;
+		gV_CustomDestinationsAngle[client][i][1] = 0.0;
+		gV_CustomDestinationsAngle[client][i][2] = 0.0;
 	}
 
 	Reset(client);
@@ -1249,11 +1253,8 @@ public Action Command_Startpos(int client, int args)
 		return Plugin_Handled;
 	}
 
-	float origin[3];
-	GetClientAbsOrigin(client, origin);
-	gV_CustomDestinations[client][gI_InsideZoneIndex[client]][0] = origin[0];
-	gV_CustomDestinations[client][gI_InsideZoneIndex[client]][1] = origin[1];
-	gV_CustomDestinations[client][gI_InsideZoneIndex[client]][2] = origin[2];
+	GetClientAbsOrigin(client, gV_CustomDestinations[client][gI_InsideZoneIndex[client]]);
+	GetClientEyeAngles(client, gV_CustomDestinationsAngle[client][gI_InsideZoneIndex[client]]);
 
 	if(Shavit_InsideZone(client, Zone_Start, -1))
 	{
@@ -1282,19 +1283,21 @@ public Action Command_Back(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!EmptyVector(gV_CustomDestinations[client][gI_InsideZoneIndex[client]]) && gB_SingleStageTiming[client])
+	int index = gI_InsideZoneIndex[client];
+
+	if(!EmptyVector(gV_CustomDestinations[client][index]))
 	{
-		TeleportEntity(client, gV_CustomDestinations[client][gI_InsideZoneIndex[client]], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+		TeleportEntity(client, gV_CustomDestinations[client][index], gV_CustomDestinationsAngle[client][index], view_as<float>({0.0, 0.0, 0.0}));
 	}
 
-	else if(!EmptyVector(gV_Destinations[gI_InsideZoneIndex[client]]))
+	else if(!EmptyVector(gV_Destinations[index]))
 	{
-		TeleportEntity(client, gV_Destinations[gI_InsideZoneIndex[client]], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+		TeleportEntity(client, gV_Destinations[index], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
 	}
 
 	else
 	{
-		TeleportEntity(client, gV_ZoneCenter[gI_InsideZoneIndex[client]], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+		TeleportEntity(client, gV_ZoneCenter[index], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
 	}
 
 	return Plugin_Handled;
@@ -1329,7 +1332,7 @@ public Action Command_Stages(int client, int args)
 		iStage = StringToInt(arg1);
 		if(iStage > gI_Stages || iStage < 1)
 		{
-			Shavit_PrintToChat(client, "???what are you doing");
+			Shavit_PrintToChat(client, "%T", "InvalidStage", client, gS_ChatStrings.sVariable2, gS_ChatStrings.sText);
 		}
 	}
 
@@ -1350,7 +1353,7 @@ public Action Command_Stages(int client, int args)
 
 				if(!EmptyVector(gV_CustomDestinations[client][i]))
 				{
-					TeleportEntity(client, gV_CustomDestinations[client][i], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+					TeleportEntity(client, gV_CustomDestinations[client][i],gV_CustomDestinationsAngle[client][i], view_as<float>({0.0, 0.0, 0.0}));
 				}
 
 				else if(!EmptyVector(gV_Destinations[i]))
@@ -1407,7 +1410,7 @@ public int MenuHandler_SelectStage(Menu menu, MenuAction action, int param1, int
 
 		if(!EmptyVector(gV_CustomDestinations[param1][iIndex]))
 		{
-			TeleportEntity(param1, gV_CustomDestinations[param1][iIndex], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+			TeleportEntity(param1, gV_CustomDestinations[param1][iIndex], gV_CustomDestinationsAngle[param1][iIndex], view_as<float>({0.0, 0.0, 0.0}));
 		}
 
 		else if(!EmptyVector(gV_Destinations[iIndex]))
@@ -3032,7 +3035,7 @@ public void Shavit_OnRestart(int client, int track)
 
 			if(!EmptyVector(gV_CustomDestinations[client][iIndex]))
 			{
-				TeleportEntity(client, gV_CustomDestinations[client][iIndex], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+				TeleportEntity(client, gV_CustomDestinations[client][iIndex], gV_CustomDestinationsAngle[client][iIndex], view_as<float>({0.0, 0.0, 0.0}));
 			}
 
 			else if(!EmptyVector(gV_Destinations[iIndex]))

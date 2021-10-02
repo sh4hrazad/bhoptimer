@@ -1652,7 +1652,7 @@ void PersistData(int client, bool disconnected)
 		(!IsPlayerAlive(client) && disconnected && !gB_SaveStates[client]) ||
 		GetSteamAccountID(client) == 0 ||
 		//Shavit_GetTimerStatus(client) == Timer_Stopped ||
-		Shavit_IsClientSingleStageTiming(client) ||
+		Shavit_IsClientStageTimer(client) ||
 		(!gCV_RestoreStates.BoolValue && !disconnected) ||
 		(gCV_PersistData.IntValue == 0 && disconnected))
 	{
