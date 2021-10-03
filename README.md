@@ -11,8 +11,8 @@
 
 # shavit's surf timer
 
-<h3>WIP</h3>
 Hope to replace [SurfTimer](https://github.com/surftimer/Surftimer-Official) with this.
+
 [Mapzones Setup Demonstration](https://youtu.be/OXFMGm40F6c)
 
 # Requirements:
