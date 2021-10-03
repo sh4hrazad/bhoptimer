@@ -9,11 +9,9 @@
 
 [Download](https://github.com/shavitush/bhoptimer/releases)
 
-# shavit's bhop timer
+# shavit's surf timer
 
-This is (nearly) an all-in-one server plugin for Counter-Strike: Source, Counter-Strike: Global Offensive, and Team Fortress 2 that adds a timer system and many other utilities, so you can install it and run a proper bunnyhop server.
-
-Includes a records system, map zones (start/end marks etc), bonuses, HUD with useful information, chat processor, miscellaneous such as weapon commands/spawn point generator, bots that replay the best records of the map, sounds, statistics, segmented running, a fair & competitive rankings system and more!
+<h3>WIP</h3>
 
 [Mapzones Setup Demonstration](https://youtu.be/OXFMGm40F6c)
 
