@@ -23,10 +23,10 @@
 * [MomSurfFix](https://forums.alliedmods.net/showthread.php?p=2680743)
 * [RNGFix](https://forums.alliedmods.net/showthread.php?t=310825)
 * [HeadBugFix](https://github.com/GAMMACASE/HeadBugFix)
-* [ShowPlayerClips](https://forums.alliedmods.net/showthread.php?p=2661942)
 * [sm_closestpos](https://github.com/rtldg/sm_closestpos)
 * [eventqueuefix](https://github.com/hermansimensen/eventqueue-fix)
 
 # Optional requirements, for the best experience:
 * [SteamWorks](https://forums.alliedmods.net/showthread.php?t=229556)
   * Used to grab `{serverip}` in advertisements.
+* [ShowPlayerClips](https://forums.alliedmods.net/showthread.php?p=2661942)
