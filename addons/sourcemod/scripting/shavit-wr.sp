@@ -165,13 +165,17 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_wr", Command_WorldRecord, "View the leaderboard of a map. Usage: sm_wr [map]");
 	RegConsoleCmd("sm_worldrecord", Command_WorldRecord, "View the leaderboard of a map. Usage: sm_worldrecord [map]");
 
-	RegConsoleCmd("sm_bwr", Command_WorldRecord, "View the leaderboard of a map. Usage: sm_bwr [map] [bonus number]");
-	RegConsoleCmd("sm_bworldrecord", Command_WorldRecord, "View the leaderboard of a map. Usage: sm_bworldrecord [map] [bonus number]");
-	RegConsoleCmd("sm_bonusworldrecord", Command_WorldRecord, "View the leaderboard of a map. Usage: sm_bonusworldrecord [map] [bonus number]");
+	RegConsoleCmd("sm_btop", Command_BonusWorldRecord, "View the leaderboard of a map. Usage: sm_btop [map] [bonus number]");
+	RegConsoleCmd("sm_wrb", Command_BonusWorldRecord, "View the leaderboard of a map. Usage: sm_wrb [map] [bonus number]");
+	RegConsoleCmd("sm_bwr", Command_BonusWorldRecord, "View the leaderboard of a map. Usage: sm_bwr [map] [bonus number]");
+	RegConsoleCmd("sm_bworldrecord", Command_BonusWorldRecord, "View the leaderboard of a map. Usage: sm_bworldrecord [map] [bonus number]");
+	RegConsoleCmd("sm_bonusworldrecord", Command_BonusWorldRecord, "View the leaderboard of a map. Usage: sm_bonusworldrecord [map] [bonus number]");
 
 	RegConsoleCmd("sm_recent", Command_RecentRecords, "View the recent #1 times set.");
 	RegConsoleCmd("sm_recentrecords", Command_RecentRecords, "View the recent #1 times set.");
 	RegConsoleCmd("sm_rr", Command_RecentRecords, "View the recent #1 times set.");
+
+	RegConsoleCmd("sm_top", Command_Maptops, "main/bonus/stage records");
 
 	// delete records
 	RegAdminCmd("sm_delete", Command_Delete, ADMFLAG_RCON, "Opens a record deletion menu interface.");
@@ -1642,6 +1646,77 @@ public Action Command_WorldRecord(int client, int args)
 	return Plugin_Handled;
 }
 
+public Action Command_BonusWorldRecord(int client, int args)
+{
+	if(!IsValidClient(client))
+	{
+		return Plugin_Handled;
+	}
+
+	char sCommand[16];
+	GetCmdArg(0, sCommand, 16);
+
+	bool havemap = (args >= 1);
+
+	// if the track doesn't fit in the bonus track range then assume it's a map name
+	if (args > 1)
+	{
+		havemap = true;
+	}
+
+	if(!havemap)
+	{
+		strcopy(gA_WRCache[client].sClientMap, 128, gS_Map);
+	}
+
+	else
+	{
+		GetCmdArg(1, gA_WRCache[client].sClientMap, 128);
+		if (!GuessBestMapName(gA_ValidMaps, gA_WRCache[client].sClientMap, gA_WRCache[client].sClientMap))
+		{
+			Shavit_PrintToChat(client, "%t", "Map was not found", gA_WRCache[client].sClientMap);
+			return Plugin_Handled;
+		}
+	}
+
+	Menu menu = new Menu(BonusWRMenu_Handler);
+	menu.SetTitle("选择一个奖励关");
+
+	for(int i = 1; i <= Track_Bonus_Last; i++)
+	{
+		char sTrack[32];
+		GetTrackName(client, i, sTrack, 32);
+
+		char sItem[8];
+		IntToString(i, sItem, 8);
+		menu.AddItem(sItem, sTrack);
+	}
+
+	menu.Display(client, -1);
+
+	return Plugin_Handled;
+}
+
+public int BonusWRMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		char sInfo[8];
+		menu.GetItem(param2, sInfo, 8);
+
+		int track = StringToInt(sInfo);
+		gA_WRCache[param1].iLastTrack = track;
+		RetrieveWRMenu(param1, track);
+	}
+
+	else if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
+}
+
 void RetrieveWRMenu(int client, int track)
 {
 	if (gA_WRCache[client].bPendingMenu)
@@ -2272,6 +2347,76 @@ public int SubMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
 	return 0;
 }
 
+public Action Command_Maptops(int client, int args)
+{
+	char sCommand[16];
+	GetCmdArg(0, sCommand, 16);
+
+	bool havemap = (args >= 1);
+
+	// if the track doesn't fit in the bonus track range then assume it's a map name
+	if (args > 1)
+	{
+		havemap = true;
+	}
+
+	if(!havemap)
+	{
+		strcopy(gA_WRCache[client].sClientMap, 128, gS_Map);
+	}
+
+	else
+	{
+		GetCmdArg(1, gA_WRCache[client].sClientMap, 128);
+		if (!GuessBestMapName(gA_ValidMaps, gA_WRCache[client].sClientMap, gA_WRCache[client].sClientMap))
+		{
+			Shavit_PrintToChat(client, "%t", "Map was not found", gA_WRCache[client].sClientMap);
+			return Plugin_Handled;
+		}
+	}
+
+	Menu menu = new Menu(MaptopMenu_Handler);
+
+	menu.AddItem("Main", "主线记录");
+	menu.AddItem("Bonus", "奖励关记录");
+	menu.AddItem("Stage", "关卡记录");
+
+	menu.Display(client, -1);
+
+	return Plugin_Handled;
+}
+
+public int MaptopMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		char sInfo[8];
+		menu.GetItem(param2, sInfo, 8);
+
+		if(StrEqual(sInfo, "Main"))
+		{
+			FakeClientCommand(param1, "sm_wr %s", gA_WRCache[param1].sClientMap);
+		}
+
+		else if(StrEqual(sInfo, "Bonus"))
+		{
+			FakeClientCommand(param1, "sm_bwr %s", gA_WRCache[param1].sClientMap);
+		}
+
+		else if(StrEqual(sInfo, "Stage"))
+		{
+			FakeClientCommand(param1, "sm_maptop %s", gA_WRCache[param1].sClientMap);
+		}
+	}
+
+	else if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
+}
+
 public void Shavit_OnDatabaseLoaded()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
@@ -2588,8 +2733,6 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 			{
 				if(client != i && IsValidClient(i) && GetSpectatorTarget(i) == client)
 				{
-					FormatEx(sMessage, sizeof(sMessage), "%s[%s]%s %T",
-						gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "NotFirstCompletionWorse", i, gS_ChatStrings.sVariable2, client, gS_ChatStrings.sText, gS_ChatStrings.sStyle, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, gS_ChatStrings.sVariable, iRank, gS_ChatStrings.sText, jumps, strafes, sSync, gS_ChatStrings.sText, sDifference);
 					Shavit_PrintToChat(i, "%s", sMessage);
 
 					if (sMessage2[0] != 0)

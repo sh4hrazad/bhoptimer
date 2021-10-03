@@ -1823,7 +1823,7 @@ native float Shavit_GetWRCPTime(int stage, int style);
  * @param style						Style to get the WRCP for.
  * @return							WRCP Prespeed.
  */
-native float Shavit_GetWRCPPrespeed(int stage, int style);
+native float Shavit_GetWRCPPostspeed(int stage, int style);
 
 /**
  * Gets the WR's checkpoint time on the map on a variable.
@@ -1845,13 +1845,22 @@ native float Shavit_GetWRCheckpointTime(int stage, int style);
 native float Shavit_GetWRCheckpointDiffTime(int client, char[] difftime = "N/A", int maxlength = 32);
 
 /**
- * Gets the WR's checkpoint speed on the map on a variable.
+ * Gets the WR's checkpoint prespeed on the map on a variable.
  *
  * @param cpnum						WR's Checkpoint number.
- * @param style						Style to get the WRCP for.
- * @return							WR checkpoint Speed.
+ * @param style						Style to get the WR Checkpoint for.
+ * @return							WR checkpoint Pre Speed.
  */
-native float Shavit_GetWRCheckpointSpeed(int cpnum, int style);
+native float Shavit_GetWRCheckpointPreSpeed(int cpnum, int style);
+
+/**
+ * Gets the WR's checkpoint postspeed on the map on a variable.
+ *
+ * @param cpnum						WR's Checkpoint number.
+ * @param style						Style to get the WR Checkpoint for.
+ * @return							WR checkpoint Post Speed.
+ */
+native float Shavit_GetWRCheckpointPostSpeed(int cpnum, int style);
 
 /**
  * Gets the client's prcp time.
@@ -3207,10 +3216,11 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetStageRankForTime");
 	MarkNativeAsOptional("Shavit_GetWRCPName");
 	MarkNativeAsOptional("Shavit_GetWRCPTime");
-	MarkNativeAsOptional("Shavit_GetWRCPPrespeed");
+	MarkNativeAsOptional("Shavit_GetWRCPPostspeed");
 	MarkNativeAsOptional("Shavit_GetWRCheckpointTime");
 	MarkNativeAsOptional("Shavit_GetWRCheckpointDiffTime");
-	MarkNativeAsOptional("Shavit_GetWRCheckpointSpeed");
+	MarkNativeAsOptional("Shavit_GetWRCheckpointPreSpeed");
+	MarkNativeAsOptional("Shavit_GetWRCheckpointPostSpeed");
 	MarkNativeAsOptional("Shavit_GetPRCPTime");
 	MarkNativeAsOptional("Shavit_FinishStage");
 	MarkNativeAsOptional("Shavit_IntoStage");

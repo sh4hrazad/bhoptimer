@@ -400,12 +400,19 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 	{
 		int stage = Shavit_GetClientStage(client);
 		bool bStageTimer = Shavit_IsClientStageTimer(client);
+		bool bLinearMap = Shavit_IsLinearMap();
 
 		float fSpeed[3];
 		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
 		float fSpeed3D = (SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0) + Pow(fSpeed[2], 2.0)));
 
-		float wrcpSpeed = (bStageTimer)?Shavit_GetWRCPPrespeed(stage, style):Shavit_GetWRCheckpointSpeed(stage, style);
+		float wrcpSpeed = (bStageTimer)?Shavit_GetWRCPPostspeed(stage, style):Shavit_GetWRCheckpointPostSpeed(stage, style);
+
+		if(bLinearMap)
+		{
+			wrcpSpeed = Shavit_GetWRCheckpointPostSpeed(0, style);
+		}
+
 		float diff = fSpeed3D - wrcpSpeed;
 
 		char sWRCPDiffSpeed[64];

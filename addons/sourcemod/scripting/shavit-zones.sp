@@ -3278,6 +3278,8 @@ void CreateZoneEntities()
 
 		gB_ZonesCreated = true;
 	}
+
+	delete aTeleDestination;
 }
 
 public void StartTouchPost(int entity, int other)

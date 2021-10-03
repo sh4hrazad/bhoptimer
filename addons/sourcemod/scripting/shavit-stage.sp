@@ -6,7 +6,7 @@
 #define PLUGIN_NAME           "[shavit] Stage"
 #define PLUGIN_AUTHOR         "Ciallo"
 #define PLUGIN_DESCRIPTION    "A modified Stage plugin for fork's surf timer."
-#define PLUGIN_VERSION        "0.2"
+#define PLUGIN_VERSION        "0.3"
 #define PLUGIN_URL            "https://github.com/Ciallo-Ani/surftimer"
 
 #include <sourcemod>
@@ -27,7 +27,8 @@ enum struct cp_t
 	float fStageTime;
 	float fCheckpointTime;
 	float fPrespeed;
-	float fFinalspeed;
+	float fStagePostspeed;
+	float fCPPostspeed;
 	char sName[MAX_NAME_LENGTH];
 }
 
@@ -87,10 +88,11 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetStageRankForTime", Native_GetStageRankForTime);
 	CreateNative("Shavit_GetWRCPName", Native_GetWRCPName);
 	CreateNative("Shavit_GetWRCPTime", Native_GetWRCPTime);
-	CreateNative("Shavit_GetWRCPPrespeed", Native_GetWRCPPrespeed);
+	CreateNative("Shavit_GetWRCPPostspeed", Native_GetWRCPPostspeed);
 	CreateNative("Shavit_GetWRCheckpointTime", Native_GetWRCheckpointTime);
 	CreateNative("Shavit_GetWRCheckpointDiffTime", Native_GetWRCheckpointDiffTime);
-	CreateNative("Shavit_GetWRCheckpointSpeed", Native_GetWRCheckpointSpeed);
+	CreateNative("Shavit_GetWRCheckpointPreSpeed", Native_GetWRCheckpointPreSpeed);
+	CreateNative("Shavit_GetWRCheckpointPostSpeed", Native_GetWRCheckpointPostSpeed);
 	CreateNative("Shavit_GetPRCPTime", Native_GetPRCPTime);
 	CreateNative("Shavit_FinishStage", Native_FinishStage);
 	CreateNative("Shavit_FinishCheckpoint", Native_FinishCheckpoint);
@@ -260,6 +262,8 @@ void ResetStage(int stage, int style, bool all = false)
 			{
 				gA_WRCP[i][j].fStageTime = -1.0;
 				gA_WRCP[i][j].fPrespeed = 0.0;
+				gA_WRCP[i][j].fStagePostspeed = 0.0;
+				gA_WRCP[i][j].fCPPostspeed = 0.0;
 				strcopy(gA_WRCP[i][j].sName, 16, gS_None);
 			}
 		}
@@ -283,7 +287,8 @@ void ResetCPs(int cpnum, int style, bool all = false)
 			for(int j = 0; j < style; j++)
 			{
 				gA_WRCP[i][j].fCheckpointTime = -1.0;
-				gA_WRCP[i][j].fFinalspeed = 0.0;
+				gA_WRCP[i][j].fPrespeed = 0.0;
+				gA_WRCP[i][j].fCPPostspeed = 0.0;
 			}
 		}
 	}
@@ -894,14 +899,13 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 
 	float fVelocity[3];
 	GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fVelocity);
-	float finalSpeed = SquareRoot(Pow(fVelocity[0], 2.0) + Pow(fVelocity[1], 2.0) + Pow(fVelocity[2], 2.0));
+	float fPrespeed = SquareRoot(Pow(fVelocity[0], 2.0) + Pow(fVelocity[1], 2.0) + Pow(fVelocity[2], 2.0));
 
 	if(type == Zone_End)
 	{
 		int cpnum = (Shavit_IsLinearMap()) ? Shavit_GetClientCheckpoint(client) : Shavit_GetClientStage(client);
 		int style = Shavit_GetBhopStyle(client);
-		gA_PRCP[client][cpnum][style].fFinalspeed = finalSpeed;
-		gA_PRCP[client][cpnum][style].fPrespeed = finalSpeed;
+		gA_PRCP[client][cpnum][style].fPrespeed = fPrespeed;
 	}
 
 	if((type == Zone_Stage || type == Zone_Start || type == Zone_End) && !Shavit_IsLinearMap())
@@ -910,12 +914,13 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 		{
 			int stage = Shavit_GetClientStage(client);
 			int style = Shavit_GetBhopStyle(client);
+			gA_PRCP[client][stage][style].fPrespeed = fPrespeed;
 
 			Call_StartForward(gH_Forwards_EnterStage);
 			Call_PushCell(client);
 			Call_PushCell(stage);
 			Call_PushCell(style);
-			Call_PushFloat(finalSpeed);
+			Call_PushFloat(fPrespeed);
 			Call_Finish();
 		}
 
@@ -929,13 +934,13 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 	{
 		int cpnum = Shavit_GetClientCheckpoint(client);
 		int style = Shavit_GetBhopStyle(client);
-		gA_PRCP[client][cpnum][style].fFinalspeed = finalSpeed;
+		gA_PRCP[client][cpnum][style].fPrespeed = fPrespeed;
 
 		Call_StartForward(gH_Forwards_EnterCheckpoint);
 		Call_PushCell(client);
 		Call_PushCell(cpnum);
 		Call_PushCell(style);
-		Call_PushFloat(finalSpeed);
+		Call_PushFloat(fPrespeed);
 		Call_Finish();
 	}
 }
@@ -949,7 +954,7 @@ public void Shavit_OnLeaveZone(int client, int type, int track, int id, int enti
 
 	float fVelocity[3];
 	GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fVelocity);
-	float prespeed = SquareRoot(Pow(fVelocity[0], 2.0) + Pow(fVelocity[1], 2.0) + Pow(fVelocity[2], 2.0));
+	float fPostspeed = SquareRoot(Pow(fVelocity[0], 2.0) + Pow(fVelocity[1], 2.0) + Pow(fVelocity[2], 2.0));
 
 	if(type == Zone_Stage || type == Zone_Start)
 	{
@@ -957,13 +962,23 @@ public void Shavit_OnLeaveZone(int client, int type, int track, int id, int enti
 
 		int stage = Shavit_GetClientStage(client);
 		int style = Shavit_GetBhopStyle(client);
-		gA_PRCP[client][stage][style].fPrespeed = prespeed;
+		bool bLinear = Shavit_IsLinearMap();
+	
+		if(bLinear)
+		{
+			gA_PRCP[client][0][style].fCPPostspeed = fPostspeed;
+		}
+		else
+		{
+			gA_PRCP[client][stage][style].fStagePostspeed = fPostspeed;
+			gA_PRCP[client][stage][style].fCPPostspeed = fPostspeed;
+		}
 
 		Call_StartForward(gH_Forwards_LeaveStage);
 		Call_PushCell(client);
 		Call_PushCell(stage);
 		Call_PushCell(style);
-		Call_PushFloat(prespeed);
+		Call_PushFloat(fPostspeed);
 		Call_Finish();
 	}
 
@@ -971,12 +986,13 @@ public void Shavit_OnLeaveZone(int client, int type, int track, int id, int enti
 	{
 		int cpnum = Shavit_GetClientCheckpoint(client);
 		int style = Shavit_GetBhopStyle(client);
+		gA_PRCP[client][cpnum][style].fCPPostspeed = fPostspeed;
 
 		Call_StartForward(gH_Forwards_LeaveCheckpoint);
 		Call_PushCell(client);
 		Call_PushCell(cpnum);
 		Call_PushCell(style);
-		Call_PushFloat(prespeed);
+		Call_PushFloat(fPostspeed);
 		Call_Finish();
 	}
 }
@@ -988,20 +1004,22 @@ public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, i
 		return;
 	}
 
+	bool bLinear = Shavit_IsLinearMap();
+
 	// overwrite
 	// 0 - no query
 	// 1 - insert
 	// 2 - update
 	int maxCPs;
 
-	if(Shavit_IsLinearMap())
+	if(bLinear)
 	{
-		maxCPs = Shavit_GetMapCheckpoints() + 1;
+		maxCPs = Shavit_GetMapCheckpoints();
 	}
 
 	else
 	{
-		maxCPs = Shavit_GetMapStages() + 1;
+		maxCPs = Shavit_GetMapStages();
 	}
 
 	if(overwrite > 0)
@@ -1009,15 +1027,18 @@ public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, i
 		Transaction hTransaction = new Transaction();
 		char sQuery[512];
 
+		int cpnum = (bLinear)? 0 : 1;
+
 		if(overwrite == 1) // insert
 		{
-			for(int cpnum = 1; cpnum <= maxCPs; cpnum++)
+			for(int i = cpnum; i <= maxCPs; i++)
 			{
-				float speed = (Shavit_IsLinearMap()) ? gA_PRCP[client][cpnum][style].fFinalspeed : gA_PRCP[client][cpnum][style].fPrespeed;
+				float prespeed = gA_PRCP[client][i][style].fPrespeed;
+				float postspeed = (bLinear)? gA_PRCP[client][i][style].fCPPostspeed : gA_PRCP[client][i][style].fStagePostspeed;
 
 				FormatEx(sQuery, 512,
-					"REPLACE INTO `%scp` (auth, map, time, style, cp, speed, date) VALUES (%d, '%s', %f, %d, %d, %f, %d);",
-					gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, gA_PRCP[client][cpnum][style].fCheckpointTime, style, cpnum, speed, GetTime());
+					"REPLACE INTO `%scp` (auth, map, time, style, cp, prespeed, postspeed, date) VALUES (%d, '%s', %f, %d, %d, %f, %f, %d);",
+					gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, gA_PRCP[client][i][style].fCheckpointTime, style, i, prespeed, postspeed, GetTime());
 				
 				hTransaction.AddQuery(sQuery);
 			}
@@ -1025,13 +1046,14 @@ public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, i
 
 		else // update
 		{
-			for(int cpnum = 1; cpnum <= maxCPs; cpnum++)
+			for(int i = cpnum; i <= maxCPs; i++)
 			{
-				float speed = (Shavit_IsLinearMap()) ? gA_PRCP[client][cpnum][style].fFinalspeed : gA_PRCP[client][cpnum][style].fPrespeed;
+				float prespeed = gA_PRCP[client][i][style].fPrespeed;
+				float postspeed = (bLinear)? gA_PRCP[client][i][style].fCPPostspeed : gA_PRCP[client][i][style].fStagePostspeed;
 
 				FormatEx(sQuery, 512,
-					"UPDATE `%scp` SET time = %f, style = %d, speed = %f, date = %d WHERE (auth = %d AND cp = %d ) AND map = '%s';",
-					gS_MySQLPrefix, gA_PRCP[client][cpnum][style].fCheckpointTime, style, speed, GetTime(), GetSteamAccountID(client), cpnum, gS_Map);
+					"UPDATE `%scp` SET time = %f, style = %d, prespeed = %f, postspeed = %f, date = %d WHERE (auth = %d AND cp = %d ) AND map = '%s';",
+					gS_MySQLPrefix, gA_PRCP[client][i][style].fCheckpointTime, style, prespeed, postspeed, GetTime(), GetSteamAccountID(client), i, gS_Map);
 				
 				hTransaction.AddQuery(sQuery);
 			}
@@ -1072,7 +1094,7 @@ void OnWRCPCheck(int client, int stage, int style, float time)
 		Call_PushCell(style);
 		Call_PushCell(GetSteamAccountID(client));
 		Call_PushFloat(time);
-		Call_PushFloat(gA_PRCP[client][stage][style].fPrespeed);
+		Call_PushFloat(gA_PRCP[client][stage][style].fStagePostspeed);
 		Call_PushString(gS_Map);
 		Call_Finish();
 	}
@@ -1111,7 +1133,7 @@ public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const c
 	}
 
 	float prTime = gA_PRCP[client][stage][style].fStageTime;
-	float prespeed = gA_PRCP[client][stage][style].fPrespeed;
+	float postspeed = gA_PRCP[client][stage][style].fStagePostspeed;
 	char sQuery[512];
 
 	if(results.FetchRow())
@@ -1119,8 +1141,8 @@ public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const c
 		if(time < prTime || prTime == 0.0)
 		{
 			FormatEx(sQuery, 512,
-			"UPDATE `%sstage` SET time = %f, date = %d, prespeed = %f, completions = completions + 1 WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
-			gS_MySQLPrefix, time, GetTime(), prespeed, stage, style, gS_Map, GetSteamAccountID(client));
+			"UPDATE `%sstage` SET time = %f, date = %d, postspeed = %f, completions = completions + 1 WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
+			gS_MySQLPrefix, time, GetTime(), postspeed, stage, style, gS_Map, GetSteamAccountID(client));
 		}
 		
 		else
@@ -1133,8 +1155,8 @@ public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const c
 	else
 	{
 		FormatEx(sQuery, 512,
-		"REPLACE INTO `%sstage` (auth, map, time, style, stage, prespeed, date, completions) VALUES (%d, '%s', %f, %d, %d, %f, %d, 1);",
-		gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, time, style, stage, prespeed, GetTime());
+		"REPLACE INTO `%sstage` (auth, map, time, style, stage, postspeed, date, completions) VALUES (%d, '%s', %f, %d, %d, %f, %d, 1);",
+		gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, time, style, stage, postspeed, GetTime());
 	}
 
 	float diff = time - gA_WRCP[stage][style].fStageTime;
@@ -1189,7 +1211,7 @@ void LoadPR(int client = -1)
 {
 	char sQuery[512];
 	FormatEx(sQuery, 512, 
-			"SELECT stage, style, time, prespeed FROM `%sstage` WHERE auth = %d AND map = '%s';", 
+			"SELECT stage, style, time, postspeed FROM `%sstage` WHERE auth = %d AND map = '%s';", 
 		gS_MySQLPrefix, GetSteamAccountID(client), gS_Map);
 
 	gH_SQL.Query(SQL_LoadPR_Callback, sQuery, GetClientSerial(client), DBPrio_High);
@@ -1216,7 +1238,7 @@ public void SQL_LoadPR_Callback(Database db, DBResultSet results, const char[] e
 		int style = results.FetchInt(1);
 		float time = results.FetchFloat(2);
 		gA_PRCP[client][stage][style].fStageTime = time;
-		gA_PRCP[client][stage][style].fPrespeed = results.FetchFloat(3);
+		gA_PRCP[client][stage][style].fStagePostspeed = results.FetchFloat(3);
 	}
 }
 
@@ -1224,7 +1246,7 @@ void LoadWRCP()
 {
 	char sQuery[512];
 	FormatEx(sQuery, 512, 
-			"SELECT p1.auth, p1.stage, p1.style, p1.time, p1.prespeed, p2.name FROM `%sstage` p1 " ...
+			"SELECT p1.auth, p1.stage, p1.style, p1.time, p1.postspeed, p2.name FROM `%sstage` p1 " ...
 			"JOIN (SELECT auth, name FROM `%susers`) p2 " ...
 			"ON p1.auth = p2.auth " ...
 			"WHERE map = '%s' " ...
@@ -1247,7 +1269,7 @@ public void SQL_LoadWRCP_Callback(Database db, DBResultSet results, const char[]
 		int stage = results.FetchInt(1);
 		int style = results.FetchInt(2);
 		float time = results.FetchFloat(3);
-		gA_WRCP[stage][style].fPrespeed = results.FetchFloat(4);
+		gA_WRCP[stage][style].fStagePostspeed = results.FetchFloat(4);
 		if(time < gA_WRCP[stage][style].fStageTime || gA_WRCP[stage][style].fStageTime == -1.0)
 		{
 			gA_WRCP[stage][style].fStageTime = time;
@@ -1315,7 +1337,7 @@ void LoadWRCheckpoints()
 	char sQuery[512];
 
 	FormatEx(sQuery, 512, 
-			"SELECT p1.auth, p1.cp, p1.style, p1.time, p1.speed FROM `%scp` p1 " ...
+			"SELECT p1.auth, p1.cp, p1.style, p1.time, p1.prespeed, p1.postspeed FROM `%scp` p1 " ...
 			"JOIN (SELECT auth, name FROM `%susers`) p2 " ...
 			"ON p1.auth = p2.auth " ...
 			"WHERE map = '%s' " ...
@@ -1338,7 +1360,8 @@ public void SQL_LoadWRCheckpoint_Callback(Database db, DBResultSet results, cons
 		int cpnum = results.FetchInt(1);
 		int style = results.FetchInt(2);
 		float time = results.FetchFloat(3);
-		gA_WRCP[cpnum][style].fFinalspeed = results.FetchFloat(4);
+		gA_WRCP[cpnum][style].fPrespeed = results.FetchFloat(4);
+		gA_WRCP[cpnum][style].fCPPostspeed = results.FetchFloat(5);
 		if(time < gA_WRCP[cpnum][style].fCheckpointTime || gA_WRCP[cpnum][style].fCheckpointTime == -1.0)
 		{
 			gA_WRCP[cpnum][style].fCheckpointTime = time;
@@ -1349,7 +1372,7 @@ public void SQL_LoadWRCheckpoint_Callback(Database db, DBResultSet results, cons
 void LoadPRCheckpoints(int client)
 {
 	char sQuery[256];
-	FormatEx(sQuery, 256, "SELECT cp, style, time, speed FROM `%scp` WHERE auth = %d AND map = '%s' ORDER BY cp ASC;", gS_MySQLPrefix, GetSteamAccountID(client), gS_Map);
+	FormatEx(sQuery, 256, "SELECT cp, style, time, prespeed, postspeed FROM `%scp` WHERE auth = %d AND map = '%s' ORDER BY cp ASC;", gS_MySQLPrefix, GetSteamAccountID(client), gS_Map);
 
 	gH_SQL.Query(SQL_LoadPRCheckpoint_Callback, sQuery, GetClientSerial(client), DBPrio_High);
 }
@@ -1369,7 +1392,8 @@ public void SQL_LoadPRCheckpoint_Callback(Database db, DBResultSet results, cons
 		int cpnum = results.FetchInt(0);
 		int style = results.FetchInt(1);
 		gA_PRCP[client][cpnum][style].fCheckpointTime = results.FetchFloat(2);
-		gA_PRCP[client][cpnum][style].fFinalspeed = results.FetchFloat(3);
+		gA_PRCP[client][cpnum][style].fPrespeed = results.FetchFloat(3);
+		gA_PRCP[client][cpnum][style].fCPPostspeed = results.FetchFloat(4);
 	}
 }
 
@@ -1393,14 +1417,9 @@ public int Native_GetWRCPTime(Handle handler, int numParams)
 	return view_as<int>(gA_WRCP[GetNativeCell(1)][GetNativeCell(2)].fStageTime);
 }
 
-public int Native_GetWRCheckpointTime(Handle handler, int numParams)
+public int Native_GetWRCPPostspeed(Handle handler, int numParams)
 {
-	return view_as<int>(gA_WRCP[GetNativeCell(1)][GetNativeCell(2)].fCheckpointTime);
-}
-
-public int Native_GetWRCPPrespeed(Handle handler, int numParams)
-{
-	return view_as<int>(gA_WRCP[GetNativeCell(1)][GetNativeCell(2)].fPrespeed);
+	return view_as<int>(gA_WRCP[GetNativeCell(1)][GetNativeCell(2)].fStagePostspeed);
 }
 
 public int Native_FinishStage(Handle handler, int numParams)
@@ -1525,7 +1544,7 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 
 		float fVelocity[3];
 		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fVelocity);
-		float finalSpeed = SquareRoot(Pow(fVelocity[0], 2.0) + Pow(fVelocity[1], 2.0) + Pow(fVelocity[2], 2.0));
+		float prespeed = SquareRoot(Pow(fVelocity[0], 2.0) + Pow(fVelocity[1], 2.0) + Pow(fVelocity[2], 2.0));
 
 		Call_StartForward(gH_Forwards_OnFinishCheckpoint);
 		Call_PushCell(client);
@@ -1533,9 +1552,14 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 		Call_PushCell(style);
 		Call_PushFloat(time);
 		Call_PushFloat(diff);
-		Call_PushFloat(finalSpeed);
+		Call_PushFloat(prespeed);
 		Call_Finish();
 	}
+}
+
+public int Native_GetWRCheckpointTime(Handle handler, int numParams)
+{
+	return view_as<int>(gA_WRCP[GetNativeCell(1)][GetNativeCell(2)].fCheckpointTime);
 }
 
 public int Native_GetWRCheckpointDiffTime(Handle handler, int numParams)
@@ -1544,9 +1568,14 @@ public int Native_GetWRCheckpointDiffTime(Handle handler, int numParams)
 	return view_as<int>(gF_DiffTime[GetNativeCell(1)]);
 }
 
-public int Native_GetWRCheckpointSpeed(Handle handler, int numParams)
+public int Native_GetWRCheckpointPreSpeed(Handle handler, int numParams)
 {
-	return view_as<int>(gA_WRCP[GetNativeCell(1)][GetNativeCell(2)].fFinalspeed);
+	return view_as<int>(gA_WRCP[GetNativeCell(1)][GetNativeCell(2)].fPrespeed);
+}
+
+public int Native_GetWRCheckpointPostSpeed(Handle handler, int numParams)
+{
+	return view_as<int>(gA_WRCP[GetNativeCell(1)][GetNativeCell(2)].fCPPostspeed);
 }
 
 public int Native_GetPRCPTime(Handle hander, int numParams)
@@ -1581,13 +1610,13 @@ public void Shavit_OnDatabaseLoaded()
 
 	char sQuery[1024];
 	FormatEx(sQuery, 1024, 
-			"CREATE TABLE IF NOT EXISTS `%sstage` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `style` TINYINT, `stage` INT, `prespeed` FLOAT, `date` INT, `completions` INT, PRIMARY KEY (`id`))%s;",
+			"CREATE TABLE IF NOT EXISTS `%sstage` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `style` TINYINT, `stage` INT, `postspeed` FLOAT, `date` INT, `completions` INT, PRIMARY KEY (`id`))%s;",
 			gS_MySQLPrefix, (IsMySQLDatabase(gH_SQL)) ? " ENGINE=INNODB" : "");
 
 	hTransaction.AddQuery(sQuery);
 
 	FormatEx(sQuery, 1024, 
-			"CREATE TABLE IF NOT EXISTS `%scp` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `style` TINYINT, `cp` INT, `speed` FLOAT, `date` INT, PRIMARY KEY (`id`))%s;",
+			"CREATE TABLE IF NOT EXISTS `%scp` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `style` TINYINT, `cp` INT, `prespeed` FLOAT, `postspeed` FLOAT, `date` INT, PRIMARY KEY (`id`))%s;",
 			gS_MySQLPrefix, (IsMySQLDatabase(gH_SQL)) ? " ENGINE=INNODB" : "");
 
 	hTransaction.AddQuery(sQuery);

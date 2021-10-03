@@ -164,6 +164,8 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_tier", Command_Tier, "Prints the map's tier to chat.");
 	RegConsoleCmd("sm_maptier", Command_Tier, "Prints the map's tier to chat. (sm_tier alias)");
 
+	RegConsoleCmd("sm_m", Command_MapDetails, "Prints the map's details information");
+
 	RegConsoleCmd("sm_rankme", Command_Rank, "Show your or someone else's rank. Usage: sm_rank [name]");
 	RegConsoleCmd("sm_rank", Command_Top, "Show the top 100 players.");
 	RegConsoleCmd("sm_st", Command_Top, "Show the top 100 players.");
@@ -609,6 +611,24 @@ public Action Command_Tier(int client, int args)
 	}
 
 	Shavit_PrintToChat(client, "%T", "CurrentTier", client, gS_ChatStrings.sVariable, sMap, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, tier, gS_ChatStrings.sText);
+
+	return Plugin_Handled;
+}
+
+public Action Command_MapDetails(int client, int args)
+{
+	int iBonuses = Shavit_GetMapBonuses();
+
+	if(Shavit_IsLinearMap())
+	{
+		int iCps = Shavit_GetMapCheckpoints();
+		Shavit_PrintToChat(client, "当前竞速图信息: 难度 %d | 检查点数 %d | 奖励关数 %d", gI_Tier, iCps, iBonuses);
+	}
+	else
+	{
+		int iStages = Shavit_GetMapStages();
+		Shavit_PrintToChat(client, "当前关卡图信息: 难度 %d | 关卡数 %d | 奖励关数 %d", gI_Tier, iStages, iBonuses);
+	}
 
 	return Plugin_Handled;
 }
