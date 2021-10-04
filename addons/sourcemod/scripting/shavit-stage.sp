@@ -134,8 +134,6 @@ public void OnPluginStart()
 	RegAdminCmd("sm_deletemtop", Command_DeleteMaptop, ADMFLAG_RCON, "Alias of sm_delmtop");
 	RegAdminCmd("sm_deletemaptop", Command_DeleteMaptop, ADMFLAG_RCON, "Alias of sm_delmtop");
 
-	RegAdminCmd("sm_test", Command_Test, ADMFLAG_RCON, "do stuff");
-
 	gH_Forwards_EnterStage = CreateGlobalForward("Shavit_OnEnterStage", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
 	gH_Forwards_EnterCheckpoint = CreateGlobalForward("Shavit_OnEnterCheckpoint", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
 	gH_Forwards_LeaveStage = CreateGlobalForward("Shavit_OnLeaveStage", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
@@ -299,12 +297,6 @@ void ResetCPs(int cpnum, int style, bool all = false)
 	}
 
 	LoadWRCheckpoints();
-}
-
-public Action Command_Test(int client, int args)
-{
-
-	return Plugin_Handled;
 }
 
 public Action Command_WRCP(int client, int args)

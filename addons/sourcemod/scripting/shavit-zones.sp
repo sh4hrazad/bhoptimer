@@ -108,7 +108,7 @@ bool gB_WaitingForChatInput[MAXPLAYERS+1];
 bool gB_HookZoneConfirm[MAXPLAYERS+1];
 bool gB_ZoneDataInput[MAXPLAYERS+1];
 bool gB_CommandToEdit[MAXPLAYERS+1];
-bool gB_SingleStageTiming[MAXPLAYERS+1];
+bool gB_StageTimer[MAXPLAYERS+1];
 bool gB_ShowTriggers[MAXPLAYERS+1];
 
 // cache
@@ -592,7 +592,7 @@ public int Native_IsClientCreatingZone(Handle handler, int numParams)
 
 public int Native_IsClientStageTimer(Handle handler, int numParams)
 {
-	return gB_SingleStageTiming[GetNativeCell(1)];
+	return gB_StageTimer[GetNativeCell(1)];
 }
 
 public int Native_IntoStage(Handle handler, int numParams)
@@ -1284,6 +1284,15 @@ public Action Command_Back(int client, int args)
 	}
 
 	int index = gI_InsideZoneIndex[client];
+	int type = gA_ZoneCache[index].iZoneType;
+	int data = gA_ZoneCache[index].iZoneData;
+
+	if(type == Zone_Stage && !gB_StageTimer[client])
+	{
+		FakeClientCommand(client, "sm_stage %d", data);
+
+		return Plugin_Handled;
+	}
 
 	if(!EmptyVector(gV_CustomDestinations[client][index]))
 	{
@@ -1349,7 +1358,7 @@ public Action Command_Stages(int client, int args)
 			if(gA_ZoneCache[i].bZoneInitialized && gA_ZoneCache[i].iZoneType == Zone_Stage && gA_ZoneCache[i].iZoneData == iStage)
 			{
 				Shavit_StopTimer(client);
-				gB_SingleStageTiming[client] = true;
+				gB_StageTimer[client] = true;
 
 				if(!EmptyVector(gV_CustomDestinations[client][i]))
 				{
@@ -1406,7 +1415,7 @@ public int MenuHandler_SelectStage(Menu menu, MenuAction action, int param1, int
 		int iIndex = StringToInt(sInfo);
 		
 		Shavit_StopTimer(param1);
-		gB_SingleStageTiming[param1] = true;
+		gB_StageTimer[param1] = true;
 
 		if(!EmptyVector(gV_CustomDestinations[param1][iIndex]))
 		{
@@ -3331,7 +3340,7 @@ public void StartTouchPost(int entity, int other)
 
 				gI_ClientCurrentCP[other] = (gB_LinearMap) ? gI_Checkpoints + 1 : gI_Stages + 1;
 
-				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && gI_ClientCurrentCP[other] - gI_LastCheckpoint[other] == 1 && !gB_SingleStageTiming[other])
+				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && gI_ClientCurrentCP[other] - gI_LastCheckpoint[other] == 1 && !gB_StageTimer[other])
 				{
 					gB_IntoCheckpoint[other] = true;
 					Shavit_FinishCheckpoint(other);
@@ -3339,7 +3348,7 @@ public void StartTouchPost(int entity, int other)
 
 				gI_LastCheckpoint[other] = (gB_LinearMap) ? gI_Checkpoints + 1 : gI_Stages + 1;
 				
-				if(status != Timer_Stopped && !Shavit_IsPaused(other) && !gB_SingleStageTiming[other] && Shavit_GetClientTrack(other) == track)
+				if(status != Timer_Stopped && !Shavit_IsPaused(other) && !gB_StageTimer[other] && Shavit_GetClientTrack(other) == track)
 				{
 					Shavit_FinishMap(other, track);
 				}
@@ -3357,7 +3366,7 @@ public void StartTouchPost(int entity, int other)
 					Shavit_FinishStage(other);
 				}
 
-				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && gI_ClientCurrentCP[other] - gI_LastCheckpoint[other] == 1 && !gB_SingleStageTiming[other])
+				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && gI_ClientCurrentCP[other] - gI_LastCheckpoint[other] == 1 && !gB_StageTimer[other])
 				{
 					gB_IntoCheckpoint[other] = true;
 					Shavit_FinishCheckpoint(other);
@@ -3470,13 +3479,13 @@ public void TouchPost(int entity, int other)
 			// so you don't accidentally step on those while running
 			if(Shavit_GetTimerStatus(other) != Timer_Stopped && Shavit_GetClientTrack(other) != Track_Main)
 			{
-				gB_SingleStageTiming[other] = false;
+				gB_StageTimer[other] = false;
 				Shavit_StartTimer(other, gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack);
 			}
 
 			else if(Shavit_GetTimerStatus(other) != Timer_Stopped && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack == Track_Main)
 			{
-				gB_SingleStageTiming[other] = false;
+				gB_StageTimer[other] = false;
 				Shavit_StartTimer(other, Track_Main);
 			}
 		}
@@ -3509,7 +3518,7 @@ public void TouchPost(int entity, int other)
 					return;
 				}
 
-				if(gB_SingleStageTiming[other])
+				if(gB_StageTimer[other])
 				{
 					Shavit_StartTimer(other, Track_Main);
 				}

@@ -35,22 +35,10 @@
 // HUD2 - these settings will *disable* elements for the main hud
 #define HUD2_TIME				(1 << 0)
 #define HUD2_SPEED				(1 << 1)
-#define HUD2_ZONE				(1 << 2)
-#define HUD2_MAPINFO			(1 << 3)
-#define HUD2_SYNC				(1 << 4)
-#define HUD2_STYLE				(1 << 5)
-#define HUD2_RANK				(1 << 6)
-#define HUD2_TRACK				(1 << 7)
-#define HUD2_SPLITPB			(1 << 8)
-#define HUD2_MAPTIER			(1 << 9)
-#define HUD2_TIMEDIFFERENCE		(1 << 10)
-#define HUD2_PERFS				(1 << 11)
-#define HUD2_MID				(1 << 12)
-#define HUD2_WR					(1 << 13)
-#define HUD2_PB					(1 << 14)
+#define HUD2_WRPB				(1 << 2)// 0 pb | 1 WR
 
 #define HUD_DEFAULT				(HUD_MASTER|HUD_CENTER|HUD_ZONEHUD|HUD_OBSERVE|HUD_TOPLEFT|HUD_SYNC|HUD_TIMELEFT|HUD_2DVEL|HUD_SPECTATORS)
-#define HUD_DEFAULT2			(HUD2_PB)
+#define HUD_DEFAULT2			(HUD2_WRPB)
 
 #define MAX_HINT_SIZE 1024
 
@@ -92,7 +80,6 @@ EngineVersion gEV_Type = Engine_Unknown;
 bool gB_Replay = false;
 bool gB_Zones = false;
 bool gB_Sounds = false;
-bool gB_Rankings = false;
 bool gB_BhopStats = false;
 
 // cache
@@ -178,7 +165,6 @@ public void OnPluginStart()
 	gB_Replay = LibraryExists("shavit-replay");
 	gB_Zones = LibraryExists("shavit-zones");
 	gB_Sounds = LibraryExists("shavit-sounds");
-	gB_Rankings = LibraryExists("shavit-rankings");
 	gB_BhopStats = LibraryExists("bhopstats");
 
 	// plugin convars
@@ -209,19 +195,7 @@ public void OnPluginStart()
 	gCV_DefaultHUD2 = new Convar("shavit_hud2_default", defaultHUD, "Default HUD2 settings as a bitflag of what to remove\n"
 		..."HUD2_TIME				1\n"
 		..."HUD2_SPEED				2\n"
-		..."HUD2_ZONE				4\n"
-		..."HUD2_MAPINFO			8\n"
-		..."HUD2_SYNC				16\n"
-		..."HUD2_STYLE				32\n"
-		..."HUD2_RANK				64\n"
-		..."HUD2_TRACK				128\n"
-		..."HUD2_SPLITPB				256\n"
-		..."HUD2_MAPTIER				512\n"
-		..."HUD2_TIMEDIFFERENCE		1024\n"
-		..."HUD2_PERFS				2048\n"
-		..."HUD2_MID				4096\n"
-		..."HUD2_WR					8192\n"
-		..."HUD2_PB					16384");
+		..."HUD2_WRPB				4\n");
 
 	Convar.AutoExecConfig();
 
@@ -302,11 +276,6 @@ public void OnLibraryAdded(const char[] name)
 		gB_Sounds = true;
 	}
 
-	else if(StrEqual(name, "shavit-rankings"))
-	{
-		gB_Rankings = true;
-	}
-
 	else if(StrEqual(name, "bhopstats"))
 	{
 		gB_BhopStats = true;
@@ -328,11 +297,6 @@ public void OnLibraryRemoved(const char[] name)
 	else if(StrEqual(name, "shavit-sounds"))
 	{
 		gB_Sounds = false;
-	}
-
-	else if(StrEqual(name, "shavit-rankings"))
-	{
-		gB_Rankings = false;
 	}
 
 	else if(StrEqual(name, "bhopstats"))
@@ -737,10 +701,6 @@ Action ShowHUDMenu(int client, int item)
 	FormatEx(sHudItem, 64, "%T", "HudCenter", client);
 	menu.AddItem(sInfo, sHudItem);
 
-	FormatEx(sInfo, 16, "!%d", HUD_ZONEHUD);
-	FormatEx(sHudItem, 64, "%T", "HudZoneHud", client);
-	menu.AddItem(sInfo, sHudItem);
-
 	FormatEx(sInfo, 16, "!%d", HUD_OBSERVE);
 	FormatEx(sHudItem, 64, "%T", "HudObserve", client);
 	menu.AddItem(sInfo, sHudItem);
@@ -756,21 +716,6 @@ Action ShowHUDMenu(int client, int item)
 	FormatEx(sInfo, 16, "!%d", HUD_HIDEWEAPON);
 	FormatEx(sHudItem, 64, "%T", "HudHideWeapon", client);
 	menu.AddItem(sInfo, sHudItem);
-
-	FormatEx(sInfo, 16, "!%d", HUD_TOPLEFT);
-	FormatEx(sHudItem, 64, "%T", "HudTopLeft", client);
-	menu.AddItem(sInfo, sHudItem);
-
-	if(IsSource2013(gEV_Type))
-	{
-		FormatEx(sInfo, 16, "!%d", HUD_SYNC);
-		FormatEx(sHudItem, 64, "%T", "HudSync", client);
-		menu.AddItem(sInfo, sHudItem);
-
-		FormatEx(sInfo, 16, "!%d", HUD_TIMELEFT);
-		FormatEx(sHudItem, 64, "%T", "HudTimeLeft", client);
-		menu.AddItem(sInfo, sHudItem);
-	}
 
 	FormatEx(sInfo, 16, "!%d", HUD_2DVEL);
 	FormatEx(sHudItem, 64, "%T", "Hud2dVel", client);
@@ -792,67 +737,13 @@ Action ShowHUDMenu(int client, int item)
 	FormatEx(sHudItem, 64, "%T", "HudTimeText", client);
 	menu.AddItem(sInfo, sHudItem);
 
-	if(gB_Replay)
-	{
-		FormatEx(sInfo, 16, "@%d", HUD2_TIMEDIFFERENCE);
-		FormatEx(sHudItem, 64, "%T", "HudTimeDifference", client);
-		menu.AddItem(sInfo, sHudItem);
-	}
-
 	FormatEx(sInfo, 16, "@%d", HUD2_SPEED);
 	FormatEx(sHudItem, 64, "%T", "HudSpeedText", client);
 	menu.AddItem(sInfo, sHudItem);
 
-	FormatEx(sInfo, 16, "@%d", HUD2_ZONE);
-	FormatEx(sHudItem, 64, "%T", "HudZoneText", client);
+	FormatEx(sInfo, 16, "@%d", HUD2_WRPB);
+	FormatEx(sHudItem, 64, "%T", "HudWRPBText", client);
 	menu.AddItem(sInfo, sHudItem);
-
-	FormatEx(sInfo, 16, "@%d", HUD2_MAPINFO);
-	FormatEx(sHudItem, 64, "%T", "HudMapinfoText", client);
-	menu.AddItem(sInfo, sHudItem);
-
-	FormatEx(sInfo, 16, "@%d", HUD2_SYNC);
-	FormatEx(sHudItem, 64, "%T", "HudSync", client);
-	menu.AddItem(sInfo, sHudItem);
-	
-	FormatEx(sInfo, 16, "@%d", HUD2_PERFS);
-	FormatEx(sHudItem, 64, "%T", "HudPerfs", client);
-	menu.AddItem(sInfo, sHudItem);
-
-	FormatEx(sInfo, 16, "@%d", HUD2_STYLE);
-	FormatEx(sHudItem, 64, "%T", "HudStyleText", client);
-	menu.AddItem(sInfo, sHudItem);
-
-	FormatEx(sInfo, 16, "@%d", HUD2_RANK);
-	FormatEx(sHudItem, 64, "%T", "HudRankText", client);
-	menu.AddItem(sInfo, sHudItem);
-
-	FormatEx(sInfo, 16, "@%d", HUD2_TRACK);
-	FormatEx(sHudItem, 64, "%T", "HudTrackText", client);
-	menu.AddItem(sInfo, sHudItem);
-
-	FormatEx(sInfo, 16, "@%d", HUD2_SPLITPB);
-	FormatEx(sHudItem, 64, "%T", "HudSplitPbText", client);
-	menu.AddItem(sInfo, sHudItem);
-
-	FormatEx(sInfo, 16, "@%d", HUD2_MID);
-	FormatEx(sHudItem, 64, "%T", "HudMidText", client);
-	menu.AddItem(sInfo, sHudItem);
-
-	FormatEx(sInfo, 16, "@%d", HUD2_WR);
-	FormatEx(sHudItem, 64, "%T", "HudWRText", client);
-	menu.AddItem(sInfo, sHudItem);
-
-	FormatEx(sInfo, 16, "@%d", HUD2_PB);
-	FormatEx(sHudItem, 64, "%T", "HudPBText", client);
-	menu.AddItem(sInfo, sHudItem);
-
-	if(gB_Rankings)
-	{
-		FormatEx(sInfo, 16, "@%d", HUD2_MAPTIER);
-		FormatEx(sHudItem, 64, "%T", "HudMapTierText", client);
-		menu.AddItem(sInfo, sHudItem);
-	}
 
 	menu.ExitButton = true;
 	menu.DisplayAt(client, item, MENU_TIME_FOREVER);
@@ -1048,27 +939,24 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 	{
 		if(data.iStyle != -1 && data.fTime <= data.fWR && Shavit_IsReplayDataLoaded(data.iStyle, data.iTrack, data.iStage))
 		{
-			if((gI_HUD2Settings[client] & HUD2_TRACK) == 0)
+			char sTrack[64];
+			if(data.iStage == 0)
 			{
-				char sTrack[64];
-				if(data.iStage == 0)
-				{
-					GetTrackName(client, data.iTrack, sTrack, 64);
-				}
-
-				else
-				{
-					Format(sTrack, 64, "%T #%d", "Stage", client, data.iStage);
-				}
-
-				FormatEx(sLine, 128, "%T ", "ReplayText", client);
-				AddHUDLine(buffer, maxlen, sLine, iLines);
-				
-				FormatEx(sLine, 128, "[<span color='#B400FF'>%s - %s</span>]", sTrack, gS_StyleStrings[data.iStyle].sStyleName);
-				AddHUDLine(buffer, maxlen, sLine, iLines);
-
-				iLines++;
+				GetTrackName(client, data.iTrack, sTrack, 64);
 			}
+
+			else
+			{
+				Format(sTrack, 64, "%T #%d", "Stage", client, data.iStage);
+			}
+
+			FormatEx(sLine, 128, "%T ", "ReplayText", client);
+			AddHUDLine(buffer, maxlen, sLine, iLines);
+			
+			FormatEx(sLine, 128, "[<span color='#B400FF'>%s - %s</span>]", sTrack, gS_StyleStrings[data.iStyle].sStyleName);
+			AddHUDLine(buffer, maxlen, sLine, iLines);
+
+			iLines++;
 
 			if((gI_HUD2Settings[client] & HUD2_TIME) == 0)
 			{
@@ -1195,7 +1083,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			iLines++;
 		}
 
-		if((gI_HUD2Settings[client] & HUD2_WR) == 0)
+		if((gI_HUD2Settings[client] & HUD2_WRPB) == 0)
 		{
 			char sTargetSR[64];
 		
@@ -1213,7 +1101,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 		}
 
-		if((gI_HUD2Settings[client] & HUD2_PB) == 0)
+		else
 		{
 			char sTargetPB[64];
 
@@ -1233,7 +1121,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 
 		iLines = 0;
 
-		if((gI_HUD2Settings[client] & HUD2_ZONE) == 0 && data.fTime == 0.0 && data.iTimerStatus != Timer_Stopped)
+		if(data.fTime == 0.0 && data.iTimerStatus != Timer_Stopped)
 		{
 			if(data.iZoneHUD == ZoneHUD_Start)
 			{

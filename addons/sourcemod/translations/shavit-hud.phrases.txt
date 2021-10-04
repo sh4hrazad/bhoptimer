@@ -262,6 +262,11 @@
 		"en"		"Top left Rank"
 		"chi"		"左上角排名"
 	}
+	"HudWRPBText"
+	{
+		"en"		"World record txt"
+		"chi"		"SR模式[+] | PB模式[-]"
+	}
 	"HudStage"
 	{
 		"en"		"Stage message"
