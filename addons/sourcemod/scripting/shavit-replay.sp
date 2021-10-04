@@ -1088,7 +1088,7 @@ int CreateReplayEntity(int track, int style, float delay, int client, int bot, i
 
 		CancelReplay(gA_BotInfo[index], false);
 		SetupIfCustomFrames(gA_BotInfo[index], cache);
-		StartReplay(gA_BotInfo[index], track, style, client, delay);
+		StartReplay(gA_BotInfo[index], track, style, client, delay, stage);
 	}
 
 	return bot;
@@ -1807,12 +1807,6 @@ int InternalCreateReplayBot()
 
 int CreateReplayBot(bot_info_t info)
 {
-	if (!info.bCustomFrames && info.iType != Replay_Central)
-	{
-		info.aCache = gA_FrameCache[info.iStyle][info.iTrack];
-		info.aCache.aFrames = view_as<ArrayList>(CloneHandle(info.aCache.aFrames));
-	}
-
 	gA_BotInfo_Temp = info;
 
 	int bot = InternalCreateReplayBot();
@@ -2671,11 +2665,11 @@ void FormatStyle(int bot, const char[] source, int style, int track, char dest[M
 	char sStage[32];
 	FormatEx(sStage, 32, "WRCP #%d", stage);
 
-	if(bot == gI_TrackBot)
+	if(stage == 0)
 	{
 		ReplaceString(temp, sizeof(temp), "{stage} ", "");
 	}
-	else if(bot == gI_StageBot)
+	else
 	{
 		ReplaceString(temp, sizeof(temp), "{stage}", sStage);
 	}
@@ -4315,7 +4309,7 @@ public int MenuHandler_ReplayStyle(Menu menu, MenuAction action, int param1, int
 
 		int style = StringToInt(sInfo);
 
-		if(style < 0 || style >= gI_Styles || !ReplayEnabled(style) || gA_FrameCache[style][gI_MenuTrack[param1]].iFrameCount == 0 || gA_BotInfo[param1].iEnt > 0 || (GetEngineTime() - gF_LastInteraction[param1] < gCV_PlaybackCooldown.FloatValue && !CheckCommandAccess(param1, "sm_deletereplay", ADMFLAG_RCON)))
+		if(style < 0 || style >= gI_Styles || !ReplayEnabled(style) || gA_BotInfo[param1].iEnt > 0 || (GetEngineTime() - gF_LastInteraction[param1] < gCV_PlaybackCooldown.FloatValue && !CheckCommandAccess(param1, "sm_deletereplay", ADMFLAG_RCON)))
 		{
 			return 0;
 		}
