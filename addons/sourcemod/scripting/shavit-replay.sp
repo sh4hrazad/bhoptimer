@@ -797,7 +797,7 @@ void FinishReplay(bot_info_t info)
 		else
 		{
 			info.iStatus = Replay_Idle;
-			UpdateBotScoreboard(info.iEnt);
+			UpdateBotScoreboard(info);
 		}
 	}
 	else if (info.iType == Replay_Central)
@@ -2690,11 +2690,11 @@ void FillBotName(bot_info_t info, char sName[MAX_NAME_LENGTH])
 
 	if (central || info.aCache.iFrameCount > 0)
 	{
-		FormatStyle(idle ? gS_ReplayStrings.sCentralName : gS_ReplayStrings.sNameStyle, info.iStyle, central, info.iTrack, sName, idle, info.aCache, info.iType, info.iStage);
+		FormatStyle(info.iEnt, idle ? gS_ReplayStrings.sCentralName : gS_ReplayStrings.sNameStyle, info.iStyle, info.iTrack, sName, idle, info.aCache, info.iType, info.iStage);
 	}
 	else
 	{
-		FormatStyle(gS_ReplayStrings.sUnloaded, info.iStyle, central, info.iTrack, sName, idle, info.aCache, info.iType, into.iStage);
+		FormatStyle(info.iEnt, gS_ReplayStrings.sUnloaded, info.iStyle, info.iTrack, sName, idle, info.aCache, info.iType, info.iStage);
 	}
 }
 
@@ -2707,7 +2707,7 @@ void UpdateBotScoreboard(bot_info_t info)
 	if (gEV_Type != Engine_TF2)
 	{
 		char sTag[MAX_NAME_LENGTH];
-		FormatStyle(gS_ReplayStrings.sClanTag, info.iStyle, central, info.iTrack, sTag, idle, info.aCache, info.iType, info.iStage);
+		FormatStyle(info.iEnt, gS_ReplayStrings.sClanTag, info.iStyle, info.iTrack, sTag, idle, info.aCache, info.iType, info.iStage);
 		CS_SetClientClanTag(client, sTag);
 	}
 
