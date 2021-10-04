@@ -20,8 +20,8 @@ Hope to replace [SurfTimer](https://github.com/surftimer/Surftimer-Official) wit
 * [Metamod:Source](https://www.sourcemm.net/downloads.php?branch=stable) and [SourceMod 1.10 or above](https://www.sourcemod.net/downloads.php?branch=stable) installed.
 * A MySQL database (preferably locally hosted) if your database is likely to grow big, or if you want to use the rankings plugin. MySQL server version of 5.5.5 or above (MariaDB equivalent works too) is highly recommended.
 * [DHooks](https://github.com/peace-maker/DHooks2/releases)
-* [MomSurfFix](https://forums.alliedmods.net/showthread.php?p=2680743)
-* [RNGFix](https://forums.alliedmods.net/showthread.php?t=310825)
+* [MomSurfFix](https://github.com/GAMMACASE/MomSurfFix)
+* [RNGFix](https://github.com/jason-e/rngfix)
 * [HeadBugFix](https://github.com/GAMMACASE/HeadBugFix)
 * [sm_closestpos](https://github.com/rtldg/sm_closestpos)
 * [eventqueuefix](https://github.com/hermansimensen/eventqueue-fix)
