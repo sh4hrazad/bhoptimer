@@ -1041,7 +1041,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
 			float fTimer = GetGameTime() - gF_LastCPTime[client];
-			if(0 < fTimer <= 5.0 && GetGameTime() > 5.0 && data.fTime != 0.0 && !Shavit_IsClientStageTimer(client))
+			if(0 < fTimer <= 5.0 && GetGameTime() > 5.0 && data.iStage != 1 && !Shavit_IsClientStageTimer(client))
 			{
 				char sDifftime[64];
 				FormatHUDSeconds(Shavit_GetWRCheckpointDiffTime(data.iTarget), sDifftime, 64);

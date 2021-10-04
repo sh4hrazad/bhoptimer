@@ -1284,15 +1284,6 @@ public Action Command_Back(int client, int args)
 	}
 
 	int index = gI_InsideZoneIndex[client];
-	int type = gA_ZoneCache[index].iZoneType;
-	int data = gA_ZoneCache[index].iZoneData;
-
-	if(type == Zone_Stage && !gB_StageTimer[client])
-	{
-		FakeClientCommand(client, "sm_stage %d", data);
-
-		return Plugin_Handled;
-	}
 
 	if(!EmptyVector(gV_CustomDestinations[client][index]))
 	{
@@ -3501,6 +3492,8 @@ public void TouchPost(int entity, int other)
 			{
 				return;
 			}
+
+			gB_StageTimer[other] = true;
 		}
 
 		case Zone_Stage:
