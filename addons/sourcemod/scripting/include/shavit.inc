@@ -1130,6 +1130,26 @@ forward void Shavit_OnEnterZone(int client, int type, int track, int id, int ent
 forward void Shavit_OnLeaveZone(int client, int type, int track, int id, int entity, int data);
 
 /**
+ * Called after a player start timer.
+ *
+ * @param client					Client index.
+ * @param track						Zone track.
+ * @param speed						Client speed(3D).
+ * @noreturn
+ */
+forward void Shavit_OnStartTimer_Post(int client, int style, int track, float speed);
+
+/**
+ * Called after a player start stage timer. (Track_Main only)
+ *
+ * @param client					Client index.
+ * @param stage						Zone stage id.
+ * @param speed						Client speed(3D).
+ * @noreturn
+ */
+forward void Shavit_OnStageTimer_Post(int client, int style, int stage, float speed);
+
+/**
  * Called when a player enters a stage-zone.
  *
  * @param client					Client index.

@@ -117,9 +117,6 @@ chatstrings_t gS_ChatStrings;
 
 // stuff
 float gF_LastCPTime[MAXPLAYERS+1];
-bool gB_InStartZone[MAXPLAYERS+1];
-bool gB_InStageZone[MAXPLAYERS+1];
-int gI_LastTrack[MAXPLAYERS+1];
 char gS_PreStrafeDiff[MAXPLAYERS+1][64];
 char gS_Map[160];
 
@@ -332,16 +329,6 @@ void MakeAngleDiff(int client, float newAngle)
 	gF_AngleDiff[client] = GetAngleDiff(newAngle, gF_PreviousAngle[client]);
 }
 
-public Action Shavit_OnStart(int client, int track)
-{
-	strcopy(gS_PreStrafeDiff[client], 64, "None");
-}
-
-public Action Shavit_OnStage(int client, int stage)
-{
-	strcopy(gS_PreStrafeDiff[client], 64, "None");
-}
-
 public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float vel[3], float angles[3], TimerStatus status, int track, int style)
 {
 	gI_Buttons[client] = buttons;
@@ -355,111 +342,134 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 		}
 	}
 
-	bool bNoclip = (GetEntityMoveType(client) == MOVETYPE_NOCLIP);
-	bool bInStart = Shavit_InsideZone(client, Zone_Start, track);
-	bool bInStage = Shavit_InsideZone(client, Zone_Stage, track);
-
 	// prestrafe message
-	if(!bNoclip && gCV_PrestrafeMessage.IntValue == 1 && Shavit_GetClientTime(client) != 0.0 && track == Track_Main && status == Timer_Running)
-	{
-		int stage = Shavit_GetClientStage(client);
-		bool bStageTimer = Shavit_IsClientStageTimer(client);
-		bool bLinearMap = Shavit_IsLinearMap();
-
-		float fSpeed[3];
-		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
-		float fSpeed3D = (SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0) + Pow(fSpeed[2], 2.0)));
-
-		float wrcpSpeed = (bStageTimer)?Shavit_GetWRCPPostspeed(stage, style):Shavit_GetWRCheckpointPostSpeed(stage, style);
-
-		if(bLinearMap)
-		{
-			wrcpSpeed = Shavit_GetWRCheckpointPostSpeed(0, style);
-		}
-
-		float diff = fSpeed3D - wrcpSpeed;
-
-		char sWRCPDiffSpeed[64];
-
-		if(wrcpSpeed <= 0.0)
-		{
-			strcopy(sWRCPDiffSpeed, 64, "N/A");
-		}
-
-		else
-		{
-			if(diff > 0.0)
-			{
-				FormatEx(sWRCPDiffSpeed, 64, "%s+%d u/s%s", gS_ChatStrings.sVariable10, RoundToFloor(diff), gS_ChatStrings.sText);
-			}
-
-			else if(diff == 0.0)
-			{
-				FormatEx(sWRCPDiffSpeed, 64, "%s%d u/s%s", gS_ChatStrings.sVariable2, RoundToFloor(diff), gS_ChatStrings.sText);
-			}
-
-			else
-			{
-				
-				FormatEx(sWRCPDiffSpeed, 64, "%s%d u/s%s", gS_ChatStrings.sVariable11, RoundToFloor(diff), gS_ChatStrings.sText);
-			}
-		}
-
-		if(!bInStart && gB_InStartZone[client] && fSpeed3D != 0.0)
-		{
-			strcopy(gS_PreStrafeDiff[client], 64, sWRCPDiffSpeed);
-
-			char sPrestrafe[128];
-			FormatEx(sPrestrafe, 128, "%T", "StartPrestrafe", client,
-				gS_ChatStrings.sStyle, 
-				gS_ChatStrings.sVariable5, RoundToFloor(fSpeed3D), gS_ChatStrings.sText, 
-				gS_ChatStrings.sVariable, gS_ChatStrings.sText, sWRCPDiffSpeed);
-			Shavit_PrintToChat(client, sPrestrafe);
-
-			for(int i = 1; i <= MaxClients; i++)
-			{
-				if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
-				{
-					Shavit_PrintToChat(i, sPrestrafe);
-				}
-			}
-		}
-
-		else if(!bInStage && gB_InStageZone[client] && fSpeed3D != 0.0)
-		{
-			strcopy(gS_PreStrafeDiff[client], 64, sWRCPDiffSpeed);
-
-			char sPrestrafe[128];
-			FormatEx(sPrestrafe, 128, "%T", 
-				(bStageTimer)?"StageWRCPPrestrafe":"StageCPPrestrafe", 
-				client,
-				gS_ChatStrings.sStyle, 
-				gS_ChatStrings.sVariable5, RoundToFloor(fSpeed3D), gS_ChatStrings.sText, 
-				gS_ChatStrings.sVariable, gS_ChatStrings.sText, sWRCPDiffSpeed,
-				stage);
-
-			Shavit_PrintToChat(client, sPrestrafe);
-
-			for(int i = 1; i <= MaxClients; i++)
-			{
-				if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
-				{
-					Shavit_PrintToChat(i, sPrestrafe);
-				}
-			}
-		}
-	}
-
-	else if(status == Timer_Stopped)
+	if(status == Timer_Stopped)
 	{
 		strcopy(gS_PreStrafeDiff[client], 64, "None");
 	}
 
-	gI_LastTrack[client] = track;
-	gB_InStartZone[client] = bInStart;
-	gB_InStageZone[client] = bInStage;
-
 	return Plugin_Continue;
+}
+
+public Action Shavit_OnStart(int client, int track)
+{
+	strcopy(gS_PreStrafeDiff[client], 64, "None");
+}
+
+public void Shavit_OnStartTimer_Post(int client, int style, int track, float speed)
+{
+	if(gCV_PrestrafeMessage.IntValue != 1)
+	{
+		return;
+	}
+
+	float wrSpeed;
+
+	if(Shavit_IsLinearMap())
+	{
+		wrSpeed = Shavit_GetWRCheckpointPostSpeed(0, style);
+	}
+	else
+	{
+		wrSpeed = Shavit_GetWRCheckpointPostSpeed(1, style);
+	}
+
+	FormatPreStrafeSpeed(gS_PreStrafeDiff[client], speed, wrSpeed);
+
+	char sPrestrafe[128];
+	if(track == Track_Main)
+	{
+		FormatEx(sPrestrafe, 128, "%T", "StartPrestrafe", client,
+			gS_ChatStrings.sStyle, 
+			gS_ChatStrings.sVariable5, RoundToFloor(speed), gS_ChatStrings.sText, 
+			gS_ChatStrings.sVariable, gS_ChatStrings.sText, gS_PreStrafeDiff[client]);
+	}
+	else
+	{
+		FormatEx(sPrestrafe, 128, "%T", "BonusStartPrestrafe", client,
+			gS_ChatStrings.sStyle, 
+			gS_ChatStrings.sVariable5, RoundToFloor(speed), gS_ChatStrings.sText);
+	}
+
+	Shavit_PrintToChat(client, sPrestrafe);
+
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
+		{
+			Shavit_PrintToChat(i, sPrestrafe);
+		}
+	}
+}
+
+public Action Shavit_OnStage(int client, int stage)
+{
+	strcopy(gS_PreStrafeDiff[client], 64, "None");
+}
+
+public void Shavit_OnStageTimer_Post(int client, int style, int stage, float speed)
+{
+	if(gCV_PrestrafeMessage.IntValue != 1)
+	{
+		return;
+	}
+
+	float wrcpSpeed;
+
+	if(Shavit_IsClientStageTimer(client))
+	{
+		wrcpSpeed = Shavit_GetWRCPPostspeed(stage, style);
+	}
+	else
+	{
+		wrcpSpeed = Shavit_GetWRCheckpointPostSpeed(stage, style);
+	}
+
+	FormatPreStrafeSpeed(gS_PreStrafeDiff[client], speed, wrcpSpeed);
+
+	char sPrestrafe[128];
+	FormatEx(sPrestrafe, 128, "%T", 
+		(Shavit_IsClientStageTimer(client))?"StageWRCPPrestrafe":"StageCPPrestrafe", 
+		client,
+		gS_ChatStrings.sStyle, 
+		gS_ChatStrings.sVariable5, RoundToFloor(speed), gS_ChatStrings.sText, 
+		gS_ChatStrings.sVariable, gS_ChatStrings.sText, gS_PreStrafeDiff[client],
+		stage);
+
+	Shavit_PrintToChat(client, sPrestrafe);
+
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
+		{
+			Shavit_PrintToChat(i, sPrestrafe);
+		}
+	}
+}
+
+void FormatPreStrafeSpeed(char[] buffer, float originSpeed, float wrSpeed)
+{
+	float diff = originSpeed - wrSpeed;
+
+	if(wrSpeed <= 0.0)
+	{
+		strcopy(buffer, 64, "N/A");
+	}
+	else
+	{
+		if(diff > 0.0)
+		{
+			FormatEx(buffer, 64, "%s+%d u/s%s", gS_ChatStrings.sVariable10, RoundToFloor(diff), gS_ChatStrings.sText);
+		}
+		else if(diff == 0.0)
+		{
+			FormatEx(buffer, 64, "%s%d u/s%s", gS_ChatStrings.sVariable2, RoundToFloor(diff), gS_ChatStrings.sText);
+		}
+		else
+		{
+			FormatEx(buffer, 64, "%s%d u/s%s", gS_ChatStrings.sVariable11, RoundToFloor(diff), gS_ChatStrings.sText);
+		}
+	}
 }
 
 public void Shavit_OnChatConfigLoaded()

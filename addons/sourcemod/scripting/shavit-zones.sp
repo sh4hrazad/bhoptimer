@@ -181,6 +181,8 @@ chatstrings_t gS_ChatStrings;
 // forwards
 Handle gH_Forwards_EnterZone = null;
 Handle gH_Forwards_LeaveZone = null;
+Handle gH_Forwards_StartTimer_Post = null;
+Handle gH_Forwards_StageTimer_Post = null;
 Handle gH_Forwards_OnStage = null;
 Handle gH_Forwards_OnEndZone = null;
 
@@ -285,6 +287,8 @@ public void OnPluginStart()
 	// forwards
 	gH_Forwards_EnterZone = CreateGlobalForward("Shavit_OnEnterZone", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
 	gH_Forwards_LeaveZone = CreateGlobalForward("Shavit_OnLeaveZone", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
+	gH_Forwards_StartTimer_Post = CreateGlobalForward("Shavit_OnStartTimer_Post", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
+	gH_Forwards_StageTimer_Post = CreateGlobalForward("Shavit_OnStageTimer_Post", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
 	gH_Forwards_OnStage = CreateGlobalForward("Shavit_OnStage", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_OnEndZone = CreateGlobalForward("Shavit_OnEndZone", ET_Event, Param_Cell);
 
@@ -3441,6 +3445,7 @@ public void EndTouchPost(int entity, int other)
 	gB_InsideZone[other][type][track] = false;
 	gB_InsideZoneID[other][entityzone] = false;
 
+	Action result = Plugin_Continue;
 	Call_StartForward(gH_Forwards_LeaveZone);
 	Call_PushCell(other);
 	Call_PushCell(type);
@@ -3448,7 +3453,36 @@ public void EndTouchPost(int entity, int other)
 	Call_PushCell(entityzone);
 	Call_PushCell(entity);
 	Call_PushCell(gA_ZoneCache[entityzone].iZoneData);
-	Call_Finish();
+	Call_Finish(result);
+
+	if(result != Plugin_Continue)
+	{
+		return;
+	}
+
+	float fSpeed[3];
+	GetEntPropVector(other, Prop_Data, "m_vecAbsVelocity", fSpeed);
+	float fSpeed3D = (SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0) + Pow(fSpeed[2], 2.0)));
+
+	if(type == Zone_Start && Shavit_GetClientTime(other) != 0.0)
+	{
+		Call_StartForward(gH_Forwards_StartTimer_Post);
+		Call_PushCell(other);
+		Call_PushCell(Shavit_GetBhopStyle(other));
+		Call_PushCell(track);
+		Call_PushFloat(fSpeed3D);
+		Call_Finish();
+	}
+
+	else if(type == Zone_Stage && Shavit_GetClientTime(other) != 0.0 && gB_StageTimer[other])
+	{
+		Call_StartForward(gH_Forwards_StageTimer_Post);
+		Call_PushCell(other);
+		Call_PushCell(Shavit_GetBhopStyle(other));
+		Call_PushCell(gA_ZoneCache[entityzone].iZoneData);
+		Call_PushFloat(fSpeed3D);
+		Call_Finish();
+	}
 }
 
 public void TouchPost(int entity, int other)
