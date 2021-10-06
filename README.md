@@ -13,6 +13,8 @@
 
 Hope to replace [SurfTimer](https://github.com/surftimer/Surftimer-Official) with this.
 
+Map strippers, zones and tiers are from [HERE](https://github.com/Sayt123/SurfZones)
+
 [Mapzones Setup Demonstration](https://youtu.be/OXFMGm40F6c)
 
 # Requirements:
@@ -30,3 +32,4 @@ Hope to replace [SurfTimer](https://github.com/surftimer/Surftimer-Official) wit
 * [SteamWorks](https://forums.alliedmods.net/showthread.php?t=229556)
   * Used to grab `{serverip}` in advertisements.
 * [ShowPlayerClips](https://forums.alliedmods.net/showthread.php?p=2661942)
+* [Stripper](http://www.bailopan.net/stripper/snapshots/1.2/)
