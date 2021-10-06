@@ -49,6 +49,7 @@ Convar g_cvMapVoteShowTier;
 Convar g_cvMapVoteRunOff;
 Convar g_cvMapVoteRunOffPerc;
 Convar g_cvMapVoteRevoteTime;
+Convar g_cvMapVotePrintToConsole;
 Convar g_cvDisplayTimeRemaining;
 
 Convar g_cvNominateMatches;
@@ -148,6 +149,7 @@ public void OnPluginStart()
 	LoadTranslations("common.phrases");
 	LoadTranslations("rockthevote.phrases");
 	LoadTranslations("nominations.phrases");
+	LoadTranslations("plugin.basecommands");
 
 	gEV_Type = GetEngineVersion();
 
@@ -183,6 +185,7 @@ public void OnPluginStart()
 	g_cvMapVoteRunOff = new Convar("smc_mapvote_runoff", "1", "Hold run of votes if winning choice is less than a certain margin", _, true, 0.0, true, 1.0);
 	g_cvMapVoteRunOffPerc = new Convar("smc_mapvote_runoffpercent", "50", "If winning choice has less than this percent of votes, hold a runoff", _, true, 0.0, true, 100.0);
 	g_cvMapVoteRevoteTime = new Convar("smc_mapvote_revotetime", "0", "How many minutes after a failed mapvote before rtv is enabled again", _, true, 0.0);
+	g_cvMapVotePrintToConsole = new Convar("smc_mapvote_printtoconsole", "1", "Prints map votes that each player makes to console.", _, true, 0.0, true, 1.0);
 	//g_cvDisplayTimeRemaining = new Convar("smc_display_timeleft", "1", "Display remaining messages in chat", _, true, 0.0, true, 1.0);
 
 	g_cvNominateMatches = new Convar("smc_nominate_matches", "1", "Prompts a menu which shows all maps which match argument",  _, true, 0.0, true, 1.0);
@@ -204,6 +207,8 @@ public void OnPluginStart()
 	RegAdminCmd("sm_extendmap", Command_Extend, ADMFLAG_CHANGEMAP, "Admin command for extending map");
 	RegAdminCmd("sm_forcemapvote", Command_ForceMapVote, ADMFLAG_CHANGEMAP, "Admin command for forcing the end of map vote");
 	RegAdminCmd("sm_reloadmaplist", Command_ReloadMaplist, ADMFLAG_CHANGEMAP, "Admin command for forcing maplist to be reloaded");
+	RegAdminCmd("sm_reloadmap", Command_ReloadMap, ADMFLAG_CHANGEMAP, "Admin command for reloading current map");
+	RegAdminCmd("sm_restartmap", Command_ReloadMap, ADMFLAG_CHANGEMAP, "Admin command for reloading current map");
 
 	RegAdminCmd("sm_loadunzonedmap", Command_LoadUnzonedMap, ADMFLAG_ROOT, "Loads the next map from the maps folder that is unzoned.");
 
@@ -339,7 +344,7 @@ float MapChangeDelay()
 		return 4.3;
 	}
 
-	return 2.0;
+	return 1.0;
 }
 
 int ExplodeCvar(ConVar cvar, char[][] buffers, int maxStrings, int maxStringLength)
@@ -872,6 +877,7 @@ public void Handler_VoteFinishedGeneric(Menu menu, int num_votes, int num_client
 			DataPack data;
 			CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, data);
 			data.WriteString(map);
+			data.WriteString("RTV Mapvote");
 			ClearRTV();
 		}
 
@@ -887,6 +893,17 @@ public int Handler_MapVoteMenu(Menu menu, MenuAction action, int param1, int par
 {
 	switch(action)
 	{
+		case MenuAction_Select:
+		{
+			if (g_cvMapVotePrintToConsole.BoolValue)
+			{
+				char map[PLATFORM_MAX_PATH];
+				menu.GetItem(param2, map, sizeof(map));
+
+				PrintToConsoleAll("%N voted for %s", param1, map);
+			}
+		}
+
 		case MenuAction_DrawItem:
 		{
 			if (g_bVoteDelayed[param1])
@@ -1287,21 +1304,14 @@ void ClearRTV()
 /* Timers */
 public Action Timer_ChangeMap(Handle timer, DataPack data)
 {
+	char reason[PLATFORM_MAX_PATH];
 	char map[PLATFORM_MAX_PATH];
+
 	data.Reset();
 	data.ReadString(map, sizeof(map));
+	data.ReadString(reason, sizeof(reason));
 
-	ForceChangeLevel(map, "RTV Mapvote");
-}
-
-// ugh
-public Action Timer_ChangeMap222(Handle timer, DataPack data)
-{
-	char map[PLATFORM_MAX_PATH];
-	data.Reset();
-	data.ReadString(map, sizeof(map));
-
-	ForceChangeLevel(map, "sm_loadunzonedmap");
+	ForceChangeLevel(map, reason);
 }
 
 /* Commands */
@@ -1347,6 +1357,12 @@ public Action Command_ReloadMaplist(int client, int args)
 
 public Action Command_Nominate(int client, int args)
 {
+	if (g_bMapVoteStarted || g_bMapVoteFinished)
+	{
+		ReplyToCommand(client, "%sMap vote already %s", g_cPrefix, (g_bMapVoteStarted) ? "initiated" : "finished");
+		return Plugin_Handled;
+	}
+
 	if(args < 1)
 	{
 		if (g_cvEnhancedMenu.BoolValue)
@@ -1367,6 +1383,12 @@ public Action Command_Nominate(int client, int args)
 
 public Action Command_Nominate_Internal(int client, char mapname[PLATFORM_MAX_PATH])
 {
+	if (g_bMapVoteStarted || g_bMapVoteFinished)
+	{
+		ReplyToCommand(client, "%sMap vote already %s", g_cPrefix, (g_bMapVoteStarted) ? "initiated" : "finished");
+		return Plugin_Handled;
+	}
+
 	LowercaseString(mapname);
 
 	if (g_cvNominateMatches.BoolValue)
@@ -1405,6 +1427,12 @@ public Action Command_Nominate_Internal(int client, char mapname[PLATFORM_MAX_PA
 
 public Action Command_UnNominate(int client, int args)
 {
+	if (g_bMapVoteStarted || g_bMapVoteFinished)
+	{
+		ReplyToCommand(client, "%sMap vote already %s", g_cPrefix, (g_bMapVoteStarted) ? "initiated" : "finished");
+		return Plugin_Handled;
+	}
+
 	if (g_fLastNominateTime[client] && (GetEngineTime() - g_fLastNominateTime[client]) < g_cvAntiSpam.FloatValue)
 	{
 		ReplyToCommand(client, "%sStop spamming", g_cPrefix);
@@ -1624,6 +1652,29 @@ void OpenNominateMenuTier(int client, int tier)
 	DisplayMenu(g_aTierMenus[tier], client, MENU_TIME_FOREVER);
 }
 
+public int MapsMenuHandler(Menu menu, MenuAction action, int param1, int param2)
+{
+	if (action == MenuAction_Select)
+	{
+		char map[PLATFORM_MAX_PATH];
+		menu.GetItem(param2, map, sizeof(map));
+
+		ShowActivity2(param2, g_cPrefix, "%t", "Changing map", map);
+		LogAction(param2, -1, "\"%L\" changed map to \"%s\"", param2, map);
+
+		DataPack dp;
+		CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, dp);
+		dp.WriteString(map);
+		dp.WriteString("sm_map");
+	}
+	else if (action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
+}
+
 public int NominateMenuHandler(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_Select)
@@ -1798,6 +1849,7 @@ int CheckRTV(int client = 0)
 			DataPack data;
 			CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, data);
 			data.WriteString(map);
+			data.WriteString("rtv after map vote");
 		}
 		else
 		{
@@ -1934,8 +1986,9 @@ public void FindUnzonedMapCallback(Database db, DBResultSet results, const char[
 		Shavit_PrintToChatAll("Loading unzoned map %s", buffer);
 
 		DataPack dp;
-		CreateDataTimer(1.0, Timer_ChangeMap222, dp);
+		CreateDataTimer(1.0, Timer_ChangeMap, dp);
 		dp.WriteString(buffer);
+		dp.WriteString("sm_loadunzonedmap");
 	}
 }
 
@@ -1944,6 +1997,99 @@ public Action Command_LoadUnzonedMap(int client, int args)
 	char sQuery[256];
 	FormatEx(sQuery, sizeof(sQuery), "SELECT DISTINCT map FROM %smapzones;", g_cSQLPrefix);
 	g_hDatabase.Query(FindUnzonedMapCallback, sQuery, 0, DBPrio_Normal);
+	return Plugin_Handled;
+}
+
+public Action Command_ReloadMap(int client, int args)
+{
+	PrintToChatAll("%sReloading current map..", g_cPrefix);
+	DataPack dp;
+	CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, dp);
+	dp.WriteString(g_cMapName);
+	dp.WriteString("sm_reloadmap");
+
+	return Plugin_Handled;
+}
+
+public Action BaseCommands_Command_Map_Menu(int client, int args)
+{
+	char map[PLATFORM_MAX_PATH];
+	Menu menu = new Menu(MapsMenuHandler);
+
+	StringMap tiersMap = gB_Rankings ? Shavit_GetMapTiers() : new StringMap();
+	ArrayList maps;
+
+	if (args < 1)
+	{
+		maps = g_aMapList;
+
+		menu.SetTitle("%T\n ", "Choose Map", client);
+	}
+	else
+	{
+		maps = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
+		ReadMapsFolderArrayList(maps);
+
+		GetCmdArg(1, map, sizeof(map));
+		LowercaseString(map);
+		ReplaceString(map, sizeof(map), "\\", "/", true);
+
+		menu.SetTitle("Maps matching \"%s\"\n ", map);
+	}
+
+	int length = maps.Length;
+	for(int i = 0; i < length; i++)
+	{
+		char entry[PLATFORM_MAX_PATH];
+		maps.GetString(i, entry, sizeof(entry));
+
+		if (args < 1 || StrContains(entry, map) != -1)
+		{
+			char mapdisplay[PLATFORM_MAX_PATH];
+			LessStupidGetMapDisplayName(entry, mapdisplay, sizeof(mapdisplay));
+
+			int tier = 0;
+			tiersMap.GetValue(mapdisplay, tier);
+
+			char mapdisplay2[PLATFORM_MAX_PATH];
+			FormatEx(mapdisplay2, sizeof(mapdisplay2), "%s | T%i", mapdisplay, tier);
+
+			menu.AddItem(entry, mapdisplay2);
+		}
+	}
+
+	if (args >= 1)
+	{
+		delete maps;
+	}
+
+	delete tiersMap;
+
+	switch (menu.ItemCount)
+	{
+		case 0:
+		{
+			ReplyToCommand(client, "%s%t", g_cPrefix, "Map was not found", map);
+			delete menu;
+		}
+		case 1:
+		{
+			menu.GetItem(0, map, sizeof(map));
+			ShowActivity2(client, g_cPrefix, "%t", "Changing map", map);
+			LogAction(client, -1, "\"%L\" changed map to \"%s\"", client, map);
+
+			DataPack dp;
+			CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, dp);
+			dp.WriteString(map);
+			dp.WriteString("sm_map");
+			delete menu;
+		}
+		default:
+		{
+			menu.Display(client, MENU_TIME_FOREVER);
+		}
+	}
+
 	return Plugin_Handled;
 }
 
@@ -2018,32 +2164,35 @@ public Action BaseCommands_Command_Map(int client, int args)
 	LogAction(client, -1, "\"%L\" changed map to \"%s\"", client, map);
 
 	DataPack dp;
-	CreateDataTimer(MapChangeDelay(), BaseCommands_Timer_ChangeMap, dp);
+	CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, dp);
 	dp.WriteString(map);
+	dp.WriteString("sm_map");
 
 	return Plugin_Handled;
 }
 
-public Action BaseCommands_Timer_ChangeMap(Handle timer, DataPack dp)
-{
-	char map[PLATFORM_MAX_PATH];
-
-	dp.Reset();
-	dp.ReadString(map, sizeof(map));
-
-	ForceChangeLevel(map, "sm_map Command");
-
-	return Plugin_Stop;
-}
-
 public Action Command_MapButFaster(int client, const char[] command, int args)
 {
-	if (!g_cvHijackMap.BoolValue || !CheckCommandAccess(client, "sm_map", ADMFLAG_CHANGEMAP) || args < 1)
+	if (!g_cvHijackMap.BoolValue || !CheckCommandAccess(client, "sm_map", ADMFLAG_CHANGEMAP))
 	{
 		return Plugin_Continue;
 	}
 
-	BaseCommands_Command_Map(client, args);
+	if (client == 0)
+	{
+		if (args < 1)
+		{
+			ReplyToCommand(client, "[SM] Usage: sm_map <map>");
+			return Plugin_Stop;
+		}
+
+		BaseCommands_Command_Map(client, args);
+	}
+	else
+	{
+		BaseCommands_Command_Map_Menu(client, args);
+	}
+
 	return Plugin_Stop;
 }
 

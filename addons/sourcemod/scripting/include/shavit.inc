@@ -23,7 +23,7 @@
 #endif
 #define _shavit_included
 
-#define SHAVIT_VERSION "3.0.7"
+#define SHAVIT_VERSION "3.0.9a"
 #define STYLE_LIMIT 256
 #define MAX_ZONES 64
 #define MAX_STAGES 51 // 😐 kind of arbitrary but also some space between this and MAX_ZONES
@@ -200,8 +200,20 @@ enum struct timer_snapshot_t
 	float fAvgVelocity;
 	float fMaxVelocity;
 	float fTimescale;
-	int iZoneIncrement;
+	int iZoneIncrement; // convert to array for per zone offsets (?)
 	float fTimescaledTicks;
+
+	bool bPracticeMode;
+
+	bool bJumped;
+	bool bCanUseAllKeys;
+	bool bOnGround;
+
+	int iLastButtons;
+	float fLastAngle;
+	int iLandingTick;
+	MoveType iLastMoveType;
+	float fStrafeWarning;
 }
 
 enum struct cp_cache_t
@@ -224,7 +236,6 @@ enum struct cp_cache_t
 	ArrayList aFrames;
 	int iPreFrames;
 	bool bSegmented;
-	bool bPractice;
 	int iGroundEntity;
 	int iSteamID;
 	ArrayList aEvents;
@@ -365,14 +376,14 @@ char gS_CSGOColors[][] =
 
 // connects synchronously to the bhoptimer database
 // calls errors if needed
-stock Database GetTimerDatabaseHandle()
+stock Database GetTimerDatabaseHandle(bool reuse_persistent_connection=true)
 {
 	Database db = null;
 	char sError[255];
 
 	if(SQL_CheckConfig("shavit"))
 	{
-		if((db = SQL_Connect("shavit", true, sError, 255)) == null)
+		if((db = SQL_Connect("shavit", reuse_persistent_connection, sError, 255)) == null)
 		{
 			SetFailState("Timer startup failed. Reason: %s", sError);
 		}
@@ -385,9 +396,9 @@ stock Database GetTimerDatabaseHandle()
 	return db;
 }
 
-stock Database2 GetTimerDatabaseHandle2()
+stock Database2 GetTimerDatabaseHandle2(bool reuse_persistent_connection=true)
 {
-	return view_as<Database2>(GetTimerDatabaseHandle());
+	return view_as<Database2>(GetTimerDatabaseHandle(reuse_persistent_connection));
 }
 
 // figures out if the database is a mysql database
@@ -536,6 +547,8 @@ stock bool ReadMapsFolderStringMap(StringMap data, bool lowercase=true, bool dis
 	return ReadMapsFolderHandler("maps", true, data, lowercase, display, iter_subfolders, use_valve_fs, exclude_prefixes, exclude_count);
 }
 
+// don't forget to declare your ArrayList like below :)))
+//// ArrayList maps = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
 stock bool ReadMapsFolderArrayList(ArrayList data, bool lowercase=true, bool display=false, bool iter_subfolders=true, bool use_valve_fs=true, char[][] exclude_prefixes=empty_excludes, int exclude_count=0)
 {
 	return ReadMapsFolderHandler("maps", false, data, lowercase, display, iter_subfolders, use_valve_fs, exclude_prefixes, exclude_count);
@@ -1323,6 +1336,13 @@ forward void Shavit_OnProcessMovement(int client);
  * @noreturn
  */
 forward void Shavit_OnProcessMovementPost(int client);
+
+/**
+ * Called after shavit-wr caches the current map's WRs.
+ *
+ * @noreturn
+ */
+forward void Shavit_OnWorldRecordsCached();
 
 /**
  * Called when a player RTV's.
@@ -2698,6 +2718,21 @@ native void Shavit_SetPlayerPreFrames(int client, int PreFrame);
 native void Shavit_GetPlainChatrank(int client, char[] buf, int buflen, bool includename=false);
 
 /*
+ * Calculates how many points a time will give.
+ * Used to minimize number of SQL queries.
+ * Requires shavit-rankings.
+ *
+ * @param track                     The track the time is from.
+ * @param style                     The style the time is from.
+ * @param tier                      The map tier. -1 to use the current map's tier.
+ * @param time                      The time you want to calculate the points for.
+ * @param wr                        WR.
+ *
+ * @return                          The number of points the time would give.
+ */
+native float Shavit_GuessPointsForTime(int track, int style, int tier, float time, float wr);
+
+/*
  * Used to delete a WR. Used to ensure Shavit_OnWRDeleted is ran.
  *
  * @param style						Record style.
@@ -2874,5 +2909,6 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetReplayCachePostFrames");
 	MarkNativeAsOptional("Shavit_GetLoopingBotByName");
 	MarkNativeAsOptional("Shavit_SetReplayCacheName");
+	MarkNativeAsOptional("Shavit_GuessPointsForTime");
 }
 #endif
