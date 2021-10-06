@@ -2957,7 +2957,6 @@ void SaveCheckpointCache(int target, cp_cache_t cpcache, bool actually_a_checkpo
 	}
 
 	cpcache.iSteamID = GetSteamAccountID(target);
-	cpcache.bPractice = Shavit_IsPracticeMode(target);
 }
 
 void TeleportToCheckpoint(int client, int index, bool suppressMessage)
@@ -3070,7 +3069,7 @@ void LoadCheckpointCache(int client, cp_cache_t cpcache, bool isPersistentData)
 		SDKCall(gH_PhysicsCheckForEntityUntouch, client);
 	}
 
-	if(cpcache.bPractice || !(cpcache.bSegmented || isPersistentData) || GetSteamAccountID(client) != cpcache.iSteamID)
+	if (cpcache.aSnapshot.bPracticeMode || !(cpcache.bSegmented || isPersistentData) || GetSteamAccountID(client) != cpcache.iSteamID)
 	{
 		Shavit_SetPracticeMode(client, true, true);
 	}
