@@ -36,9 +36,10 @@
 #define HUD2_TIME				(1 << 0)
 #define HUD2_SPEED				(1 << 1)
 #define HUD2_WRPB				(1 << 2)// 0 pb | 1 WR
+#define HUD2_PRESTRAFE			(1 << 3)
 
 #define HUD_DEFAULT				(HUD_MASTER|HUD_CENTER|HUD_ZONEHUD|HUD_OBSERVE|HUD_TOPLEFT|HUD_SYNC|HUD_TIMELEFT|HUD_2DVEL|HUD_SPECTATORS)
-#define HUD_DEFAULT2			(HUD2_WRPB)
+#define HUD_DEFAULT2			(HUD2_PRESTRAFE)
 
 #define MAX_HINT_SIZE 1024
 
@@ -118,6 +119,7 @@ chatstrings_t gS_ChatStrings;
 // stuff
 float gF_LastCPTime[MAXPLAYERS+1];
 char gS_PreStrafeDiff[MAXPLAYERS+1][64];
+char gS_DiffTime[MAXPLAYERS+1][64];
 char gS_Map[160];
 
 public Plugin myinfo =
@@ -192,7 +194,8 @@ public void OnPluginStart()
 	gCV_DefaultHUD2 = new Convar("shavit_hud2_default", defaultHUD, "Default HUD2 settings as a bitflag of what to remove\n"
 		..."HUD2_TIME				1\n"
 		..."HUD2_SPEED				2\n"
-		..."HUD2_WRPB				4\n");
+		..."HUD2_WRPB				4\n"
+		..."HUD2_PRESTRAFE			8\n");
 
 	Convar.AutoExecConfig();
 
@@ -358,7 +361,7 @@ public Action Shavit_OnStart(int client, int track)
 
 public void Shavit_OnStartTimer_Post(int client, int style, int track, float speed)
 {
-	if(gCV_PrestrafeMessage.IntValue != 1)
+	if(gCV_PrestrafeMessage.IntValue != 1 || (gI_HUD2Settings[client] & HUD2_PRESTRAFE) != 0)
 	{
 		return;
 	}
@@ -409,7 +412,7 @@ public Action Shavit_OnStage(int client, int stage)
 
 public void Shavit_OnStageTimer_Post(int client, int style, int stage, float speed)
 {
-	if(gCV_PrestrafeMessage.IntValue != 1)
+	if(gCV_PrestrafeMessage.IntValue != 1 || (gI_HUD2Settings[client] & HUD2_PRESTRAFE) != 0)
 	{
 		return;
 	}
@@ -470,6 +473,78 @@ void FormatPreStrafeSpeed(char[] buffer, float originSpeed, float wrSpeed)
 			FormatEx(buffer, 64, "%s%d u/s%s", gS_ChatStrings.sVariable11, RoundToFloor(diff), gS_ChatStrings.sText);
 		}
 	}
+}
+
+public void Shavit_OnFinishStage(int client, int stage, int style, float time)
+{
+	float wrcpTime = Shavit_GetWRCPTime(stage, style);
+	float diff = time - wrcpTime;
+
+	char sTime[32];
+	FormatHUDSeconds(time, sTime, 32);
+
+	char sDifftime[32];
+	FormatHUDSeconds(diff, sDifftime, 32);
+
+	if(wrcpTime == -1.0)
+	{
+		FormatEx(sDifftime, 32, "N/A");
+	}
+
+	else if(diff > 0)
+	{
+		char sBuffer[32];
+		FormatEx(sBuffer, 32, "+%s", sDifftime);
+		strcopy(sDifftime, 32, sBuffer);
+	}
+
+	char sMessage[255];
+	FormatEx(sMessage, 255, "%T", "ZoneStageTime", client, 
+			gS_ChatStrings.sStyle, gS_ChatStrings.sText, 
+			gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, 
+			gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, 
+			gS_ChatStrings.sVariable, gS_ChatStrings.sText, 
+			gS_ChatStrings.sVariable2, sDifftime, gS_ChatStrings.sText);
+	Shavit_PrintToChat(client, "%s", sMessage);
+}
+
+public void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float time, float diff, float prespeed)
+{
+	int cpmax = (Shavit_IsLinearMap()) ? Shavit_GetMapCheckpoints() : Shavit_GetMapStages();
+
+	if(cpnum > cpmax)
+	{
+		return;
+	}
+
+	char sTime[32];
+	FormatHUDSeconds(time, sTime, 32);
+
+	char sDifftime[32];
+	FormatHUDSeconds(diff, sDifftime, 32);
+
+	if(Shavit_GetWRCheckpointTime(cpnum, style) == -1.0)
+	{
+		FormatEx(sDifftime, 32, "N/A");
+	}
+
+	else if(diff > 0)
+	{
+		char sBuffer[32];
+		FormatEx(sBuffer, 32, "+%s", sDifftime);
+		strcopy(sDifftime, 32, sBuffer);
+	}
+
+	strcopy(gS_DiffTime[client], 32, sDifftime);
+
+	char sMessage[255];
+	FormatEx(sMessage, 255, "%T", "ZoneCheckpointTime", client, 
+		gS_ChatStrings.sStyle, gS_ChatStrings.sText, 
+		gS_ChatStrings.sVariable2, cpnum, gS_ChatStrings.sText, 
+		gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, 
+		gS_ChatStrings.sVariable, gS_ChatStrings.sText, 
+		gS_ChatStrings.sVariable2, sDifftime, gS_ChatStrings.sText);
+	Shavit_PrintToChat(client, "%s", sMessage);
 }
 
 public void Shavit_OnChatConfigLoaded()
@@ -753,6 +828,10 @@ Action ShowHUDMenu(int client, int item)
 
 	FormatEx(sInfo, 16, "@%d", HUD2_WRPB);
 	FormatEx(sHudItem, 64, "%T", "HudWRPBText", client);
+	menu.AddItem(sInfo, sHudItem);
+
+	FormatEx(sInfo, 16, "@%d", HUD2_PRESTRAFE);
+	FormatEx(sHudItem, 64, "%T", "HudPrestrafeText", client);
 	menu.AddItem(sInfo, sHudItem);
 
 	menu.ExitButton = true;
@@ -1053,23 +1132,21 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			float fTimer = GetGameTime() - gF_LastCPTime[client];
 			if(0 < fTimer <= 5.0 && GetGameTime() > 5.0 && data.iStage != 1 && !Shavit_IsClientStageTimer(client))
 			{
-				char sDifftime[64];
-				FormatHUDSeconds(Shavit_GetWRCheckpointDiffTime(data.iTarget), sDifftime, 64);
-
+				int iDiffColor;
 				if(Shavit_GetWRCheckpointTime(data.iStage, data.iStyle) == -1.0)
 				{
-					FormatEx(sLine, 128, "[CP%d <span color='#FFFF00'>N/A</span>]", data.iCheckpoint);
+					iDiffColor = 0xFFFF00;
 				}
-
 				else if(Shavit_GetWRCheckpointDiffTime(data.iTarget) > 0.0)
 				{
-					FormatEx(sLine, 128, "[CP%d <span color='#FF0000'>+%s</span>]", data.iCheckpoint, sDifftime);
+					iDiffColor = 0xFF0000;
 				}
-
 				else
 				{
-					FormatEx(sLine, 128, "[CP%d <span color='#00FF00'>%s</span>]", data.iCheckpoint, sDifftime);
+					iDiffColor = 0x00FF00;
 				}
+
+				FormatEx(sLine, 128, "[CP%d <span color='#%06X'>%s</span>]", data.iCheckpoint, iDiffColor, gS_DiffTime[client]);
 
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 			}

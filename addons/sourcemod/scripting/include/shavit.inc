@@ -1133,7 +1133,8 @@ forward void Shavit_OnLeaveZone(int client, int type, int track, int id, int ent
  * Called after a player start timer.
  *
  * @param client					Client index.
- * @param track						Zone track.
+ * @param style						Client style.
+ * @param track						Client track.
  * @param speed						Client speed(3D).
  * @noreturn
  */
@@ -1143,7 +1144,8 @@ forward void Shavit_OnStartTimer_Post(int client, int style, int track, float sp
  * Called after a player start stage timer. (Track_Main only)
  *
  * @param client					Client index.
- * @param stage						Zone stage id.
+ * @param style						Client style.
+ * @param stage						Client stage id.
  * @param speed						Client speed(3D).
  * @noreturn
  */
@@ -1468,20 +1470,20 @@ forward void Shavit_OnFinishStage(int client, int stage, int style, float time);
  * @param style						Style id.
  * @return							False to prevent the Checkpoint/Stage from finishing.
  */
-forward bool Shavit_OnFinishCheckpointPre(int client, int stage, int style);
+forward bool Shavit_OnFinishCheckpointPre(int client, int cpnum, int style);
 
 /**
  * Called when a player finishes a checkpoint. (touches the checkpoint/stage zone)
  *
  * @param client					Client index.
- * @param style						Style the record was done on.
  * @param cpnum						Checkpoint/Stage zone number was done on.
+ * @param style						Style the record was done on.
  * @param time						Current time when the checkpoint finished.
  * @param diff						Difference between wr checkpoint time and pr checkpoint time, below 0 means faster, otherwise slower.
- * @param finalspeed				Speed when client enters checkpoint/stage zone.
+ * @param prespeed					Speed when client enters checkpoint/stage zone.
  * @noreturn
  */
-forward void Shavit_OnFinishCheckpoint(int client, int style, int cpnum, float time, float diff, float finalspeed);
+forward void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float time, float diff, float prespeed);
 
 /**
  * Called when a player RTV's.
@@ -1854,17 +1856,15 @@ native float Shavit_GetWRCPPostspeed(int stage, int style);
  * @param style						Style to get the WRCP for.
  * @return							WR checkpoint Time.
  */
-native float Shavit_GetWRCheckpointTime(int stage, int style);
+native float Shavit_GetWRCheckpointTime(int cpnum, int style);
 
 /**
  * Gets the difference time between WR's checkpoint time and client checkpoint time.
  *
  * @param client					Client index.
- * @param difftime					String for difftime.
- * @param maxlength					String maxlength for difftime.
  * @return							Difference time.
  */
-native float Shavit_GetWRCheckpointDiffTime(int client, char[] difftime = "N/A", int maxlength = 32);
+native float Shavit_GetWRCheckpointDiffTime(int client);
 
 /**
  * Gets the WR's checkpoint prespeed on the map on a variable.

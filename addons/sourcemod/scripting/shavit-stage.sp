@@ -6,7 +6,7 @@
 #define PLUGIN_NAME           "[shavit] Stage"
 #define PLUGIN_AUTHOR         "Ciallo"
 #define PLUGIN_DESCRIPTION    "A modified Stage plugin for fork's surf timer."
-#define PLUGIN_VERSION        "0.3"
+#define PLUGIN_VERSION        "0.4"
 #define PLUGIN_URL            "https://github.com/Ciallo-Ani/surftimer"
 
 #include <sourcemod>
@@ -38,7 +38,6 @@ int gI_Steamid[101];//this is a mysql index, i dont have any better implementati
 
 float gF_LeaveStageTime[MAXPLAYERS+1];
 float gF_DiffTime[MAXPLAYERS+1];
-char gS_DiffTime[MAXPLAYERS+1][32];
 
 cp_t gA_WRCP[MAX_STAGES+1][STYLE_LIMIT];
 cp_t gA_PRCP[MAXPLAYERS+1][MAX_STAGES+1][STYLE_LIMIT];
@@ -211,14 +210,9 @@ public void OnAllPluginsLoaded()
 
 public void Shavit_OnStyleConfigLoaded(int styles)
 {
-	if(styles == -1)
-	{
-		styles = Shavit_GetStyleCount();
-	}
-
 	for(int i = 0; i < styles; i++)
 	{
-		Shavit_GetStyleStrings(i, sStyleName, gS_StyleStrings[i].sStyleName, sizeof(stylestrings_t::sStyleName));
+		Shavit_GetStyleStringsStruct(i, gS_StyleStrings[i]);
 	}
 
 	for(int i = 0; i < STYLE_LIMIT; i++)
@@ -989,6 +983,34 @@ public void Shavit_OnLeaveZone(int client, int type, int track, int id, int enti
 	}
 }
 
+public void Shavit_OnWRDeleted(int style, int id, int track, int accountid, const char[] mapname)
+{
+	if(track != Track_Main)
+	{
+		return;
+	}
+
+	char sQuery[255];
+	FormatEx(sQuery, sizeof(sQuery),
+		"DELETE FROM %scp WHERE auth = %d AND map = '%s' AND style = %d;",
+		gS_MySQLPrefix, accountid, mapname, style);
+	gH_SQL.Query(SQL_DeleteWRCheckpoint_Callback, sQuery, 0, DBPrio_High);
+}
+
+public void SQL_DeleteWRCheckpoint_Callback(Database db, DBResultSet results, const char[] error, any data)
+{
+	if(results == null)
+	{
+		LogError("Timer (WRCheckpoint Delete) SQL query failed. Reason: %s", error);
+		return;
+	}
+
+	PrintToChatAll("管理员删除了WR记录");
+
+	ResetStage(MAX_STAGES, STYLE_LIMIT, true);
+	ResetCPs(MAX_CPZONES, STYLE_LIMIT, true);
+}
+
 public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, int strafes, float sync, int rank, int overwrite, int track, float oldtime, float perfs, float avgvel, float maxvel, int timestamp)
 {
 	if(track != Track_Main)
@@ -1150,38 +1172,6 @@ public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const c
 		"REPLACE INTO `%sstage` (auth, map, time, style, stage, postspeed, date, completions) VALUES (%d, '%s', %f, %d, %d, %f, %d, 1);",
 		gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, time, style, stage, postspeed, GetTime());
 	}
-
-	float diff = time - gA_WRCP[stage][style].fStageTime;
-
-	char sTime[32];
-	FormatSeconds(time, sTime, 32, true);
-
-	char sDifftime[32];
-	FormatSeconds(diff, sDifftime, 32, true);
-
-	if(gA_WRCP[stage][style].fStageTime == -1.0)
-	{
-		FormatEx(sDifftime, 32, "N/A");
-	}
-
-	else if(diff > 0)
-	{
-		char sBuffer[32];
-		FormatEx(sBuffer, 32, "+%s", sDifftime);
-		strcopy(sDifftime, 32, sBuffer);
-	}
-
-	char sStage[32];
-	FormatEx(sStage, 32, "%T", "Stage", client);
-
-	char sMessage[255];
-	FormatEx(sMessage, 255, "%T", "ZoneStageTime", client, 
-			gS_ChatStrings.sStyle, sStage, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable2, sDifftime, gS_ChatStrings.sText);
-	Shavit_PrintToChat(client, "%s", sMessage);
 
 	gH_SQL.Query(SQL_PrCheck_Callback2, sQuery, GetClientSerial(client), DBPrio_High);
 }
@@ -1421,7 +1411,7 @@ public int Native_FinishStage(Handle handler, int numParams)
 	int stage = Shavit_GetClientStage(client);
 	int style = Shavit_GetBhopStyle(client);
 
-	if(style == 8 || Shavit_IsPracticeMode(client))//segment
+	if(Shavit_IsPracticeMode(client) || StrContains(gS_StyleStrings[style].sSpecialString, "segments") != -1)
 	{
 		return;
 	}
@@ -1445,17 +1435,17 @@ public int Native_FinishStage(Handle handler, int numParams)
 
 	if(time > 0.0 && Shavit_GetTimerStatus(client) != Timer_Stopped)
 	{
-		gA_PRCP[client][stage][style].fCheckpointTime = time;
-
-		OnWRCPCheck(client, stage - 1, style, time);//check if wrcp
-		Insert_WRCP_PR(client, stage - 1, style, time);//check if wrcp and pr, insert or update
-
 		Call_StartForward(gH_Forwards_OnFinishStage);
 		Call_PushCell(client);
 		Call_PushCell(stage - 1);
 		Call_PushCell(style);
 		Call_PushFloat(time);
 		Call_Finish();
+
+		gA_PRCP[client][stage][style].fCheckpointTime = time;
+
+		OnWRCPCheck(client, stage - 1, style, time);//check if wrcp
+		Insert_WRCP_PR(client, stage - 1, style, time);//check if wrcp and pr, insert or update
 	}
 }
 
@@ -1464,7 +1454,6 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 	int client = GetNativeCell(1);
 	bool bBypass = (numParams < 2 || view_as<bool>(GetNativeCell(2)));
 	int cpnum = (Shavit_IsLinearMap()) ? Shavit_GetClientCheckpoint(client) : Shavit_GetClientStage(client);
-	int cpmax = (Shavit_IsLinearMap()) ? Shavit_GetMapCheckpoints() : Shavit_GetMapStages();
 	int style = Shavit_GetBhopStyle(client);
 	float time = Shavit_GetClientTime(client);
 
@@ -1490,50 +1479,6 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 		float diff = time - gA_WRCP[cpnum][style].fCheckpointTime;
 		gF_DiffTime[client] = diff;
 
-		char sCheckpoint[32];
-
-		if(Shavit_IsLinearMap())
-		{
-			FormatEx(sCheckpoint, 32, "%T", "Checkpoint", client);
-		}
-
-		else
-		{
-			FormatEx(sCheckpoint, 32, "%T", "Stage", client);
-		}
-
-		char sTime[32];
-		FormatSeconds(time, sTime, 32, true);
-
-		char sDifftime[32];
-		FormatSeconds(diff, sDifftime, 32, true);
-
-		if(gA_WRCP[cpnum][style].fCheckpointTime == -1.0)
-		{
-			FormatEx(sDifftime, 32, "N/A");
-		}
-
-		else if(diff > 0)
-		{
-			char sBuffer[32];
-			FormatEx(sBuffer, 32, "+%s", sDifftime);
-			strcopy(sDifftime, 32, sBuffer);
-		}
-
-		strcopy(gS_DiffTime[client], 32, sDifftime);
-
-		if(cpnum <= cpmax)
-		{
-			char sMessage[255];
-			FormatEx(sMessage, 255, "%T", "ZoneCheckpointTime", client, 
-				gS_ChatStrings.sStyle, sCheckpoint, gS_ChatStrings.sText, 
-				gS_ChatStrings.sVariable2, cpnum, gS_ChatStrings.sText, 
-				gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, 
-				gS_ChatStrings.sVariable, gS_ChatStrings.sText, 
-				gS_ChatStrings.sVariable2, sDifftime, gS_ChatStrings.sText);
-			Shavit_PrintToChat(client, "%s", sMessage);
-		}
-
 		float fVelocity[3];
 		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fVelocity);
 		float prespeed = SquareRoot(Pow(fVelocity[0], 2.0) + Pow(fVelocity[1], 2.0) + Pow(fVelocity[2], 2.0));
@@ -1556,7 +1501,6 @@ public int Native_GetWRCheckpointTime(Handle handler, int numParams)
 
 public int Native_GetWRCheckpointDiffTime(Handle handler, int numParams)
 {
-	SetNativeString(2, gS_DiffTime[GetNativeCell(1)], GetNativeCell(3));
 	return view_as<int>(gF_DiffTime[GetNativeCell(1)]);
 }
 
