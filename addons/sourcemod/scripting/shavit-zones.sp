@@ -3502,13 +3502,13 @@ public void TouchPost(int entity, int other)
 		{
 			// start timer instantly for main track, but require bonuses to have the current timer stopped
 			// so you don't accidentally step on those while running
-			if(Shavit_GetTimerStatus(other) != Timer_Stopped && Shavit_GetClientTrack(other) != Track_Main)
+			if(Shavit_GetTimerStatus(other) == Timer_Stopped || Shavit_GetClientTrack(other) != Track_Main)
 			{
 				gB_StageTimer[other] = false;
 				Shavit_StartTimer(other, gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack);
 			}
 
-			else if(Shavit_GetTimerStatus(other) != Timer_Stopped && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack == Track_Main)
+			else if(gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack == Track_Main)
 			{
 				gB_StageTimer[other] = false;
 				Shavit_StartTimer(other, Track_Main);
@@ -3526,8 +3526,6 @@ public void TouchPost(int entity, int other)
 			{
 				return;
 			}
-
-			gB_StageTimer[other] = true;
 		}
 
 		case Zone_Stage:

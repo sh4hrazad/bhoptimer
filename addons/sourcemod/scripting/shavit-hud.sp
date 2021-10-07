@@ -72,6 +72,10 @@ enum struct huddata_t
 	ZoneHUD iZoneHUD;
 	int iFinishNum;
 	bool bFinishCP;
+	bool bStageTimer;
+	float fDiffTimer;
+	char sDiff[64];
+	char sPreStrafe[64];
 }
 
 // game type (CS:S/CS:GO/TF2)
@@ -1066,7 +1070,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
 			{
 				int iColor = 0xA0FFFF;
-		
+
 				if(data.iSpeed < gI_PreviousSpeed[client])
 				{
 					iColor = 0xFFC966;
@@ -1126,11 +1130,20 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 				iColor = 0xFFFACD; // 小于PB 黄色
 			}
 
-			FormatEx(sLine, 128, "Time: <span color='#%06X'>%s </span>", iColor, sTime);
+			if(data.iStyle == 0)
+			{
+				FormatEx(sLine, 128, "Time: <span color='#%06X'>%s </span>", iColor, sTime);
+			}
+			else
+			{
+				char sStyle[32];
+				Shavit_GetStyleStrings(data.iStyle, sStyleName, sStyle, 32);
+				FormatEx(sLine, 128, "Time: <span color='#%06X'>%s </span>[%s] ", iColor, sTime, sStyle);
+			}
+
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
-			float fTimer = GetGameTime() - gF_LastCPTime[client];
-			if(0 < fTimer <= 5.0 && GetGameTime() > 5.0 && data.iStage != 1 && !Shavit_IsClientStageTimer(client))
+			if(0 < data.fDiffTimer <= 5.0 && GetGameTime() > 5.0 && data.iStage != 1 && !data.bStageTimer)
 			{
 				int iDiffColor;
 				if(Shavit_GetWRCheckpointTime(data.iStage, data.iStyle) == -1.0)
@@ -1146,14 +1159,9 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 					iDiffColor = 0x00FF00;
 				}
 
-				FormatEx(sLine, 128, "[CP%d <span color='#%06X'>%s</span>]", data.iCheckpoint, iDiffColor, gS_DiffTime[client]);
+				FormatEx(sLine, 128, "[CP%d <span color='#%06X'>%s</span>]", data.iCheckpoint, iDiffColor, data.sDiff);
 
 				AddHUDLine(buffer, maxlen, sLine, iLines);
-			}
-
-			if(data.bFinishCP)
-			{
-				gF_LastCPTime[client] = GetGameTime();
 			}
 
 			if(data.bPractice)
@@ -1265,15 +1273,15 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 				iColor = 0xFFC966;
 			}
 
-			if(!StrEqual(gS_PreStrafeDiff[client], "None") && data.iTrack == Track_Main)
+			if(!StrEqual(data.sPreStrafe, "None") && data.iTrack == Track_Main)
 			{
 				int iDiffColor = 0x00FF7F;
-				if(StrContains(gS_PreStrafeDiff[client], "-") != -1)
+				if(StrContains(data.sPreStrafe, "-") != -1)
 				{
 					iDiffColor = 0xFF0000;
 				}
 
-				FormatEx(sLine, 128, "Speed: <span color='#%06X'>%d</span> [<span color='#%06X'>%s</span>]", iColor, data.iSpeed, iDiffColor, gS_PreStrafeDiff[client]);
+				FormatEx(sLine, 128, "Speed: <span color='#%06X'>%d</span> [<span color='#%06X'>%s</span>]", iColor, data.iSpeed, iDiffColor, data.sPreStrafe);
 			}
 
 			else
@@ -1286,7 +1294,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			iLines++;
 		}
 	}
-	
+
 	StrCat(buffer, MAX_HINT_SIZE, "</font>");
 	return iLines;
 }
@@ -1364,16 +1372,20 @@ void UpdateMainHUD(int client)
 	huddata.bPractice = (bReplay)? false:Shavit_IsPracticeMode(target);
 	huddata.iFinishNum = (huddata.iStyle == -1 || huddata.iTrack == -1)?Shavit_GetRecordAmount(0, 0):Shavit_GetRecordAmount(huddata.iStyle, huddata.iTrack);
 	huddata.bFinishCP = (Shavit_IntoCheckpoint(target) || Shavit_IntoStage(target));
-	huddata.iCheckpoint = Shavit_GetClientCheckpoint(target);
+	huddata.bStageTimer = Shavit_IsClientStageTimer(target);
+	huddata.iCheckpoint = (Shavit_IsLinearMap())? Shavit_GetClientCheckpoint(target) : Shavit_GetMapStages() - 1;
+	huddata.fDiffTimer = GetGameTime() - gF_LastCPTime[target];
+	strcopy(huddata.sDiff, 64, gS_DiffTime[target]);
+	strcopy(huddata.sPreStrafe, 64, gS_PreStrafeDiff[target]);
+
+	if(huddata.bFinishCP)
+	{
+		gF_LastCPTime[target] = GetGameTime();
+	}
 
 	if(huddata.iStage > Shavit_GetMapStages())
 	{
 		huddata.iStage = Shavit_GetMapStages();
-	}
-
-	if(!Shavit_IsLinearMap())
-	{
-		huddata.iCheckpoint--;
 	}
 
 	char sBuffer[512];
