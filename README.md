@@ -13,7 +13,7 @@
 
 Hope to replace [SurfTimer](https://github.com/surftimer/Surftimer-Official) with this.
 
-Map strippers, zones and tiers are from [HERE](https://github.com/Sayt123/SurfZones)
+Map strippers, zones and tiers are from [HERE](https://github.com/Kyli3Boi/Surftimer-Official-Stripper-Config)
 
 [Mapzones Setup Demonstration](https://youtu.be/OXFMGm40F6c)
 
