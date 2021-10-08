@@ -3079,7 +3079,7 @@ native void Shavit_FinishStage(int client, bool bypass = true);
  * @param client					Client index.
  * @return							True if they went.
  */
-native bool Shavit_IntoStage(int client);
+native bool Shavit_EnterStage(int client);
 
 /**
  * Detect checkpoint conditions first.
@@ -3097,7 +3097,7 @@ native void Shavit_FinishCheckpoint(int client, bool bypass = true);
  * @param client					Client index.
  * @return							True if they went.
  */
-native bool Shavit_IntoCheckpoint(int client);
+native bool Shavit_EnterCheckpoint(int client);
 
 /*
  * Used to find a looping replay bot from the loop config name.
@@ -3277,9 +3277,9 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetWRCheckpointPostSpeed");
 	MarkNativeAsOptional("Shavit_GetPRCPTime");
 	MarkNativeAsOptional("Shavit_FinishStage");
-	MarkNativeAsOptional("Shavit_IntoStage");
+	MarkNativeAsOptional("Shavit_EnterStage");
 	MarkNativeAsOptional("Shavit_FinishCheckpoint");
-	MarkNativeAsOptional("Shavit_IntoCheckpoint");
+	MarkNativeAsOptional("Shavit_EnterCheckpoint");
 	MarkNativeAsOptional("Shavit_GetReplayPreFrames");
 	MarkNativeAsOptional("Shavit_GetReplayPostFrames");
 	MarkNativeAsOptional("Shavit_GetReplayCachePreFrames");
