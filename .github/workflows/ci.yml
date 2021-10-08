@@ -37,7 +37,6 @@ jobs:
           spcomp64 -O2 -i $INCLUDE_PATH shavit-core.sp
           spcomp64 -O2 -i $INCLUDE_PATH shavit-chat.sp
           spcomp64 -O2 -i $INCLUDE_PATH shavit-hud.sp
-          spcomp64 -O2 -i $INCLUDE_PATH shavit-mapchooser.sp
           spcomp64 -O2 -i $INCLUDE_PATH shavit-misc.sp
           spcomp64 -O2 -i $INCLUDE_PATH shavit-rankings.sp
           spcomp64 -O2 -i $INCLUDE_PATH shavit-replay.sp
