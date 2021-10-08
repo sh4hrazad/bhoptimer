@@ -110,12 +110,13 @@ public void OnPluginStart()
 	HookEvent("player_death", Player_Death);
 
 	//wrcp
-	RegConsoleCmd("sm_wrcp", Command_WRCP, "Show WRCP menu, Select a style and a stage");
+	RegConsoleCmd("sm_wrcp", Command_WRCP, "Show WRCP menu, select a style and a stage");
 	RegConsoleCmd("sm_wrcps", Command_WRCP, "Alias of sm_wrcp");
 	RegConsoleCmd("sm_srcp", Command_WRCP, "Alias of sm_wrcp");
 	RegConsoleCmd("sm_srcps", Command_WRCP, "Alias of sm_wrcp");
+
 	//maptop
-	RegConsoleCmd("sm_mtop", Command_Maptop, "Actually it's alias of sm_wrcp");
+	RegConsoleCmd("sm_mtop", Command_Maptop, "Show stage tops menu, select a style and a stage");
 	RegConsoleCmd("sm_maptop", Command_Maptop, "Alias of sm_mtop");
 
 	//delete
@@ -487,7 +488,7 @@ public int DeleteWRCPMenu_Handler(Menu menu, MenuAction action, int param1, int 
 
 			char sQuery[256];//i write 2 callbacks in order to find wrcp auth index, but seems to have a better implementation(mysql syntax)
 			FormatEx(sQuery, 256, 
-					"SELECT auth, time FROM `%sstage` " ...
+					"SELECT auth, time FROM `%sstagetimes` " ...
 					"WHERE (stage = '%d' AND style = '%d') AND map = '%s' " ...
 					"ORDER BY time ASC " ...
 					"LIMIT 1;", 
@@ -534,7 +535,7 @@ public void SQL_DeleteWRCP_Callback(Database db, DBResultSet results, const char
 	dp.WriteCell(index);
 
 	char sQuery[256];
-	FormatEx(sQuery, 256, "DELETE FROM `%sstage` WHERE (stage = '%d' AND style = '%d') AND (auth = '%d' AND map = '%s');", 
+	FormatEx(sQuery, 256, "DELETE FROM `%sstagetimes` WHERE (stage = '%d' AND style = '%d') AND (auth = '%d' AND map = '%s');", 
 			gS_MySQLPrefix, stage, style, index, gS_Map);
 	
 	gH_SQL.Query(SQL_DeleteWRCP_Callback2, sQuery, dp, DBPrio_High);
@@ -704,7 +705,7 @@ public int MaptopMenu2_Handler(Menu menu, MenuAction action, int param1, int par
 
 		char sQuery[512];
 		FormatEx(sQuery, 512, 
-				"SELECT p1.auth, p1.time, p1.completions, p2.name FROM `%sstage` p1 " ...
+				"SELECT p1.auth, p1.time, p1.completions, p2.name FROM `%sstagetimes` p1 " ...
 				"JOIN (SELECT auth, name FROM `%susers`) p2 " ...
 				"ON p1.auth = p2.auth " ...
 				"WHERE (stage = '%d' AND style = '%d') AND map = '%s' " ...
@@ -811,13 +812,13 @@ public int MaptopMenu3_Handler(Menu menu, MenuAction action, int param1, int par
 		{
 			gB_DeleteMaptop[param1] = false;
 
-			int index = gI_Steamid[param2 + 1];
+			int steamid = gI_Steamid[param2 + 1];
 			int stage = gI_StageChoice[param1];
 			int style = gI_StyleChoice[param1];
 
 			char sQuery[256];
-			FormatEx(sQuery, 256, "DELETE FROM `%sstage` WHERE (stage = '%d' AND style = '%d') AND (auth = '%d' AND map = '%s');", 
-					gS_MySQLPrefix, stage, style, index, gS_MapChoice[param1]);
+			FormatEx(sQuery, 256, "DELETE FROM `%sstagetimes` WHERE (stage = '%d' AND style = '%d') AND (auth = '%d' AND map = '%s');", 
+					gS_MySQLPrefix, stage, style, steamid, gS_MapChoice[param1]);
 
 			DataPack dp = new DataPack();
 			dp.WriteCell(GetClientSerial(param1));
@@ -828,7 +829,9 @@ public int MaptopMenu3_Handler(Menu menu, MenuAction action, int param1, int par
 		}
 		else
 		{
-			return 0;//do stuff here
+			char sSteamid[32];
+			FormatEx(sSteamid, 32, "U:1:%d", gI_Steamid[param2 + 1]);
+			FakeClientCommand(param1, "sm_p %s", sSteamid);
 		}
 	}
 
@@ -995,7 +998,7 @@ public void Shavit_OnWRDeleted(int style, int id, int track, int accountid, cons
 
 	char sQuery[255];
 	FormatEx(sQuery, sizeof(sQuery),
-		"DELETE FROM %scp WHERE auth = %d AND map = '%s' AND style = %d;",
+		"DELETE FROM `%scptimes` WHERE auth = %d AND map = '%s' AND style = %d;",
 		gS_MySQLPrefix, accountid, mapname, style);
 	gH_SQL.Query(SQL_DeleteWRCheckpoint_Callback, sQuery, 0, DBPrio_High);
 }
@@ -1054,7 +1057,7 @@ public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, i
 				float postspeed = (bLinear)? gA_PRCP[client][i][style].fCPPostspeed : gA_PRCP[client][i][style].fStagePostspeed;
 
 				FormatEx(sQuery, 512,
-					"REPLACE INTO `%scp` (auth, map, time, style, cp, prespeed, postspeed, date) VALUES (%d, '%s', %f, %d, %d, %f, %f, %d);",
+					"REPLACE INTO `%scptimes` (auth, map, time, style, cp, prespeed, postspeed, date) VALUES (%d, '%s', %f, %d, %d, %f, %f, %d);",
 					gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, gA_PRCP[client][i][style].fCheckpointTime, style, i, prespeed, postspeed, GetTime());
 				
 				hTransaction.AddQuery(sQuery);
@@ -1069,7 +1072,7 @@ public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, i
 				float postspeed = (bLinear)? gA_PRCP[client][i][style].fCPPostspeed : gA_PRCP[client][i][style].fStagePostspeed;
 
 				FormatEx(sQuery, 512,
-					"UPDATE `%scp` SET time = %f, style = %d, prespeed = %f, postspeed = %f, date = %d WHERE (auth = %d AND cp = %d ) AND map = '%s';",
+					"UPDATE `%scptimes` SET time = %f, style = %d, prespeed = %f, postspeed = %f, date = %d WHERE (auth = %d AND cp = %d ) AND map = '%s';",
 					gS_MySQLPrefix, gA_PRCP[client][i][style].fCheckpointTime, style, prespeed, postspeed, GetTime(), GetSteamAccountID(client), i, gS_Map);
 				
 				hTransaction.AddQuery(sQuery);
@@ -1121,7 +1124,7 @@ void OnWRCPCheck(int client, int stage, int style, float time)
 			gS_ChatStrings.sVariable3, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, 
 			gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, 
 			gS_ChatStrings.sVariable10, sDiffTime, gS_ChatStrings.sText, 
-			gS_ChatStrings.sTeam, sRank, gS_ChatStrings.sText);
+			gS_ChatStrings.sVariable4, sRank, gS_ChatStrings.sText);
 		Shavit_PrintToChatAll("%s", sMessage);
 
 
@@ -1140,7 +1143,7 @@ void OnWRCPCheck(int client, int stage, int style, float time)
 void Insert_WRCP_PR(int client, int stage, int style, float time)
 {
 	char sQuery[512];
-	FormatEx(sQuery, 512, "SELECT completions FROM `%sstage` WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
+	FormatEx(sQuery, 512, "SELECT completions FROM `%sstagetimes` WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
 			gS_MySQLPrefix, stage, style, gS_Map, GetSteamAccountID(client));
 
 	DataPack dp = new DataPack();
@@ -1178,21 +1181,21 @@ public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const c
 		if(time < prTime || prTime == 0.0)
 		{
 			FormatEx(sQuery, 512,
-			"UPDATE `%sstage` SET time = %f, date = %d, postspeed = %f, completions = completions + 1 WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
+			"UPDATE `%sstagetimes` SET time = %f, date = %d, postspeed = %f, completions = completions + 1 WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
 			gS_MySQLPrefix, time, GetTime(), postspeed, stage, style, gS_Map, GetSteamAccountID(client));
 		}
 		
 		else
 		{
 			FormatEx(sQuery, 512,
-			"UPDATE `%sstage` SET completions = completions + 1 WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
+			"UPDATE `%sstagetimes` SET completions = completions + 1 WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
 			gS_MySQLPrefix, stage, style, gS_Map, GetSteamAccountID(client));
 		}
 	}
 	else
 	{
 		FormatEx(sQuery, 512,
-		"REPLACE INTO `%sstage` (auth, map, time, style, stage, postspeed, date, completions) VALUES (%d, '%s', %f, %d, %d, %f, %d, 1);",
+		"REPLACE INTO `%sstagetimes` (auth, map, time, style, stage, postspeed, date, completions) VALUES (%d, '%s', %f, %d, %d, %f, %d, 1);",
 		gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, time, style, stage, postspeed, GetTime());
 	}
 
@@ -1216,7 +1219,7 @@ void LoadPR(int client = -1)
 {
 	char sQuery[512];
 	FormatEx(sQuery, 512, 
-			"SELECT stage, style, time, postspeed FROM `%sstage` WHERE auth = %d AND map = '%s';", 
+			"SELECT stage, style, time, postspeed FROM `%sstagetimes` WHERE auth = %d AND map = '%s';", 
 		gS_MySQLPrefix, GetSteamAccountID(client), gS_Map);
 
 	gH_SQL.Query(SQL_LoadPR_Callback, sQuery, GetClientSerial(client), DBPrio_High);
@@ -1251,7 +1254,7 @@ void LoadWRCP()
 {
 	char sQuery[512];
 	FormatEx(sQuery, 512, 
-			"SELECT p1.auth, p1.stage, p1.style, p1.time, p1.postspeed, p2.name FROM `%sstage` p1 " ...
+			"SELECT p1.auth, p1.stage, p1.style, p1.time, p1.postspeed, p2.name FROM `%sstagetimes` p1 " ...
 			"JOIN (SELECT auth, name FROM `%susers`) p2 " ...
 			"ON p1.auth = p2.auth " ...
 			"WHERE map = '%s' " ...
@@ -1289,7 +1292,7 @@ public void SQL_LoadWRCP_Callback(Database db, DBResultSet results, const char[]
 void UpdateStageLeaderboards()
 {
 	char sQuery[192];
-	FormatEx(sQuery, 192, "SELECT style, stage, time FROM `%sstage` WHERE map = '%s' ORDER BY time ASC, date ASC;", gS_MySQLPrefix, gS_Map);
+	FormatEx(sQuery, 192, "SELECT style, stage, time FROM `%sstagetimes` WHERE map = '%s' ORDER BY time ASC, date ASC;", gS_MySQLPrefix, gS_Map);
 	gH_SQL.Query(SQL_UpdateStageLeaderboards_Callback, sQuery, 0, DBPrio_High);
 }
 
@@ -1342,7 +1345,7 @@ void LoadWRCheckpoints()
 	char sQuery[512];
 
 	FormatEx(sQuery, 512, 
-			"SELECT p1.auth, p1.cp, p1.style, p1.time, p1.prespeed, p1.postspeed FROM `%scp` p1 " ...
+			"SELECT p1.auth, p1.cp, p1.style, p1.time, p1.prespeed, p1.postspeed FROM `%scptimes` p1 " ...
 			"JOIN (SELECT auth, name FROM `%susers`) p2 " ...
 			"ON p1.auth = p2.auth " ...
 			"WHERE map = '%s' " ...
@@ -1377,7 +1380,7 @@ public void SQL_LoadWRCheckpoint_Callback(Database db, DBResultSet results, cons
 /* void LoadPRCheckpoints(int client)
 {
 	char sQuery[256];
-	FormatEx(sQuery, 256, "SELECT cp, style, time, prespeed, postspeed FROM `%scp` WHERE auth = %d AND map = '%s' ORDER BY cp ASC;", gS_MySQLPrefix, GetSteamAccountID(client), gS_Map);
+	FormatEx(sQuery, 256, "SELECT cp, style, time, prespeed, postspeed FROM `%scptimes` WHERE auth = %d AND map = '%s' ORDER BY cp ASC;", gS_MySQLPrefix, GetSteamAccountID(client), gS_Map);
 
 	gH_SQL.Query(SQL_LoadPRCheckpoint_Callback, sQuery, GetClientSerial(client), DBPrio_High);
 }
@@ -1580,13 +1583,13 @@ public void Shavit_OnDatabaseLoaded()
 
 	char sQuery[1024];
 	FormatEx(sQuery, 1024, 
-			"CREATE TABLE IF NOT EXISTS `%sstage` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `style` TINYINT, `stage` INT, `postspeed` FLOAT, `date` INT, `completions` INT, PRIMARY KEY (`id`))%s;",
+			"CREATE TABLE IF NOT EXISTS `%sstagetimes` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `style` TINYINT, `stage` INT, `postspeed` FLOAT, `date` INT, `completions` INT, PRIMARY KEY (`id`))%s;",
 			gS_MySQLPrefix, (IsMySQLDatabase(gH_SQL)) ? " ENGINE=INNODB" : "");
 
 	hTransaction.AddQuery(sQuery);
 
 	FormatEx(sQuery, 1024, 
-			"CREATE TABLE IF NOT EXISTS `%scp` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `style` TINYINT, `cp` INT, `prespeed` FLOAT, `postspeed` FLOAT, `date` INT, PRIMARY KEY (`id`))%s;",
+			"CREATE TABLE IF NOT EXISTS `%scptimes` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `style` TINYINT, `cp` INT, `prespeed` FLOAT, `postspeed` FLOAT, `date` INT, PRIMARY KEY (`id`))%s;",
 			gS_MySQLPrefix, (IsMySQLDatabase(gH_SQL)) ? " ENGINE=INNODB" : "");
 
 	hTransaction.AddQuery(sQuery);

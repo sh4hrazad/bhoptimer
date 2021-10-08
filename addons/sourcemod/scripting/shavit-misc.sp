@@ -273,8 +273,8 @@ public void OnPluginStart()
 	gA_PersistentData = new ArrayList(sizeof(persistent_data_t));
 
 	// noclip
-	RegConsoleCmd("sm_nc", Command_Noclip, "Toggles noclip. (sm_p alias)");
-	RegConsoleCmd("sm_noclipme", Command_Noclip, "Toggles noclip. (sm_p alias)");
+	RegConsoleCmd("sm_nc", Command_Noclip, "Toggles noclip.");
+	RegConsoleCmd("sm_noclipme", Command_Noclip, "Toggles noclip.");
 	RegConsoleCmd("sm_nctrigger", Command_NoclipIgnoreTrigger);
 	RegConsoleCmd("sm_nctriggers", Command_NoclipIgnoreTrigger);
 	AddCommandListener(CommandListener_Noclip, "+noclip");
@@ -3302,6 +3302,7 @@ public Action CommandListener_Noclip(int client, const char[] command, int args)
 			{
 				Shavit_StopTimer(client);
 			}
+
 			SetEntityMoveType(client, MOVETYPE_NOCLIP);
 			Shavit_PrintToChat(client, "你的穿墙设置为: %s%s%s (输入!nctrigger修改)", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"可传送":"不可传送", gS_ChatStrings.sText);
 		}
