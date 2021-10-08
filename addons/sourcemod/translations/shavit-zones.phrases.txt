@@ -73,34 +73,7 @@
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"You {1}cannot{2} setup mapzones when you're dead."
-		"chi"		"没有复活前，您{1}无法{2}设置地图区域."
-	}
-	"ZoneCustomSpawnMenuTitle"
-	{
-		"en"		"Add custom spawn for track:"
-		"chi"		"为track添加自定义复活区域:"
-	}
-	"ZoneCustomSpawnMenuDeleteTitle"
-	{
-		"en"		"Delete custom spawn for track:"
-		"chi"		"删除track的自定义复活区域:"
-	}
-	"ZoneCustomSpawnExists"
-	{
-		"#format"	"{1:s},{2:s},{3:s}"
-		"en"		"Custom Spawn for track {1}{2}{3} already exists. Please delete it before placing a new one."
-		"chi"		"Track{1}{2}{3}的自定义复活区域已存在。请先将其删除，然后再放置新的."
-	}
-	"ZoneCustomSpawnMissing"
-	{
-		"#format"	"{1:s},{2:s},{3:s}"
-		"en"		"Custom Spawn for track {1}{2}{3} is missing."
-		"chi"		"缺少Track{1}{2}{3}的自定义复活区域."
-	}
-	"ZoneCustomSpawnDelete"
-	{
-		"en"		"Deleted Custom Spawn successfully."
-		"chi"		"删除自定义复活区域成功."
+		"chi"		"死亡状态下，您{1}无法{2}设置地图区域."
 	}
 	"ZoneDead"
 	{
@@ -128,7 +101,7 @@
 	{
 		"#format"	"{1:T}"
 		"en"		"Snap to wall: {1}"
-		"chi"		"贴墙划线: {1}"
+		"chi"		"使用自身位置(贴墙): {1}"
 	}
 	"CursorZone"
 	{
@@ -156,11 +129,6 @@
 	{
 		"en"		"axis"
 		"chi"		"轴"
-	}
-	"ZoneCustomSpawnSuccess"
-	{
-		"en"		"Successfully placed custom spawn!"
-		"chi"		"已成功放置自定义复活区域!"
 	}
 	"ZoneDecreased"
 	{
@@ -294,21 +262,6 @@
 		"en"		"[{1}] Force zone drawing"
 		"chi"		"[{1}] 强制区域显示"
 	}
-	"ZoneSetAiraccelerate"
-	{
-		"#format"	"{1:d}"
-		"en"		"Airaccelerate: {1}"
-	}
-	"ZoneSetSpeedLimit"
-	{
-		"#format"	"{1:d}"
-		"en"		"Custom speed limit: {1}"
-	}
-	"ZoneSetSpeedLimitUnlimited"
-	{
-		"#format"	"{1:d}"
-		"en"		"Custom speed limit: {1} (No Limit)"
-	}
 	"ZoneSetData"
 	{
 		"#format"	"{1:d}"
@@ -328,12 +281,12 @@
 	"ZoneSetTP"
 	{
 		"en"		"Yes (choose teleport destination first)"
-		"chi"		"是 (优先选择传送的目的地)"
+		"chi"		"需选择一个点，否则会随机传送"
 	}
 	"ZoneSetTPZone"
 	{
 		"en"		"Update teleport destination"
-		"chi"		"更新了传送的目的地坐标"
+		"chi"		"更新传送点"
 	}
 	"ZoneSetYes"
 	{
@@ -389,17 +342,11 @@
 		"chi"		"刷新目录"
 	}
 	// ---------- Messages ---------- //
-	"ZoneSlayEnter"
-	{
-		"#format"	"{1:s},{2:s},{3:s}"
-		"en"		"{1}You have been slain for entering a {2}glitch zone{3}."
-		"chi"		"{1}您因进入{2}故障区域而被杀{3}."
-	}
 	"ZoneStopEnter"
 	{
 		"#format"	"{1:s},{2:s},{3:s}"
 		"en"		"{1}Your timer has been stopped for entering a {2}glitch zone{3}."
-		"chi"		"{1}您的计时器已停止，无法进入{2}故障区域{3}."
+		"chi"		"{1}您的计时器因进入{2}故障区域{3}而停止."
 	}
 	"ZoneStageEnter"
 	{
