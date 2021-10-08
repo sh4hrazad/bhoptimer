@@ -1371,7 +1371,7 @@ void UpdateMainHUD(int client)
 	huddata.bReplay = bReplay;
 	huddata.bPractice = (bReplay)? false:Shavit_IsPracticeMode(target);
 	huddata.iFinishNum = (huddata.iStyle == -1 || huddata.iTrack == -1)?Shavit_GetRecordAmount(0, 0):Shavit_GetRecordAmount(huddata.iStyle, huddata.iTrack);
-	huddata.bFinishCP = (Shavit_IntoCheckpoint(target) || Shavit_IntoStage(target));
+	huddata.bFinishCP = (Shavit_EnterCheckpoint(target) || Shavit_EnterStage(target));
 	huddata.bStageTimer = Shavit_IsClientStageTimer(target);
 	huddata.iCheckpoint = (Shavit_IsLinearMap())? Shavit_GetClientCheckpoint(target) : Shavit_GetMapStages() - 1;
 	huddata.fDiffTimer = GetGameTime() - gF_LastCPTime[target];

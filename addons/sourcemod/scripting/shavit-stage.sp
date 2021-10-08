@@ -1371,11 +1371,11 @@ public void SQL_LoadPRCheckpoint_Callback(Database db, DBResultSet results, cons
 
 	while(results.FetchRow())
 	{
-		int cpnum = results.FetchInt(0);
+		/* int cpnum = results.FetchInt(0);
 		int style = results.FetchInt(1);
 		gA_PRCP[client][cpnum][style].fCheckpointTime = results.FetchFloat(2);
 		gA_PRCP[client][cpnum][style].fPrespeed = results.FetchFloat(3);
-		gA_PRCP[client][cpnum][style].fCPPostspeed = results.FetchFloat(4);
+		gA_PRCP[client][cpnum][style].fCPPostspeed = results.FetchFloat(4); */
 	}
 }
 
@@ -1411,8 +1411,14 @@ public int Native_FinishStage(Handle handler, int numParams)
 	int stage = Shavit_GetClientStage(client);
 	int style = Shavit_GetBhopStyle(client);
 
-	if(Shavit_IsPracticeMode(client) || StrContains(gS_StyleStrings[style].sSpecialString, "segments") != -1)
+	if(Shavit_IsPracticeMode(client) || Shavit_GetStyleSettingBool(style, "unranked"))
 	{
+		return;
+	}
+
+	if(StrContains(gS_StyleStrings[style].sSpecialString, "segment") != -1)
+	{
+		Shavit_PrintToChat(client, "暂不支持关卡segments模式");
 		return;
 	}
 
@@ -1455,6 +1461,11 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 	bool bBypass = (numParams < 2 || view_as<bool>(GetNativeCell(2)));
 	int cpnum = (Shavit_IsLinearMap()) ? Shavit_GetClientCheckpoint(client) : Shavit_GetClientStage(client);
 	int style = Shavit_GetBhopStyle(client);
+	if(Shavit_GetStyleSettingBool(style, "unranked"))
+	{
+		return;
+	}
+
 	float time = Shavit_GetClientTime(client);
 
 	if(time > 0.0 && Shavit_GetTimerStatus(client) != Timer_Stopped)

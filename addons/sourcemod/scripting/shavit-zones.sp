@@ -35,6 +35,7 @@
 #pragma newdecls required
 
 //#define DEBUG
+#define CHINESE 1
 #define EF_NODRAW 32
 
 EngineVersion gEV_Type = Engine_Unknown;
@@ -45,6 +46,19 @@ bool gB_MySQL = false;
 
 char gS_Map[160];
 
+#if CHINESE
+char gS_ZoneNames[][] =
+{
+	"起点", // starts timer
+	"终点", // stops timer
+	"关卡", // stage zone
+	"检查点", // track checkpoint zone
+	"停止计时器区域", // stops the player's timer
+	"传送区域", // teleports to a defined point
+	"标记用" // do nothing, mainly used for marking map like clip, trigger_push and so on, with hookzone collocation is recommended
+};
+
+#else
 char gS_ZoneNames[][] =
 {
 	"Start Zone", // starts timer
@@ -55,6 +69,8 @@ char gS_ZoneNames[][] =
 	"Teleport Zone", // teleports to a defined point
 	"Mark Zone" // do nothing, mainly used for marking map like clip, trigger_push and so on, with hookzone collocation is recommended
 };
+
+#endif
 
 enum struct zone_cache_t
 {
@@ -188,8 +204,8 @@ Handle gH_Forwards_OnEndZone = null;
 
 int gI_LastStage[MAXPLAYERS+1];
 int gI_LastCheckpoint[MAXPLAYERS+1];
-bool gB_IntoStage[MAXPLAYERS+1];
-bool gB_IntoCheckpoint[MAXPLAYERS+1];
+bool gB_EnterStage[MAXPLAYERS+1];
+bool gB_EnterCheckpoint[MAXPLAYERS+1];
 bool gB_LinearMap;
 int gI_LastEntityIndex = -1;
 
@@ -220,8 +236,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_IsLinearMap", Native_IsLinearMap);
 	CreateNative("Shavit_IsClientCreatingZone", Native_IsClientCreatingZone);
 	CreateNative("Shavit_IsClientStageTimer", Native_IsClientStageTimer);
-	CreateNative("Shavit_IntoStage", Native_IntoStage);
-	CreateNative("Shavit_IntoCheckpoint", Native_IntoCheckpoint);
+	CreateNative("Shavit_EnterStage", Native_EnterStage);
+	CreateNative("Shavit_EnterCheckpoint", Native_EnterCheckpoint);
 	CreateNative("Shavit_ZoneExists", Native_ZoneExists);
 	CreateNative("Shavit_Zones_DeleteMap", Native_Zones_DeleteMap);
 
@@ -253,10 +269,12 @@ public void OnPluginStart()
 	// menu
 	RegAdminCmd("sm_zone", Command_Zones, ADMFLAG_RCON, "Opens the mapzones menu.");
 	RegAdminCmd("sm_zones", Command_Zones, ADMFLAG_RCON, "Opens the mapzones menu.");
-	RegAdminCmd("sm_mapzone", Command_Zones, ADMFLAG_RCON, "Opens the mapzones menu. Alias of sm_zones.");
-	RegAdminCmd("sm_mapzones", Command_Zones, ADMFLAG_RCON, "Opens the mapzones menu. Alias of sm_zones.");
-	RegAdminCmd("sm_hookzone", Command_HookZones, ADMFLAG_RCON, "Opens the mapHookzones menu.");
-	RegAdminCmd("sm_hookzones", Command_HookZones, ADMFLAG_RCON, "Opens the mapHookzones menu. Alias of sm_hookzone.");
+	RegAdminCmd("sm_addzone", Command_AddZones, ADMFLAG_RCON, "Opens the addzones menu.");
+	RegAdminCmd("sm_addzones", Command_AddZones, ADMFLAG_RCON, "Opens the addzones menu.");
+	RegAdminCmd("sm_mapzone", Command_AddZones, ADMFLAG_RCON, "Opens the addzones menu. Alias of sm_addzones.");
+	RegAdminCmd("sm_mapzones", Command_AddZones, ADMFLAG_RCON, "Opens the addzones menu. Alias of sm_addzones.");
+	RegAdminCmd("sm_hookzone", Command_HookZones, ADMFLAG_RCON, "Opens the addHookzones menu.");
+	RegAdminCmd("sm_hookzones", Command_HookZones, ADMFLAG_RCON, "Opens the addHookzones menu. Alias of sm_hookzone.");
 
 	RegAdminCmd("sm_delzone", Command_DeleteZone, ADMFLAG_RCON, "Delete a mapzone");
 	RegAdminCmd("sm_delzones", Command_DeleteZone, ADMFLAG_RCON, "Delete a mapzone");
@@ -268,7 +286,7 @@ public void OnPluginStart()
 
 	RegAdminCmd("sm_editzone", Command_ZoneEdit, ADMFLAG_RCON, "Modify an existing zone.");
 	RegAdminCmd("sm_editzones", Command_ZoneEdit, ADMFLAG_RCON, "Modify an existing zone.");
-	
+
 	RegAdminCmd("sm_reloadzonesettings", Command_ReloadZoneSettings, ADMFLAG_ROOT, "Reloads the zone settings.");
 
 	RegConsoleCmd("sm_stages", Command_Stages, "Opens the stage menu. Usage: sm_stages [stage #]");
@@ -453,7 +471,7 @@ public void AdminMenu_Zones(Handle topmenu, TopMenuAction action, TopMenuObject 
 
 	else if(action == TopMenuAction_SelectOption)
 	{
-		Command_Zones(param, 0);
+		Command_AddZones(param, 0);
 	}
 }
 
@@ -599,13 +617,18 @@ public int Native_IsClientStageTimer(Handle handler, int numParams)
 	return gB_StageTimer[GetNativeCell(1)];
 }
 
-public int Native_IntoStage(Handle handler, int numParams)
+public int Native_EnterStage(Handle handler, int numParams)
 {
 	int client = GetNativeCell(1);
 
-	if(gB_IntoStage[client])
+	if(gB_EnterStage[client])
 	{
-		gB_IntoStage[client] = false;
+		gB_EnterStage[client] = false;
+
+		if(Shavit_GetStyleSettingBool(Shavit_GetBhopStyle(client), "unranked"))
+		{
+			return false;
+		}
 
 		return true;
 	}
@@ -613,13 +636,18 @@ public int Native_IntoStage(Handle handler, int numParams)
 	return false;
 }
 
-public int Native_IntoCheckpoint(Handle handler, int numParams)
+public int Native_EnterCheckpoint(Handle handler, int numParams)
 {
 	int client = GetNativeCell(1);
 
-	if(gB_IntoCheckpoint[client])
+	if(gB_EnterCheckpoint[client])
 	{
-		gB_IntoCheckpoint[client] = false;
+		gB_EnterCheckpoint[client] = false;
+
+		if(Shavit_GetStyleSettingBool(Shavit_GetBhopStyle(client), "unranked"))
+		{
+			return false;
+		}
 
 		return true;
 	}
@@ -1789,6 +1817,75 @@ public Action Command_Zones(int client, int args)
 		return Plugin_Handled;
 	}
 
+	OpenZonesMenu(client);
+
+	return Plugin_Handled;
+}
+
+void OpenZonesMenu(int client)
+{
+	Menu menu = new Menu(MenuHandler_OpenZonesMenu);
+	menu.SetTitle("Zones");
+
+	char sFormatItem[64];
+	FormatEx(sFormatItem, 64, "%T", "AddMapZone", client);
+	menu.AddItem("Create", sFormatItem);
+
+	FormatEx(sFormatItem, 64, "%T", "ZoneEdit", client);
+	menu.AddItem("Edit", sFormatItem);
+
+	FormatEx(sFormatItem, 64, "%T", "DeleteMapZone", client);
+	menu.AddItem("Delete", sFormatItem);
+
+	FormatEx(sFormatItem, 64, "%T", "DeleteAllMapZone", client);
+	menu.AddItem("DeleteAll", sFormatItem);
+
+	menu.Display(client, -1);
+}
+
+public int MenuHandler_OpenZonesMenu(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		char sInfo[16];
+		menu.GetItem(param2, sInfo, 16);
+
+		if(StrEqual(sInfo, "Create"))
+		{
+			FakeClientCommand(param1, "sm_addzones");
+		}
+
+		else if(StrEqual(sInfo, "Edit"))
+		{
+			FakeClientCommand(param1, "sm_editzones");
+		}
+
+		else if(StrEqual(sInfo, "Delete"))
+		{
+			FakeClientCommand(param1, "sm_delzones");
+		}
+
+		else
+		{
+			FakeClientCommand(param1, "sm_deleteallzones");
+		}
+	}
+
+	else if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
+}
+
+public Action Command_AddZones(int client, int args)
+{
+	if(!IsValidClient(client))
+	{
+		return Plugin_Handled;
+	}
+
 	if(!IsPlayerAlive(client))
 	{
 		Shavit_PrintToChat(client, "%T", "ZonesCommand", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
@@ -1796,12 +1893,12 @@ public Action Command_Zones(int client, int args)
 		return Plugin_Handled;
 	}
 
-	OpenZonesMenu(client);
+	OpenAddZonesMenu(client);
 
 	return Plugin_Handled;
 }
 
-void OpenZonesMenu(int client)
+void OpenAddZonesMenu(int client)
 {
 	Reset(client);
 
@@ -1907,7 +2004,7 @@ void OpenEditMenu(int client)
 		char sTrack[32];
 		GetTrackName(client, gA_ZoneCache[i].iZoneTrack, sTrack, 32);
 
-		FormatEx(sDisplay, 64, "#%d - %s %d (%s)", (i + 1), gS_ZoneNames[gA_ZoneCache[i].iZoneType], gA_ZoneCache[i].iZoneData, sTrack);
+		FormatEx(sDisplay, 64, "#%d - %s #%d (%s)", (i + 1), gS_ZoneNames[gA_ZoneCache[i].iZoneType], gA_ZoneCache[i].iZoneData, sTrack);
 
 		if(gB_InsideZoneID[client][i])
 		{
@@ -2016,7 +2113,7 @@ Action OpenDeleteMenu(int client)
 			char sTrack[32];
 			GetTrackName(client, gA_ZoneCache[i].iZoneTrack, sTrack, 32);
 
-			FormatEx(sDisplay, 64, "#%d - %s %d (%s)", (i + 1), gS_ZoneNames[gA_ZoneCache[i].iZoneType], gA_ZoneCache[i].iZoneData, sTrack);
+			FormatEx(sDisplay, 64, "#%d - %s #%d (%s)", (i + 1), gS_ZoneNames[gA_ZoneCache[i].iZoneType], gA_ZoneCache[i].iZoneData, sTrack);
 
 			char sInfo[8];
 			IntToString(i, sInfo, 8);
@@ -2221,8 +2318,8 @@ void Reset(int client)
 	gI_ClientCurrentStage[client] = 0;
 	gI_LastStage[client] = 0;
 	gI_LastCheckpoint[client] = 0;
-	gB_IntoStage[client] = false;
-	gB_IntoCheckpoint[client] = false;
+	gB_EnterStage[client] = false;
+	gB_EnterCheckpoint[client] = false;
 	gB_ZoneDataInput[client] = false;
 	gB_CommandToEdit[client] = false;
 	gB_ShowTriggers[client] = false;
@@ -3326,7 +3423,7 @@ public void StartTouchPost(int entity, int other)
 
 					if(gI_ClientCurrentStage[other] > gI_LastStage[other] && gI_ClientCurrentStage[other] - gI_LastStage[other] == 1 && !gB_LinearMap)
 					{
-						gB_IntoStage[other] = true;
+						gB_EnterStage[other] = true;
 						Shavit_FinishStage(other);
 					}
 
@@ -3337,7 +3434,7 @@ public void StartTouchPost(int entity, int other)
 
 				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && gI_ClientCurrentCP[other] - gI_LastCheckpoint[other] == 1 && !gB_StageTimer[other])
 				{
-					gB_IntoCheckpoint[other] = true;
+					gB_EnterCheckpoint[other] = true;
 					Shavit_FinishCheckpoint(other);
 				}
 
@@ -3357,13 +3454,13 @@ public void StartTouchPost(int entity, int other)
 
 				if(gI_ClientCurrentStage[other] > gI_LastStage[other] && gI_ClientCurrentStage[other] - gI_LastStage[other] == 1)
 				{
-					gB_IntoStage[other] = true;
+					gB_EnterStage[other] = true;
 					Shavit_FinishStage(other);
 				}
 
 				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && gI_ClientCurrentCP[other] - gI_LastCheckpoint[other] == 1 && !gB_StageTimer[other])
 				{
-					gB_IntoCheckpoint[other] = true;
+					gB_EnterCheckpoint[other] = true;
 					Shavit_FinishCheckpoint(other);
 				}
 
@@ -3377,7 +3474,7 @@ public void StartTouchPost(int entity, int other)
 
 				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && gI_ClientCurrentCP[other] - gI_LastCheckpoint[other] == 1)
 				{
-					gB_IntoCheckpoint[other] = true;
+					gB_EnterCheckpoint[other] = true;
 					Shavit_FinishCheckpoint(other);
 				}
 
