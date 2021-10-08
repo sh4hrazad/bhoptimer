@@ -1577,7 +1577,7 @@ public int Native_GetBhopStyle(Handle handler, int numParams)
 
 public int Native_GetTimerStatus(Handle handler, int numParams)
 {
-	return GetTimerStatus(GetNativeCell(1));
+	return view_as<int>(GetTimerStatus(GetNativeCell(1)));
 }
 
 public int Native_HasStyleAccess(Handle handler, int numParams)
@@ -2372,7 +2372,7 @@ public any Native_SetStyleSettingInt(Handle handler, int numParams)
 
 public Action Shavit_OnStartPre(int client, int track)
 {
-	if (GetTimerStatus(client) == view_as<int>(Timer_Paused) && gCV_PauseMovement.BoolValue)
+	if (GetTimerStatus(client) == Timer_Paused && gCV_PauseMovement.BoolValue)
 	{
 		return Plugin_Stop;
 	}
@@ -2380,18 +2380,18 @@ public Action Shavit_OnStartPre(int client, int track)
 	return Plugin_Continue;
 }
 
-int GetTimerStatus(int client)
+TimerStatus GetTimerStatus(int client)
 {
 	if (!gA_Timers[client].bTimerEnabled)
 	{
-		return view_as<int>(Timer_Stopped);
+		return Timer_Stopped;
 	}
 	else if (gA_Timers[client].bClientPaused)
 	{
-		return view_as<int>(Timer_Paused);
+		return Timer_Paused;
 	}
 
-	return view_as<int>(Timer_Running);
+	return Timer_Running;
 }
 
 void StartTimer(int client, int track)
@@ -2989,12 +2989,6 @@ void SQL_DBConnect()
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
 	gH_SQL = GetTimerDatabaseHandle2();
 	gB_MySQL = IsMySQLDatabase(gH_SQL);
-
-	// support unicode names
-	if(!gH_SQL.SetCharset("utf8mb4"))
-	{
-		gH_SQL.SetCharset("utf8");
-	}
 
 	CreateUsersTable();
 }
@@ -4071,7 +4065,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		}
 	}
 
-	if (GetTimerStatus(client) == view_as<int>(Timer_Running) && gA_Timers[client].fCurrentTime != 0.0)
+	if (GetTimerStatus(client) == Timer_Running && gA_Timers[client].fCurrentTime != 0.0)
 	{
 #if 0
 		float frameCount = gB_Replay
