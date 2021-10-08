@@ -3503,14 +3503,17 @@ public void StartTouchPost(int entity, int other)
 
 	else
 	{
-		if(type == Zone_Start)
+		switch(type)
 		{
-			gI_ClientCurrentCP[other] = 0;
-		}
+			case Zone_Start:
+			{
+				gI_ClientCurrentCP[other] = 0;
+			}
 
-		else if(type == Zone_Checkpoint)
-		{
-			gI_ClientCurrentCP[other] = data;
+			case Zone_Checkpoint:
+			{
+				gI_ClientCurrentCP[other] = data;
+			}
 		}
 	}
 }
