@@ -179,7 +179,6 @@ Convar gCV_Interval = null;
 Convar gCV_TeleportToStart = null;
 Convar gCV_TeleportToEnd = null;
 Convar gCV_UseCustomSprite = null;
-Convar gCV_Height = null;
 Convar gCV_Offset = null;
 Convar gCV_EnforceTracks = null;
 Convar gCV_BoxOffset = null;
@@ -315,7 +314,6 @@ public void OnPluginStart()
 	gCV_TeleportToStart = new Convar("shavit_zones_teleporttostart", "1", "Teleport players to the start zone on timer restart?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_TeleportToEnd = new Convar("shavit_zones_teleporttoend", "1", "Teleport players to the end zone on sm_end?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_UseCustomSprite = new Convar("shavit_zones_usecustomsprite", "1", "Use custom sprite for zone drawing?\nSee `configs/shavit-zones.cfg`.\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
-	gCV_Height = new Convar("shavit_zones_height", "128.0", "Height to use for the start zone.", 0, true, 0.0, false);
 	gCV_Offset = new Convar("shavit_zones_offset", "0", "When calculating a zone's *VISUAL* box, by how many units, should we scale it to the center?\n0.0 - no downscaling. Values above 0 will scale it inward and negative numbers will scale it outwards.\nAdjust this value if the zones clip into walls.");
 	gCV_EnforceTracks = new Convar("shavit_zones_enforcetracks", "1", "Enforce zone tracks upon entry?\n0 - allow every zone except for start/end to affect users on every zone.\n1 - require the user's track to match the zone's track.", 0, true, 0.0, true, 1.0);
 	gCV_BoxOffset = new Convar("shavit_zones_box_offset", "0", "Offset zone trigger boxes by this many unit\n0 - matches players bounding box\n16 - matches players center");
@@ -2564,19 +2562,15 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 					gV_WallSnap[client] = origin;
 				}
 
-				origin[2] = vPlayerOrigin[2];
-
 				if(gI_MapStep[client] == 1)
 				{
 					gV_Point1[client] = origin;
-					gV_Point1[client][2] += 1.0;
 
 					ShowPanel(client, 2);
 				}
 
 				else if(gI_MapStep[client] == 2)
 				{
-					origin[2] += gCV_Height.FloatValue;
 					gV_Point2[client] = origin;
 
 					gI_MapStep[client]++;
@@ -2973,12 +2967,7 @@ public Action Timer_Draw(Handle Timer, any data)
 		gV_WallSnap[client] = origin;
 	}
 
-	if(gI_MapStep[client] == 1 || gV_Point2[client][0] == 0.0)
-	{
-		origin[2] = (vPlayerOrigin[2] + gCV_Height.FloatValue);
-	}
-
-	else
+	if(gI_MapStep[client] == 3)
 	{
 		origin = gV_Point2[client];
 	}
@@ -3007,8 +2996,6 @@ public Action Timer_Draw(Handle Timer, any data)
 
 	if(gI_MapStep[client] != 3 && !EmptyVector(origin))
 	{
-		origin[2] -= gCV_Height.FloatValue;
-
 		TE_SetupBeamPoints(vPlayerOrigin, origin, gI_BeamSpriteIgnoreZ, gA_ZoneSettings[type][track].iHalo, 0, 0, 0.1, 1.0, 1.0, 0, 0.0, {255, 255, 255, 75}, 0);
 		TE_SendToAll(0.0);
 
