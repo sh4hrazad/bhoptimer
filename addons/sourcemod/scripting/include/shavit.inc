@@ -713,6 +713,46 @@ stock void FormatSeconds(float time, char[] newtime, int newtimesize, bool preci
 	}
 }
 
+stock void FormatHUDSeconds(float time, char[] newtime, int newtimesize)
+{
+	float fTempTime = time;
+
+	if(fTempTime < 0.0)
+	{
+		fTempTime = -fTempTime;
+	}
+	
+	int iRounded = RoundToFloor(fTempTime);
+	float fSeconds = (iRounded % 60) + fTempTime - iRounded;
+
+	char sSeconds[8];
+	FormatEx(sSeconds, 8, "%.02f", fSeconds);
+
+	if(fTempTime < 60.0)
+	{
+		strcopy(newtime, newtimesize, sSeconds);
+		FormatEx(newtime, newtimesize, "%s00:%s%s", (time < 0.0) ? "-":"", (fSeconds < 10) ? "0":"", sSeconds);
+	}
+
+	else
+	{
+		int iMinutes = (iRounded / 60);
+
+		if(fTempTime < 3600.0)
+		{
+			FormatEx(newtime, newtimesize, "%s%s%d:%s%s", (time < 0.0)? "-":"", (fTempTime < 600)? "0":"", iMinutes, (fSeconds < 10)? "0":"", sSeconds);
+		}
+
+		else
+		{
+			iMinutes %= 60;
+			int iHours = (iRounded / 3600);
+
+			FormatEx(newtime, newtimesize, "%s%d:%s%d:%s%s", (time < 0.0)? "-":"", iHours, (iMinutes < 10)? "0":"", iMinutes, (fSeconds < 10)? "0":"", sSeconds);
+		}
+	}
+}
+
 stock bool GuessBestMapName(ArrayList maps, const char input[PLATFORM_MAX_PATH], char output[PLATFORM_MAX_PATH])
 {
 	if(maps.FindString(input) != -1)

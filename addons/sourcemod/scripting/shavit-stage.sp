@@ -429,11 +429,14 @@ public int WRCPMenu2_Handler(Menu menu, MenuAction action, int param1, int param
 			char sMessage[255];
 			if(time > 0.0)
 			{
+				char sTime[32];
+				FormatHUDSeconds(time, sTime, 32);
+
 				FormatEx(sMessage, 255, "%T", "Chat-WRCP", param1, 
 					gS_ChatStrings.sVariable, sName, gS_ChatStrings.sText, 
 					gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, 
-					gS_ChatStrings.sVariable2, time, gS_ChatStrings.sText,
-					gS_ChatStrings.sVariable3, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText);
+					gS_ChatStrings.sVariable3, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, 
+					gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText);
 			}
 			else
 			{
@@ -768,12 +771,12 @@ public void SQL_Maptop_Callback(Database db, DBResultSet results, const char[] e
 			// 1 - time
 			float time = results.FetchFloat(1);
 			char sTime[32];
-			FormatSeconds(time, sTime, 32, true);
+			FormatHUDSeconds(time, sTime, 32);
 
 			// compareTime
 			float compareTime = time - gA_WRCP[stage][style].fStageTime;
 			char sCompareTime[32];
-			FormatSeconds(compareTime, sCompareTime, 32, true);
+			FormatHUDSeconds(compareTime, sCompareTime, 32);
 
 			// 2 - completions
 			int completions = results.FetchInt(2);
@@ -1089,16 +1092,36 @@ public void Trans_InsertCP_PR_Failed(Database db, any data, int numQueries, cons
 
 void OnWRCPCheck(int client, int stage, int style, float time)
 {
-	if(time < gA_WRCP[stage][style].fStageTime || gA_WRCP[stage][style].fStageTime == -1.0)//check if wrcp
+	float wrcpTime = gA_WRCP[stage][style].fStageTime;
+	if(time < wrcpTime || wrcpTime == -1.0)// check if wrcp
 	{
-		char sMessage[255];
 		char sName[MAX_NAME_LENGTH];
 		GetClientName(client, sName, sizeof(sName));
+
+		char sTime[32];
+		FormatHUDSeconds(time, sTime, 32);
+
+		char sDiffTime[32];
+		char sRank[32];
+		if(wrcpTime == -1.0)
+		{
+			FormatEx(sDiffTime, 32, "N/A");
+			FormatEx(sRank, 32, "1/1");
+		}
+		else
+		{
+			FormatHUDSeconds(time - wrcpTime, sDiffTime, 32);
+			FormatEx(sRank, 32, "%d/%d", GetStageRankForTime(style, time, stage), GetStageRecordAmount(style, stage));
+		}
+
+		char sMessage[255];
 		FormatEx(sMessage, 255, "%T", "OnWRCP", client, 
 			gS_ChatStrings.sVariable, sName, gS_ChatStrings.sText, 
 			gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable2, time, gS_ChatStrings.sText,
-			gS_ChatStrings.sVariable3, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText);
+			gS_ChatStrings.sVariable3, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, 
+			gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, 
+			gS_ChatStrings.sVariable10, sDiffTime, gS_ChatStrings.sText, 
+			gS_ChatStrings.sTeam, sRank, gS_ChatStrings.sText);
 		Shavit_PrintToChatAll("%s", sMessage);
 
 
@@ -1351,7 +1374,7 @@ public void SQL_LoadWRCheckpoint_Callback(Database db, DBResultSet results, cons
 	}
 }
 
-void LoadPRCheckpoints(int client)
+/* void LoadPRCheckpoints(int client)
 {
 	char sQuery[256];
 	FormatEx(sQuery, 256, "SELECT cp, style, time, prespeed, postspeed FROM `%scp` WHERE auth = %d AND map = '%s' ORDER BY cp ASC;", gS_MySQLPrefix, GetSteamAccountID(client), gS_Map);
@@ -1371,13 +1394,13 @@ public void SQL_LoadPRCheckpoint_Callback(Database db, DBResultSet results, cons
 
 	while(results.FetchRow())
 	{
-		/* int cpnum = results.FetchInt(0);
+		int cpnum = results.FetchInt(0);
 		int style = results.FetchInt(1);
 		gA_PRCP[client][cpnum][style].fCheckpointTime = results.FetchFloat(2);
 		gA_PRCP[client][cpnum][style].fPrespeed = results.FetchFloat(3);
-		gA_PRCP[client][cpnum][style].fCPPostspeed = results.FetchFloat(4); */
+		gA_PRCP[client][cpnum][style].fCPPostspeed = results.FetchFloat(4);
 	}
-}
+} */
 
 public int Native_ReloadWRCPs(Handle handler, int numParams)
 {

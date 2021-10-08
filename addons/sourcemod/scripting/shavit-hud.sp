@@ -975,46 +975,6 @@ void AddHUDLine(char[] buffer, int maxlen, const char[] line, int lines)
 	}
 }
 
-void FormatHUDSeconds(float time, char[] newtime, int newtimesize)
-{
-	float fTempTime = time;
-
-	if(fTempTime < 0.0)
-	{
-		fTempTime = -fTempTime;
-	}
-	
-	int iRounded = RoundToFloor(fTempTime);
-	float fSeconds = (iRounded % 60) + fTempTime - iRounded;
-
-	char sSeconds[8];
-	FormatEx(sSeconds, 8, "%.02f", fSeconds);
-
-	if(fTempTime < 60.0)
-	{
-		strcopy(newtime, newtimesize, sSeconds);
-		FormatEx(newtime, newtimesize, "%s00:%s%s", (time < 0.0) ? "-":"", (fSeconds < 10) ? "0":"", sSeconds);
-	}
-
-	else
-	{
-		int iMinutes = (iRounded / 60);
-
-		if(fTempTime < 3600.0)
-		{
-			FormatEx(newtime, newtimesize, "%s%s%d:%s%s", (time < 0.0)? "-":"", (fTempTime < 600)? "0":"", iMinutes, (fSeconds < 10)? "0":"", sSeconds);
-		}
-
-		else
-		{
-			iMinutes %= 60;
-			int iHours = (iRounded / 3600);
-
-			FormatEx(newtime, newtimesize, "%s%d:%s%d:%s%s", (time < 0.0)? "-":"", iHours, (iMinutes < 10)? "0":"", iMinutes, (fSeconds < 10)? "0":"", sSeconds);
-		}
-	}
-}
-
 int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 {
 	int iLines = 0;
@@ -1373,7 +1333,7 @@ void UpdateMainHUD(int client)
 	huddata.iFinishNum = (huddata.iStyle == -1 || huddata.iTrack == -1)?Shavit_GetRecordAmount(0, 0):Shavit_GetRecordAmount(huddata.iStyle, huddata.iTrack);
 	huddata.bFinishCP = (Shavit_EnterCheckpoint(target) || Shavit_EnterStage(target));
 	huddata.bStageTimer = Shavit_IsClientStageTimer(target);
-	huddata.iCheckpoint = (Shavit_IsLinearMap())? Shavit_GetClientCheckpoint(target) : Shavit_GetMapStages() - 1;
+	huddata.iCheckpoint = (Shavit_IsLinearMap())? Shavit_GetClientCheckpoint(target) : Shavit_GetClientStage(target) - 1;
 	huddata.fDiffTimer = GetGameTime() - gF_LastCPTime[target];
 	strcopy(huddata.sDiff, 64, gS_DiffTime[target]);
 	strcopy(huddata.sPreStrafe, 64, gS_PreStrafeDiff[target]);
