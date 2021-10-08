@@ -11,7 +11,7 @@ Map strippers, zones and tiers are from [HERE](https://github.com/Kyli3Boi/Surft
 [Mapzones Setup Demonstration](https://youtu.be/OXFMGm40F6c)
 
 # Requirements:
-* Steam version of Counter-Strike: Source, Counter-Strike: Global Offensive, or Team Fortress 2.
+* Steam version of Counter-Strike: Global Offensive. (Counter-Strike: Source not support yet, Team Fortress 2 doesn't support)
 * [Metamod:Source](https://www.sourcemm.net/downloads.php?branch=stable) and [SourceMod 1.10 or above](https://www.sourcemod.net/downloads.php?branch=stable) installed.
 * A MySQL database (preferably locally hosted) if your database is likely to grow big, or if you want to use the rankings plugin. MySQL server version of 5.5.5 or above (MariaDB equivalent works too) is required.
 * [DHooks](https://github.com/peace-maker/DHooks2/releases)
