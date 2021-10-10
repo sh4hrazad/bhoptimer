@@ -100,6 +100,7 @@ Cookie gH_BlockAdvertsCookie = null;
 // cvars
 Convar gCV_GodMode = null;
 Convar gCV_PreSpeed = null;
+Convar gCV_EntrySpeedLimit = null;
 Convar gCV_HideTeamChanges = null;
 Convar gCV_RespawnOnTeam = null;
 Convar gCV_RespawnOnRestart = null;
@@ -124,9 +125,7 @@ Convar gCV_Checkpoints = null;
 Convar gCV_RemoveRagdolls = null;
 Convar gCV_ClanTag = null;
 Convar gCV_DropAll = null;
-Convar gCV_ResetTargetname = null;
-Convar gCV_ResetTargetnameMain = null;
-Convar gCV_ResetTargetnameBonus = null;
+Convar gCV_ResetEventQueue = null;
 Convar gCV_RestoreStates = null;
 Convar gCV_JointeamHook = null;
 Convar gCV_SpectatorList = null;
@@ -141,7 +140,6 @@ Convar gCV_RestrictNoclip = null;
 Convar gCV_BotFootsteps = null;
 Convar gCV_SpecScoreboardOrder = null;
 Convar gCV_ExperimentalSegmentedEyeAngleFix = null;
-Convar gCV_CSGOPushFix = null;
 ConVar gCV_PauseMovement = null;
 
 // external cvars
@@ -328,6 +326,7 @@ public void OnPluginStart()
 	// cvars and stuff
 	gCV_GodMode = new Convar("shavit_misc_godmode", "3", "Enable godmode for players?\n0 - Disabled\n1 - Only prevent fall/world damage.\n2 - Only prevent damage from other players.\n3 - Full godmode.", 0, true, 0.0, true, 3.0);
 	gCV_PreSpeed = new Convar("shavit_misc_prespeed", "6", "Stop prespeeding in the start zone?\n0 - Disabled, fully allow prespeeding.\n1 - Limit relatively to prestrafelimit.\n2 - Block bunnyhopping in startzone.\n3 - Limit to prestrafelimit and block bunnyhopping.\n4 - Limit to prestrafelimit but allow prespeeding. Combine with shavit_core_nozaxisspeed 1 for SourceCode timer's behavior.\n5 - Limit horizontal speed to prestrafe but allow prespeeding.\n6 - SurfHeaven Limitspeed", 0, true, 0.0, true, 6.0);
+	gCV_EntrySpeedLimit = new Convar("shavit_misc_entryzonespeedlimit", "500", "Maximum speed at which entry into the start/stage zone will not be slowed down.\n(***Make sure shavit_misc_prespeed set to 6***)", 0, true, 0.0);
 	gCV_HideTeamChanges = new Convar("shavit_misc_hideteamchanges", "1", "Hide team changes in chat?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_RespawnOnTeam = new Convar("shavit_misc_respawnonteam", "1", "Respawn whenever a player joins a team?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_RespawnOnRestart = new Convar("shavit_misc_respawnonrestart", "1", "Respawn a dead player if they use the timer restart command?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
@@ -352,9 +351,7 @@ public void OnPluginStart()
 	gCV_RemoveRagdolls = new Convar("shavit_misc_removeragdolls", "1", "Remove ragdolls after death?\n0 - Disabled\n1 - Only remove replay bot ragdolls.\n2 - Remove all ragdolls.", 0, true, 0.0, true, 2.0);
 	gCV_ClanTag = new Convar("shavit_misc_clantag", "{tr}{styletag} :: {time}", "Custom clantag for players.\n0 - Disabled\n{styletag} - style tag.\n{style} - style name.\n{time} - formatted time.\n{tr} - first letter of track.\n{rank} - player rank.\n{cr} - player's chatrank from shavit-chat, trimmed, with no colors", 0);
 	gCV_DropAll = new Convar("shavit_misc_dropall", "1", "Allow all weapons to be dropped?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
-	gCV_ResetTargetname = new Convar("shavit_misc_resettargetname", "1", "Reset the player's targetname and eventqueue upon timer start?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
-	gCV_ResetTargetnameMain = new Convar("shavit_misc_resettargetname_main", "", "What targetname to use when resetting the player. You don't need to touch this");
-	gCV_ResetTargetnameBonus = new Convar("shavit_misc_resettargetname_bonus", "", "What targetname to use when resetting the player (on bonus tracks). You don't need to touch this");
+	gCV_ResetEventQueue = new Convar("shavit_misc_reseteventqueue", "1", "Reset the player's eventqueue upon timer start?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_RestoreStates = new Convar("shavit_misc_restorestates", "1", "Save the players' timer/position etc.. when they die/change teams,\nand load the data when they spawn?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_JointeamHook = new Convar("shavit_misc_jointeamhook", "1", "Hook `jointeam`?\n0 - Disabled\n1 - Enabled, players can instantly change teams.", 0, true, 0.0, true, 1.0);
 	gCV_SpectatorList = new Convar("shavit_misc_speclist", "1", "Who to show in !specs?\n0 - everyone\n1 - all admins (admin_speclisthide override to bypass)\n2 - players you can target", 0, true, 0.0, true, 2.0);
@@ -369,7 +366,6 @@ public void OnPluginStart()
 	gCV_BotFootsteps = new Convar("shavit_misc_botfootsteps", "1", "Enable footstep sounds for replay bots. Only works if shavit_misc_bhopsounds is less than 2.", 0, true, 0.0, true, 1.0);
 	gCV_ExperimentalSegmentedEyeAngleFix = new Convar("shavit_misc_experimental_segmented_eyeangle_fix", "1", "When teleporting to a segmented checkpoint, the player's old eye-angles persist in replay-frames for as many ticks they're behind the server in latency. This applies the teleport-position angles to the replay-frame for that many ticks.", 0, true, 0.0, true, 1.0);
 	gCV_SpecScoreboardOrder = new Convar("shavit_misc_spec_scoreboard_order", "1", "Use scoreboard ordering for players when changing target when spectating.", 0, true, 0.0, true, 1.0);
-	gCV_CSGOPushFix = new Convar("shavit_csgo_trigger_push_fix", "1", "Enables trigger push fix\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 
 	gCV_HideRadar.AddChangeHook(OnConVarChanged);
 	Convar.AutoExecConfig();
@@ -1514,7 +1510,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 
 			if((bInStart && !gB_InStart[client]) || (bInStage && !gB_InStage[client]))
 			{
-				if(fSpeedXY > 500)
+				if(fSpeedXY > gCV_EntrySpeedLimit.FloatValue)
 				{
 					fSpeed[0] *= 0.1;
 					fSpeed[1] *= 0.1;
@@ -2184,141 +2180,9 @@ public Action HookTrigger(int entity, int other)
 		{
 			return Plugin_Handled;
 		}
-
-		if(gCV_CSGOPushFix.BoolValue)
-		{
-			char sClassname[64];
-			GetEntityClassname(entity, sClassname, 64);
-
-			if(StrEqual(sClassname, "trigger_push"))
-			{
-				DoPush(entity, other);
-
-				return Plugin_Handled;
-			}
-		}
     }
     
     return Plugin_Continue;
-}
-
-void DoPush(int entity, int other)
-{
-	if(!DoesClientPassFilter(entity, other))
-	{
-		return;
-	}
-
-	float vecPushDir[3];
-	float angRotation[3];
-
-	float fPushSpeed = GetEntPropFloat(entity, Prop_Data, "m_flSpeed");
-	GetEntPropVector(entity, Prop_Data, "m_vecPushDir", vecPushDir);
-	GetEntPropVector(entity, Prop_Data, "m_angRotation", angRotation);
-
-	// Rotate vector according to world
-	float sr, sp, sy, cr, cp, cy;
-	float matrix[3][4];
-
-	SinCos(DegToRad(angRotation[1]), sy, cy);
-	SinCos(DegToRad(angRotation[0]), sp, cp);
-	SinCos(DegToRad(angRotation[2]), sr, cr);
-
-	matrix[0][0] = cp*cy;
-	matrix[1][0] = cp*sy;
-	matrix[2][0] = -sp;
-
-	float crcy = cr*cy;
-	float crsy = cr*sy;
-	float srcy = sr*cy;
-	float srsy = sr*sy;
-
-	matrix[0][1] = sp*srcy-crsy;
-	matrix[1][1] = sp*srsy+crcy;
-	matrix[2][1] = sr*cp;
-
-	matrix[0][2] = (sp*crcy+srsy);
-	matrix[1][2] = (sp*crsy-srcy);
-	matrix[2][2] = cr*cp;
-
-	matrix[0][3] = angRotation[0];
-	matrix[1][3] = angRotation[1];
-	matrix[2][3] = angRotation[2];
-
-	float vecAbsDir[3];
-	vecAbsDir[0] = vecPushDir[0]*matrix[0][0] + vecPushDir[1]*matrix[0][1] + vecPushDir[2]*matrix[0][2];
-	vecAbsDir[1] = vecPushDir[0]*matrix[1][0] + vecPushDir[1]*matrix[1][1] + vecPushDir[2]*matrix[1][2];
-	vecAbsDir[2] = vecPushDir[0]*matrix[2][0] + vecPushDir[1]*matrix[2][1] + vecPushDir[2]*matrix[2][2];
-
-	ScaleVector(vecAbsDir, fPushSpeed);
-
-	// Apply the base velocity directly to abs velocity
-	float newVelocity[3];
-	GetEntPropVector(other, Prop_Data, "m_vecVelocity", newVelocity);
-
-	newVelocity[2] = newVelocity[2] + (vecAbsDir[2] * GetTickInterval());
-	TeleportEntity(other, NULL_VECTOR, NULL_VECTOR, newVelocity);
-
-	// Remove the base velocity z height so abs velocity can do it and add old base velocity if there is any
-	vecAbsDir[2] = 0.0;
-	if(GetEntityFlags(other) & FL_BASEVELOCITY)
-	{
-		float vecBaseVel[3];
-		GetEntPropVector(other, Prop_Data, "m_vecBaseVelocity", vecBaseVel);
-		AddVectors(vecAbsDir, vecBaseVel, vecAbsDir);
-	}
-
-	SetEntPropVector(other, Prop_Data, "m_vecBaseVelocity", vecAbsDir);
-	SetEntityFlags(other, GetEntityFlags(other) | FL_BASEVELOCITY);
-}
-
-void SinCos(float radians, float &sine, float &cosine)
-{
-	sine = Sine(radians);
-	cosine = Cosine(radians);
-}
-
-void GetFilterTargetName(const char[] filtername, char[] buffer, int maxlen)
-{
-	int filter = FindEntityByTargetname(filtername);
-	if(filter != -1)
-	{
-		GetEntPropString(filter, Prop_Data, "m_iFilterName", buffer, maxlen);
-	}
-}
-
-int FindEntityByTargetname(const char[] targetname)
-{
-	int entity = -1;
-	char sName[64];
-	while((entity = FindEntityByClassname(entity, "filter_activator_name")) != -1)
-	{
-		GetEntPropString(entity, Prop_Data, "m_iName", sName, 64);
-		if(StrEqual(sName, targetname))
-		{
-			return entity;
-		}
-	}
-	
-	return -1;
-}
-
-bool DoesClientPassFilter(int entity, int client)
-{
-	char sPushFilter[64];
-	GetEntPropString(entity, Prop_Data, "m_iFilterName", sPushFilter, 64);
-	if(StrEqual(sPushFilter, ""))
-	{
-		return true;
-	}
-
-	char sFilterName[64];
-	GetFilterTargetName(sPushFilter, sFilterName, 64);
-
-	char sClientName[64];
-	GetEntPropString(client, Prop_Data, "m_iName", sClientName, 64);
-
-	return StrEqual(sFilterName, sClientName, true);
 }
 
 public Action Command_Weapon(int client, int args)
@@ -3604,29 +3468,12 @@ public Action Shavit_OnStart(int client)
 		return Plugin_Stop;
 	}
 
-	if(gCV_ResetTargetname.BoolValue)
+	// Used to clear some (mainly basevelocity) events that can be used to boost out of the start zone.
+	if(gCV_ResetEventQueue.BoolValue && gB_Eventqueuefix)
 	{
-		char targetname[64];
-
-		if (Shavit_GetClientTrack(client) == Track_Main)
-		{
-			gCV_ResetTargetnameMain.GetString(targetname, sizeof(targetname));
-		}
-		else
-		{
-			gCV_ResetTargetnameBonus.GetString(targetname, sizeof(targetname));
-		}
-
-		DispatchKeyValue(client, "targetname", targetname);
-		SetEntPropString(client, Prop_Data, "m_iClassname", "player");
-
-		// Used to clear some (mainly basevelocity) events that can be used to boost out of the start zone.
-		if(gB_Eventqueuefix)
-		{
-			ClearClientEvents(client); // maybe unneeded?
-			// The RequestFrame is the on that's actually needed though...
-			RequestFrame(ClearClientEventsFrame, GetClientSerial(client));
-		}
+		ClearClientEvents(client); // maybe unneeded?
+		// The RequestFrame is the on that's actually needed though...
+		RequestFrame(ClearClientEventsFrame, GetClientSerial(client));
 	}
 
 	return Plugin_Continue;
