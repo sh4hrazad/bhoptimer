@@ -26,5 +26,6 @@ Map strippers, zones and tiers are from [HERE](https://github.com/Kyli3Boi/Surft
   * Used to grab `{serverip}` in advertisements.
 * [ShowPlayerClips](https://forums.alliedmods.net/showthread.php?p=2661942)
 * [Stripper](http://www.bailopan.net/stripper/snapshots/1.2/)
+  * Used to fix maps
 * [Boostfix](https://github.com/t5mat/boostfix)
   * Prevent client getting double push/boost
