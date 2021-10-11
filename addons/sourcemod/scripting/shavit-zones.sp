@@ -1380,6 +1380,7 @@ public Action Command_Stages(int client, int args)
 			if(gA_ZoneCache[i].bZoneInitialized && gA_ZoneCache[i].iZoneType == Zone_Stage && gA_ZoneCache[i].iZoneData == iStage)
 			{
 				Shavit_StopTimer(client);
+				Shavit_SetPracticeMode(client, false, false);
 				gB_StageTimer[client] = true;
 
 				if(!EmptyVector(gV_CustomDestinations[client][i]))
@@ -3503,7 +3504,14 @@ public void StartTouchPost(int entity, int other)
 
 			case Zone_Teleport:
 			{
-				TeleportEntity(other, gV_Destinations[gI_EntityZone[entity]], NULL_VECTOR, NULL_VECTOR);
+				if(EmptyVector(gV_Destinations[gI_EntityZone[entity]]))
+				{
+					FakeClientCommand(other, "sm_r");
+				}
+				else
+				{
+					TeleportEntity(other, gV_Destinations[gI_EntityZone[entity]], NULL_VECTOR, NULL_VECTOR);
+				}
 			}
 
 			case Zone_Mark:
@@ -3598,7 +3606,7 @@ public void EndTouchPost(int entity, int other)
 
 public void TouchPost(int entity, int other)
 {
-	if(other < 1 || other > MaxClients || gI_EntityZone[entity] == -1 || IsFakeClient(other) || Shavit_GetTimerStatus(other) == Timer_Paused ||
+	if(other < 1 || other > MaxClients || gI_EntityZone[entity] == -1 || IsFakeClient(other) || Shavit_GetTimerStatus(other) == Timer_Paused || Shavit_IsPracticeMode(other) || 
 		(gCV_EnforceTracks.BoolValue && gA_ZoneCache[gI_EntityZone[entity]].iZoneType > Zone_End && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack != Shavit_GetClientTrack(other)))
 	{
 		return;

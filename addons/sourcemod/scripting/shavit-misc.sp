@@ -3316,6 +3316,7 @@ public Action CommandListener_Noclip(int client, const char[] command, int args)
 			}
 
 			SetEntityMoveType(client, MOVETYPE_NOCLIP);
+			Shavit_SetPracticeMode(client, true, false);
 			Shavit_PrintToChat(client, "你的穿墙设置为: %s%s%s (输入!nctrigger修改)", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"可传送":"不可传送", gS_ChatStrings.sText);
 		}
 
