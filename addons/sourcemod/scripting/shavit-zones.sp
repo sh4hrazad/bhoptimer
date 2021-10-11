@@ -121,6 +121,7 @@ int gI_ZoneFlags[MAXPLAYERS+1];
 int gI_ZoneData[MAXPLAYERS+1][ZONETYPES_SIZE];
 int gI_ZoneMaxData[TRACKS_SIZE];
 bool gB_WaitingForChatInput[MAXPLAYERS+1];
+bool gB_WaitingForChatInput_HookName[MAXPLAYERS+1];
 bool gB_HookZoneConfirm[MAXPLAYERS+1];
 bool gB_ZoneDataInput[MAXPLAYERS+1];
 bool gB_CommandToEdit[MAXPLAYERS+1];
@@ -2055,6 +2056,7 @@ public int MenuHandler_ZoneEdit(Menu menu, MenuAction action, int param1, int pa
 				gI_ZoneFlags[param1] = gA_ZoneCache[id].iZoneFlags;
 				gI_ZoneData[param1][gI_ZoneType[param1]] = gA_ZoneCache[id].iZoneData;//zoneid change start here
 				gI_ZoneID[param1] = id;
+				strcopy(gS_ZoneHookname[param1], 128, gA_ZoneCache[id].sZoneHookname);
 
 				// to stop the original zone from drawing
 				gA_ZoneCache[id].bZoneInitialized = false;
@@ -2310,6 +2312,7 @@ void Reset(int client)
 	gI_ZoneFlags[client] = 0;
 	gI_ZoneDatabaseID[client] = -1;
 	gB_WaitingForChatInput[client] = false;
+	gB_WaitingForChatInput_HookName[client] = false;
 	gB_HookZoneConfirm[client] = false;
 	strcopy(gS_ZoneHookname[client], 128, "NONE");
 	gI_ZoneID[client] = -1;
@@ -2639,6 +2642,15 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 			return 0;
 		}
 
+		else if(StrEqual(sInfo, "hookname"))
+		{
+			gB_WaitingForChatInput_HookName[param1] = true;
+
+			Shavit_PrintToChat(param1, "Please enter a name");
+
+			return 0;
+		}
+
 		else if(StrEqual(sInfo, "forcerender"))
 		{
 			gI_ZoneFlags[param1] ^= ZF_ForceRender;
@@ -2657,10 +2669,17 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
 {
-	if((gB_WaitingForChatInput[client] && gI_MapStep[client] == 3) || gB_HookZoneConfirm[client])
+	if(((gB_WaitingForChatInput[client] || gB_WaitingForChatInput_HookName[client]) && gI_MapStep[client] == 3) || gB_HookZoneConfirm[client])
 	{
-		gI_ZoneData[client][gI_ZoneType[client]] = StringToInt(sArgs);
-		gB_ZoneDataInput[client] = true;
+		if(gB_WaitingForChatInput[client])
+		{
+			gI_ZoneData[client][gI_ZoneType[client]] = StringToInt(sArgs);
+			gB_ZoneDataInput[client] = true;
+		}
+		else if(gB_WaitingForChatInput_HookName[client])
+		{
+			strcopy(gS_ZoneHookname[client], 128, sArgs);
+		}
 
 		if(gB_HookZoneConfirm[client])
 		{
@@ -2736,6 +2755,11 @@ void CreateEditMenu(int client)
 	FormatEx(sMenuItem, 64, "%T", "ZoneSetData", client, gI_ZoneData[client][gI_ZoneType[client]]);
 	menu.AddItem("datafromchat", sMenuItem);
 
+	FormatEx(sMenuItem, 64, "hookname: %s", gS_ZoneHookname[client]);
+	menu.AddItem("hookname", sMenuItem);
+
+	menu.ExitButton = false;
+	menu.Pagination = MENU_NO_PAGINATION;
 	menu.Display(client, 600);
 }
 
@@ -2856,8 +2880,8 @@ void InsertZone(int client)
 		}
 
 		FormatEx(sQuery, 512,
-			"UPDATE %smapzones SET corner1_x = '%.03f', corner1_y = '%.03f', corner1_z = '%.03f', corner2_x = '%.03f', corner2_y = '%.03f', corner2_z = '%.03f', destination_x = '%.03f', destination_y = '%.03f', destination_z = '%.03f', track = %d, flags = %d, data = %d WHERE %s = %d;",
-			gS_MySQLPrefix, gV_Point1[client][0], gV_Point1[client][1], gV_Point1[client][2], gV_Point2[client][0], gV_Point2[client][1], gV_Point2[client][2], gV_Teleport[client][0], gV_Teleport[client][1], gV_Teleport[client][2], gI_ZoneTrack[client], gI_ZoneFlags[client], gI_ZoneData[client][iType], (gB_MySQL)? "id":"rowid", gI_ZoneDatabaseID[client]);
+			"UPDATE %smapzones SET corner1_x = '%.03f', corner1_y = '%.03f', corner1_z = '%.03f', corner2_x = '%.03f', corner2_y = '%.03f', corner2_z = '%.03f', destination_x = '%.03f', destination_y = '%.03f', destination_z = '%.03f', track = %d, flags = %d, data = %d, hookname = '%s' WHERE %s = %d;",
+			gS_MySQLPrefix, gV_Point1[client][0], gV_Point1[client][1], gV_Point1[client][2], gV_Point2[client][0], gV_Point2[client][1], gV_Point2[client][2], gV_Teleport[client][0], gV_Teleport[client][1], gV_Teleport[client][2], gI_ZoneTrack[client], gI_ZoneFlags[client], gI_ZoneData[client][iType], gS_ZoneHookname[client], (gB_MySQL)? "id":"rowid", gI_ZoneDatabaseID[client]);
 	}
 
 	gH_SQL.Query(SQL_InsertZone_Callback, sQuery, GetClientSerial(client));
