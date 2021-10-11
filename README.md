@@ -19,7 +19,6 @@ Map strippers, zones and tiers are from [HERE](https://github.com/Kyli3Boi/Surft
 * [RNGFix](https://github.com/jason-e/rngfix)
 * [HeadBugFix](https://github.com/GAMMACASE/HeadBugFix)
 * [sm_closestpos](https://github.com/rtldg/sm_closestpos)
-* [eventqueuefix](https://github.com/hermansimensen/eventqueue-fix)
 
 # Optional requirements, for the best experience:
 * [SteamWorks](https://forums.alliedmods.net/showthread.php?t=229556)
