@@ -3251,6 +3251,12 @@ void CreateZoneEntities()
 		aTeleDestination.Push(iTeledesEnt);
 	}
 
+	iTeledesEnt = -1;
+	while ((iTeledesEnt = FindEntityByClassname(iTeledesEnt, "info_target")) != -1)
+	{
+		aTeleDestination.Push(iTeledesEnt);
+	}
+
 	delete gA_HookTriggers;
 	gA_HookTriggers = new ArrayList();
 
@@ -3380,7 +3386,10 @@ void CreateZoneEntities()
 			float origin[3];
 			GetEntPropVector(entity, Prop_Send, "m_vecOrigin", origin);
 
-			if(IsEntityInsideZone(origin, gV_MapZones[i]))
+			float bmin[3], bmax[3];
+			FillBoxMinMax(gV_MapZones[i][0], gV_MapZones[i][1], bmin, bmax);
+
+			if(PointInBox(origin, bmin, bmax))
 			{
 				gV_ZoneCenter[i][0] = origin[0];
 				gV_ZoneCenter[i][1] = origin[1];
@@ -3683,18 +3692,20 @@ public void TouchPost(int entity, int other)
 	gB_InsideZoneID[other][gI_EntityZone[entity]] = true;
 }
 
-// Reference: https://forums.alliedmods.net/showpost.php?p=2007420&postcount=1
-bool IsEntityInsideZone(float origin[3], float point[2][3])
+void FillBoxMinMax(float point1[3], float point2[3], float boxmin[3], float boxmax[3])
 {
-    for(int i = 0; i < 3; i++)
-    {
-        if((point[0][i] >= origin[i]) == (point[1][i] >= origin[i]))
-        {
-            return false;
-        }
-    }
+	for (int i = 0; i < 3; i++)
+	{
+		boxmin[i] = (point1[i] < point2[i]) ? point1[i] : point2[i];
+		boxmax[i] = (point1[i] < point2[i]) ? point2[i] : point1[i];
+	}
+}
 
-    return true;
+bool PointInBox(float point[3], float bmin[3], float bmax[3])
+{
+	return (bmin[0] <= point[0] <= bmax[0]) &&
+	       (bmin[1] <= point[1] <= bmax[1]) &&
+	       (bmin[2] <= point[2] <= bmax[2]);
 }
 
 void TransmitTriggers(int client, bool btransmit)
