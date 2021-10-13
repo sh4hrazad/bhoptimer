@@ -29,7 +29,6 @@
 #undef REQUIRE_PLUGIN
 #define USES_CHAT_COLORS
 #include <shavit>
-#include <eventqueuefix>
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -101,7 +100,6 @@ Handle gH_AutoBhopCookie = null;
 bool gB_Late = false;
 
 // modules
-bool gB_Eventqueuefix = false;
 bool gB_Zones = false;
 bool gB_WR = false;
 bool gB_Replay = false;
@@ -396,7 +394,6 @@ public void OnPluginStart()
 		sv_enablebunnyhopping.Flags &= ~(FCVAR_NOTIFY | FCVAR_REPLICATED);
 	}
 
-	gB_Eventqueuefix = LibraryExists("eventqueuefix");
 	gB_Zones = LibraryExists("shavit-zones");
 	gB_WR = LibraryExists("shavit-wr");
 	gB_Replay = LibraryExists("shavit-replay");
@@ -578,11 +575,6 @@ public void OnLibraryAdded(const char[] name)
 	{
 		gB_HUD = true;
 	}
-
-	else if(StrEqual(name, "eventqueuefix"))
-	{
-		gB_Eventqueuefix = true;
-	}
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -610,11 +602,6 @@ public void OnLibraryRemoved(const char[] name)
 	else if(StrEqual(name, "shavit-hud"))
 	{
 		gB_HUD = false;
-	}
-
-	else if(StrEqual(name, "eventqueuefix"))
-	{
-		gB_Eventqueuefix = false;
 	}
 }
 
@@ -1312,11 +1299,6 @@ void CallOnStyleChanged(int client, int oldstyle, int newstyle, bool manual, boo
 	float newLaggedMovement = fNewTimescale * GetStyleSettingFloat(newstyle, "speed");
 	SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", newLaggedMovement); // might be problematic with the shavit-kz stuff TODO
 
-	if (gB_Eventqueuefix)
-	{
-		SetEventsTimescale(client, newLaggedMovement);
-	}
-
 	SetEntityGravity(client, GetStyleSettingFloat(newstyle, "gravity"));
 }
 
@@ -1431,11 +1413,6 @@ void VelocityChanges(int data)
 	{
 		float mod = gA_Timers[client].fTimescale * GetStyleSettingFloat(gA_Timers[client].bsStyle, "speed");
 		SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", mod);
-
-		if (gB_Eventqueuefix)
-		{
-			SetEventsTimescale(client, mod);
-		}
 	}
 
 	float fAbsVelocity[3];
@@ -2415,12 +2392,6 @@ void StartTimer(int client, int track)
 
 			float mod = gA_Timers[client].fTimescale * GetStyleSettingFloat(gA_Timers[client].bsStyle, "speed");
 			SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", mod);
-
-			if (gB_Eventqueuefix)
-			{
-				SetEventsTimescale(client, mod);
-			}
-
 			SetEntityGravity(client, GetStyleSettingFloat(gA_Timers[client].bsStyle, "gravity"));
 		}
 #if 0

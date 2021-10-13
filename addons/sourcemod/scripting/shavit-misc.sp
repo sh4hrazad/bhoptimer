@@ -33,7 +33,6 @@
 
 #undef REQUIRE_PLUGIN
 #include <shavit>
-#include <eventqueuefix>
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -45,8 +44,6 @@
 #define CP_DEFAULT				(CP_ANGLES|CP_VELOCITY)
 
 #define DEBUG 0
-
-#define EFL_CHECK_UNTOUCH (1<<24)
 
 enum struct persistent_data_t
 {
@@ -125,7 +122,6 @@ Convar gCV_Checkpoints = null;
 Convar gCV_RemoveRagdolls = null;
 Convar gCV_ClanTag = null;
 Convar gCV_DropAll = null;
-Convar gCV_ResetEventQueue = null;
 Convar gCV_RestoreStates = null;
 Convar gCV_JointeamHook = null;
 Convar gCV_SpectatorList = null;
@@ -164,10 +160,8 @@ Handle gH_GetPlayerMaxSpeed = null;
 DynamicHook gH_UpdateStepSound = null;
 DynamicHook gH_IsSpawnPointValid = null;
 DynamicDetour gH_CalcPlayerScore = null;
-Handle gH_PhysicsCheckForEntityUntouch;
 
 // modules
-bool gB_Eventqueuefix = false;
 bool gB_Rankings = false;
 bool gB_Replay = false;
 bool gB_Zones = false;
@@ -351,7 +345,6 @@ public void OnPluginStart()
 	gCV_RemoveRagdolls = new Convar("shavit_misc_removeragdolls", "1", "Remove ragdolls after death?\n0 - Disabled\n1 - Only remove replay bot ragdolls.\n2 - Remove all ragdolls.", 0, true, 0.0, true, 2.0);
 	gCV_ClanTag = new Convar("shavit_misc_clantag", "{tr}{styletag} :: {time}", "Custom clantag for players.\n0 - Disabled\n{styletag} - style tag.\n{style} - style name.\n{time} - formatted time.\n{tr} - first letter of track.\n{rank} - player rank.\n{cr} - player's chatrank from shavit-chat, trimmed, with no colors", 0);
 	gCV_DropAll = new Convar("shavit_misc_dropall", "1", "Allow all weapons to be dropped?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
-	gCV_ResetEventQueue = new Convar("shavit_misc_reseteventqueue", "1", "Reset the player's eventqueue upon timer start?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_RestoreStates = new Convar("shavit_misc_restorestates", "1", "Save the players' timer/position etc.. when they die/change teams,\nand load the data when they spawn?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_JointeamHook = new Convar("shavit_misc_jointeamhook", "1", "Hook `jointeam`?\n0 - Disabled\n1 - Enabled, players can instantly change teams.", 0, true, 0.0, true, 1.0);
 	gCV_SpectatorList = new Convar("shavit_misc_speclist", "1", "Who to show in !specs?\n0 - everyone\n1 - all admins (admin_speclisthide override to bypass)\n2 - players you can target", 0, true, 0.0, true, 2.0);
@@ -384,7 +377,6 @@ public void OnPluginStart()
 	}
 
 	// modules
-	gB_Eventqueuefix = LibraryExists("eventqueuefix");
 	gB_Rankings = LibraryExists("shavit-rankings");
 	gB_Replay = LibraryExists("shavit-replay");
 	gB_Zones = LibraryExists("shavit-zones");
@@ -457,13 +449,6 @@ void LoadDHooks()
 	{
 		SetFailState("Couldn't get the offset for \"CGameRules::IsSpawnPointValid\" - make sure your gamedata is updated!");
 	}
-
-	StartPrepSDKCall(SDKCall_Entity);
-	if(!PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "PhysicsCheckForEntityUntouch"))
-	{
-		SetFailState("Failed to get PhysicsCheckForEntityUntouch");
-	}
-	gH_PhysicsCheckForEntityUntouch = EndPrepSDKCall();
 
 	delete hGameData;
 }
@@ -822,11 +807,6 @@ public void OnLibraryAdded(const char[] name)
 	{
 		gB_Chat = true;
 	}
-
-	else if(StrEqual(name, "eventqueuefix"))
-	{
-		gB_Eventqueuefix = true;
-	}
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -849,11 +829,6 @@ public void OnLibraryRemoved(const char[] name)
 	else if(StrEqual(name, "shavit-chat"))
 	{
 		gB_Chat = false;
-	}
-
-	else if(StrEqual(name, "eventqueuefix"))
-	{
-		gB_Eventqueuefix = false;
 	}
 }
 
@@ -1372,11 +1347,6 @@ void RemoveRagdoll(int client)
 
 public void Shavit_OnPause(int client, int track)
 {
-	if (gB_Eventqueuefix)
-	{
-		SetClientEventsPaused(client, true);
-	}
-
 	if (!gB_SaveStates[client])
 	{
 		PersistData(client, false);
@@ -1385,11 +1355,6 @@ public void Shavit_OnPause(int client, int track)
 
 public void Shavit_OnResume(int client, int track)
 {
-	if (gB_Eventqueuefix)
-	{
-		SetClientEventsPaused(client, false);
-	}
-
 	if (gB_SaveStates[client])
 	{
 		// events&outputs won't work properly unless we do this next frame...
@@ -1399,11 +1364,6 @@ public void Shavit_OnResume(int client, int track)
 
 public void Shavit_OnStop(int client, int track)
 {
-	if (gB_Eventqueuefix)
-	{
-		SetClientEventsPaused(client, false);
-	}
-
 	if (gB_SaveStates[client])
 	{
 		DeletePersistentDataFromClient(client);
@@ -2959,22 +2919,6 @@ void SaveCheckpointCache(int target, cp_cache_t cpcache, bool actually_a_checkpo
 		cpcache.iPreFrames = Shavit_GetPlayerPreFrames(target);
 	}
 
-	if (gB_Eventqueuefix && !IsFakeClient(target))
-	{
-		eventpack_t ep;
-
-		if (GetClientEvents(target, ep))
-		{
-			cpcache.aEvents = ep.playerEvents;
-			cpcache.aOutputWaits = ep.outputWaits;
-		}
-		else
-		{
-			delete ep.playerEvents;
-			delete ep.outputWaits;
-		}
-	}
-
 	cpcache.iSteamID = GetSteamAccountID(target);
 }
 
@@ -3040,12 +2984,6 @@ void TeleportToCheckpoint(int client, int index, bool suppressMessage)
 	}
 }
 
-bool GetCheckUntouch(int client)
-{
-	int flags = GetEntProp(client, Prop_Data, "m_iEFlags");
-	return (flags & EFL_CHECK_UNTOUCH) != 0;
-}
-
 void LoadCheckpointCache(int client, cp_cache_t cpcache, bool isPersistentData)
 {
 	SetEntityMoveType(client, cpcache.iMoveType);
@@ -3082,12 +3020,6 @@ void LoadCheckpointCache(int client, cp_cache_t cpcache, bool isPersistentData)
 		((gI_CheckpointsSettings[client] & CP_ANGLES)   > 0 || cpcache.bSegmented || isPersistentData) ? cpcache.fAngles   : NULL_VECTOR,
 		((gI_CheckpointsSettings[client] & CP_VELOCITY) > 0 || cpcache.bSegmented || isPersistentData) ? cpcache.fVelocity : NULL_VECTOR);
 
-	// Used to trigger all endtouch booster events which are then wiped via eventqueuefix :)
-	if (GetCheckUntouch(client))
-	{
-		SDKCall(gH_PhysicsCheckForEntityUntouch, client);
-	}
-
 	if (cpcache.aSnapshot.bPracticeMode || !(cpcache.bSegmented || isPersistentData) || GetSteamAccountID(client) != cpcache.iSteamID)
 	{
 		Shavit_SetPracticeMode(client, true, true);
@@ -3113,25 +3045,6 @@ void LoadCheckpointCache(int client, cp_cache_t cpcache, bool isPersistentData)
 		// if isPersistentData, then CloneHandle() is done instead of ArrayList.Clone()
 		Shavit_SetReplayData(client, cpcache.aFrames, isPersistentData);
 		Shavit_SetPlayerPreFrames(client, cpcache.iPreFrames);
-	}
-
-	if (gB_Eventqueuefix && cpcache.aEvents != null && cpcache.aOutputWaits != null)
-	{
-		eventpack_t ep;
-		ep.playerEvents = cpcache.aEvents;
-		ep.outputWaits = cpcache.aOutputWaits;
-		SetClientEvents(client, ep);
-
-		#if DEBUG
-		PrintToConsole(client, "targetname='%s'", cpcache.sTargetname);
-
-		for (int i = 0; i < cpcache.aEvents.Length; i++)
-		{
-			event_t e;
-			cpcache.aEvents.GetArray(i, e);
-			PrintToConsole(client, "%s %s %s %f %i %i %i", e.target, e.targetInput, e.variantValue, e.delay, e.activator, e.caller, e.outputID);
-		}
-		#endif
 	}
 }
 
@@ -3452,36 +3365,13 @@ public Action Command_Specs(int client, int args)
 	return Plugin_Handled;
 }
 
-void ClearClientEventsFrame(int serial)
-{
-	int client = GetClientFromSerial(serial);
-
-	if (client > 0 && gB_Eventqueuefix)
-	{
-		ClearClientEvents(client);
-	}
-}
-
 public Action Shavit_OnStart(int client)
 {
 	gI_TimesTeleported[client] = 0;
 
-	if (gB_Eventqueuefix)
-	{
-		SetClientEventsPaused(client, false);
-	}
-
 	if(Shavit_GetStyleSettingInt(gI_Style[client], "prespeed") == 0 && GetEntityMoveType(client) == MOVETYPE_NOCLIP)
 	{
 		return Plugin_Stop;
-	}
-
-	// Used to clear some (mainly basevelocity) events that can be used to boost out of the start zone.
-	if(gCV_ResetEventQueue.BoolValue && gB_Eventqueuefix)
-	{
-		ClearClientEvents(client); // maybe unneeded?
-		// The RequestFrame is the on that's actually needed though...
-		RequestFrame(ClearClientEventsFrame, GetClientSerial(client));
 	}
 
 	return Plugin_Continue;
