@@ -156,6 +156,7 @@ float gV_ZoneCenter[MAX_ZONES][3];
 int gI_EntityZone[4096];
 ArrayList gA_Triggers;
 ArrayList gA_HookTriggers;
+ArrayList gA_TeleDestination;
 bool gB_ZonesCreated = false;
 int gI_Bonuses;
 int gI_Stages; // how many stages in a map, default 1.
@@ -265,6 +266,9 @@ public void OnPluginStart()
 	}
 	
 	RegConsoleCmd("sm_showzones", Command_Showzones, "Command to dynamically toggle shavit's zones trigger visibility");
+	RegConsoleCmd("sm_findtele", Command_FindTeleDestination, "Show teleport_destination entities menu");
+	RegConsoleCmd("sm_findteles", Command_FindTeleDestination, "Show teleport_destination entities menu. Alias of sm_findtele");
+	RegConsoleCmd("sm_telefinder", Command_FindTeleDestination, "Show teleport_destination entities menu. Alias of sm_findtele");
 
 	// menu
 	RegAdminCmd("sm_zone", Command_Zones, ADMFLAG_RCON, "Opens the mapzones menu.");
@@ -899,6 +903,26 @@ void FindTriggers()
 	}
 }
 
+void FindTeles()
+{
+	int iEnt = -1;
+
+	delete gA_TeleDestination;
+	gA_TeleDestination = new ArrayList();
+
+	while ((iEnt = FindEntityByClassname(iEnt, "info_teleport_destination")) != -1)
+	{
+		gA_TeleDestination.Push(iEnt);
+	}
+
+	iEnt = -1;
+
+	while ((iEnt = FindEntityByClassname(iEnt, "info_target")) != -1)
+	{
+		gA_TeleDestination.Push(iEnt);
+	}
+}
+
 public void OnMapStart()
 {
 	if(!gB_Connected)
@@ -916,6 +940,7 @@ public void OnMapStart()
 	gI_Checkpoints = 0;
 	UnloadZones(0);
 	FindTriggers();
+	FindTeles();
 	RefreshZones();
 	LoadBonusZones();
 	LoadStageZones();
@@ -1485,6 +1510,70 @@ public Action Command_Showzones(int client, int args)
 	TransmitTriggers(client, gB_ShowTriggers[client]);
 
 	return Plugin_Handled;
+}
+
+public Action Command_FindTeleDestination(int client, int args)
+{
+	if(!IsValidClient(client))
+	{
+		return Plugin_Handled;
+	}
+
+	if (gA_TeleDestination.Length == 0)
+	{
+		Shavit_PrintToChat(client, "No Map Teleports Found");
+		return Plugin_Handled;
+	}
+
+	OpenFindTeleMenu(client);
+
+	return Plugin_Handled;
+}
+
+void OpenFindTeleMenu(int client)
+{
+	Menu menu = new Menu(FindTeleDestination_MenuHandler);
+	menu.SetTitle("Warning: This will stop your timer");
+
+	for(int i = 0; i < gA_TeleDestination.Length; i++)
+	{
+		int iEnt = gA_TeleDestination.Get(i);
+
+		char sName[64];
+		GetEntPropString(iEnt, Prop_Data, "m_iName", sName, 64);
+		menu.AddItem(sName, sName);
+	}
+
+	menu.Display(client, -1);
+}
+
+public int FindTeleDestination_MenuHandler(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		char sInfo[64];
+		menu.GetItem(param2, sInfo, 64);
+
+		int iEnt = gA_TeleDestination.Get(param2);
+
+		float position[3];
+		float angles[3];
+		GetEntPropVector(iEnt, Prop_Send, "m_vecOrigin", position);
+		GetClientEyeAngles(param1, angles);
+
+		Shavit_StopTimer(param1);
+		TeleportEntity(param1, position, angles, view_as<float>( { 0.0, 0.0, 0.0 } ));
+		Shavit_PrintToChat(param1, "Teleported to '%s', position: %f, angle: %f", sInfo, position, angles);
+
+		FakeClientCommand(param1, "sm_findtele");
+	}
+
+	else if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
 }
 
 public Action Command_HookZones(int client, int args)
@@ -3242,21 +3331,6 @@ void CreateZoneEntities()
 		return;
 	}
 
-	int iTeledesEnt = -1;
-
-	ArrayList aTeleDestination = new ArrayList();
-
-	while ((iTeledesEnt = FindEntityByClassname(iTeledesEnt, "info_teleport_destination")) != -1)
-	{
-		aTeleDestination.Push(iTeledesEnt);
-	}
-
-	iTeledesEnt = -1;
-	while ((iTeledesEnt = FindEntityByClassname(iTeledesEnt, "info_target")) != -1)
-	{
-		aTeleDestination.Push(iTeledesEnt);
-	}
-
 	delete gA_HookTriggers;
 	gA_HookTriggers = new ArrayList();
 
@@ -3380,9 +3454,9 @@ void CreateZoneEntities()
 			}
 		}
 
-		for(int j = 0; j < aTeleDestination.Length; j++)
+		for(int j = 0; j < gA_TeleDestination.Length; j++)
 		{
-			int entity = aTeleDestination.Get(j);
+			int entity = gA_TeleDestination.Get(j);
 			float origin[3];
 			GetEntPropVector(entity, Prop_Send, "m_vecOrigin", origin);
 
@@ -3400,8 +3474,6 @@ void CreateZoneEntities()
 
 		gB_ZonesCreated = true;
 	}
-
-	delete aTeleDestination;
 }
 
 public void StartTouchPost(int entity, int other)
