@@ -1559,11 +1559,11 @@ public int FindTeleDestination_MenuHandler(Menu menu, MenuAction action, int par
 		float position[3];
 		float angles[3];
 		GetEntPropVector(iEnt, Prop_Send, "m_vecOrigin", position);
-		GetClientEyeAngles(param1, angles);
+		GetEntPropVector(iEnt, Prop_Send, "m_angRotation", angles);
 
 		Shavit_StopTimer(param1);
-		TeleportEntity(param1, position, angles, view_as<float>( { 0.0, 0.0, 0.0 } ));
-		Shavit_PrintToChat(param1, "Teleported to '%s', position: %f, angle: %f", sInfo, position, angles);
+		TeleportEntity(param1, position, angles, view_as<float>({0.0, 0.0, 0.0}));
+		Shavit_PrintToChat(param1, "Teleported to '%s', position: %.2f | %.2f | %.2f", sInfo, position[0], position[1], position[2]);
 
 		FakeClientCommand(param1, "sm_findtele");
 	}
