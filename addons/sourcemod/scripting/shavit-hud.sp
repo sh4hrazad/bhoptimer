@@ -1103,10 +1103,10 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
-			if(0 < data.fDiffTimer <= 5.0 && GetGameTime() > 5.0 && data.iStage != 1 && !data.bStageTimer)
+			if(0 < data.fDiffTimer <= 5.0 && GetGameTime() > 5.0 && data.iCheckpoint != 0 && !data.bStageTimer)
 			{
 				int iDiffColor;
-				if(Shavit_GetWRCheckpointTime(data.iStage, data.iStyle) == -1.0)
+				if(Shavit_GetWRCheckpointTime(data.iCheckpoint, data.iStyle) == -1.0)
 				{
 					iDiffColor = 0xFFFF00;
 				}
