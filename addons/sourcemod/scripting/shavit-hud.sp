@@ -124,6 +124,7 @@ float gF_AngleDiff[MAXPLAYERS+1];
 
 bool gB_Late = false;
 char gS_HintPadding[MAX_HINT_SIZE];
+bool gB_AlternateCenterKeys[MAXPLAYERS+1]; // use for css linux gamers
 
 // hud handle
 Handle gH_HUD = null;
@@ -412,11 +413,34 @@ public void OnClientPutInServer(int client)
 	gI_LastScrollCount[client] = 0;
 	gI_ScrollCount[client] = 0;
 	gB_FirstPrint[client] = false;
+	gB_AlternateCenterKeys[client] = false;
 
 	if(IsFakeClient(client))
 	{
 		SDKHook(client, SDKHook_PostThinkPost, PostThinkPost);
 	}
+	else
+	{
+		if (gEV_Type != Engine_CSGO)
+		{
+			CreateTimer(5.0, Timer_QueryWindowsCvar, GetClientSerial(client), TIMER_FLAG_NO_MAPCHANGE);
+		}
+	}
+}
+
+public Action Timer_QueryWindowsCvar(Handle timer, any data)
+{
+	int client = GetClientFromSerial(data);
+
+	if (client > 0)
+	{
+		QueryClientConVar(client, "windows_speaker_config", OnWindowsCvarQueried);
+	}
+}
+
+public void OnWindowsCvarQueried(QueryCookie cookie, int client, ConVarQueryResult result, const char[] cvarName, const char[] cvarValue, any value)
+{
+	gB_AlternateCenterKeys[client] = (result == ConVarQuery_NotFound);
 }
 
 public void PostThinkPost(int client)
@@ -1172,7 +1196,15 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 
 		if((gI_HUD2Settings[client] & HUD2_STRAFE) == 0)
 		{
-			FormatEx(sLine, 128, "%T: %d", "HudStrafeText", client, data.iStrafes);
+			if((gI_HUD2Settings[client] & HUD2_SYNC) == 0)
+			{
+				FormatEx(sLine, 128, "%T: %d (%.1f%%%%)", "HudStrafeText", client, data.iStrafes, data.fSync);
+			}
+			else
+			{
+				FormatEx(sLine, 128, "%T: %d", "HudStrafeText", client, data.iStrafes);
+			}
+			//FormatEx(sLine, 128, "%T: %d", "HudStrafeText", client, data.iStrafes);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 			iLines++;
 		}
@@ -1450,7 +1482,6 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			{
 				FormatEx(sLine, 128, "%d %T (%.1f%%)", data.iStrafes, "HudStrafeText", client, data.fSync);
 			}
-
 			else
 			{
 				FormatEx(sLine, 128, "%d %T", data.iStrafes, "HudStrafeText", client);
@@ -1677,11 +1708,23 @@ void UpdateCenterKeys(int client)
 	}
 
 	char sCenterText[80];
-	FormatEx(sCenterText, sizeof(sCenterText), "　%s　　%s\n%s   %s   %s\n%s　 %s 　%s\n　%s　　%s",
-		(buttons & IN_JUMP) > 0? "Ｊ":"ｰ", (buttons & IN_DUCK) > 0? "Ｃ":"ｰ",
-		(fAngleDiff > 0) ? "<":"  ", (buttons & IN_FORWARD) > 0 ? "Ｗ":" ｰ", (fAngleDiff < 0) ? ">":"",
-		(buttons & IN_MOVELEFT) > 0? "Ａ":"ｰ", (buttons & IN_BACK) > 0? "Ｓ":"ｰ", (buttons & IN_MOVERIGHT) > 0? "Ｄ":"ｰ",
-		(buttons & IN_LEFT) > 0? "Ｌ":" ", (buttons & IN_RIGHT) > 0? "Ｒ":" ");
+
+	if (gB_AlternateCenterKeys[client])
+	{
+		FormatEx(sCenterText, sizeof(sCenterText), "　%s　　%s\n%s   %s   %s\n%s　 %s 　%s\n　%s　　%s",
+			(buttons & IN_JUMP) > 0? "J":"_", (buttons & IN_DUCK) > 0? "C":"_",
+			(fAngleDiff > 0) ? "<":"  ", (buttons & IN_FORWARD) > 0 ? "W":" _", (fAngleDiff < 0) ? ">":"",
+			(buttons & IN_MOVELEFT) > 0? "A":"_", (buttons & IN_BACK) > 0? "S":"_", (buttons & IN_MOVERIGHT) > 0? "D":"_",
+			(buttons & IN_LEFT) > 0? "L":" ", (buttons & IN_RIGHT) > 0? "R":" ");
+	}
+	else
+	{
+		FormatEx(sCenterText, sizeof(sCenterText), "　%s　　%s\n%s   %s   %s\n%s　 %s 　%s\n　%s　　%s",
+			(buttons & IN_JUMP) > 0? "Ｊ":"ｰ", (buttons & IN_DUCK) > 0? "Ｃ":"ｰ",
+			(fAngleDiff > 0) ? "<":"  ", (buttons & IN_FORWARD) > 0 ? "Ｗ":" ｰ", (fAngleDiff < 0) ? ">":"",
+			(buttons & IN_MOVELEFT) > 0? "Ａ":"ｰ", (buttons & IN_BACK) > 0? "Ｓ":"ｰ", (buttons & IN_MOVERIGHT) > 0? "Ｄ":"ｰ",
+			(buttons & IN_LEFT) > 0? "Ｌ":" ", (buttons & IN_RIGHT) > 0? "Ｒ":" ");
+	}
 
 	int style = (gB_Replay && Shavit_IsReplayEntity(target))? Shavit_GetReplayBotStyle(target):Shavit_GetBhopStyle(target);
 
