@@ -3150,8 +3150,8 @@ void DoReplaySaverCallbacks(int iSteamID, int client, int style, float time, int
 	Call_PushCell(avgvel);
 	Call_PushCell(maxvel);
 	Call_PushCell(timestamp);
-	Call_PushCell(isBestReplay);
 	Call_PushCell(isTooLong);
+	Call_PushCell(isBestReplay);
 	Call_PushCell(makeCopy);
 	Call_PushString(sPath);
 	Call_Finish();
@@ -4592,7 +4592,7 @@ float GetReplayLength(int style, int track, frame_cache_t aCache, int stage = 0)
 	}
 	else
 	{
-		return Shavit_GetWRCPTime(stage, style) * Shavit_GetStyleSettingFloat(style, "speed");
+		return Shavit_GetWRStageTime(stage, style) * Shavit_GetStyleSettingFloat(style, "speed");
 	}
 }
 
@@ -4624,7 +4624,7 @@ void GetReplayName(int style, int track, char[] buffer, int length, int stage = 
 			return;
 		}
 
-		Shavit_GetWRCPName(style, buffer, length, stage);
+		Shavit_GetWRStageName(style, stage, buffer, length);
 	}
 }
 

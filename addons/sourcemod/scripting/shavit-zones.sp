@@ -1000,7 +1000,7 @@ public void SQL_GetStageZone_Callback(Database db, DBResultSet results, const ch
 
 	gB_LinearMap = (gI_Stages == 1);
 
-	Shavit_ReloadWRCPs();
+	Shavit_ReloadWRStages();
 }
 
 void LoadCheckpointZones()
@@ -1023,7 +1023,7 @@ public void SQL_GetCheckpointZone_Callback(Database db, DBResultSet results, con
 		gI_Checkpoints = results.FetchInt(1);
 	}
 
-	Shavit_ReloadWRCheckpoints();
+	Shavit_ReloadWRCPs();
 }
 
 public void OnMapEnd()

@@ -1865,6 +1865,79 @@ native void Shavit_GetWRRecordID(int style, int &recordid, int track);
 native void Shavit_GetWRName(int style, char[] wrname, int wrmaxlength, int track);
 
 /**
+ * Gets the WRStage's date on the map on a variable.(TODO)
+ *
+ * @param stage						WRStage stage.
+ * @param style						Style to get the WRStage for.
+ * @return							WRStage Date.
+ */
+native float Shavit_GetWRStageDate(int stage, int style);
+
+/**
+ * Gets the WRStage's time on the map on a variable.
+ *
+ * @param stage						WRStage stage.
+ * @param style						Style to get the WRStage for.
+ * @return							WRStage Time.
+ */
+native float Shavit_GetWRStageTime(int stage, int style);
+
+/**
+ * Gets the WRStage's postspeed on the map on a variable.
+ *
+ * @param stage						WRStage stage.
+ * @param style						Style to get the WRStage for.
+ * @return							WRStage Postspeed.
+ */
+native float Shavit_GetWRStagePostspeed(int stage, int style);
+
+/**
+ * Saves the WRStage's player name on the map on a variable.
+ *
+ * @param style						Style to get the WRStage for.
+ * @param stage						WRStage checkpoint.
+ * @param wrstagename				Reference to the name variable.
+ * @param wrstagemaxlength			Max length for the string.
+ * @noreturn
+ */
+native void Shavit_GetWRStageName(int style, int stage, char[] wrstagename, int wrstagemaxlength);
+
+/**
+ * Gets the WRCP's time on the map on a variable.
+ *
+ * @param cp						WRCP checkpoint.
+ * @param style						Style to get the WRCP for.
+ * @return							WRCP Time.
+ */
+native float Shavit_GetWRCPTime(int cp, int style);
+
+/**
+ * Gets the WRCP's prespeed on the map on a variable.
+ *
+ * @param cp						WRCP checkpoint.
+ * @param style						Style to get the WRCP for.
+ * @return							WRCP Prespeed.
+ */
+native float Shavit_GetWRCPPrespeed(int cp, int style);
+
+/**
+ * Gets the WRCP's postspeed on the map on a variable.
+ *
+ * @param cp						WRCP checkpoint.
+ * @param style						Style to get the WRCP for.
+ * @return							WRCP Postspeed.
+ */
+native float Shavit_GetWRCPPostspeed(int cp, int style);
+
+/**
+ * Gets the difference time between WR's checkpoint time and client checkpoint time.
+ *
+ * @param client					Client index.
+ * @return							Difference time.
+ */
+native float Shavit_GetWRCPDiffTime(int client);
+
+/**
  * Get the amount of records on the current map/style on a stage.
  *
  * @param style						Style.
@@ -1882,80 +1955,6 @@ native int Shavit_GetStageRecordAmount(int style, int stage);
  * @return							Stage rank.
  */
 native int Shavit_GetStageRankForTime(int style, float time, int stage);
-
-/**
- * Saves the WRCP's player name on the map on a variable.
- *
- * @param style						Style to get the WRCP for.
- * @param wrcpname					Reference to the name variable.
- * @param wrcpmaxlength				Max length for the string.
- * @param stage						WRCP stage.
- * @noreturn
- */
-native void Shavit_GetWRCPName(int style, char[] wrcpname, int wrcpmaxlength, int stage);
-
-/**
- * Gets the WRCP's time on the map on a variable.
- *
- * @param stage						WRCP stage.
- * @param style						Style to get the WRCP for.
- * @return							WRCP Time.
- */
-native float Shavit_GetWRCPTime(int stage, int style);
-
-/**
- * Gets the WRCP's prespeed on the map on a variable.
- *
- * @param stage						WRCP stage.
- * @param style						Style to get the WRCP for.
- * @return							WRCP Prespeed.
- */
-native float Shavit_GetWRCPPostspeed(int stage, int style);
-
-/**
- * Gets the WR's checkpoint time on the map on a variable.
- *
- * @param cpnum						WR's Checkpoint number.
- * @param style						Style to get the WRCP for.
- * @return							WR checkpoint Time.
- */
-native float Shavit_GetWRCheckpointTime(int cpnum, int style);
-
-/**
- * Gets the difference time between WR's checkpoint time and client checkpoint time.
- *
- * @param client					Client index.
- * @return							Difference time.
- */
-native float Shavit_GetWRCheckpointDiffTime(int client);
-
-/**
- * Gets the WR's checkpoint prespeed on the map on a variable.
- *
- * @param cpnum						WR's Checkpoint number.
- * @param style						Style to get the WR Checkpoint for.
- * @return							WR checkpoint Pre Speed.
- */
-native float Shavit_GetWRCheckpointPreSpeed(int cpnum, int style);
-
-/**
- * Gets the WR's checkpoint postspeed on the map on a variable.
- *
- * @param cpnum						WR's Checkpoint number.
- * @param style						Style to get the WR Checkpoint for.
- * @return							WR checkpoint Post Speed.
- */
-native float Shavit_GetWRCheckpointPostSpeed(int cpnum, int style);
-
-/**
- * Gets the client's prcp time.
- *
- * @param client					Client index.
- * @param stage						WR's Checkpoint number.
- * @param style						Style to get the WRCP for.
- * @return							PR Time.
- */
-native float Shavit_GetPRCPTime(int client, int stage, int style);
 
 /**
  * Retrieves the best time of a player.
@@ -2003,9 +2002,19 @@ native int Shavit_GetRecordAmount(int style, int track);
  * @param style						Style.
  * @param time						Time to check for.
  * @param track						Timer track.
- * @return							Map rank.
+ * @return							Track rank.
  */
 native int Shavit_GetRankForTime(int style, float time, int track);
+
+/**
+ * Calculate potential rank for a given style and time.
+ *
+ * @param style						Style.
+ * @param steamid 					Steamid to check for.
+ * @param track						Timer track.
+ * @return							Track rank.
+ */
+native int Shavit_GetRankForSteamid(int style, int steamid, int track);
 
 /**
  * Retrieves the time of a record from a specified rank.
@@ -2016,6 +2025,16 @@ native int Shavit_GetRankForTime(int style, float time, int track);
  * @return							Record time. 0.0 if none.
  */
 native float Shavit_GetTimeForRank(int style, int rank, int track);
+
+/**
+ * Retrieves the steamid of a record from a specified rank.
+ *
+ * @param style						Style.
+ * @param rank						Rank to retrieve the time from.
+ * @param track						Timer track.
+ * @return							Record steamid. -1 if none.
+ */
+native int Shavit_GetSteamidForRank(int style, int rank, int track);
 
 /**
  * Checks if a mapzone exists.
@@ -3087,18 +3106,18 @@ native float Shavit_GuessPointsForTime(int track, int style, int tier, float tim
 native void Shavit_DeleteWR(int style, int track, const char[] map, int accountid, int recordid, bool delete_sql, bool update_cache);
 
 /**
+ * Reload WRStages.
+ *
+ * @noreturn
+ */
+native void Shavit_ReloadWRStages();
+
+/**
  * Reload WRCPs.
  *
  * @noreturn
  */
 native void Shavit_ReloadWRCPs();
-
-/**
- * Reload WR Checkpoints.
- *
- * @noreturn
- */
-native void Shavit_ReloadWRCheckpoints();
 
 /**
  * Detect client recording single stage time(not recording finish map time).
@@ -3200,6 +3219,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetPoints");
 	MarkNativeAsOptional("Shavit_GetRank");
 	MarkNativeAsOptional("Shavit_GetRankedPlayers");
+	MarkNativeAsOptional("Shavit_GetRankForSteamid");
 	MarkNativeAsOptional("Shavit_GetRankForTime");
 	MarkNativeAsOptional("Shavit_GetRecordAmount");
 	MarkNativeAsOptional("Shavit_GetReplayBotCurrentFrame");
@@ -3232,6 +3252,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetZoneOffset");
 	MarkNativeAsOptional("Shavit_GetDistanceOffset");
 	MarkNativeAsOptional("Shavit_GetTimeForRank");
+	MarkNativeAsOptional("Shavit_GetSteamidForRank");
 	MarkNativeAsOptional("Shavit_GetTimerStatus");
 	MarkNativeAsOptional("Shavit_GetWorldRecord");
 	MarkNativeAsOptional("Shavit_GetWRCount");
@@ -3309,18 +3330,18 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetMapStages");
 	MarkNativeAsOptional("Shavit_GetMapCheckpoints");
 	MarkNativeAsOptional("Shavit_ReloadAllReplays");
+	MarkNativeAsOptional("Shavit_ReloadWRStages");
 	MarkNativeAsOptional("Shavit_ReloadWRCPs");
-	MarkNativeAsOptional("Shavit_ReloadWRCheckpoints");
 	MarkNativeAsOptional("Shavit_GetStageRecordAmount");
 	MarkNativeAsOptional("Shavit_GetStageRankForTime");
-	MarkNativeAsOptional("Shavit_GetWRCPName");
+	MarkNativeAsOptional("Shavit_GetWRStageDate");
+	MarkNativeAsOptional("Shavit_GetWRStageTime");
+	MarkNativeAsOptional("Shavit_GetWRStagePostspeed");
+	MarkNativeAsOptional("Shavit_GetWRStageName");
 	MarkNativeAsOptional("Shavit_GetWRCPTime");
+	MarkNativeAsOptional("Shavit_GetWRCPPrespeed");
 	MarkNativeAsOptional("Shavit_GetWRCPPostspeed");
-	MarkNativeAsOptional("Shavit_GetWRCheckpointTime");
-	MarkNativeAsOptional("Shavit_GetWRCheckpointDiffTime");
-	MarkNativeAsOptional("Shavit_GetWRCheckpointPreSpeed");
-	MarkNativeAsOptional("Shavit_GetWRCheckpointPostSpeed");
-	MarkNativeAsOptional("Shavit_GetPRCPTime");
+	MarkNativeAsOptional("Shavit_GetWRCPDiffTime");
 	MarkNativeAsOptional("Shavit_FinishStage");
 	MarkNativeAsOptional("Shavit_EnterStage");
 	MarkNativeAsOptional("Shavit_FinishCheckpoint");

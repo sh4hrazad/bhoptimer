@@ -42,6 +42,13 @@ enum struct wrcache_t
 	float fWRs[STYLE_LIMIT];
 }
 
+enum struct prcache_t
+{
+	float fTime;
+	int iSteamid;
+	//int iRank; -> gA_Leaderboard[style][track].index
+}
+
 bool gB_Late = false;
 bool gB_Rankings = false;
 bool gB_Stats = false;
@@ -109,9 +116,11 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetClientPB", Native_GetClientPB);
 	CreateNative("Shavit_SetClientPB", Native_SetClientPB);
 	CreateNative("Shavit_GetClientCompletions", Native_GetClientCompletions);
+	CreateNative("Shavit_GetRankForSteamid", Native_GetRankForSteamid);
 	CreateNative("Shavit_GetRankForTime", Native_GetRankForTime);
 	CreateNative("Shavit_GetRecordAmount", Native_GetRecordAmount);
 	CreateNative("Shavit_GetTimeForRank", Native_GetTimeForRank);
+	CreateNative("Shavit_GetSteamidForRank", Native_GetSteamidForRank);
 	CreateNative("Shavit_GetWorldRecord", Native_GetWorldRecord);
 	CreateNative("Shavit_GetWRName", Native_GetWRName);
 	CreateNative("Shavit_GetWRRecordID", Native_GetWRRecordID);
@@ -466,7 +475,7 @@ public void Shavit_OnStyleConfigLoaded(int styles)
 			{
 				if (gA_Leaderboard[i][j] == null)
 				{
-					gA_Leaderboard[i][j] = new ArrayList();
+					gA_Leaderboard[i][j] = new ArrayList(sizeof(prcache_t));
 				}
 
 				gA_Leaderboard[i][j].Clear();
@@ -683,14 +692,22 @@ public int Native_SetClientPB(Handle handler, int numParams)
 	gF_PlayerRecord[client][style][track] = time;
 }
 
-public int Native_GetPlayerPB(Handle handler, int numParams)
-{
-	SetNativeCellRef(3, gF_PlayerRecord[GetNativeCell(1)][GetNativeCell(2)][GetNativeCell(4)]);
-}
-
 public int Native_GetClientCompletions(Handle handler, int numParams)
 {
 	return gI_PlayerCompletion[GetNativeCell(1)][GetNativeCell(2)][GetNativeCell(3)];
+}
+
+public int Native_GetRankForSteamid(Handle handler, int numParams)
+{
+	int style = GetNativeCell(1);
+	int track = GetNativeCell(3);
+
+	if(gA_Leaderboard[style][track] == null || gA_Leaderboard[style][track].Length == 0)
+	{
+		return 0;
+	}
+
+	return GetRankForSteamid(style, GetNativeCell(2), track);
 }
 
 public int Native_GetRankForTime(Handle handler, int numParams)
@@ -726,7 +743,27 @@ public int Native_GetTimeForRank(Handle handler, int numParams)
 		return view_as<int>(0.0);
 	}
 
-	return view_as<int>(gA_Leaderboard[style][track].Get(rank - 1));
+	prcache_t pr;
+	gA_Leaderboard[style][track].GetArray(rank - 1, pr, sizeof(pr));
+
+	return view_as<int>(pr.fTime);
+}
+
+public int Native_GetSteamidForRank(Handle handler, int numParams)
+{
+	int style = GetNativeCell(1);
+	int rank = GetNativeCell(2);
+	int track = GetNativeCell(3);
+
+	if(rank > GetRecordAmount(style, track))
+	{
+		return -1;
+	}
+
+	prcache_t pr;
+	gA_Leaderboard[style][track].GetArray(rank - 1, pr, sizeof(pr));
+
+	return pr.iSteamid;
 }
 
 public int Native_WR_DeleteMap(Handle handler, int numParams)
@@ -891,9 +928,12 @@ public Action Command_PrintLeaderboards(int client, int args)
 	ReplyToCommand(client, "Count: %d", iRecords);
 	ReplyToCommand(client, "Rank: %d", Shavit_GetRankForTime(iStyle, gF_PlayerRecord[client][iStyle][0], iStyle));
 
+	prcache_t pr;
+
 	for(int i = 0; i < iRecords; i++)
 	{
-		ReplyToCommand(client, "#%d: %f", i, gA_Leaderboard[iStyle][0].Get(i));
+		gA_Leaderboard[iStyle][0].GetArray(i, pr, sizeof(pr));
+		ReplyToCommand(client, "#%d: %f", i, pr.fTime);
 	}
 
 	return Plugin_Handled;
@@ -2687,7 +2727,7 @@ public void SQL_OnFinish_Callback(Database db, DBResultSet results, const char[]
 void UpdateLeaderboards()
 {
 	char sQuery[512];
-	FormatEx(sQuery, sizeof(sQuery), "SELECT style, track, time, exact_time_int FROM %splayertimes WHERE map = '%s' ORDER BY time ASC, date ASC;", gS_MySQLPrefix, gS_Map);
+	FormatEx(sQuery, sizeof(sQuery), "SELECT style, track, time, exact_time_int, auth FROM %splayertimes WHERE map = '%s' ORDER BY time ASC, date ASC;", gS_MySQLPrefix, gS_Map);
 	gH_SQL.Query(SQL_UpdateLeaderboards_Callback, sQuery);
 }
 
@@ -2712,10 +2752,14 @@ public void SQL_UpdateLeaderboards_Callback(Database db, DBResultSet results, co
 			continue;
 		}
 
-		gA_Leaderboard[style][track].Push(ExactTimeMaybe(results.FetchFloat(2), results.FetchInt(3)));
+		prcache_t pr;
+		pr.fTime = ExactTimeMaybe(results.FetchFloat(2), results.FetchInt(3));
+		pr.iSteamid = results.FetchInt(4);
+
+		gA_Leaderboard[style][track].PushArray(pr);
 	}
 
-	for(int i = 0; i < gI_Styles; i++)
+	/* for(int i = 0; i < gI_Styles; i++)
 	{
 		if (Shavit_GetStyleSettingInt(i, "unranked"))
 		{
@@ -2724,10 +2768,22 @@ public void SQL_UpdateLeaderboards_Callback(Database db, DBResultSet results, co
 
 		for(int j = 0; j < TRACKS_SIZE; j++)
 		{
-			SortADTArray(gA_Leaderboard[i][j], Sort_Ascending, Sort_Float);
+			gA_Leaderboard[i][j].SortCustom(ADT_SortTimeAscending);
 		}
-	}
+	} */
 }
+
+/* public int ADT_SortTimeAscending(int index1, int index2, Handle array, Handle hndl)
+{
+	prcache_t pr1;
+	prcache_t pr2;
+
+	ArrayList leaderboard = view_as<ArrayList>(array);
+	leaderboard.GetArray(index1, pr1, sizeof(prcache_t));
+	leaderboard.GetArray(index2, pr2, sizeof(prcache_t));
+
+	return pr1.fTime - pr2.fTime;
+} */
 
 int GetRecordAmount(int style, int track)
 {
@@ -2752,7 +2808,10 @@ int GetRankForTime(int style, float time, int track)
 	{
 		for(int i = 0; i < iRecords; i++)
 		{
-			if(time <= gA_Leaderboard[style][track].Get(i))
+			prcache_t pr;
+			gA_Leaderboard[style][track].GetArray(i, pr, sizeof(pr));
+
+			if(time <= pr.fTime)
 			{
 				return ++i;
 			}
@@ -2760,6 +2819,32 @@ int GetRankForTime(int style, float time, int track)
 	}
 
 	return (iRecords + 1);
+}
+
+int GetRankForSteamid(int style, int steamid, int track)
+{
+	int iRecords = GetRecordAmount(style, track);
+
+	if(iRecords <= 0)
+	{
+		return 0;
+	}
+
+	if(gA_Leaderboard[style][track] != null && gA_Leaderboard[style][track].Length > 0)
+	{
+		for(int i = 0; i < iRecords; i++)
+		{
+			prcache_t pr;
+			gA_Leaderboard[style][track].GetArray(i, pr, sizeof(pr));
+
+			if(steamid == pr.iSteamid)
+			{
+				return ++i;
+			}
+		}
+	}
+
+	return 0;
 }
 
 float ExactTimeMaybe(float time, int exact_time)

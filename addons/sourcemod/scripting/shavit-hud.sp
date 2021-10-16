@@ -374,11 +374,11 @@ public void Shavit_OnStartTimer_Post(int client, int style, int track, float spe
 
 	if(Shavit_IsLinearMap())
 	{
-		wrSpeed = Shavit_GetWRCheckpointPostSpeed(0, style);
+		wrSpeed = Shavit_GetWRCPPostspeed(0, style);
 	}
 	else
 	{
-		wrSpeed = Shavit_GetWRCheckpointPostSpeed(1, style);
+		wrSpeed = Shavit_GetWRCPPostspeed(1, style);
 	}
 
 	FormatPreStrafeSpeed(gS_PreStrafeDiff[client], speed, wrSpeed);
@@ -425,11 +425,11 @@ public void Shavit_OnStageTimer_Post(int client, int style, int stage, float spe
 
 	if(Shavit_IsClientStageTimer(client))
 	{
-		wrcpSpeed = Shavit_GetWRCPPostspeed(stage, style);
+		wrcpSpeed = Shavit_GetWRStagePostspeed(stage, style);
 	}
 	else
 	{
-		wrcpSpeed = Shavit_GetWRCheckpointPostSpeed(stage, style);
+		wrcpSpeed = Shavit_GetWRCPPostspeed(stage, style);
 	}
 
 	FormatPreStrafeSpeed(gS_PreStrafeDiff[client], speed, wrcpSpeed);
@@ -481,7 +481,7 @@ void FormatPreStrafeSpeed(char[] buffer, float originSpeed, float wrSpeed)
 
 public void Shavit_OnFinishStage(int client, int stage, int style, float time)
 {
-	float wrcpTime = Shavit_GetWRCPTime(stage, style);
+	float wrcpTime = Shavit_GetWRStageTime(stage, style);
 	float diff = time - wrcpTime;
 
 	char sTime[32];
@@ -527,7 +527,7 @@ public void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float ti
 	char sDifftime[32];
 	FormatHUDSeconds(diff, sDifftime, 32);
 
-	if(Shavit_GetWRCheckpointTime(cpnum, style) == -1.0)
+	if(Shavit_GetWRCPTime(cpnum, style) == -1.0)
 	{
 		FormatEx(sDifftime, 32, "N/A");
 	}
@@ -1106,11 +1106,11 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			if(0 < data.fDiffTimer <= 5.0 && GetGameTime() > 5.0 && data.iCheckpoint != 0 && !data.bStageTimer)
 			{
 				int iDiffColor;
-				if(Shavit_GetWRCheckpointTime(data.iCheckpoint, data.iStyle) == -1.0)
+				if(Shavit_GetWRCPTime(data.iCheckpoint, data.iStyle) == -1.0)
 				{
 					iDiffColor = 0xFFFF00;
 				}
-				else if(Shavit_GetWRCheckpointDiffTime(data.iTarget) > 0.0)
+				else if(Shavit_GetWRCPDiffTime(data.iTarget) > 0.0)
 				{
 					iDiffColor = 0xFF0000;
 				}
