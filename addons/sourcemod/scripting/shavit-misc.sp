@@ -228,7 +228,9 @@ public void OnPluginStart()
 	sv_cheats = FindConVar("sv_cheats");
 	sv_disable_immunity_alpha = FindConVar("sv_disable_immunity_alpha");
 
-	//RegConsoleCmd("sm_test", Command_Test);
+	// avaliable colors
+	RegConsoleCmd("sm_colors", Command_ValidColors, "Show a list of avaliable colors to client's chat");
+	RegConsoleCmd("sm_validcolors", Command_ValidColors, "Show a list of avaliable colors to client's chat");
 
 	// spectator list
 	RegConsoleCmd("sm_specs", Command_Specs, "Show a list of spectators.");
@@ -3289,6 +3291,46 @@ public Action CommandListener_Real_Noclip(int client, const char[] command, int 
 	}
 
 	return Plugin_Continue;
+}
+
+public Action Command_ValidColors(int client, int args)
+{
+	if(!IsValidClient(client))
+	{
+		return Plugin_Handled;
+	}
+
+	char sGlobalColorNames[][] =
+	{
+		"{default}", "{team}", "{green}"
+	};
+
+	char sGlobalColorNamesDemo[][] =
+	{
+		"default", "team", "green"
+	};
+
+	char sCSGOColorNames[][] =
+	{
+		"{blue}", "{bluegrey}", "{darkblue}", "{darkred}", "{gold}", "{grey}", "{grey2}", "{lightgreen}", "{lightred}", "{lime}", "{orchid}", "{yellow}", "{palered}"
+	};
+
+	char sCSGOColorNamesDemo[][] =
+	{
+		"blue", "bluegrey", "darkblue", "darkred", "gold", "grey", "grey2", "lightgreen", "lightred", "lime", "orchid", "yellow", "palered"
+	};
+
+	for(int i = 0; i < sizeof(sGlobalColorNames); i++)
+	{
+		Shavit_PrintToChat(client, "%s%s", sGlobalColorNames[i], sGlobalColorNamesDemo[i]);
+	}
+
+	for(int i = 0; i < sizeof(sCSGOColorNames); i++)
+	{
+		Shavit_PrintToChat(client, "%s%s", sCSGOColorNames[i], sCSGOColorNamesDemo[i]);
+	}
+
+	return Plugin_Handled;
 }
 
 public Action Command_Specs(int client, int args)

@@ -1835,6 +1835,7 @@ public int SemiNative_PrintToChat(int client, int formatParam)
 
 	// space before message needed show colors in cs:go
 	// strlen(sBuffer)>252 is when CSS stops printing the messages
+	ReplaceColors(sInput, 300);
 	FormatEx(sBuffer, (gB_Protobuf ? sizeof(sBuffer) : 253), "%s%s%s %s%s", (gB_Protobuf ? " ":""), sTime, gS_ChatStrings.sPrefix, gS_ChatStrings.sText, sInput);
 
 	if(client == 0)
