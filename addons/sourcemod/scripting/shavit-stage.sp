@@ -50,7 +50,6 @@ enum struct stage_t
 
 int gI_Styles = 0;
 char gS_Map[160];
-int gI_Steamid[101];//this is a mysql index, i dont have any better implementation
 
 // cp info
 ArrayList gA_StageLeaderboard[STYLE_LIMIT][MAX_STAGES+1];
@@ -794,8 +793,6 @@ public void SQL_GetWRCheckpointInfomation_Callback(Database db, DBResultSet resu
 	}
 
 	menu.Display(client, -1);
-
-	//OpenCPRMenu(client, steamid, cp, startSpeed, time, sName);
 }
 
 public int CPRMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
@@ -893,46 +890,62 @@ public int MaptopMenu_Handler(Menu menu, MenuAction action, int param1, int para
 
 void Maptop_StageMenu(int client)
 {
-	Menu stagemenu = new Menu(MaptopMenu2_Handler);
-	stagemenu.SetTitle("%T", "WrcpMenuTitle-Stage", client);
+	char sQuery[128];
+	FormatEx(sQuery, 128, "SELECT data FROM `%smapzones` WHERE map = '%s' AND type = '%d' AND track = '%d' ORDER BY data DESC;", gS_MySQLPrefix, gS_MapChoice[client], Zone_Stage, Track_Main);
+	gH_SQL.Query(SQL_Maptop_StageMenu_Callback, sQuery, GetClientSerial(client));
+}
 
-	for(int i = 1; i <= Shavit_GetMapStages(); i++)
+public void SQL_Maptop_StageMenu_Callback(Database db, DBResultSet results, const char[] error, any data)
+{
+	if(results == null)
+	{
+		LogError("Timer (GetMaptop) SQL query failed. Reason: %s", error);
+		return;
+	}
+
+	int client = GetClientFromSerial(data);
+
+	Menu submenu = new Menu(Maptop_StageMenu_Handler);
+	submenu.SetTitle("%T", "WrcpMenuTitle-Stage", client);
+
+	int stages = Shavit_GetMapStages();
+
+	if(results.FetchRow())
+	{
+		stages = results.FetchInt(0);
+	}
+
+	for(int i = 1; i <= stages; i++)
 	{
 		char sDisplay[64];
 		FormatEx(sDisplay, 64, "%T %d", "WrcpMenuItem-Stage", client, i);
 
-		stagemenu.AddItem("", sDisplay);
+		submenu.AddItem("", sDisplay);
 	}
 
-	stagemenu.ExitBackButton = true;
-	stagemenu.Display(client, -1);
+	submenu.ExitBackButton = true;
+	submenu.Display(client, -1);
 }
 
-public int MaptopMenu2_Handler(Menu menu, MenuAction action, int param1, int param2)
+public int Maptop_StageMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_Select)
 	{
 		gI_StageChoice[param1] = param2 + 1;
-		
+
 		int stage = gI_StageChoice[param1];
 		int style = gI_StyleChoice[param1];
 
-		DataPack dp = new DataPack();
-		dp.WriteCell(GetClientSerial(param1));
-		dp.WriteCell(stage);
-		dp.WriteCell(style);
-		dp.WriteString(gS_MapChoice[param1]);
-
 		char sQuery[512];
 		FormatEx(sQuery, 512, 
-				"SELECT p1.auth, p1.time, p1.completions, p2.name FROM `%sstagetimes` p1 " ...
-				"JOIN (SELECT auth, name FROM `%susers`) p2 " ...
-				"ON p1.auth = p2.auth " ...
-				"WHERE (stage = '%d' AND style = '%d') AND map = '%s' " ...
-				"ORDER BY p1.time ASC " ...
+				"SELECT p1.auth, p1.time, p1.completions, p2.name FROM `%sstagetimes` p1 "...
+				"JOIN `%susers` p2 "...
+				"ON p1.auth = p2.auth "...
+				"WHERE (stage = '%d' AND style = '%d') AND map = '%s' "...
+				"ORDER BY p1.time ASC "...
 				"LIMIT 100;", 
 				gS_MySQLPrefix, gS_MySQLPrefix, stage, style, gS_MapChoice[param1]);
-		gH_SQL.Query(SQL_Maptop_Callback, sQuery, dp);
+		gH_SQL.Query(SQL_Maptop_Callback, sQuery, GetClientSerial(param1));
 	}
 
 	else if(action == MenuAction_Cancel)
@@ -948,17 +961,11 @@ public int MaptopMenu2_Handler(Menu menu, MenuAction action, int param1, int par
 	return 0;
 }
 
-public void SQL_Maptop_Callback(Database db, DBResultSet results, const char[] error, DataPack dp)
+public void SQL_Maptop_Callback(Database db, DBResultSet results, const char[] error, any data)
 {
-	dp.Reset();
-
-	int client = GetClientFromSerial(dp.ReadCell());
-	int stage = dp.ReadCell();
-	int style = dp.ReadCell();
-	char sMap[160];
-	dp.ReadString(sMap, 160);
-
-	delete dp;
+	int client = GetClientFromSerial(data);
+	int stage = gI_StageChoice[client];
+	int style = gI_StyleChoice[client];
 
 	if(results == null)
 	{
@@ -966,19 +973,19 @@ public void SQL_Maptop_Callback(Database db, DBResultSet results, const char[] e
 		return;
 	}
 
-	Menu maptopmenu = new Menu(MaptopMenu3_Handler);
+	Menu finalMenu = new Menu(Maptop_FinalMenu_Handler);
 
 	char sTitle[128];
 	if(gB_DeleteMaptop[client])
 	{
-		FormatEx(sTitle, 128, "%T", "DeleteMaptopMenuTitle-Maptop", client, sMap, stage);
+		FormatEx(sTitle, 128, "%T", "DeleteMaptopMenuTitle-Maptop", client, gS_MapChoice[client], stage);
 	}
 	else
 	{
-		FormatEx(sTitle, 128, "%T", "WrcpMenuTitle-Maptop", client, sMap, stage);
+		FormatEx(sTitle, 128, "%T", "WrcpMenuTitle-Maptop", client, gS_MapChoice[client], stage);
 	}
 
-	maptopmenu.SetTitle(sTitle);
+	finalMenu.SetTitle(sTitle);
 
 	int iCount = 0;
 
@@ -987,7 +994,8 @@ public void SQL_Maptop_Callback(Database db, DBResultSet results, const char[] e
 		if(++iCount <= 100)
 		{
 			// 0 - steamid (mysql delete index)
-			gI_Steamid[iCount] = results.FetchInt(0);
+			char sSteamid[32];
+			IntToString(results.FetchInt(0), sSteamid, 32);
 
 			// 1 - time
 			float time = results.FetchFloat(1);
@@ -1008,49 +1016,43 @@ public void SQL_Maptop_Callback(Database db, DBResultSet results, const char[] e
 
 			char sDisplay[128];
 			FormatEx(sDisplay, 128, "#%d | %s (+%s) - %s (%d)", iCount, sTime, sCompareTime, sName, completions, client);
-			maptopmenu.AddItem("", sDisplay, ITEMDRAW_DEFAULT);
+			finalMenu.AddItem(sSteamid, sDisplay, ITEMDRAW_DEFAULT);
 		}
 	}
 
-	if(maptopmenu.ItemCount == 0)
+	if(finalMenu.ItemCount == 0)
 	{
 		char sNoRecords[64];
 		FormatEx(sNoRecords, 64, "%t", "WrcpMenuItem-NoRecord", client);
 
-		maptopmenu.AddItem("-1", sNoRecords, ITEMDRAW_DISABLED);
+		finalMenu.AddItem("-1", sNoRecords, ITEMDRAW_DISABLED);
 	}
 
-	maptopmenu.ExitBackButton = true;
-	maptopmenu.Display(client, -1);
+	finalMenu.ExitBackButton = true;
+	finalMenu.Display(client, -1);
 }
 
-public int MaptopMenu3_Handler(Menu menu, MenuAction action, int param1, int param2)
+public int Maptop_FinalMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_Select)
 	{
+		char sSteamid[32];
+		menu.GetItem(param2, sSteamid, 32);
+		int steamid = StringToInt(sSteamid);
+
 		if(gB_DeleteMaptop[param1])
 		{
-			gB_DeleteMaptop[param1] = false;
-
-			int steamid = gI_Steamid[param2 + 1];
 			int stage = gI_StageChoice[param1];
 			int style = gI_StyleChoice[param1];
 
 			char sQuery[256];
 			FormatEx(sQuery, 256, "DELETE FROM `%sstagetimes` WHERE (stage = '%d' AND style = '%d') AND (auth = '%d' AND map = '%s');", 
 					gS_MySQLPrefix, stage, style, steamid, gS_MapChoice[param1]);
-
-			DataPack dp = new DataPack();
-			dp.WriteCell(GetClientSerial(param1));
-			dp.WriteCell(stage);
-			dp.WriteCell(style);
-
-			gH_SQL.Query(SQL_DeleteMaptop_Callback, sQuery, dp);
+			gH_SQL.Query(SQL_DeleteMaptop_Callback, sQuery, GetClientSerial(param1));
 		}
 		else
 		{
-			char sSteamid[32];
-			FormatEx(sSteamid, 32, "U:1:%d", gI_Steamid[param2 + 1]);
+			FormatEx(sSteamid, 32, "U:1:%d", steamid);
 			FakeClientCommand(param1, "sm_p %s", sSteamid);
 		}
 	}
@@ -1068,15 +1070,8 @@ public int MaptopMenu3_Handler(Menu menu, MenuAction action, int param1, int par
 	return 0;
 }
 
-public void SQL_DeleteMaptop_Callback(Database db, DBResultSet results, const char[] error, DataPack data)
+public void SQL_DeleteMaptop_Callback(Database db, DBResultSet results, const char[] error, any data)
 {
-	data.Reset();
-	int client = GetClientFromSerial(data.ReadCell());
-	int stage = data.ReadCell();
-	int style = data.ReadCell();
-
-	delete data;
-
 	if(results == null)
 	{
 		LogError("Timer (single stage record delete) SQL query failed. Reason: %s", error);
@@ -1084,11 +1079,20 @@ public void SQL_DeleteMaptop_Callback(Database db, DBResultSet results, const ch
 		return;
 	}
 
-	ReloadWRStages();
+	int client = GetClientFromSerial(data);
+	int stage = gI_StageChoice[client];
+	int style = gI_StyleChoice[client];
+
+	if(StrEqual(gS_MapChoice[client], gS_Map))
+	{
+		ReloadWRStages();
+	}
 
 	Shavit_PrintToChat(client, "%T", "StageRecordDeleteSuccessful", client, gS_ChatStrings.sText, 
 		gS_ChatStrings.sVariable, stage, gS_ChatStrings.sText, 
 		gS_ChatStrings.sVariable3, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText);
+
+	Maptop_StageMenu(client);
 }
 
 public void Shavit_OnEnterZone(int client, int type, int track, int id, int entity, int data)
