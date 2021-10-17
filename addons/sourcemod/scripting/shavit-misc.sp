@@ -1566,11 +1566,14 @@ public void OnClientPutInServer(int client)
 
 void RemoveAllWeapons(int client)
 {
-	int weapon = -1, max = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
+	int weapon = -1;
+	int max = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
 	for (int i = 0; i < max; i++)
 	{
 		if ((weapon = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", i)) == -1)
+		{
 			continue;
+		}
 
 		if (RemovePlayerItem(client, weapon))
 		{
