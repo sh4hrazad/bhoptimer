@@ -21,7 +21,6 @@
 // plugin cache
 Database2 gH_SQL = null;
 bool gB_Connected = false;
-bool gB_Late = false;
 
 // table prefix
 char gS_MySQLPrefix[32];
@@ -110,10 +109,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetWRCPDiffTime", Native_GetWRCPDiffTime);
 	CreateNative("Shavit_FinishStage", Native_FinishStage);
 	CreateNative("Shavit_FinishCheckpoint", Native_FinishCheckpoint);
-	// registers library, check "bool LibraryExists(const char[] name)" in order to use with other plugins
-	RegPluginLibrary("shavit-stage");
 
-	gB_Late = late;
+	RegPluginLibrary("shavit-stage");
 
 	return APLRes_Success;
 }
@@ -165,15 +162,13 @@ public void OnPluginStart()
 	gH_Forwards_OnFinishCheckpointPre = CreateGlobalForward("Shavit_OnFinishCheckpointPre", ET_Event, Param_Cell, Param_Cell, Param_Cell);
 	gH_Forwards_OnFinishCheckpoint = CreateGlobalForward("Shavit_OnFinishCheckpoint", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_Float);
 
-	if(gB_Late)
-	{
-		Shavit_OnDatabaseLoaded();
-	}
+	SQL_DBConnect();
+	Shavit_OnStyleConfigLoaded(Shavit_GetStyleCount());
 }
 
-public void OnClientAuthorized(int client, const char[] auth)
+public void OnClientAuthorized(int client)
 {
-	if(gB_Connected && !IsFakeClient(client))
+	if(!IsFakeClient(client))
 	{
 		ResetPlayerStatus(client);
 		ReloadStageInfo(client);
@@ -226,10 +221,8 @@ public void OnMapStart()
 	GetCurrentMap(gS_Map, 160);
 	GetMapDisplayName(gS_Map, gS_Map, 160);
 
-	if(gB_Late)
-	{
-		Shavit_OnStyleConfigLoaded(Shavit_GetStyleCount());
-	}
+	ResetWRStages();
+	ResetWRCPs();
 
 	for(int i = 1; i <= MaxClients; i++)
 	{
@@ -295,7 +288,6 @@ void ResetStageLeaderboards()
 	}
 }
 
-// this runs after shavit-zones handled zones or deleted wrstages
 void ResetWRStages(int styles = STYLE_LIMIT, int stages = MAX_STAGES)
 {
 	for(int i = 0; i < styles; i++)
@@ -312,7 +304,6 @@ void ResetWRStages(int styles = STYLE_LIMIT, int stages = MAX_STAGES)
 	ReloadWRStages();
 }
 
-// this runs after shavit-zones handled zones or deleted wr
 void ResetWRCPs(int styles = STYLE_LIMIT, int maxcp = MAX_STAGES)
 {
 	for(int i = 0; i < styles; i++)
@@ -1167,7 +1158,6 @@ public void SQL_DeleteWRCPs_Callback(Database db, DBResultSet results, const cha
 // This runs after got or delete map wr
 void ReloadWRCPs()
 {
-	Shavit_PrintToChatAll("reloading wrcps");
 	char sQuery[192];
 	FormatEx(sQuery, 192, "SELECT style, cp, time, prespeed, postspeed FROM `%scpwrs` WHERE map = '%s';", gS_MySQLPrefix, gS_Map);
 	gH_SQL.Query(SQL_ReloadWRCPs_Callback, sQuery);
@@ -1393,6 +1383,11 @@ public void SQL_PrCheck_Callback(Database db, DBResultSet results, const char[] 
 
 void ReloadStageInfo(int client)
 {
+	if(!IsValidClient(client))
+	{
+		return;
+	}
+
 	char sQuery[512];
 	FormatEx(sQuery, 512, 
 			"SELECT style, stage, date, completions, time, postspeed FROM `%sstagetimes` WHERE auth = %d AND map = '%s';", 
@@ -1433,6 +1428,11 @@ public void SQL_ReloadStageInfo_Callback(Database db, DBResultSet results, const
 
 void ReloadCPInfo(int client)
 {
+	if(!IsValidClient(client))
+	{
+		return;
+	}
+
 	char sQuery[512];
 	FormatEx(sQuery, 512, 
 			"SELECT style, cp, date, time, prespeed, postspeed FROM `%scptimes` WHERE auth = %d AND map = '%s';", 
@@ -1554,12 +1554,18 @@ public void SQL_UpdateStageLeaderboards_Callback(Database db, DBResultSet result
 
 public int Native_ReloadWRStages(Handle handler, int numParams)
 {
-	ResetWRStages();
+	if(gB_Connected)
+	{
+		ResetWRStages();
+	}
 }
 
 public int Native_ReloadWRCPs(Handle handler, int numParams)
 {
-	ResetWRCPs();
+	if(gB_Connected)
+	{
+		ResetWRCPs();
+	}
 }
 
 //native float Shavit_GetWRStageDate(int stage, int style)
@@ -1728,13 +1734,13 @@ public int Native_GetStageRankForTime(Handle handler, int numParams)
 	return GetStageRankForTime(style, GetNativeCell(2), stage);
 }
 
-public void Shavit_OnDatabaseLoaded()
+void SQL_DBConnect()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
 	gH_SQL = GetTimerDatabaseHandle2(false);
 	bool bMysql = IsMySQLDatabase(gH_SQL);
 
-	Transaction hTransaction = new Transaction();
+	Transaction2 hTransaction = new Transaction2();
 
 	char sQuery[1024];
 

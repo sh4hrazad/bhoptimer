@@ -3294,22 +3294,22 @@ public Action Command_ValidColors(int client, int args)
 		return Plugin_Handled;
 	}
 
-	char sGlobalColorNames[][] =
+	static char sGlobalColorNames[][] =
 	{
 		"{default}", "{team}", "{green}"
 	};
 
-	char sGlobalColorNamesDemo[][] =
+	static char sGlobalColorNamesDemo[][] =
 	{
 		"default", "team", "green"
 	};
 
-	char sCSGOColorNames[][] =
+	static char sCSGOColorNames[][] =
 	{
 		"{blue}", "{bluegrey}", "{darkblue}", "{darkred}", "{gold}", "{grey}", "{grey2}", "{lightgreen}", "{lightred}", "{lime}", "{orchid}", "{yellow}", "{palered}"
 	};
 
-	char sCSGOColorNamesDemo[][] =
+	static char sCSGOColorNamesDemo[][] =
 	{
 		"blue", "bluegrey", "darkblue", "darkred", "gold", "grey", "grey2", "lightgreen", "lightred", "lime", "orchid", "yellow", "palered"
 	};

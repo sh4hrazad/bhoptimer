@@ -452,7 +452,7 @@ void FormatPreStrafeSpeed(char[] buffer, float originSpeed, float wrSpeed)
 	{
 		if(diff > 0.0)
 		{
-			FormatEx(buffer, 64, "%t", "PrestrafeIncreate", RoundToFloor(diff));
+			FormatEx(buffer, 64, "%t", "PrestrafeIncrease", RoundToFloor(diff));
 		}
 		else if(diff == 0.0)
 		{
@@ -1210,6 +1210,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 					iDiffColor = 0xFF0000;
 				}
 
+				RemoveColors(data.sPreStrafe, 64);
 				FormatEx(sLine, 128, "Speed: <span color='#%06X'>%d</span> [<span color='#%06X'>%s</span>]", iColor, data.iSpeed, iDiffColor, data.sPreStrafe);
 			}
 
@@ -1547,4 +1548,27 @@ void PrintCSGOHUDText(int client, const char[] str)
 	pb.AddString("params", NULL_STRING);
 	
 	EndMessage();
+}
+
+void RemoveColors(char[] string, int size)
+{
+	static char sGlobalColorNames[][] =
+	{
+		"{default}", "{team}", "{green}"
+	};
+
+	static char sCSGOColorNames[][] =
+	{
+		"{blue}", "{bluegrey}", "{darkblue}", "{darkred}", "{gold}", "{grey}", "{grey2}", "{lightgreen}", "{lightred}", "{lime}", "{orchid}", "{yellow}", "{palered}"
+	};
+
+	for(int x = 0; x < sizeof(sGlobalColorNames); x++)
+	{
+		ReplaceString(string, size, sGlobalColorNames[x], "");
+	}
+
+	for(int x = 0; x < sizeof(sCSGOColorNames); x++)
+	{
+		ReplaceString(string, size, sCSGOColorNames[x], "");
+	}
 }
