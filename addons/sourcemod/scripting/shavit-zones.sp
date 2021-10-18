@@ -172,9 +172,6 @@ int gI_Offset_m_fEffects = -1;
 TopMenu gH_AdminMenu = null;
 TopMenuObject gH_TimerCommands = INVALID_TOPMENUOBJECT;
 
-// misc cache
-bool gB_Late = false;
-
 // cvars
 Convar gCV_Interval = null;
 Convar gCV_TeleportToStart = null;
@@ -240,8 +237,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 	// registers library, check "bool LibraryExists(const char[] name)" in order to use with other plugins
 	RegPluginLibrary("shavit-zones");
-
-	gB_Late = late;
 
 	return APLRes_Success;
 }
@@ -339,18 +334,7 @@ public void OnPluginStart()
 		}
 	}
 
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(IsClientConnected(i) && IsClientInGame(i))
-		{
-			OnClientConnected(i);
-		}
-	}
-
-	if (gB_Late)
-	{
-		Shavit_OnDatabaseLoaded();
-	}
+	SQL_DBConnect();
 }
 
 public void OnAllPluginsLoaded()
@@ -950,6 +934,14 @@ public void OnMapStart()
 	{
 		gH_DrawEverything = CreateTimer(gCV_Interval.FloatValue, Timer_DrawEverything, INVALID_HANDLE, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 	}
+
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(IsClientConnected(i) && IsClientInGame(i))
+		{
+			OnClientPutInServer(i);
+		}
+	}
 }
 
 void LoadBonusZones()
@@ -1183,7 +1175,7 @@ public void SQL_RefreshZones_Callback(Database db, DBResultSet results, const ch
 	CreateZoneEntities();
 }
 
-public void OnClientConnected(int client)
+public void OnClientPutInServer(int client)
 {
 	for(int i = 0; i < TRACKS_SIZE; i++)
 	{
@@ -3178,7 +3170,7 @@ void CreateZonePoints(float point[8][3], float offset = 0.0)
 	}
 }
 
-public void Shavit_OnDatabaseLoaded()
+void SQL_DBConnect()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
 	gH_SQL = GetTimerDatabaseHandle2(false);

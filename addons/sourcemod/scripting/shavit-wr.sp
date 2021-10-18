@@ -197,8 +197,9 @@ public void OnPluginStart()
 	{
 		Shavit_OnStyleConfigLoaded(Shavit_GetStyleCount());
 		Shavit_OnChatConfigLoaded();
-		Shavit_OnDatabaseLoaded();
 	}
+
+	SQL_DBConnect();
 
 	CreateTimer(2.5, Timer_Dominating, 0, TIMER_REPEAT);
 }
@@ -393,9 +394,9 @@ public void OnMapStart()
 
 	for(int i = 1; i <= MaxClients; i++)
 	{
-		if(IsValidClient(i) && IsClientAuthorized(i))
+		if(IsClientConnected(i) && IsClientInGame(i))
 		{
-			OnClientAuthorized(i, "");
+			OnClientPutInServer(i);
 		}
 	}
 }
@@ -511,7 +512,7 @@ public void OnClientConnected(int client)
 	}
 }
 
-public void OnClientAuthorized(int client)
+public void OnClientPutInServer(int client)
 {
 	if (gB_Connected && !IsFakeClient(client))
 	{
@@ -2389,7 +2390,7 @@ public int MaptopMenu_Handler(Menu menu, MenuAction action, int param1, int para
 	return 0;
 }
 
-public void Shavit_OnDatabaseLoaded()
+void SQL_DBConnect()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
 	gH_SQL = GetTimerDatabaseHandle2(false);

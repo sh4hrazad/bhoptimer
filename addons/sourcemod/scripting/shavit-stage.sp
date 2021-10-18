@@ -166,9 +166,9 @@ public void OnPluginStart()
 	Shavit_OnStyleConfigLoaded(Shavit_GetStyleCount());
 }
 
-public void OnClientAuthorized(int client)
+public void OnClientPutInServer(int client)
 {
-	if(!IsFakeClient(client))
+	if(gB_Connected && !IsFakeClient(client))
 	{
 		ResetPlayerStatus(client);
 		ReloadStageInfo(client);
@@ -226,9 +226,9 @@ public void OnMapStart()
 
 	for(int i = 1; i <= MaxClients; i++)
 	{
-		if(IsValidClient(i) && IsClientAuthorized(i))
+		if(IsClientConnected(i) && IsClientInGame(i))
 		{
-			OnClientAuthorized(i, "");
+			OnClientPutInServer(i);
 		}
 	}
 }

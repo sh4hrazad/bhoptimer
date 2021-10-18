@@ -71,7 +71,6 @@ Database2 gH_SQL_b = null;
 bool gB_HasSQLRANK = false; // whether the sql driver supports RANK()
 
 bool gB_Stats = false;
-bool gB_Late = false;
 bool gB_TierQueried = false;
 bool gB_Maplimitspeed;
 bool gB_Maplimitnoclip;
@@ -145,8 +144,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 	RegPluginLibrary("shavit-rankings");
 
-	gB_Late = late;
-
 	return APLRes_Success;
 }
 
@@ -212,10 +209,7 @@ public void OnPluginStart()
 	// maxvelocity
 	gCV_Maxvelocity = FindConVar("sv_maxvelocity");
 
-	if(gB_Late)
-	{
-		Shavit_OnDatabaseLoaded();
-	}
+	SQL_DBConnect();
 
 	if (gEV_Type != Engine_TF2)
 	{
@@ -244,7 +238,7 @@ public void OnLibraryRemoved(const char[] name)
 	}
 }
 
-public void Shavit_OnDatabaseLoaded()
+void SQL_DBConnect()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
 	gH_SQL = GetTimerDatabaseHandle2(false);
@@ -253,14 +247,6 @@ public void Shavit_OnDatabaseLoaded()
 	if(!IsMySQLDatabase(gH_SQL))
 	{
 		SetFailState("MySQL is the only supported database engine for shavit-rankings.");
-	}
-
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if (IsClientConnected(i) && IsClientAuthorized(i))
-		{
-			OnClientAuthorized(i, "");
-		}
 	}
 
 	gH_SQL.Query(SQL_Version_Callback, "SELECT VERSION();");
@@ -371,7 +357,7 @@ public void OnClientConnected(int client)
 	gA_Rankings[client] = empty_ranking;
 }
 
-public void OnClientAuthorized(int client)
+public void OnClientPutInServer(int client)
 {
 	if (gH_SQL && !IsFakeClient(client))
 	{
@@ -402,6 +388,14 @@ public void OnMapStart()
 	if(gB_TierQueried)
 	{
 		return;
+	}
+
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(IsClientConnected(i) && IsClientInGame(i))
+		{
+			OnClientPutInServer(i);
+		}
 	}
 
 	// Default tier.
@@ -511,11 +505,8 @@ public void OnMapEnd()
 	gB_WRHoldersRefreshed = false;
 	gB_WorldRecordsCached = false;
 
-	// might be null if Shavit_OnDatabaseLoaded hasn't been called yet
-	if (gH_SQL != null)
-	{
-		RecalculateCurrentMap();
-	}
+	// now should SQL be loaded, fuck you avocado
+	RecalculateCurrentMap();
 }
 
 public void Shavit_OnWorldRecordsCached()

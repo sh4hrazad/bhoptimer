@@ -116,7 +116,6 @@ Convar gCV_Colon = null;
 ConVar gCV_TimeInMessages = null;
 
 EngineVersion gEV_Type = Engine_Unknown;
-bool gB_Late = false;
 
 Handle gH_ChatCookie = null;
 
@@ -155,8 +154,6 @@ public Plugin myinfo =
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	gB_Late = late;
-
 	CreateNative("Shavit_GetPlainChatrank", Native_GetPlainChatrank);
 
 	RegPluginLibrary("shavit-chat");
@@ -197,10 +194,7 @@ public void OnPluginStart()
 	gH_ChatCookie = RegClientCookie("shavit_chat_selection", "Chat settings", CookieAccess_Protected);
 	gA_ChatRanks = new ArrayList(sizeof(chatranks_cache_t));
 
-	if (gB_Late)
-	{
-		Shavit_OnDatabaseLoaded();
-	}
+	SQL_DBConnect();
 
 	for(int i = 1; i <= MaxClients; i++)
 	{
@@ -1444,10 +1438,10 @@ void FormatChat(int client, char[] buffer, int size)
 	ReplaceString(buffer, size, "{name}", temp);
 }
 
-public void Shavit_OnDatabaseLoaded()
+void SQL_DBConnect()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
-	gH_SQL = view_as<Database2>(Shavit_GetDatabase());
+	gH_SQL = GetTimerDatabaseHandle2(false);
 
 	char sQuery[512];
 

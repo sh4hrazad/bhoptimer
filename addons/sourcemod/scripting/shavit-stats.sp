@@ -120,10 +120,11 @@ public void OnPluginStart()
 
 	gB_Rankings = LibraryExists("shavit-rankings");
 
+	SQL_DBConnect();
+
 	if(gB_Late)
 	{
 		Shavit_OnStyleConfigLoaded(Shavit_GetStyleCount());
-		Shavit_OnDatabaseLoaded();
 
 		for(int i = 1; i <= MaxClients; i++)
 		{
@@ -137,7 +138,7 @@ public void OnPluginStart()
 	CreateTimer(2.5 * 60.0, Timer_SavePlaytime, 0, TIMER_REPEAT);
 }
 
-public void Shavit_OnDatabaseLoaded()
+void SQL_DBConnect()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
 	gH_SQL = GetTimerDatabaseHandle2(false);
