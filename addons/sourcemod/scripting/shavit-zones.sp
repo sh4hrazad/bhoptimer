@@ -1143,6 +1143,12 @@ public void SQL_RefreshZones_Callback(Database db, DBResultSet results, const ch
 	while(results.FetchRow())
 	{
 		int type = results.FetchInt(0);
+		// how you got type == -1?
+		if(type < 0)
+		{
+			LogError("Timer (zone refresh) SQL query got zone_type < 0, type -> %d", type);
+			continue;
+		}
 
 		gV_MapZones[gI_MapZones][0][0] = gV_MapZones_Visual[gI_MapZones][0][0] = results.FetchFloat(1);
 		gV_MapZones[gI_MapZones][0][1] = gV_MapZones_Visual[gI_MapZones][0][1] = results.FetchFloat(2);
