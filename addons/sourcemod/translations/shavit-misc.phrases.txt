@@ -3,15 +3,13 @@
 	// ---------- Commands ---------- //
 	"CommandAlive"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"You have to be {1}alive{2} to use this command."
-		"chi"		"您必须{1}活着{2}才能使用此命令."
+		"en"		"You have to be {gold}alive{default} to use this command."
+		"chi"		"您必须{gold}活着{default}才能使用此命令."
 	}
 	"CommandAliveSpectate"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"You have to be {1}alive{2} or {3}spectate a player{4} to use this command."
-		"chi"		"您必须{1}活着{2}或{3}观看玩家{4}才能使用此命令."
+		"en"		"You have to be {gold}alive{default} or {gold}spectate a player{default} to use this command."
+		"chi"		"您必须{gold}活着{default}或{gold}观看玩家{default}才能使用此命令."
 	}
 	"CommandSaveCPKZInvalid"
 	{
@@ -30,57 +28,50 @@
 	}
 	"CommandNoPause"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"Your timer has to be {1}resumed{2} to use this command."
-		"chi"		"您的计时器必须{1}恢复{2}才能使用此命令."
+		"en"		"Your timer has to be {gold}resumed{default} to use this command."
+		"chi"		"您的计时器必须{gold}恢复{default}才能使用此命令."
 	}
 	"CommandDisabled"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"This command is {1}disabled{2}."
-		"chi"		"此命令已{1}禁用{2}."
+		"en"		"This command is {darkred}disabled{default}."
+		"chi"		"此命令已{darkred}禁用{default}."
 	}
 	"FeatureDisabled"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"This feature is {1}disabled{2}."
-		"chi"		"此功能已{1}禁用{2}."
+		"en"		"This feature is {darkred}disabled{default}."
+		"chi"		"此功能已{darkred}禁用{default}."
 	}
 	"HideEnabled"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"You are now {1}hiding{2} players."
-		"chi"		"您现在{1}隐藏了{2}所有玩家."
+		"en"		"You are now {gold}hiding{default} players."
+		"chi"		"您现在{gold}隐藏了{default}所有玩家."
 	}
 	"HideDisabled"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"You are now {1}not hiding{2} players."
-		"chi"		"您现在{1}取消隐藏了{2}所有玩家."
+		"en"		"You are now {darkred}not hiding{default} players."
+		"chi"		"您现在{darkred}取消隐藏了{default}所有玩家."
 	}
 	"LackingAccess"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"You're {1}lacking access{2} to this command."
-		"chi"		"您{1}无权访问{2}此命令."
+		"en"		"You're {darkred}lacking access{default} to this command."
+		"chi"		"您{darkred}无权访问{default}此命令."
 	}
 	"SpectateDead"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"You {1}cannot{2} target a dead player."
-		"chi"		"您{1}不能{2}将死亡玩家作为目标."
+		"en"		"You {darkred}cannot{default} target a dead player."
+		"chi"		"您{darkred}不能{default}将死亡玩家作为目标."
 	}
 	"SpectatorCount"
 	{
-		"#format"	"{1:s},{2:N},{3:s},{4:s},{5:i},{6:s},{7:s}"
-		"en"		"{1}{2}{3} has {4}{5}{6} spectators: {7}"
-		"chi"		"{1}{2}{3}有{4}{5}{6}个观众：{7}."
+		"#format"	"{1:N},{2:i},{3:s}"
+		"en"		"{orchid}{1}{default} has {gold}{2}{default} spectators: {3}"
+		"chi"		"{orchid}{1}{default}有{gold}{2}{default}个观众：{3}."
 	}
 	"SpectatorCountZero"
 	{
-		"#format"	"{1:s},{2:N},{3:s}"
-		"en"		"No one is spectating {1}{2}{3}."
-		"chi"		"没有人观察 {1}{2}{3}."
+		"#format"	"{1:N}"
+		"en"		"No one is spectating {orchid}{1}{default}."
+		"chi"		"没有人观察 {orchid}{1}{default}."
 	}
 	"SpectatorInvalid"
 	{
@@ -99,21 +90,31 @@
 	}
 	"MiscCheckpointsSaved"
 	{
-		"#format"	"{1:d},{2:s},{3:s}"
-		"en"		"Checkpoint ({1}) {2}saved{3}."
-		"chi"		"存点 ({1}) {2}已保存{3}."
+		"#format"	"{1:d}"
+		"en"		"Checkpoint ({1}) {gold}saved{default}."
+		"chi"		"存点 ({1}) {gold}已保存{default}."
+	}
+	"NoclipCanTrigger"
+	{
+		"en"		"Your noclip setting is: {gold}Triggerable{default}"
+		"chi"		"你的穿墙设置为: {gold}可传送{default} (输入!nctrigger修改)."
+	}
+	"NoclipCannotTrigger"
+	{
+		"en"		"Your noclip setting is: {darkred}UnTriggerable{default}"
+		"chi"		"你的穿墙设置为: {darkred}不可传送{default} (输入!nctrigger修改)."
 	}
 	"MiscCheckpointsTeleported"
 	{
-		"#format"	"{1:d},{2:s},{3:s}"
-		"en"		"{2}Teleported{3} to checkpoint ({1})."
-		"chi"		"{2}已传送到{3} 存点({1})."
+		"#format"	"{1:d}"
+		"en"		"{gold}Teleported{default} to checkpoint ({1})."
+		"chi"		"{gold}已传送到{default} 存点({1})."
 	}
 	"MiscCheckpointsEmpty"
 	{
-		"#format"	"{1:d},{2:s},{3:s}"
-		"en"		"Checkpoint {1} is {2}empty{3}."
-		"chi"		"存点{1}为{2}空{3}。"
+		"#format"	"{1:d}"
+		"en"		"Checkpoint {1} is {darkred}empty{default}."
+		"chi"		"存点{1}为{darkred}空{default}。"
 	}
 	"MiscCheckpointsOverflow"
 	{
@@ -122,9 +123,8 @@
 	}
 	"MiscSegmentedCommand"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"Use {1}!cp{2} to re-open the segmented checkpoints menu."
-		"chi"		"输入{1}!CP{2}重新打开Segment存点菜单。"
+		"en"		"Use {gold}!cp{default} to re-open the segmented checkpoints menu."
+		"chi"		"输入{gold}!CP{default}重新打开Segment存点菜单。"
 	}
 	// ---------- Menus ---------- //
 	"StopTimerWarning"
@@ -164,9 +164,8 @@
 	}
 	"WeaponAlive"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"You need to be {1}alive{2} to spawn weapons."
-		"chi"		"您需要{1}活着{2}才能得到武器."
+		"en"		"You need to be {orchid}alive{default} to spawn weapons."
+		"chi"		"您需要{orchid}活着{default}才能得到武器."
 	}
 	"MiscCheckpointMenu"
 	{
@@ -239,9 +238,9 @@
 	}
 	"WRNotice"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"{1}NEW {2} WR!!!"
-		"chi"		"{1}新的 {2} 服务器记录!!!"
+		"#format"	"{1:s}"
+		"en"		"{darkred}NEW {1} WR!!!"
+		"chi"		"{darkred}新的 {1} 服务器记录!!!"
 	}
 	"AdvertisementsEnabled"
 	{

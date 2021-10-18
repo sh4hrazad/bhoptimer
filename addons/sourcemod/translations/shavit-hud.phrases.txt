@@ -306,51 +306,66 @@
 	// ---------- Commands ---------- //
 	"HudEnabledComponent"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s}"
-		"en"		"{1}{2} {3}HUD setting {4}enabled{5}."
-		"chi"		"{1}{2} {3}HUD设置{4}已启用{5}."
+		"#format"	"{1:s}"
+		"en"		"{gold}{1} {default}HUD setting {orchid}enabled{default}."
+		"chi"		"{gold}{1} {default}HUD设置{orchid}已启用{default}."
 	}
 	"HudDisabledComponent"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s}"
-		"en"		"{1}{2} {3}HUD setting {4}disabled{5}."
-		"chi"		"{1}{2} {3}HUD设置{4}已禁用{5}."
+		"#format"	"{1:s}"
+		"en"		"{gold}{1} {default}HUD setting {darkred}disabled{default}."
+		"chi"		"{gold}{1} {default}HUD设置{darkred}已禁用{default}."
 	}
 	// ---------- Misc ---------- //
 	"StartPrestrafe"
 	{
-		"#format"	"{1:s},{2:s},{3:d},{4:s},{5:s},{6:s},{7:s}"
-		"en"		"{1}Start: {2}{3} u/s {4}| {5}WR:{6} {7}"
-		"chi"		"{1}起点 Prestrafe: {2}{3} u/s {4}| {5}WR:{6} {7}"
+		"#format"	"{1:d},{2:s}"
+		"en"		"{grey}Start: {grey2}{1} u/s {default}| {gold}WR:{default} {2}"
+		"chi"		"{grey}起点 Prestrafe: {grey2}{1} u/s {default}| {gold}WR:{default} {2}"
 	}
 	"BonusStartPrestrafe"
 	{
-		"#format"	"{1:s},{2:s},{3:d},{4:s}"
-		"en"		"{1}Start: {2}{3} u/s {4}"
-		"chi"		"{1}起点 Prestrafe: {2}{3} u/s {4}"
+		"#format"	"{1:d}"
+		"en"		"{grey}Start: {grey2}{1} u/s {default}"
+		"chi"		"{grey}起点 Prestrafe: {grey2}{1} u/s {default}"
 	}
 	"StageCPPrestrafe"
 	{
-		"#format"	"{1:s},{2:s},{3:d},{4:s},{5:s},{6:s},{7:s},{8:d}"
-		"en"		"{1}Stage{8}: {2}{3} u/s {4}| {5}WR:{6} {7}"
-		"chi"		"{1}关卡[{8}] Prestrafe: {2}{3} u/s {4}| {5}WR:{6} {7}"
+		"#format"	"{1:d},{2:d},{3:s}"
+		"en"		"{grey}Stage {1}: {grey2}{2} u/s {default}| {gold}WR:{default} {3}"
+		"chi"		"{grey}关卡 [{1}] Prestrafe: {grey2}{2} u/s {default}| {gold}WR:{default} {3}"
 	}
 	"StageWRCPPrestrafe"
 	{
-		"#format"	"{1:s},{2:s},{3:d},{4:s},{5:s},{6:s},{7:s},{8:d}"
-		"en"		"{1}Stage{8}: {2}{3} u/s {4}| {5}WR:{6} {7}"
-		"chi"		"{1}关卡[{8}] Prestrafe: {2}{3} u/s {4}| {5}WRCP:{6} {7}"
+		"#format"	"{1:d},{2:d},{3:s}"
+		"en"		"{grey}Stage {1}: {grey2}{2} u/s {default}| {gold}WRCP:{default} {3}"
+		"chi"		"{grey}关卡 [{1}] Prestrafe: {grey2}{2} u/s {default}| {gold}WRCP:{default} {3}"
+	}
+	"PrestrafeIncrease"
+	{
+		"#format"	"{1:d}"
+		"en"		"{green}+{1} u/s{default}"
+	}
+	"PrestrafeNochange"
+	{
+		"#format"	"{1:d}"
+		"en"		"{orchid}{1} u/s{default}"
+	}
+	"PrestrafeDecrease"
+	{
+		"#format"	"{1:d}"
+		"en"		"{lightred}{1} u/s{default}"
 	}
 	"ZoneCheckpointTime"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:d},{5:s},{6:s},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s}"
-		"en"		"{1}CP{2} [{3}{4}{5}] | {6}{7}{8} | {9}WR{10} {11}{12}{13}."
-		"chi"		"{1}检查点{2} [{3}{4}{5}] | {6}{7}{8} | {9}WR{10} {11}{12}{13}."
+		"#format"	"{1:d},{2:s},{3:s}"
+		"en"		"{grey}CP{default} [{orchid}{1}{default}] | {orchid}{2}{default} | {gold}WR{default} {orchid}{3}{default}."
+		"chi"		"{grey}检查点{default} [{orchid}{1}{default}] | {orchid}{2}{default} | {gold}WR{default} {orchid}{3}{default}."
 	}
 	"ZoneStageTime"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:d},{5:s},{6:s},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s}"
-		"en"		"{1}Stage{2} [{3}{4}{5}] | {6}{7}{8} | {9}WRCP{10} {11}{12}{13}."
-		"chi"		"{1}关卡{2} [{3}{4}{5}] | {6}{7}{8} | {9}WRCP{10} {11}{12}{13}."
+		"#format"	"{1:d},{2:s},{3:s}"
+		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {orchid}{2}{default} | {gold}WRCP{default} {orchid}{3}{default}."
+		"chi"		"{grey}关卡{default} [{orchid}{1}{default}] | {orchid}{2}{default} | {gold}WRCP{default} {orchid}{3}{default}."
 	}
 }

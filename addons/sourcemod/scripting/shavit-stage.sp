@@ -28,7 +28,6 @@ char gS_MySQLPrefix[32];
 
 // timer settings
 stylestrings_t gS_StyleStrings[STYLE_LIMIT];
-chatstrings_t gS_ChatStrings;
 
 enum struct cp_t
 {
@@ -168,7 +167,6 @@ public void OnPluginStart()
 
 	if(gB_Late)
 	{
-		Shavit_OnChatConfigLoaded();
 		Shavit_OnDatabaseLoaded();
 	}
 }
@@ -284,11 +282,6 @@ public void Shavit_OnStyleConfigLoaded(int styles)
 	}
 
 	gI_Styles = styles;
-}
-
-public void Shavit_OnChatConfigLoaded()
-{
-	Shavit_GetChatStringsStruct(gS_ChatStrings);
 }
 
 void ResetStageLeaderboards()
@@ -471,18 +464,11 @@ public int WRCP_StageMenu_Handler(Menu menu, MenuAction action, int param1, int 
 			{
 				char sTime[32];
 				FormatHUDSeconds(time, sTime, 32);
-
-				FormatEx(sMessage, 255, "%T", "Chat-WRCP", param1, 
-					gS_ChatStrings.sVariable, sName, gS_ChatStrings.sText, 
-					gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, 
-					gS_ChatStrings.sVariable3, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, 
-					gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText);
+				FormatEx(sMessage, 255, "%T", "Chat-WRCP", param1, sName, stage, gS_StyleStrings[style].sStyleName, sTime);
 			}
 			else
 			{
-				FormatEx(sMessage, 255, "%T", "Chat-WRCP-NoRecord", param1, 
-				gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, 
-				gS_ChatStrings.sVariable3, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText);
+				FormatEx(sMessage, 255, "%T", "Chat-WRCP-NoRecord", param1, stage, gS_StyleStrings[style].sStyleName);
 			}
 
 			Shavit_PrintToChat(param1, "%s", sMessage);
@@ -585,9 +571,7 @@ public void Trans_DeleteWRCP_Success(Database db, any data, int numQueries, DBRe
 	Call_PushString(gS_Map);
 	Call_Finish();
 
-	Shavit_PrintToChat(client, "%T", "WRCPDeleteSuccessful", client, gS_ChatStrings.sText, 
-		gS_ChatStrings.sVariable, stage, gS_ChatStrings.sText, 
-		gS_ChatStrings.sVariable3, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText);
+	Shavit_PrintToChat(client, "%T", "WRCPDeleteSuccessful", client, stage, gS_StyleStrings[style].sStyleName, steamid);
 
 	OpenStageMenu(client, true);
 }
@@ -790,7 +774,7 @@ public void SQL_Maptop_Callback(Database db, DBResultSet results, const char[] e
 	if(finalMenu.ItemCount == 0)
 	{
 		char sNoRecords[64];
-		FormatEx(sNoRecords, 64, "%t", "WrcpMenuItem-NoRecord", client);
+		FormatEx(sNoRecords, 64, "%T", "WrcpMenuItem-NoRecord", client);
 
 		finalMenu.AddItem("-1", sNoRecords, ITEMDRAW_DISABLED);
 	}
@@ -815,7 +799,12 @@ public int Maptop_FinalMenu_Handler(Menu menu, MenuAction action, int param1, in
 			char sQuery[256];
 			FormatEx(sQuery, 256, "DELETE FROM `%sstagetimes` WHERE (stage = '%d' AND style = '%d') AND (auth = '%d' AND map = '%s');", 
 					gS_MySQLPrefix, stage, style, steamid, gS_MapChoice[param1]);
-			gH_SQL.Query(SQL_DeleteMaptop_Callback, sQuery, GetClientSerial(param1));
+			
+			DataPack dp = new DataPack();
+			dp.WriteCell(GetClientSerial(param1));
+			dp.WriteCell(steamid);
+
+			gH_SQL.Query(SQL_DeleteMaptop_Callback, sQuery, dp);
 		}
 		else
 		{
@@ -837,8 +826,15 @@ public int Maptop_FinalMenu_Handler(Menu menu, MenuAction action, int param1, in
 	return 0;
 }
 
-public void SQL_DeleteMaptop_Callback(Database db, DBResultSet results, const char[] error, any data)
+public void SQL_DeleteMaptop_Callback(Database db, DBResultSet results, const char[] error, DataPack dp)
 {
+	dp.Reset();
+
+	int client = GetClientFromSerial(dp.ReadCell());
+	int steamid = dp.ReadCell();
+
+	delete dp;
+
 	if(results == null)
 	{
 		LogError("Timer (single stage record delete) SQL query failed. Reason: %s", error);
@@ -846,7 +842,6 @@ public void SQL_DeleteMaptop_Callback(Database db, DBResultSet results, const ch
 		return;
 	}
 
-	int client = GetClientFromSerial(data);
 	int stage = gI_StageChoice[client];
 	int style = gI_StyleChoice[client];
 
@@ -855,9 +850,7 @@ public void SQL_DeleteMaptop_Callback(Database db, DBResultSet results, const ch
 		ResetWRStages();
 	}
 
-	Shavit_PrintToChat(client, "%T", "StageRecordDeleteSuccessful", client, gS_ChatStrings.sText, 
-		gS_ChatStrings.sVariable, stage, gS_ChatStrings.sText, 
-		gS_ChatStrings.sVariable3, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText);
+	Shavit_PrintToChat(client, "%T", "StageRecordDeleteSuccessful", client, stage, gS_StyleStrings[style].sStyleName, steamid);
 
 	OpenStageMenu(client, false);
 }
@@ -1305,13 +1298,7 @@ void OnWRCPCheck(int client, int stage, int style, float time)
 		}
 
 		char sMessage[255];
-		FormatEx(sMessage, 255, "%T", "OnWRCP", client, 
-			gS_ChatStrings.sVariable, sName, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable3, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable10, sDiffTime, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable4, sRank, gS_ChatStrings.sText);
+		FormatEx(sMessage, 255, "%T", "OnWRCP", client, sName, stage, gS_StyleStrings[style].sStyleName, sTime, sDiffTime, sRank);
 		Shavit_PrintToChatAll("%s", sMessage);
 
 

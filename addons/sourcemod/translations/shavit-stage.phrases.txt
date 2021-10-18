@@ -3,33 +3,33 @@
 	/*-------------Chat-------------*/
 	"OnWRCP"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:d},{6:s},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:s},{16:s},{17:s},{18:s}"
-		"en"		"{1}{2}{3} beat a stage record! Stage:[{4}{5}{6}] Mode: {7}{8}{9} Time: {10}{11}{12} ({13}WR {14}{15}) Rank: {16}{17}{18}."
-		"chi"		"{1}{2}{3} 打破了关卡[{4}{5}{6}]纪录! 模式: {7}{8}{9} 时间: {10}{11}{12} ({13}WR {14}{15}) 排名: {16}{17}{18}."
+		"#format"	"{1:s},{2:d},{3:s},{4:s},{5:s},{6:s}"
+		"en"		"{gold}{1}{default} beat {palered}[Stage {2}]{default} record! Mode: {blue}{3}{default} Time: {orchid}{4}{default} ({green}WR {5}{default}) Rank: {bluegrey}{6}{default}."
+		"chi"		"{gold}{1}{default} 打破了 {palered}[关卡 {2}]{default} 记录! 模式: {blue}{3}{default} 时间: {orchid}{4}{default} ({green}WR {5}{default}) 排名: {bluegrey}{6}{default}."
 	}
 	"Chat-WRCP"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:d},{6:s},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s}"
-		"en"		"{1}{2}{3} hold Stage [{4}{5}{6}] record! Mode: {7}{8}{9} Time: {10}{11}{12}."
-		"chi"		"{1}{2}{3} 维持住了关卡[{4}{5}{6}]记录! 模式: {7}{8}{9} 时间: {10}{11}{12}."
+		"#format"	"{1:s},{2:d},{3:s},{4:s}"
+		"en"		"{gold}{1}{default} hold {palered}[Stage {2}]{default} record! Mode: {blue}{3}{default} Time: {orchid}{4}{default}."
+		"chi"		"{gold}{1}{default} 维持住了 {palered}[关卡 {2}]{default} 记录! 模式: {blue}{3}{default} 时间: {orchid}{4}{default}."
 	}
 	"Chat-WRCP-NoRecord"
 	{
-		"#format"	"{1:s},{2:d},{3:s},{4:s},{5:s},{6:s}"
-		"en"		"No Records for Stage [{1}{2}{3}].(style:{4}{5}{6})"
-		"chi"		"关卡[{1}{2}{3}]没有记录。(模式: {4}{5}{6})"
+		"#format"	"{1:d},{2:s}"
+		"en"		"No Records for {palered}[Stage {1}]{default}. (style: {blue}{2}{default})"
+		"chi"		"{palered}[关卡 {1}]{default} 没有记录. (模式: {blue}{2}{default})"
 	}
 	"WRCPDeleteSuccessful"
 	{
-		"#format"	"{1:s},{2:s},{3:d},{4:s},{5:s},{6:s},{7:s}"
-		"en"		"{1}Stage [{2}{3}{4}] WR deleted successfuly (style:{5}{6}{7})"
-		"chi"		"{1}关卡[{2}{3}{4}] 最佳纪录已被删除 (模式:{5}{6}{7})"
+		"#format"	"{1:d},{2:s},{3:d}"
+		"en"		"{palered}[Stage {1}]{default} WR deleted successfuly (style: {blue}{2}{default}), Steamid: {green}{3}{default}"
+		"chi"		"{palered}[关卡 {1}]{default} 最佳纪录已被删除 (模式: {blue}{2}{default}), Steamid: {green}{3}{default}"
 	}
 	"StageRecordDeleteSuccessful"
 	{
-		"#format"	"{1:s},{2:s},{3:d},{4:s},{5:s},{6:s},{7:s}"
-		"en"		"{1}A record of Stage [{2}{3}{4}] deleted successfuly (style:{5}{6}{7})"
-		"chi"		"{1}关卡[{2}{3}{4}]的记录删除成功 (模式:{5}{6}{7})"
+		"#format"	"{1:d},{2:s},{3:d}"
+		"en"		"A record of {palered}[Stage {1}]{default} deleted successfuly (style: {blue}{2}{default}), Steamid: {green}{3}{default}"
+		"chi"		"{palered}[关卡 {1}]{default} 的记录删除成功 (模式: {blue}{2}{default}), Steamid: {green}{3}{default}"
 	}
 	/*-------------Menu Title-------------*/
 	"WrcpMenuTitle-Style"

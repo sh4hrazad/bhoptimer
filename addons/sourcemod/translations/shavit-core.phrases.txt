@@ -3,39 +3,35 @@
 	// ---------- Commands ---------- //
 	"AutobhopEnabled"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"Autobhop {1}enabled{2}."
-		"chi"		"自动连跳 {1}已开启{2}."
+		"en"		"Autobhop {orchid}enabled{default}."
+		"chi"		"自动连跳 {orchid}已开启{default}."
 	}
 	"AutobhopDisabled"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"Autobhop {1}disabled{2}."
-		"chi"		"自动连跳 {1}已关闭{2}."
+		"en"		"Autobhop {darkred}disabled{default}."
+		"chi"		"自动连跳 {darkred}已关闭{default}."
 	}
 	"CheatTimerStop"
 	{
-		"#format"	"{1:s},{2:s},{3:s}"
-		"en"		"{1}Timer stopped! {2}{3}"
-		"chi"		"{1}计时器已停止! {2}{3}"
+		"#format"	"{1:s}"
+		"en"		"{darkred}Timer stopped! {default}{1}"
+		"chi"		"{darkred}计时器已停止! {default}{1}"
 	}
 	"CommandDisabled"
 	{
-		"#format" 	"{1:s},{2:s},{3:s}"
-		"en"		"The command ({1}{2}{3}) is disabled."
-		"chi"		"这条指令 ({1}{2}{3}) 已禁止."
+		"#format" 	"{1:s}"
+		"en"		"The command ({gold}{1}{default}) is disabled."
+		"chi"		"这条指令 ({gold}{1}{default}) 已禁止."
 	}
 	"StyleNoAccess"
 	{
-		"#format" 	"{1:s},{2:s}"
-		"en"		"You lack the {1}permissions{2} for this style."
-		"chi"		"你没有这个模式的{1}权限{2}."
+		"en"		"You lack the {darkred}permissions{default} for this style."
+		"chi"		"你没有这个模式的{darkred}权限{default}."
 	}
 	"BlockNoclipResume"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"You {1}can't{2} resume timer while {1}nocliping{2}"
-		"chi"		"你不能在{1}穿墙状态{2}下恢复计时"
+		"en"		"You {darkred}can't{default} resume timer while {darkred}nocliping{default}"
+		"chi"		"你不能在{darkred}穿墙状态{default}下恢复计时"
 	}
 	// ---------- Errors ---------- //
 	"VerificationFailed"
@@ -51,9 +47,9 @@
 	}
 	"StyleSelection"
 	{
-		"#format"	"{1:s},{2:s},{3:s}"
-		"en"		"You have chosen to play {1}{2}{3}."
-		"chi"		"你已经选择了玩 {1}{2}{3}."
+		"#format"	"{1:s}"
+		"en"		"You have chosen to play {grey}{1}{default}."
+		"chi"		"你已经选择了玩 {grey}{1}{default}."
 	}
 	"StyleUnranked"
 	{
@@ -73,9 +69,8 @@
 	}
 	"UnrankedWarning"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"{1}WARNING: {2}This style is unranked. Your times WILL NOT be saved and will be only displayed to you!"
-		"chi"		"{1}警告：{2}此模式未排名。您的时间不会被保存，只会显示给你自己！"
+		"en"		"{darkred}WARNING: {default}This style is unranked. Your times WILL NOT be saved and will be only displayed to you!"
+		"chi"		"{darkred}警告：{default}此模式未排名。您的时间不会被保存，只会显示给你自己！"
 	}
 	"PracticeModeAlert"
 	{
@@ -85,15 +80,13 @@
 	}
 	"SHSWCombination0"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"Your SHSW combination is {1}W/A & S/D{2}."
-		"chi"		"你的半侧滑按键组合为： {1}W/A 和 S/D{2}."
+		"en"		"Your SHSW combination is {gold}W/A & S/D{default}."
+		"chi"		"你的半侧滑按键组合为： {gold}W/A 和 S/D{default}."
 	}
 	"SHSWCombination1"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"Your SHSW combination is {1}W/D & S/A{2}."
-		"chi"		"你的半侧滑按键组合为：{1}W/D 和 S/A{2}."
+		"en"		"Your SHSW combination is {gold}W/D & S/A{default}."
+		"chi"		"你的半侧滑按键组合为：{gold}W/D 和 S/A{default}."
 	}
 	"NewAiraccelerate"
 	{
@@ -104,69 +97,50 @@
 	// ---------- Pauses ---------- //
 	"MessagePause"
 	{
-		"#format"	"{1:s},{2:s},{3:s}"
-		"en"		"{1}Timer has been {2}paused{3}."
-		"chi"		"{1}计时器已{2}暂停{3}."
+		"en"		"{default}Timer has been {darkred}paused{default}."
+		"chi"		"{default}计时器已{darkred}暂停{default}."
 	}
 	"MessageUnpause"
 	{
-		"#format"	"{1:s},{2:s},{3:s}"
-		"en"		"{1}Timer has been {2}resumed{3}."
-		"chi"		"{1}计时器已{2}恢复{3}."
+		"en"		"{default}Timer has been {darkred}resumed{default}."
+		"chi"		"{default}计时器已{darkred}恢复{default}."
 	}
 	"PauseNotOnGround"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"You {1}are not{2} allowed to pause when not on ground."
-		"chi"		"您{1}不允许{2}在空中暂停."
+		"en"		"You {darkred}are not{default} allowed to pause when not on ground."
+		"chi"		"您{darkred}不允许{default}在空中暂停."
 	}
 	"PauseStartZone"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s}"
-		"en"		"{1}You {2}cannot{3} pause in the {4}start zone{5}."
-		"chi"		"{1}您{2}无法在{4}开始区域{5}中{3}暂停."
+		"en"		"{default}You {darkred}cannot{default} pause in the {gold}start zone{default}."
+		"chi"		"{default}您{darkred}无法在{default}{gold}开始区域{default}中暂停."
 	}
 	"PauseEndZone"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s}"
-		"en"		"{1}You {2}cannot{3} pause in the {4}end zone{5}."
+		"en"		"{default}You {darkred}cannot{default} pause in the {gold}end zone{default}."
+		"chi"		"{default}您{darkred}无法在{default}{gold}终点区域{default}中暂停."
 	}
 	"PauseMoving"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"You {1}are not{2} allowed to pause while moving."
-		"chi"		"您{1}不允许{2}在移动时暂停."
+		"en"		"You {darkred}are not{default} allowed to pause while moving."
+		"chi"		"您{darkred}不允许{default}在移动时暂停."
 	}
 	"PauseDuck"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"You {1}are not{2} allowed to pause while crouching."
-		"chi"		"您{1}不允许{2}在蹲下时暂停."
-	}
-	"TimerUnpaused"
-	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"Timer has been {1}unpaused{2}."
-		"chi"		"计时器已{1}取消暂停{2}."
-	}
-	"TimerPaused"
-	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"Timer has been {1}paused{2}."
-		"chi"		"计时器已{1}暂停{2}."
+		"en"		"You {darkred}are not{default} allowed to pause while crouching."
+		"chi"		"您{darkred}不允许{default}在蹲下时暂停."
 	}
 	// ---------- Zones ---------- //
 	"StartZoneUndefined"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s}"
-		"en"		"Your timer {1}will not{2} start because the {3}{4}{5} start zone is not set."
-		"chi"		"您的计时器{1}将不会{2}启动，因为地图未设置{3}{4}{5}起点区域."
+		"#format"	"{1:s}"
+		"en"		"Your timer {darkred}will not{default} start because the {orchid}{1}{default} start zone is not set."
+		"chi"		"您的计时器{darkred}将不会{default}启动，因为地图未设置{orchid}{1}{default}起点区域."
 	}
 	"EndZoneUndefined"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"You {1}can't{2} teleport as an end zone for the map is not defined."
-		"chi"		"您{1}无法{2}传送，因为地图未设置结束区域"
+		"en"		"You {darkred}can't{default} teleport as an end zone for the map is not defined."
+		"chi"		"您{darkred}无法{default}传送，因为地图未设置结束区域"
 	}
 	"DebugOffsets"
 	{
@@ -175,8 +149,7 @@
 	}
 	"TrackChangeFromMain"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s},{6:s}"
-		"en"		"Use {1}!m{2}/{3}!main{4} go to back to the main track. Or {5}!ihate!main{6}."
-		"chi"		"输入 {1}!r{2}或者{3}!main{4} 回到主线."
+		"en"		"Use {orchid}!m{default}/{orchid}!main{default} go to back to the main track."
+		"chi"		"输入 {orchid}!r{default}或者{orchid}!main{default} 回到主线."
 	}
 }

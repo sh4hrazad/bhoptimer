@@ -13,9 +13,9 @@
 	}
 	"DeletedRecordsMap"
 	{
-		"#format"	"{1:s},{2:s},{3:s}"
-		"en"		"Deleted ALL records for {1}{2}{3}."
-		"chi"		"已删除{1}{2}{3}的所有记录."
+		"#format"	"{1:s}"
+		"en"		"Deleted ALL records for {gold}{1}{default}."
+		"chi"		"已删除{gold}{1}{default}的所有记录."
 	}
 	"DeletedRecordsStyle"
 	{
@@ -33,38 +33,38 @@
 	// ---------- Completion Messages ---------- //
 	"FirstCompletion"
 	{
-		"#format"	"{1:s},{2:N},{3:s},{4:s},{5:s},{6:s},{7:s},{8:s},{9:s},{10:s},{11:d},{12:s},{13:d},{14:d},{15:s},{16:s}"
-		"en"		"{1}{2}{3} finished ({4}{5}{6}) in {7}{8}{9} ({10}#{11}{12}) with {13} jumps, {14} strafes{15}{16}."
-		"chi"		"{1}{2}{3}在{7}{8}{9}({10}#{11}{12})中完成({4}{5}{6})，共{13}次跳跃，{14}次加速{15}{16}."
+		"#format"	"{1:N},{2:s},{3:s},{4:d},{5:d},{6:d},{7:s}"
+		"en"		"{orchid}{1}{default} finished ({grey}{2}{default}) in {orchid}{3}{default} ({gold}#{4}{default}) with {5} jumps, {6} strafes{7}{default}."
+		"chi"		"{orchid}{1}{default}在{orchid}{3}{default}({gold}#{4}{default})中完成({grey}{2}{default})，共{5}次跳跃，{6}次加速{7}{default}."
 	}
 	"NotFirstCompletion"
 	{
-		"#format"	"{1:s},{2:N},{3:s},{4:s},{5:s},{6:s},{7:s},{8:s},{9:s},{10:s},{11:d},{12:s},{13:d},{14:d},{15:s},{16:s},{17:s},{18:s}"
-		"en"		"{1}{2}{3} finished ({4}{5}{6}) in {7}{8}{9} ({10}#{11}{12}) with {13} jumps, {14} strafes{15}{16} {17}(-{18})"
-		"chi"		"{1}{2}{3}在{7}{8}{9}({10}#{11}{12})中完成({4}{5}{6})，共{13}次跳跃，{14}次加速{15}{16} {17}(-{18})"
+		"#format"	"{1:N},{2:s},{3:s},{4:d},{5:d},{6:d},{7:s},{8:s}"
+		"en"		"{orchid}{1}{default} finished ({grey}{2}{default}) in {orchid}{3}{default} ({gold}#{4}{default}) with {5} jumps, {6} strafes{7}{default} {darkred}(-{8})"
+		"chi"		"{orchid}{1}{default}在{orchid}{3}{default}({gold}#{4}{default})中完成({grey}{2}{default})，共{5}次跳跃，{6}次加速{7}{default} {darkred}(-{8})"
 	}
 	"NotFirstCompletionWorse"
 	{
-		"#format"	"{1:s},{2:N},{3:s},{4:s},{5:s},{6:s},{7:s},{8:s},{9:s},{10:s},{11:d},{12:s},{13:d},{14:d},{15:s},{16:s},{17:s}"
-		"en"		"{1}{2}{3} finished ({4}{5}{6}) in {7}{8}{9} ({10}#{11}{12}) with {13} jumps, {14} strafes{15}{16} (+{17})"
-		"chi"		"{1}{2}{3}在{7}{8}{9}({10}#{11}{12})中完成({4}{5}{6})，共{13}次跳跃，{14}次加速{15}{16} (+{17})"
+		"#format"	"{1:N},{2:s},{3:s},{4:d},{5:d},{6:d},{7:s},{8:s}"
+		"en"		"{orchid}{1}{default} finished ({grey}{2}{default}) in {orchid}{3}{default} ({gold}#{4}{default}) with {5} jumps, {6} strafes{7}{default} (+{8})"
+		"chi"		"{orchid}{1}{default}在{orchid}{3}{default}({gold}#{4}{default})中完成({grey}{2}{default})，共{5}次跳跃，{6}次加速{7}{default} (+{8})"
 	}
 	"WorseTime"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s},{6:s},{7:d},{8:d},{9:s},{10:s},{11:s}"
-		"en"		"You have finished ({1}{2}{3}) in {4}{5}{6} with {7} jumps, {8} strafes{9}{10} (+{11})"
-		"chi"		"您已在{4}{5}{6}中完成({1}{2}{3})，共{7}次跳跃，{8}次加速{9}{10} (+{11})"
+		"#format"	"{1:s},{2:s},{3:d},{4:d},{5:s},{6:s}"
+		"en"		"You have finished ({grey}{1}{default}) in {orchid}{2}{default} with {3} jumps, {4} strafes{5}{default} (+{6})"
+		"chi"		"您已在{orchid}{2}{default}中完成({grey}{1}{default})，共{3}次跳跃，{4}次加速{5}{default} (+{6})"
 	}
 	"UnrankedTime"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s},{6:s},{7:d},{8:d},{9:s},{10:s}"
-		"en"		"You have finished ({1}{2}{3}) in {4}{5}{6} with {7} jumps, {8} strafes{9}{10}."
-		"chi"		"您已在{4}{5}{6}中完成({1}{2}{3})，共{7}次跳跃，{8}次加速{9}{10}."
+		"#format"	"{1:s},{2:s},{3:d},{4:d},{5:s}"
+		"en"		"You have finished ({grey}{1}{default}) in {orchid}{2}{default} with {3} jumps, {4} strafes{5}{default}."
+		"chi"		"您已在{orchid}{2}{default}中完成({grey}{1}{default})，共{3}次跳跃，{4}次加速{5}{default}."
 	}
 	"CompletionExtraInfo"
 	{
-		"#format"   "{1:s},{2:.2f},{3:s},{4:s},{5:.2f},{6:s},{7:s},{8:.1f},{9:s}"
-		"en"        "Avg/Max Spd: {1}{2}{3}/{4}{5}{6}. Perfs: {7}{8}{9}%%."
+		"#format"   "{1:.2f},{2:.2f},{3:.1f}"
+		"en"        "Avg/Max Spd: {gold}{1}{default}/{gold}{2}{default}. Perfs: {gold}{3}{default}%%."
 	}
 	// ---------- Deletion Menus ---------- //
 	"DeleteAllRecords"
@@ -155,9 +155,8 @@
 	}
 	"NoStyles"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"{1}FATAL ERROR: {2}No styles are available. Contact the server owner immediately!"
-		"chi"		"{1}致命错误ERROR：{2}没有可用的模式。请立即联系服务器OP!"
+		"en"		"{darkred}FATAL ERROR: {default}No styles are available. Contact the server owner immediately!"
+		"chi"		"{darkred}致命错误ERROR：{default}没有可用的模式。请立即联系服务器OP!"
 	}
 	// ---------- WR Menu ---------- //
 	"RecentRecords"

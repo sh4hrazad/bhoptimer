@@ -179,7 +179,7 @@
 	}
 	"ChatRanksMenu_SampleText"
 	{
-		"en"		"Arknight."
-		"chi"		"Arknight.|两面包夹芝士|"
+		"en"		"The quick brown fox jumps over the lazy dog."
+		"chi"		"不需要文字演示，因为这是 中国 文字."
 	}
 }

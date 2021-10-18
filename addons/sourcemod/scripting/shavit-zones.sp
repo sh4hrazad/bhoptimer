@@ -191,9 +191,6 @@ Handle gH_DrawZonesToClient[MAXPLAYERS+1] = {null, ...};
 // table prefix
 char gS_MySQLPrefix[32];
 
-// chat settings
-chatstrings_t gS_ChatStrings;
-
 // forwards
 Handle gH_Forwards_EnterZone = null;
 Handle gH_Forwards_LeaveZone = null;
@@ -352,7 +349,6 @@ public void OnPluginStart()
 
 	if (gB_Late)
 	{
-		Shavit_OnChatConfigLoaded();
 		Shavit_OnDatabaseLoaded();
 	}
 }
@@ -1030,11 +1026,6 @@ public void OnMapEnd()
 	delete gH_DrawEverything;
 }
 
-public void Shavit_OnChatConfigLoaded()
-{
-	Shavit_GetChatStringsStruct(gS_ChatStrings);
-}
-
 void ClearZone(int index)
 {
 	for(int i = 0; i < 3; i++)
@@ -1244,7 +1235,7 @@ public Action Command_Modifier(int client, int args)
 
 	gF_Modifier[client] = fArg1;
 
-	Shavit_PrintToChat(client, "%T %s%.01f%s.", "ModifierSet", client, gS_ChatStrings.sVariable, fArg1, gS_ChatStrings.sText);
+	Shavit_PrintToChat(client, "%T %s%.01f%s.", "ModifierSet", client, fArg1);
 
 	return Plugin_Handled;
 }
@@ -1281,28 +1272,28 @@ public Action Command_Startpos(int client, int args)
 
 	if(!IsPlayerAlive(client))
 	{
-		Shavit_PrintToChat(client, "%T", "StageCommandAlive", client, gS_ChatStrings.sVariable2, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "SetStartCommandAlive", client);
 
 		return Plugin_Handled;
 	}
 
 	if(Shavit_GetTimerStatus(client) != Timer_Running)
 	{
-		Shavit_PrintToChat(client, "你必须要恢复计时才能自定义起点");
+		Shavit_PrintToChat(client, "%T", "SetStartRestartTimer", client);
 
 		return Plugin_Handled;
 	}
 
 	if(!(GetEntityFlags(client) & FL_ONGROUND))
 	{
-		Shavit_PrintToChat(client, "你必须站在地面上才能自定义起点");
+		Shavit_PrintToChat(client, "%T", "SetStartOnGround", client);
 
 		return Plugin_Handled;
 	}
 
 	if(!Shavit_InsideZone(client, Zone_Start, -1) && !Shavit_InsideZone(client, Zone_Stage, -1))
 	{
-		Shavit_PrintToChat(client, "你必须在起点区域内才能自定义起点");
+		Shavit_PrintToChat(client, "%T", "SetStartNotInStartZone", client);
 
 		return Plugin_Handled;
 	}
@@ -1312,12 +1303,12 @@ public Action Command_Startpos(int client, int args)
 
 	if(Shavit_InsideZone(client, Zone_Start, -1))
 	{
-		Shavit_PrintToChat(client, "自定义主线起点成功!");
+		Shavit_PrintToChat(client, "%T", "SetStart", client);
 	}
 
 	else if(Shavit_InsideZone(client, Zone_Stage, -1))
 	{
-		Shavit_PrintToChat(client, "自定义关卡起点成功!");
+		Shavit_PrintToChat(client, "%T", "SetStageStart", client);
 	}
 
 	return Plugin_Handled;
@@ -1332,7 +1323,7 @@ public Action Command_Back(int client, int args)
 
 	if(!IsPlayerAlive(client))
 	{
-		Shavit_PrintToChat(client, "%T", "StageCommandAlive", client, gS_ChatStrings.sVariable2, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "StageCommandAlive", client);
 
 		return Plugin_Handled;
 	}
@@ -1366,7 +1357,7 @@ public Action Command_Stages(int client, int args)
 
 	if(!IsPlayerAlive(client))
 	{
-		Shavit_PrintToChat(client, "%T", "StageCommandAlive", client, gS_ChatStrings.sVariable2, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "StageCommandAlive", client);
 
 		return Plugin_Handled;
 	}
@@ -1386,7 +1377,7 @@ public Action Command_Stages(int client, int args)
 		iStage = StringToInt(arg1);
 		if(iStage > gI_Stages || iStage < 1)
 		{
-			Shavit_PrintToChat(client, "%T", "InvalidStage", client, gS_ChatStrings.sVariable2, gS_ChatStrings.sText);
+			Shavit_PrintToChat(client, "%T", "InvalidStage", client);
 		}
 	}
 
@@ -1583,7 +1574,7 @@ public Action Command_HookZones(int client, int args)
 
 	if(!IsPlayerAlive(client))
 	{
-		Shavit_PrintToChat(client, "%T", "ZonesCommand", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "ZonesCommand", client);
 
 		return Plugin_Handled;
 	}
@@ -1963,7 +1954,7 @@ public Action Command_AddZones(int client, int args)
 
 	if(!IsPlayerAlive(client))
 	{
-		Shavit_PrintToChat(client, "%T", "ZonesCommand", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "ZonesCommand", client);
 
 		return Plugin_Handled;
 	}
@@ -2272,7 +2263,7 @@ public void SQL_DeleteZone_Callback(Database db, DBResultSet results, const char
 	LoadStageZones();
 	LoadCheckpointZones();
 
-	Shavit_PrintToChat(client, "%T", "ZoneDeleteSuccessful", client, gS_ChatStrings.sVariable, gS_ZoneNames[type], gS_ChatStrings.sText);
+	Shavit_PrintToChat(client, "%T", "ZoneDeleteSuccessful", client, gS_ZoneNames[type]);
 	CreateTimer(0.05, Timer_OpenDeleteMenu, client);
 }
 
@@ -2908,7 +2899,7 @@ public int ZoneAdjuster_Handler(Menu menu, MenuAction action, int param1, int pa
 			bool bIncrease = view_as<bool>(StringToInt(sExploded[2]) == 1);
 
 			((iPoint == 1)? gV_Point1:gV_Point2)[param1][iAxis] += ((bIncrease)? gF_Modifier[param1]:-gF_Modifier[param1]);
-			Shavit_PrintToChat(param1, "%T", (bIncrease)? "ZoneSizeIncrease":"ZoneSizeDecrease", param1, gS_ChatStrings.sVariable2, sAxis[iAxis], gS_ChatStrings.sText, iPoint, gS_ChatStrings.sVariable, gF_Modifier[param1], gS_ChatStrings.sText);
+			Shavit_PrintToChat(param1, "%T", (bIncrease)? "ZoneSizeIncrease":"ZoneSizeDecrease", param1, sAxis[iAxis], iPoint, gF_Modifier[param1]);
 
 			CreateAdjustMenu(param1, GetMenuSelectionPosition());
 		}
@@ -3564,7 +3555,7 @@ public void StartTouchPost(int entity, int other)
 				if(status != Timer_Stopped)
 				{
 					Shavit_StopTimer(other);
-					Shavit_PrintToChat(other, "%T", "ZoneStopEnter", other, gS_ChatStrings.sWarning, gS_ChatStrings.sVariable2, gS_ChatStrings.sWarning);
+					Shavit_PrintToChat(other, "%T", "ZoneStopEnter", other);
 				}
 			}
 
@@ -3740,7 +3731,7 @@ public void TouchPost(int entity, int other)
 			if(Shavit_GetTimerStatus(other) != Timer_Stopped)
 			{
 				Shavit_StopTimer(other);
-				Shavit_PrintToChat(other, "%T", "ZoneStopEnter", other, gS_ChatStrings.sWarning, gS_ChatStrings.sVariable2, gS_ChatStrings.sWarning);
+				Shavit_PrintToChat(other, "%T", "ZoneStopEnter", other);
 			}
 		}
 	}

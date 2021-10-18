@@ -109,7 +109,6 @@ Handle gH_Forwards_OnTierAssigned = null;
 Handle gH_Forwards_OnRankAssigned = null;
 
 // Timer settings.
-chatstrings_t gS_ChatStrings;
 int gI_Styles = 0;
 
 bool gB_WorldRecordsCached = false;
@@ -215,7 +214,6 @@ public void OnPluginStart()
 
 	if(gB_Late)
 	{
-		Shavit_OnChatConfigLoaded();
 		Shavit_OnDatabaseLoaded();
 	}
 
@@ -223,11 +221,6 @@ public void OnPluginStart()
 	{
 		CreateTimer(1.0, Timer_MVPs, 0, TIMER_REPEAT);
 	}
-}
-
-public void Shavit_OnChatConfigLoaded()
-{
-	Shavit_GetChatStringsStruct(gS_ChatStrings);
 }
 
 public void Shavit_OnStyleConfigLoaded(int styles)
@@ -677,7 +670,7 @@ public Action Command_Tier(int client, int args)
 		}
 	}
 
-	Shavit_PrintToChat(client, "%T", "CurrentTier", client, gS_ChatStrings.sVariable, sMap, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, tier, gS_ChatStrings.sText);
+	Shavit_PrintToChat(client, "%T", "CurrentTier", client, sMap, tier);
 
 	return Plugin_Handled;
 }
@@ -719,15 +712,12 @@ public Action Command_Rank(int client, int args)
 
 	if(gA_Rankings[target].fPoints == 0.0)
 	{
-		Shavit_PrintToChat(client, "%T", "Unranked", client, gS_ChatStrings.sVariable2, target, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "Unranked", client, target);
 
 		return Plugin_Handled;
 	}
 
-	Shavit_PrintToChat(client, "%T", "Rank", client, gS_ChatStrings.sVariable2, target, gS_ChatStrings.sText,
-		gS_ChatStrings.sVariable, (gA_Rankings[target].iRank > gI_RankedPlayers)? gI_RankedPlayers:gA_Rankings[target].iRank, gS_ChatStrings.sText,
-		gI_RankedPlayers,
-		gS_ChatStrings.sVariable, gA_Rankings[target].fPoints, gS_ChatStrings.sText);
+	Shavit_PrintToChat(client, "%T", "Rank", client, target, (gA_Rankings[target].iRank > gI_RankedPlayers)? gI_RankedPlayers:gA_Rankings[target].iRank, gI_RankedPlayers, gA_Rankings[target].fPoints);
 
 	return Plugin_Handled;
 }
@@ -781,7 +771,7 @@ public Action Command_SetTier(int client, int args)
 	Call_PushCell(tier);
 	Call_Finish();
 
-	Shavit_PrintToChat(client, "%T", "SetTier", client, gS_ChatStrings.sVariable2, tier, gS_ChatStrings.sText);
+	Shavit_PrintToChat(client, "%T", "SetTier", client, tier);
 
 	char sQuery[512];
 	FormatEx(sQuery, sizeof(sQuery), "REPLACE INTO %smaptiers (map, tier) VALUES ('%s', %d);", gS_MySQLPrefix, gS_Map, tier);

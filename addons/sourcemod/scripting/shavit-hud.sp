@@ -118,7 +118,6 @@ Convar gCV_DefaultHUD2 = null;
 
 // timer settings
 stylestrings_t gS_StyleStrings[STYLE_LIMIT];
-chatstrings_t gS_ChatStrings;
 
 // stuff
 float gF_LastCPTime[MAXPLAYERS+1];
@@ -241,7 +240,6 @@ public void OnPluginStart()
 	if(gB_Late)
 	{
 		Shavit_OnStyleConfigLoaded(Shavit_GetStyleCount());
-		Shavit_OnChatConfigLoaded();
 
 		for(int i = 1; i <= MaxClients; i++)
 		{
@@ -386,16 +384,11 @@ public void Shavit_OnStartTimer_Post(int client, int style, int track, float spe
 	char sPrestrafe[128];
 	if(track == Track_Main)
 	{
-		FormatEx(sPrestrafe, 128, "%T", "StartPrestrafe", client,
-			gS_ChatStrings.sStyle, 
-			gS_ChatStrings.sVariable5, RoundToFloor(speed), gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable, gS_ChatStrings.sText, gS_PreStrafeDiff[client]);
+		FormatEx(sPrestrafe, 128, "%T", "StartPrestrafe", client, RoundToFloor(speed), gS_PreStrafeDiff[client]);
 	}
 	else
 	{
-		FormatEx(sPrestrafe, 128, "%T", "BonusStartPrestrafe", client,
-			gS_ChatStrings.sStyle, 
-			gS_ChatStrings.sVariable5, RoundToFloor(speed), gS_ChatStrings.sText);
+		FormatEx(sPrestrafe, 128, "%T", "BonusStartPrestrafe", client, RoundToFloor(speed));
 	}
 
 	Shavit_PrintToChat(client, sPrestrafe);
@@ -435,14 +428,7 @@ public void Shavit_OnStageTimer_Post(int client, int style, int stage, float spe
 	FormatPreStrafeSpeed(gS_PreStrafeDiff[client], speed, wrcpSpeed);
 
 	char sPrestrafe[128];
-	FormatEx(sPrestrafe, 128, "%T", 
-		(Shavit_IsClientStageTimer(client))?"StageWRCPPrestrafe":"StageCPPrestrafe", 
-		client,
-		gS_ChatStrings.sStyle, 
-		gS_ChatStrings.sVariable5, RoundToFloor(speed), gS_ChatStrings.sText, 
-		gS_ChatStrings.sVariable, gS_ChatStrings.sText, gS_PreStrafeDiff[client],
-		stage);
-
+	FormatEx(sPrestrafe, 128, "%T", (Shavit_IsClientStageTimer(client))?"StageWRCPPrestrafe":"StageCPPrestrafe", client, stage, RoundToFloor(speed), gS_PreStrafeDiff[client]);
 	Shavit_PrintToChat(client, sPrestrafe);
 
 	for(int i = 1; i <= MaxClients; i++)
@@ -466,15 +452,15 @@ void FormatPreStrafeSpeed(char[] buffer, float originSpeed, float wrSpeed)
 	{
 		if(diff > 0.0)
 		{
-			FormatEx(buffer, 64, "%s+%d u/s%s", gS_ChatStrings.sVariable10, RoundToFloor(diff), gS_ChatStrings.sText);
+			FormatEx(buffer, 64, "%t", "PrestrafeIncreate", RoundToFloor(diff));
 		}
 		else if(diff == 0.0)
 		{
-			FormatEx(buffer, 64, "%s%d u/s%s", gS_ChatStrings.sVariable2, RoundToFloor(diff), gS_ChatStrings.sText);
+			FormatEx(buffer, 64, "%t", "PrestrafeNochange", RoundToFloor(diff));
 		}
 		else
 		{
-			FormatEx(buffer, 64, "%s%d u/s%s", gS_ChatStrings.sVariable11, RoundToFloor(diff), gS_ChatStrings.sText);
+			FormatEx(buffer, 64, "%t", "PrestrafeDecrease", RoundToFloor(diff));
 		}
 	}
 }
@@ -503,12 +489,7 @@ public void Shavit_OnFinishStage(int client, int stage, int style, float time)
 	}
 
 	char sMessage[255];
-	FormatEx(sMessage, 255, "%T", "ZoneStageTime", client, 
-			gS_ChatStrings.sStyle, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable2, stage, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable, gS_ChatStrings.sText, 
-			gS_ChatStrings.sVariable2, sDifftime, gS_ChatStrings.sText);
+	FormatEx(sMessage, 255, "%T", "ZoneStageTime", client, stage, sTime, sDifftime);
 	Shavit_PrintToChat(client, "%s", sMessage);
 }
 
@@ -542,18 +523,8 @@ public void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float ti
 	strcopy(gS_DiffTime[client], 32, sDifftime);
 
 	char sMessage[255];
-	FormatEx(sMessage, 255, "%T", "ZoneCheckpointTime", client, 
-		gS_ChatStrings.sStyle, gS_ChatStrings.sText, 
-		gS_ChatStrings.sVariable2, cpnum, gS_ChatStrings.sText, 
-		gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, 
-		gS_ChatStrings.sVariable, gS_ChatStrings.sText, 
-		gS_ChatStrings.sVariable2, sDifftime, gS_ChatStrings.sText);
+	FormatEx(sMessage, 255, "%T", "ZoneCheckpointTime", client, cpnum, sTime, sDifftime);
 	Shavit_PrintToChat(client, "%s", sMessage);
-}
-
-public void Shavit_OnChatConfigLoaded()
-{
-	Shavit_GetChatStringsStruct(gS_ChatStrings);
 }
 
 public void OnClientPutInServer(int client)
@@ -711,14 +682,12 @@ void ToggleHUD(int client, int hud, bool chat)
 
 		if((gI_HUDSettings[client] & hud) > 0)
 		{
-			Shavit_PrintToChat(client, "%T", "HudEnabledComponent", client,
-				gS_ChatStrings.sVariable, sHUDSetting, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, gS_ChatStrings.sText);
+			Shavit_PrintToChat(client, "%T", "HudEnabledComponent", client, sHUDSetting);
 		}
 
 		else
 		{
-			Shavit_PrintToChat(client, "%T", "HudDisabledComponent", client,
-				gS_ChatStrings.sVariable, sHUDSetting, gS_ChatStrings.sText, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+			Shavit_PrintToChat(client, "%T", "HudDisabledComponent", client, sHUDSetting);
 		}
 	}
 }

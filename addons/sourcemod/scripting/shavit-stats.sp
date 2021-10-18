@@ -67,9 +67,6 @@ EngineVersion gEV_Type = Engine_Unknown;
 int gI_Styles = 0;
 stylestrings_t gS_StyleStrings[STYLE_LIMIT];
 
-// chat settings
-chatstrings_t gS_ChatStrings;
-
 Convar gCV_SavePlaytime = null;
 
 public Plugin myinfo =
@@ -126,7 +123,6 @@ public void OnPluginStart()
 	if(gB_Late)
 	{
 		Shavit_OnStyleConfigLoaded(Shavit_GetStyleCount());
-		Shavit_OnChatConfigLoaded();
 		Shavit_OnDatabaseLoaded();
 
 		for(int i = 1; i <= MaxClients; i++)
@@ -178,11 +174,6 @@ public void Shavit_OnStyleConfigLoaded(int styles)
 	}
 
 	gI_Styles = styles;
-}
-
-public void Shavit_OnChatConfigLoaded()
-{
-	Shavit_GetChatStringsStruct(gS_ChatStrings);
 }
 
 public void OnClientConnected(int client)
@@ -903,7 +894,7 @@ public void OpenStatsMenuCallback(Database db, DBResultSet results, const char[]
 
 	else
 	{
-		Shavit_PrintToChat(client, "%T", "StatsMenuFailure", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "StatsMenuFailure", client);
 	}
 }
 

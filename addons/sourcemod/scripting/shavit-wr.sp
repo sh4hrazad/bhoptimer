@@ -1538,7 +1538,7 @@ public void DeleteAll_Callback(Database db, DBResultSet results, const char[] er
 
 	DeleteWR(style, track, gS_Map, 0, -1, false, true);
 
-	Shavit_PrintToChat(client, "%T", "DeletedRecordsMap", client, gS_ChatStrings.sVariable, gS_Map, gS_ChatStrings.sText);
+	Shavit_PrintToChat(client, "%T", "DeletedRecordsMap", client, gS_Map);
 }
 
 public Action Command_WorldRecord_Style(int client, int args)
@@ -1827,7 +1827,7 @@ public int MenuHandler_StyleChooser(Menu menu, MenuAction action, int param1, in
 
 		if(iStyle == -1)
 		{
-			Shavit_PrintToChat(param1, "%T", "NoStyles", param1, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+			Shavit_PrintToChat(param1, "%T", "NoStyles", param1);
 
 			return 0;
 		}
@@ -2570,7 +2570,7 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 		if(iOverwrite == 1) // insert
 		{
 			FormatEx(sMessage, 255, "%s[%s]%s %T",
-				gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "FirstCompletion", LANG_SERVER, gS_ChatStrings.sVariable2, client, gS_ChatStrings.sText, gS_ChatStrings.sStyle, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, gS_ChatStrings.sVariable, iRank, gS_ChatStrings.sText, jumps, strafes, sSync, gS_ChatStrings.sText);
+				gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "FirstCompletion", LANG_SERVER, client, gS_StyleStrings[style].sStyleName, sTime, iRank, jumps, strafes, sSync);
 
 			FormatEx(sQuery, sizeof(sQuery),
 				"INSERT INTO %splayertimes (auth, map, time, jumps, date, style, strafes, sync, points, track, perfs, exact_time_int) VALUES (%d, '%s', %f, %d, %d, %d, %d, %.2f, %f, %d, %.2f, %d);",
@@ -2579,7 +2579,7 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 		else // update
 		{
 			FormatEx(sMessage, 255, "%s[%s]%s %T",
-				gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "NotFirstCompletion", LANG_SERVER, gS_ChatStrings.sVariable2, client, gS_ChatStrings.sText, gS_ChatStrings.sStyle, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, gS_ChatStrings.sVariable, iRank, gS_ChatStrings.sText, jumps, strafes, sSync, gS_ChatStrings.sText, gS_ChatStrings.sWarning, sDifference);
+				gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "NotFirstCompletion", LANG_SERVER, client, gS_StyleStrings[style].sStyleName, sTime, iRank, jumps, strafes, sSync, sDifference);
 
 			FormatEx(sQuery, sizeof(sQuery),
 				"UPDATE %splayertimes SET time = %f, jumps = %d, date = %d, strafes = %d, sync = %.02f, points = %f, perfs = %.2f, exact_time_int = %d, completions = completions + 1 WHERE map = '%s' AND auth = %d AND style = %d AND track = %d;",
@@ -2623,13 +2623,13 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 		if(iOverwrite == 0 && !Shavit_GetStyleSettingInt(style, "unranked"))
 		{
 			FormatEx(sMessage, 255, "%s[%s]%s %T",
-				gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "WorseTime", client, gS_ChatStrings.sStyle, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, jumps, strafes, sSync, gS_ChatStrings.sText, sDifference);
+				gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "WorseTime", client, gS_StyleStrings[style].sStyleName, sTime, jumps, strafes, sSync, sDifference);
 		}
 	}
 	else
 	{
 		FormatEx(sMessage, 255, "%s[%s]%s %T",
-			gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "UnrankedTime", client, gS_ChatStrings.sStyle, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, jumps, strafes, sSync, gS_ChatStrings.sText);
+			gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "UnrankedTime", client, gS_StyleStrings[style].sStyleName, sTime, jumps, strafes, sSync);
 	}
 
 	timer_snapshot_t aSnapshot;
@@ -2637,7 +2637,7 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 
 	if (!Shavit_GetStyleSettingBool(style, "autobhop"))
 	{
-		FormatEx(sMessage2, sizeof(sMessage2), "%s[%s]%s %T", gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "CompletionExtraInfo", LANG_SERVER, gS_ChatStrings.sVariable, avgvel, gS_ChatStrings.sText, gS_ChatStrings.sVariable, maxvel, gS_ChatStrings.sText, gS_ChatStrings.sVariable, perfs, gS_ChatStrings.sText);
+		FormatEx(sMessage2, sizeof(sMessage2), "%s[%s]%s %T", gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "CompletionExtraInfo", LANG_SERVER, avgvel, maxvel, perfs);
 	}
 
 	Action aResult = Plugin_Continue;
@@ -2668,10 +2668,7 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 				if(client != i && IsValidClient(i) && GetSpectatorTarget(i) == client)
 				{
 					FormatEx(sMessage, sizeof(sMessage), "%s[%s]%s %T",
-						gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "NotFirstCompletionWorse", i, 
-						gS_ChatStrings.sVariable2, client, gS_ChatStrings.sText, gS_ChatStrings.sStyle, gS_StyleStrings[style].sStyleName, 
-						gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTime, gS_ChatStrings.sText, gS_ChatStrings.sVariable, iRank, 
-						gS_ChatStrings.sText, jumps, strafes, sSync, gS_ChatStrings.sText, sDifference);
+						gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "NotFirstCompletionWorse", i, client, gS_StyleStrings[style].sStyleName, sTime, gS_ChatStrings.sText, iRank, gS_ChatStrings.sText, jumps, strafes, sSync, sDifference);
 					Shavit_PrintToChat(i, "%s", sMessage);
 
 					if (sMessage2[0] != 0)

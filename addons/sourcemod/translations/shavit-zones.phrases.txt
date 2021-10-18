@@ -19,21 +19,33 @@
 	// --------- Set Start --------- //
 	"SetStart"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"Start position has been {1}set{2}."
-		"chi"		"起始位置{1}已设置{2}."
+		"en"		"Start position has been {green}set{default}."
+		"chi"		"主线起始位置{green}已设置{default}."
+	}
+	"SetStageStart"
+	{
+		"en"		"Start position has been {green}set{default}."
+		"chi"		"关卡起始位置{green}已设置{default}."
 	}
 	"SetStartCommandAlive"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"You have to be {1}alive{2} to set your start position."
-		"chi"		"您必须{1}活着{2}才能设置您的起始位置."
+		"en"		"You have to be {darkred}alive{default} to set your start position."
+		"chi"		"您必须{darkred}活着{default}才能设置您的起始位置."
+	}
+	"SetStartRestartTimer"
+	{
+		"en"		"You must {darkred}restart your timer{default} to set your start position"
+		"chi"		"你必须要{darkred}恢复计时{default}才能自定义起点"
+	}
+	"SetStartOnGround"
+	{
+		"en"		"You must {darkred}stand on ground{default} to set your start position"
+		"chi"		"你必须{darkred}站在地面上{default}才能自定义起点"
 	}
 	"SetStartNotInStartZone"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"You {1}must{2} be in the {3}start zone{4} to use set start."
-		"chi"		"您{1}必须{2}在{3}起点区域{4}内才能设置起始位置."
+		"en"		"You {darkred}must{default} be in the {orchid}start zone{default} to use set start."
+		"chi"		"您{darkred}必须{default}在{orchid}起点区域{default}内才能设置起始位置."
 	}
 	"DeleteSetStart"
 	{
@@ -44,15 +56,13 @@
 	// ---------- Commands ---------- //
 	"StageCommandAlive"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"You have to be {1}alive{2} to use this command."
-		"chi"		"您必须{1}活着{2}才能使用此命令."
+		"en"		"You have to be {orchid}alive{default} to use this command."
+		"chi"		"您必须{orchid}活着{default}才能使用此命令."
 	}
 	"InvalidStage"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"Your input stage is {1}invalid{2}"
-		"chi"		"{1}无效{2}关卡."
+		"en"		"Your input stage is {orchid}invalid{default}"
+		"chi"		"{orchid}无效{default}关卡."
 	}
 	"ModifierCommandNoArgs"
 	{
@@ -66,14 +76,13 @@
 	}
 	"ModifierSet"
 	{
-		"en"		"Modifier set to"
-		"chi"		"数字已设置为"
+		"en"		"{gold}Modifier set to{default}"
+		"chi"		"{gold}数字已设置为{default}"
 	}
 	"ZonesCommand"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"You {1}cannot{2} setup mapzones when you're dead."
-		"chi"		"死亡状态下，您{1}无法{2}设置地图区域."
+		"en"		"You {darkred}cannot{default} setup mapzones when you're dead."
+		"chi"		"死亡状态下，您{darkred}无法{default}设置地图区域."
 	}
 	"ZoneDead"
 	{
@@ -142,9 +151,9 @@
 	}
 	"ZoneDeleteSuccessful"
 	{
-		"#format"	"{1:s},{2:s},{3:s}"
-		"en"		"Deleted {1}{2}{3} successfully."
-		"chi"		"删除区域 {1}{2}{3} 成功."
+		"#format"	"{1:s}"
+		"en"		"Deleted {gold}{1}{default} successfully."
+		"chi"		"删除区域 {gold}{1}{default} 成功."
 	}
 	"ZoneDeleteAllSuccessful"
 	{
@@ -306,15 +315,15 @@
 	}
 	"ZoneSizeIncrease"
 	{
-		"#format"	"{1:s},{2:c},{3:s},{4:d},{5:s},{6:.01f},{7:s}"
-		"en"		"{1}{2} axis{3} (point {4}) increased by {5}{6}{7}."
-		"chi"		"{1}{2}轴{3}(点{4})增加了{5}{6}{7}."
+		"#format"	"{1:c},{2:d},{3:.01f}"
+		"en"		"{orchid}{1} axis{default} (point {2}) increased by {gold}{3}{default}."
+		"chi"		"{orchid}{1}轴{default}(点{2})增加了{gold}{3}{default}."
 	}
 	"ZoneSizeDecrease"
 	{
-		"#format"	"{1:s},{2:c},{3:s},{4:d},{5:s},{6:.01f},{7:s}"
-		"en"		"{1}{2} axis{3} (point {4}) decreased by {5}{6}{7}."
-		"chi"		"{1}{2}轴{3}(点{4})减少了{5}{6}{7}."
+		"#format"	"{1:c},{2:d},{3:.01f}"
+		"en"		"{orchid}{1} axis{default} (point {2}) decreased by {gold}{3}{default}."
+		"chi"		"{orchid}{1}轴{default}(点{2})减少了{gold}{3}{default}."
 	}
 	"ZoneTeleportUpdated"
 	{
@@ -355,14 +364,7 @@
 	// ---------- Messages ---------- //
 	"ZoneStopEnter"
 	{
-		"#format"	"{1:s},{2:s},{3:s}"
-		"en"		"{1}Your timer has been stopped for entering a {2}glitch zone{3}."
-		"chi"		"{1}您的计时器因进入{2}故障区域{3}而停止."
-	}
-	"ZoneStageEnter"
-	{
-		"#format"	"{1:s},{2:s},{3:d},{4:s},{5:s},{6:s}{7:s}"
-		"en"		"{1}You have reached stage {2}{3}{4} with a time of {5}{6}{7}."
-		"chi"		"{1}您已到达关卡{2}{3}{4}，时间为{5}{6}{7}."
+		"en"		"{darkred}Your timer has been stopped for entering a {orchid}glitch zone{darkred}."
+		"chi"		"{darkred}您的计时器因进入{orchid}故障区域{darkred}而停止."
 	}
 }

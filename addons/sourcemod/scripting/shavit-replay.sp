@@ -287,9 +287,6 @@ ConVar mp_randomspawn = null;
 int gI_Styles = 0;
 stylestrings_t gS_StyleStrings[STYLE_LIMIT];
 
-// chat settings
-chatstrings_t gS_ChatStrings;
-
 // replay settings
 replaystrings_t gS_ReplayStrings;
 
@@ -516,9 +513,8 @@ public void OnPluginStart()
 	if(gB_Late)
 	{
 		Shavit_OnStyleConfigLoaded(Shavit_GetStyleCount());
-		Shavit_OnChatConfigLoaded();
 	}
-	
+
 	for(int i = 1; i <= MaxClients; i++)
 	{
 		ClearBotInfo(gA_BotInfo[i]);
@@ -1728,11 +1724,6 @@ public void Shavit_OnStyleConfigLoaded(int styles)
 	}
 
 	gI_Styles = styles;
-}
-
-public void Shavit_OnChatConfigLoaded()
-{
-	Shavit_GetChatStringsStruct(gS_ChatStrings);
 }
 
 public void Shavit_OnStyleChanged(int client, int oldstyle, int newstyle, int track, bool manual)
@@ -3837,12 +3828,12 @@ public int DeleteConfirmation_Callback(Menu menu, MenuAction action, int param1,
 
 			LogAction(param1, param1, "Deleted replay for %s on map %s. (Track: %s)", gS_StyleStrings[style].sStyleName, gS_Map, sTrack);
 
-			Shavit_PrintToChat(param1, "%T (%s%s%s)", "ReplayDeleted", param1, gS_ChatStrings.sStyle, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText, gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText);
+			Shavit_PrintToChat(param1, "%T", "ReplayDeleted", param1, gS_StyleStrings[style].sStyleName, sTrack);
 		}
 
 		else
 		{
-			Shavit_PrintToChat(param1, "%T", "ReplayDeleteFailure", param1, gS_ChatStrings.sStyle, gS_StyleStrings[style].sStyleName, gS_ChatStrings.sText);
+			Shavit_PrintToChat(param1, "%T", "ReplayDeleteFailure", param1, gS_StyleStrings[style].sStyleName);
 		}
 	}
 

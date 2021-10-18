@@ -644,7 +644,7 @@ public Action Command_StartTimer(int client, int args)
 	{
 		if(args != -1)
 		{
-			Shavit_PrintToChat(client, "%T", "CommandDisabled", client, gS_ChatStrings.sVariable, sCommand, gS_ChatStrings.sText);
+			Shavit_PrintToChat(client, "%T", "CommandDisabled", client, sCommand);
 		}
 
 		return Plugin_Handled;
@@ -713,7 +713,7 @@ public Action Command_StartTimer(int client, int args)
 		char sTrack[32];
 		GetTrackName(client, track, sTrack, 32);
 
-		Shavit_PrintToChat(client, "%T", "StartZoneUndefined", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, sTrack, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "StartZoneUndefined", client, sTrack);
 	}
 
 	return Plugin_Handled;
@@ -763,7 +763,7 @@ public Action Command_TeleportEnd(int client, int args)
 
 	else
 	{
-		Shavit_PrintToChat(client, "%T", "EndZoneUndefined", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "EndZoneUndefined", client);
 	}
 
 	return Plugin_Handled;
@@ -797,14 +797,14 @@ public Action Command_TogglePause(int client, int args)
 
 	if((iFlags & CPR_InStartZone) > 0)
 	{
-		Shavit_PrintToChat(client, "%T", "PauseStartZone", client, gS_ChatStrings.sText, gS_ChatStrings.sWarning, gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "PauseStartZone", client);
 
 		return Plugin_Handled;
 	}
 
 	if((iFlags & CPR_InEndZone) > 0)
 	{
-		Shavit_PrintToChat(client, "%T", "PauseEndZone", client, gS_ChatStrings.sText, gS_ChatStrings.sWarning, gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "PauseEndZone", client);
 
 		return Plugin_Handled;
 	}
@@ -814,7 +814,7 @@ public Action Command_TogglePause(int client, int args)
 		char sCommand[16];
 		GetCmdArg(0, sCommand, 16);
 
-		Shavit_PrintToChat(client, "%T", "CommandDisabled", client, gS_ChatStrings.sVariable, sCommand, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "CommandDisabled", client, sCommand);
 
 		return Plugin_Handled;
 	}
@@ -823,7 +823,7 @@ public Action Command_TogglePause(int client, int args)
 	{
 		if(GetEntityMoveType(client) == MOVETYPE_NOCLIP)
 		{
-			Shavit_PrintToChat(client, "%T", "BlockNoclipResume", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+			Shavit_PrintToChat(client, "%T", "BlockNoclipResume", client);
 
 			return Plugin_Handled;
 		}
@@ -831,28 +831,28 @@ public Action Command_TogglePause(int client, int args)
 		TeleportEntity(client, gF_PauseOrigin[client], gF_PauseAngles[client], gF_PauseVelocity[client]);
 		ResumeTimer(client);
 
-		Shavit_PrintToChat(client, "%T", "MessageUnpause", client, gS_ChatStrings.sText, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "MessageUnpause", client);
 	}
 
 	else
 	{
 		if((iFlags & CPR_NotOnGround) > 0)
 		{
-			Shavit_PrintToChat(client, "%T", "PauseNotOnGround", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+			Shavit_PrintToChat(client, "%T", "PauseNotOnGround", client);
 
 			return Plugin_Handled;
 		}
 
 		if((iFlags & CPR_Moving) > 0)
 		{
-			Shavit_PrintToChat(client, "%T", "PauseMoving", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+			Shavit_PrintToChat(client, "%T", "PauseMoving", client);
 
 			return Plugin_Handled;
 		}
 
 		if((iFlags & CPR_Duck) > 0)
 		{
-			Shavit_PrintToChat(client, "%T", "PauseDuck", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+			Shavit_PrintToChat(client, "%T", "PauseDuck", client);
 
 			return Plugin_Handled;
 		}
@@ -863,7 +863,7 @@ public Action Command_TogglePause(int client, int args)
 
 		PauseTimer(client);
 
-		Shavit_PrintToChat(client, "%T", "MessagePause", client, gS_ChatStrings.sText, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "MessagePause", client);
 	}
 
 	return Plugin_Handled;
@@ -1129,11 +1129,11 @@ public Action Command_AutoBhop(int client, int args)
 
 	if (gB_Auto[client])
 	{
-		Shavit_PrintToChat(client, "%T", "AutobhopEnabled", client, gS_ChatStrings.sVariable2, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "AutobhopEnabled", client);
 	}
 	else
 	{
-		Shavit_PrintToChat(client, "%T", "AutobhopDisabled", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "AutobhopDisabled", client);
 	}
 
 	char sAutoBhop[4];
@@ -1267,7 +1267,7 @@ void CallOnTrackChanged(int client, int oldtrack, int newtrack)
 
 	if (oldtrack == Track_Main && oldtrack != newtrack)
 	{
-		Shavit_PrintToChat(client, "%T", "TrackChangeFromMain", client, gS_ChatStrings.sVariable, gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "TrackChangeFromMain", client);
 	}
 }
 
@@ -1322,7 +1322,7 @@ void ChangeClientStyle(int client, int style, bool manual)
 	{
 		if(manual)
 		{
-			Shavit_PrintToChat(client, "%T", "StyleNoAccess", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+			Shavit_PrintToChat(client, "%T", "StyleNoAccess", client);
 		}
 
 		return;
@@ -1338,12 +1338,12 @@ void ChangeClientStyle(int client, int style, bool manual)
 		char sName[64];
 		gSM_StyleKeys[style].GetString("name", sName, 64);
 
-		Shavit_PrintToChat(client, "%T", "StyleSelection", client, gS_ChatStrings.sStyle, sName, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "StyleSelection", client, sName);
 	}
 
 	if(GetStyleSettingBool(style, "unranked"))
 	{
-		Shavit_PrintToChat(client, "%T", "UnrankedWarning", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%T", "UnrankedWarning", client);
 	}
 
 	CallOnStyleChanged(client, gA_Timers[client].bsStyle, style, manual);
@@ -3809,7 +3809,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					// int gI_SHSW_FirstCombination[MAXPLAYERS+1]; // 0 - W/A S/D | 1 - W/D S/A
 					if(gA_Timers[client].iSHSWCombination == -1 && iCombination != -1)
 					{
-						Shavit_PrintToChat(client, "%T", (iCombination == 0)? "SHSWCombination0":"SHSWCombination1", client, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
+						Shavit_PrintToChat(client, "%T", (iCombination == 0)? "SHSWCombination0":"SHSWCombination1", client);
 						gA_Timers[client].iSHSWCombination = iCombination;
 					}
 
@@ -4004,7 +4004,7 @@ void TestAngles(int client, float dirangle, float yawdelta, float vel[3])
 void StopTimer_Cheat(int client, const char[] message)
 {
 	Shavit_StopTimer(client);
-	Shavit_PrintToChat(client, "%T", "CheatTimerStop", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText, message);
+	Shavit_PrintToChat(client, "%T", "CheatTimerStop", client, message);
 }
 
 void UpdateStyleSettings(int client)
