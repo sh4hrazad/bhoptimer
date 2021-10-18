@@ -1303,7 +1303,6 @@ void UpdateMainHUD(int client)
 	huddata.iFinishNum = (huddata.iStyle == -1 || huddata.iTrack == -1)?Shavit_GetRecordAmount(0, 0):Shavit_GetRecordAmount(huddata.iStyle, huddata.iTrack);
 	huddata.bFinishCP = (Shavit_EnterCheckpoint(target) || Shavit_EnterStage(target));
 	huddata.bStageTimer = Shavit_IsClientStageTimer(target);
-	huddata.iCheckpoint = (Shavit_IsLinearMap())? Shavit_GetClientCheckpoint(target) : Shavit_GetClientStage(target) - 1;
 	huddata.fDiffTimer = GetGameTime() - gF_LastCPTime[target];
 	strcopy(huddata.sDiff, 64, gS_DiffTime[target]);
 	strcopy(huddata.sPreStrafe, 64, gS_PreStrafeDiff[target]);
@@ -1316,6 +1315,11 @@ void UpdateMainHUD(int client)
 	if(huddata.iStage > Shavit_GetMapStages())
 	{
 		huddata.iStage = Shavit_GetMapStages();
+	}
+
+	if(huddata.iZoneHUD != ZoneHUD_End)
+	{
+		huddata.iCheckpoint = (Shavit_IsLinearMap())? Shavit_GetClientCheckpoint(target) : Shavit_GetClientStage(target) - 1;
 	}
 
 	char sBuffer[512];
