@@ -78,6 +78,30 @@ enum struct huddata_t
 	char sPreStrafe[64];
 }
 
+char gS_GlobalColorNames[][] =
+{
+	"{default}",
+	"{team}",
+	"{green}"
+};
+
+char gS_CSGOColorNames[][] =
+{
+	"{blue}",
+	"{bluegrey}",
+	"{darkblue}",
+	"{darkred}",
+	"{gold}",
+	"{grey}",
+	"{grey2}",
+	"{lightgreen}",
+	"{lightred}",
+	"{lime}",
+	"{orchid}",
+	"{yellow}",
+	"{palered}"
+};
+
 // game type (CS:S/CS:GO/TF2)
 EngineVersion gEV_Type = Engine_Unknown;
 
@@ -1556,23 +1580,13 @@ void PrintCSGOHUDText(int client, const char[] str)
 
 void RemoveColors(char[] string, int size)
 {
-	static char sGlobalColorNames[][] =
+	for(int x = 0; x < sizeof(gS_GlobalColorNames); x++)
 	{
-		"{default}", "{team}", "{green}"
-	};
-
-	static char sCSGOColorNames[][] =
-	{
-		"{blue}", "{bluegrey}", "{darkblue}", "{darkred}", "{gold}", "{grey}", "{grey2}", "{lightgreen}", "{lightred}", "{lime}", "{orchid}", "{yellow}", "{palered}"
-	};
-
-	for(int x = 0; x < sizeof(sGlobalColorNames); x++)
-	{
-		ReplaceString(string, size, sGlobalColorNames[x], "");
+		ReplaceString(string, size, gS_GlobalColorNames[x], "");
 	}
 
-	for(int x = 0; x < sizeof(sCSGOColorNames); x++)
+	for(int x = 0; x < sizeof(gS_CSGOColorNames); x++)
 	{
-		ReplaceString(string, size, sCSGOColorNames[x], "");
+		ReplaceString(string, size, gS_CSGOColorNames[x], "");
 	}
 }
