@@ -123,10 +123,9 @@ int gI_ZoneMaxData[TRACKS_SIZE];
 bool gB_WaitingForChatInput[MAXPLAYERS+1];
 bool gB_WaitingForChatInput_HookName[MAXPLAYERS+1];
 bool gB_HookZoneConfirm[MAXPLAYERS+1];
-bool gB_ZoneDataInput[MAXPLAYERS+1];
-bool gB_CommandToEdit[MAXPLAYERS+1];
 bool gB_StageTimer[MAXPLAYERS+1];
 bool gB_ShowTriggers[MAXPLAYERS+1];
+bool gB_EditMaxData[MAXPLAYERS+1];
 
 // cache
 float gV_Point1[MAXPLAYERS+1][3];
@@ -933,6 +932,8 @@ public void OnMapStart()
 	GetCurrentMap(gS_Map, 160);
 	GetMapDisplayName(gS_Map, gS_Map, 160);
 
+	PrecacheModel("models/props/cs_office/vending_machine.mdl");
+
 	gB_LinearMap = false;
 	gI_MapZones = 0;
 	gI_Bonuses = 0;
@@ -946,8 +947,6 @@ public void OnMapStart()
 	LoadStageZones();
 	LoadCheckpointZones();
 	LoadZoneSettings();
-	
-	PrecacheModel("models/props/cs_office/vending_machine.mdl");
 
 	// draw
 	// start drawing mapzones here
@@ -1258,7 +1257,6 @@ public Action Command_ZoneEdit(int client, int args)
 	}
 
 	Reset(client);
-	gB_CommandToEdit[client] = true;
 
 	OpenEditMenu(client);
 
@@ -1844,18 +1842,6 @@ void HookZoneConfirmMenu(int client)
 	FormatEx(sMenuItem, 64, "%T", "ZoneSetNo", client);
 	menu.AddItem("no", sMenuItem);
 
-	if(!gB_ZoneDataInput[client] && !gB_CommandToEdit[client])
-	{
-		gI_ZoneData[client][gI_ZoneType[client]] = gI_ZoneMaxData[gI_ZoneType[client]] + 1;
-
-		if(gI_ZoneType[client] == Zone_Stage)
-		{
-			gI_ZoneData[client][gI_ZoneType[client]] = gI_Stages + 1;
-		}
-	}
-	gB_ZoneDataInput[client] = false;
-	gB_CommandToEdit[client] = false;
-
 	FormatEx(sMenuItem, 64, "%T", "ZoneSetData", client, gI_ZoneData[client][gI_ZoneType[client]]);
 	menu.AddItem("datafromchat", sMenuItem);
 
@@ -2144,12 +2130,9 @@ public int MenuHandler_ZoneEdit(Menu menu, MenuAction action, int param1, int pa
 				gV_Teleport[param1] = gV_Destinations[id];
 				gI_ZoneDatabaseID[param1] = gA_ZoneCache[id].iDatabaseID;
 				gI_ZoneFlags[param1] = gA_ZoneCache[id].iZoneFlags;
-				gI_ZoneData[param1][gI_ZoneType[param1]] = gA_ZoneCache[id].iZoneData;//zoneid change start here
+				gI_ZoneData[param1][gI_ZoneType[param1]] = gA_ZoneCache[id].iZoneData;
 				gI_ZoneID[param1] = id;
 				strcopy(gS_ZoneHookname[param1], 128, gA_ZoneCache[id].sZoneHookname);
-
-				// to stop the original zone from drawing
-				gA_ZoneCache[id].bZoneInitialized = false;
 
 				// draw the zone edit
 				CreateTimer(0.1, Timer_Draw, GetClientSerial(param1), TIMER_REPEAT);
@@ -2157,16 +2140,6 @@ public int MenuHandler_ZoneEdit(Menu menu, MenuAction action, int param1, int pa
 				CreateEditMenu(param1);
 			}
 		}
-
-		gB_CommandToEdit[param1] = false;
-		RefreshZones();
-		LoadStageZones();
-		LoadCheckpointZones();
-	}
-
-	else if(action == MenuAction_Cancel)
-	{
-		gB_CommandToEdit[param1] = false;
 	}
 
 	else if(action == MenuAction_End)
@@ -2411,9 +2384,8 @@ void Reset(int client)
 	gI_LastCheckpoint[client] = 0;
 	gB_EnterStage[client] = false;
 	gB_EnterCheckpoint[client] = false;
-	gB_ZoneDataInput[client] = false;
-	gB_CommandToEdit[client] = false;
 	gB_ShowTriggers[client] = false;
+	gB_EditMaxData[client] = false;
 
 	for(int i = 0; i < 3; i++)
 	{
@@ -2711,16 +2683,15 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 			return 0;
 		}
 
-		else if(StrEqual(sInfo, "adjust"))
+		else if(StrEqual(sInfo, "zonedes"))
 		{
-			CreateAdjustMenu(param1, 0);
-
-			return 0;
+			UpdateTeleportZone(param1);
 		}
 
 		else if(StrEqual(sInfo, "tpzone"))
 		{
-			UpdateTeleportZone(param1);
+			Shavit_StopTimer(param1);
+			TeleportEntity(param1, gV_ZoneCenter[gI_ZoneID[param1]], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
 		}
 
 		else if(StrEqual(sInfo, "datafromchat"))
@@ -2732,11 +2703,32 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 			return 0;
 		}
 
+		else if(StrEqual(sInfo, "setmaxdata"))
+		{
+			gB_EditMaxData[param1] = !gB_EditMaxData[param1];
+
+			if(gB_EditMaxData[param1])
+			{
+				gI_ZoneData[param1][gI_ZoneType[param1]] = gI_ZoneMaxData[gI_ZoneType[param1]] + 1;
+			}
+			else
+			{
+				gI_ZoneData[param1][gI_ZoneType[param1]] = gA_ZoneCache[gI_ZoneID[param1]].iZoneData;
+			}
+		}
+
 		else if(StrEqual(sInfo, "hookname"))
 		{
 			gB_WaitingForChatInput_HookName[param1] = true;
 
 			Shavit_PrintToChat(param1, "Please enter a name");
+
+			return 0;
+		}
+
+		else if(StrEqual(sInfo, "adjust"))
+		{
+			CreateAdjustMenu(param1, 0);
 
 			return 0;
 		}
@@ -2764,7 +2756,6 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 		if(gB_WaitingForChatInput[client])
 		{
 			gI_ZoneData[client][gI_ZoneType[client]] = StringToInt(sArgs);
-			gB_ZoneDataInput[client] = true;
 		}
 		else if(gB_WaitingForChatInput_HookName[client])
 		{
@@ -2818,11 +2809,23 @@ void CreateEditMenu(int client)
 	FormatEx(sMenuItem, 64, "%T", "ZoneSetYes", client);
 	menu.AddItem("yes", sMenuItem);
 
-	FormatEx(sMenuItem, 64, "%T", "ZoneSetTPZone", client);
-	menu.AddItem("tpzone", sMenuItem);
-
 	FormatEx(sMenuItem, 64, "%T", "ZoneSetNo", client);
 	menu.AddItem("no", sMenuItem);
+
+	FormatEx(sMenuItem, 64, "%T", "ZoneSetTPZone", client);
+	menu.AddItem("zonedes", sMenuItem);
+
+	FormatEx(sMenuItem, 64, "%T", "TPToZone", client);
+	menu.AddItem("tpzone", sMenuItem);
+
+	FormatEx(sMenuItem, 64, "%T", "ZoneSetData", client, gI_ZoneData[client][gI_ZoneType[client]]);
+	menu.AddItem("datafromchat", sMenuItem);
+
+	FormatEx(sMenuItem, 64, "%T", "ZoneForceMaxData", client, (gB_EditMaxData[client])? "＋":"－");
+	menu.AddItem("setmaxdata", sMenuItem);
+
+	FormatEx(sMenuItem, 64, "hookname: %s", gS_ZoneHookname[client]);
+	menu.AddItem("hookname", sMenuItem);
 
 	FormatEx(sMenuItem, 64, "%T", "ZoneSetAdjust", client);
 	menu.AddItem("adjust", sMenuItem);
@@ -2830,27 +2833,9 @@ void CreateEditMenu(int client)
 	FormatEx(sMenuItem, 64, "%T", "ZoneForceRender", client, ((gI_ZoneFlags[client] & ZF_ForceRender) > 0)? "＋":"－");
 	menu.AddItem("forcerender", sMenuItem);
 
-	if(!gB_ZoneDataInput[client] && !gB_CommandToEdit[client])
-	{
-		gI_ZoneData[client][gI_ZoneType[client]] = gI_ZoneMaxData[gI_ZoneType[client]] + 1;
-
-		if(gI_ZoneType[client] == Zone_Stage)
-		{
-			gI_ZoneData[client][gI_ZoneType[client]] = gI_Stages + 1;
-		}
-	}
-	gB_ZoneDataInput[client] = false;
-	gB_CommandToEdit[client] = false;
-
-	FormatEx(sMenuItem, 64, "%T", "ZoneSetData", client, gI_ZoneData[client][gI_ZoneType[client]]);
-	menu.AddItem("datafromchat", sMenuItem);
-
-	FormatEx(sMenuItem, 64, "hookname: %s", gS_ZoneHookname[client]);
-	menu.AddItem("hookname", sMenuItem);
-
 	menu.ExitButton = false;
 	menu.Pagination = MENU_NO_PAGINATION;
-	menu.Display(client, 600);
+	menu.Display(client, -1);
 }
 
 void CreateAdjustMenu(int client, int page)
@@ -3358,7 +3343,7 @@ void CreateZoneEntities()
 			continue;
 		}
 
-		if(StrEqual(gA_ZoneCache[i].sZoneHookname, "NONE"))// create non-hooked zones
+		if(StrEqual(gA_ZoneCache[i].sZoneHookname, "NONE")) // create non-hooked zones
 		{
 			int entity = CreateEntityByName("trigger_multiple");
 
@@ -3417,7 +3402,7 @@ void CreateZoneEntities()
 			DispatchKeyValue(entity, "targetname", sTargetname);
 		}
 
-		else// create hookzones
+		else // create hookzones
 		{
 			for(int index = 0; index < gA_Triggers.Length; index++)
 			{
@@ -3434,11 +3419,11 @@ void CreateZoneEntities()
 						{
 							for(int k = 0; k < 3; k++)
 							{
-								gV_MapZones_Visual[i][j][k] = 0.0;// do not set their visual point, use trigger material instead
+								gV_MapZones_Visual[i][j][k] = 0.0; // do not set their visual point, use trigger material instead
 							}
 						}
 
-						gA_HookTriggers.Push(iEnt);// do not push markzone index to arraylist
+						gA_HookTriggers.Push(iEnt); // do not push markzone index to arraylist
 					}
 
 					SDKHook(iEnt, SDKHook_StartTouchPost, StartTouchPost);
@@ -3449,7 +3434,7 @@ void CreateZoneEntities()
 					gA_ZoneCache[i].iEntityID = iEnt;
 					gI_LastEntityIndex = iEnt;
 
-					break;// stop looping from finding triggers to hook
+					break; // stop looping from finding triggers to hook
 				}
 			}
 		}
@@ -3510,9 +3495,9 @@ public void StartTouchPost(int entity, int other)
 
 			case Zone_End:
 			{
-				if(gI_Stages > 1)//prevent no stages.
+				if(gI_Stages > 1) // prevent no stages.
 				{
-					gI_ClientCurrentStage[other] = gI_Stages + 1;//a hack that record the last stage's time
+					gI_ClientCurrentStage[other] = gI_Stages + 1; // a hack that record the last stage's time
 
 					if(gI_ClientCurrentStage[other] > gI_LastStage[other] && gI_ClientCurrentStage[other] - gI_LastStage[other] == 1 && !gB_LinearMap)
 					{
@@ -3597,7 +3582,7 @@ public void StartTouchPost(int entity, int other)
 
 			case Zone_Mark:
 			{
-				return;//cant do anything in mark zone, insidezone or else are not permitted.
+				return; // cant do anything in mark zone, insidezone or else are not permitted.
 			}
 		}
 
@@ -3874,7 +3859,7 @@ public Action Timer_DrawZonesToClient(Handle Timer, any data)
 
 			if(gA_ZoneSettings[type][track].bVisible || (gA_ZoneCache[i].iZoneFlags & ZF_ForceRender) > 0)
 			{
-				continue;// already drew to everyone, find next undrawn
+				continue; // already drew to everyone, find next undrawn
 			}
 
 			DrawZoneToSingleClient(client, 

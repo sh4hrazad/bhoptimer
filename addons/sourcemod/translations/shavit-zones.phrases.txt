@@ -266,7 +266,13 @@
 	{
 		"#format"	"{1:d}"
 		"en"		"Data: {1}"
-		"chi"		"第几个: {1}"
+		"chi"		"数值: {1}"
+	}
+	"ZoneForceMaxData"
+	{
+		"#format"	"{1:s}"
+		"en"		"[{1}] Create mode \n  (MaxData + 1)"
+		"chi"		"[{1}] 创建模式 \n  (最大数值 + 1)"
 	}
 	"ZoneEnterDataChat"
 	{
@@ -286,7 +292,12 @@
 	"ZoneSetTPZone"
 	{
 		"en"		"Update teleport destination"
-		"chi"		"更新传送点"
+		"chi"		"更新区域的传送点"
+	}
+	"TPToZone"
+	{
+		"en"		"Teleport to zone"
+		"chi"		"传送到该区域"
 	}
 	"ZoneSetYes"
 	{
