@@ -3488,7 +3488,7 @@ public void StartTouchPost(int entity, int other)
 				{
 					gI_ClientCurrentStage[other] = gI_Stages + 1; // a hack that record the last stage's time
 
-					if(gI_ClientCurrentStage[other] > gI_LastStage[other] && gI_ClientCurrentStage[other] - gI_LastStage[other] == 1 && !gB_LinearMap)
+					if(gI_ClientCurrentStage[other] > gI_LastStage[other] && !gB_LinearMap)
 					{
 						gB_EnterStage[other] = true;
 						Shavit_FinishStage(other);
@@ -3499,7 +3499,7 @@ public void StartTouchPost(int entity, int other)
 
 				gI_ClientCurrentCP[other] = (gB_LinearMap) ? gI_Checkpoints + 1 : gI_Stages + 1;
 
-				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && gI_ClientCurrentCP[other] - gI_LastCheckpoint[other] == 1 && !gB_StageTimer[other])
+				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && !gB_StageTimer[other])
 				{
 					gB_EnterCheckpoint[other] = true;
 					Shavit_FinishCheckpoint(other);
@@ -3519,13 +3519,13 @@ public void StartTouchPost(int entity, int other)
 				gI_ClientCurrentStage[other] = data;
 				gI_ClientCurrentCP[other] = data;
 
-				if(gI_ClientCurrentStage[other] > gI_LastStage[other] && gI_ClientCurrentStage[other] - gI_LastStage[other] == 1)
+				if(gI_ClientCurrentStage[other] > gI_LastStage[other])
 				{
 					gB_EnterStage[other] = true;
 					Shavit_FinishStage(other);
 				}
 
-				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && gI_ClientCurrentCP[other] - gI_LastCheckpoint[other] == 1 && !gB_StageTimer[other])
+				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && !gB_StageTimer[other])
 				{
 					gB_EnterCheckpoint[other] = true;
 					Shavit_FinishCheckpoint(other);
@@ -3539,7 +3539,7 @@ public void StartTouchPost(int entity, int other)
 			{
 				gI_ClientCurrentCP[other] = data;
 
-				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && gI_ClientCurrentCP[other] - gI_LastCheckpoint[other] == 1)
+				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other])
 				{
 					gB_EnterCheckpoint[other] = true;
 					Shavit_FinishCheckpoint(other);
