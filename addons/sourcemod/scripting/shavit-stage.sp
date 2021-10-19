@@ -151,10 +151,10 @@ public void OnPluginStart()
 	RegAdminCmd("sm_deletemtop", Command_DeleteMaptop, ADMFLAG_RCON, "Alias of sm_delmtop");
 	RegAdminCmd("sm_deletemaptop", Command_DeleteMaptop, ADMFLAG_RCON, "Alias of sm_delmtop");
 
-	gH_Forwards_EnterStage = CreateGlobalForward("Shavit_OnEnterStage", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
-	gH_Forwards_EnterCheckpoint = CreateGlobalForward("Shavit_OnEnterCheckpoint", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
-	gH_Forwards_LeaveStage = CreateGlobalForward("Shavit_OnLeaveStage", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
-	gH_Forwards_LeaveCheckpoint = CreateGlobalForward("Shavit_OnLeaveCheckpoint", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
+	gH_Forwards_EnterStage = CreateGlobalForward("Shavit_OnEnterStage", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float);
+	gH_Forwards_EnterCheckpoint = CreateGlobalForward("Shavit_OnEnterCheckpoint", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float);
+	gH_Forwards_LeaveStage = CreateGlobalForward("Shavit_OnLeaveStage", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_Cell);
+	gH_Forwards_LeaveCheckpoint = CreateGlobalForward("Shavit_OnLeaveCheckpoint", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float);
 	gH_Forwards_OnWRCP = CreateGlobalForward("Shavit_OnWRCP", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_String);
 	gH_Forwards_OnWRCPDeleted = CreateGlobalForward("Shavit_OnWRCPDeleted", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_String);
 	gH_Forwards_OnFinishStagePre = CreateGlobalForward("Shavit_OnFinishStagePre", ET_Event, Param_Cell, Param_Cell, Param_Cell);
@@ -1064,6 +1064,7 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 			Call_PushCell(data);
 			Call_PushCell(Shavit_GetBhopStyle(client));
 			Call_PushFloat(fPrespeed);
+			Call_PushFloat(Shavit_GetClientTime(client));
 			Call_Finish();
 		}
 
@@ -1076,6 +1077,7 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 			Call_PushCell(data);
 			Call_PushCell(Shavit_GetBhopStyle(client));
 			Call_PushFloat(fPrespeed);
+			Call_PushFloat(Shavit_GetClientTime(client));
 			Call_Finish();
 		}
 	}
@@ -1111,6 +1113,8 @@ public void Shavit_OnLeaveZone(int client, int type, int track, int id, int enti
 			Call_PushCell(data);
 			Call_PushCell(Shavit_GetBhopStyle(client));
 			Call_PushFloat(fPostspeed);
+			Call_PushFloat(Shavit_GetClientTime(client));
+			Call_PushCell(Shavit_IsClientStageTimer(client));
 			Call_Finish();
 		}
 
@@ -1123,6 +1127,7 @@ public void Shavit_OnLeaveZone(int client, int type, int track, int id, int enti
 			Call_PushCell(data);
 			Call_PushCell(Shavit_GetBhopStyle(client));
 			Call_PushFloat(fPostspeed);
+			Call_PushFloat(Shavit_GetClientTime(client));
 			Call_Finish();
 		}
 	}

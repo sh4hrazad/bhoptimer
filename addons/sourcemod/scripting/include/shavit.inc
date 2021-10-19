@@ -1125,11 +1125,11 @@ forward void Shavit_OnChatConfigLoaded();
  * @param style						style index.
  * @param steamid					WRCP steamid.
  * @param time						WRCP time.
- * @param prespeed					WRCP stage prespeed.
+ * @param enterspeed				WRCP stage enterspeed.
  * @param mapname					Current mapname.
  * @noreturn
  */
-forward void Shavit_OnWRCP(int client, int stage, int style, int steamid, float time, float prespeed, const char[] mapname);
+forward void Shavit_OnWRCP(int client, int stage, int style, int steamid, float time, float enterspeed, const char[] mapname);
 
 /**
  * Called when a player teleports with checkpoints.
@@ -1213,10 +1213,11 @@ forward void Shavit_OnStageTimer_Post(int client, int style, int stage, float sp
  * @param client					Client index.
  * @param stage						Stage number.
  * @param style						Style index.
- * @param finalspeed				Speed when client enters stage zone.
+ * @param enterspeed				Speed when client enters stage zone.
+ * @param time						Client current time.
  * @noreturn
  */
-forward void Shavit_OnEnterStage(int client, int stage, int style, float finalspeed);
+forward void Shavit_OnEnterStage(int client, int stage, int style, float enterspeed, float time);
 
 /**
  * Called when a player enters a checkpoint-zone.
@@ -1224,10 +1225,11 @@ forward void Shavit_OnEnterStage(int client, int stage, int style, float finalsp
  * @param client					Client index.
  * @param stage						Stage number.
  * @param style						Style index.
- * @param finalspeed				Speed when client enters stage zone.
+ * @param enterspeed				Speed when client enters checkpoint zone.
+ * @param time						Client current time.
  * @noreturn
  */
-forward void Shavit_OnEnterCheckpoint(int client, int cp, int style, float finalspeed);
+forward void Shavit_OnEnterCheckpoint(int client, int cp, int style, float enterspeed, float time);
 
 /**
  * Called when a player leaves a stage-zone.
@@ -1235,21 +1237,24 @@ forward void Shavit_OnEnterCheckpoint(int client, int cp, int style, float final
  * @param client					Client index.
  * @param stage						Stage number.
  * @param style						Style index.
- * @param prespeed					Speed when client leaves stage zone.
+ * @param leavespeed				Speed when client leaves stage zone.
+ * @param time						Client current time.
+ * @param stagetimer				Check client is not finishing the map, only stage timer.
  * @noreturn
  */
-forward void Shavit_OnLeaveStage(int client, int stage, int style, float prespeed);
+forward void Shavit_OnLeaveStage(int client, int stage, int style, float leavespeed, float time, bool stagetimer);
 
 /**
- * Called when a player leaves a stage-zone.
+ * Called when a player leaves a checkpoint-zone.
  *
  * @param client					Client index.
  * @param stage						Stage number.
  * @param style						Style index.
- * @param prespeed					Speed when client leaves stage zone.
+ * @param leavespeed				Speed when client leaves checkpoint zone.
+ * @param time						Client current time.
  * @noreturn
  */
-forward void Shavit_OnLeaveCheckpoint(int client, int cp, int style, float prespeed);
+forward void Shavit_OnLeaveCheckpoint(int client, int cp, int style, float leavespeed, float time);
 
 /**
  * Called when a player gets the worst record in the server for the style.
@@ -1536,10 +1541,10 @@ forward bool Shavit_OnFinishCheckpointPre(int client, int cpnum, int style);
  * @param style						Style the record was done on.
  * @param time						Current time when the checkpoint finished.
  * @param diff						Difference between wr checkpoint time and pr checkpoint time, below 0 means faster, otherwise slower.
- * @param prespeed					Speed when client enters checkpoint/stage zone.
+ * @param enterspeed				Speed when client enters checkpoint/stage zone.
  * @noreturn
  */
-forward void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float time, float diff, float prespeed);
+forward void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float time, float diff, float enterspeed);
 
 /**
  * Called after shavit-wr caches the current map's WRs.
