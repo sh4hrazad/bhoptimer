@@ -35,7 +35,6 @@
 #pragma newdecls required
 
 //#define DEBUG
-#define CHINESE 1
 #define EF_NODRAW 32
 
 EngineVersion gEV_Type = Engine_Unknown;
@@ -45,32 +44,6 @@ bool gB_Connected = false;
 bool gB_MySQL = false;
 
 char gS_Map[160];
-
-#if CHINESE
-char gS_ZoneNames[][] =
-{
-	"起点", // starts timer
-	"终点", // stops timer
-	"关卡", // stage zone
-	"检查点", // track checkpoint zone
-	"停止计时器区域", // stops the player's timer
-	"传送区域", // teleports to a defined point
-	"标记用" // do nothing, mainly used for marking map like clip, trigger_push and so on, with hookzone collocation is recommended
-};
-
-#else
-char gS_ZoneNames[][] =
-{
-	"Start Zone", // starts timer
-	"End Zone", // stops timer
-	"Stage Zone", // stage zone
-	"Checkpoint Zone", // track checkpoint zone
-	"Stop Timer", // stops the player's timer
-	"Teleport Zone", // teleports to a defined point
-	"Mark Zone" // do nothing, mainly used for marking map like clip, trigger_push and so on, with hookzone collocation is recommended
-};
-
-#endif
 
 enum struct zone_cache_t
 {
@@ -1763,20 +1736,23 @@ public int MenuHandler_SelectHookZone_Track(Menu menu, MenuAction action, int pa
 		Menu submenu = new Menu(MenuHandler_SelectHookZone_Type);
 		submenu.SetTitle("%T\n ", "ZoneMenuTitle", param1, sTrack);
 
-		for(int i = 0; i < sizeof(gS_ZoneNames); i++)
+		for(int i = 0; i < ZONETYPES_SIZE; i++)
 		{
-			if(StrEqual(gS_ZoneNames[i], "Stage Zone") && gI_Checkpoints > 0)
+			char sZoneName[64];
+			GetZoneName(param1, i, sZoneName, 64);
+
+			if(i == Zone_Stage && gI_Checkpoints > 0)
 			{
 				continue;
 			}
 
-			else if(StrEqual(gS_ZoneNames[i], "Checkpoint Zone") && gI_Stages > 1)
+			else if(i == Zone_Checkpoint && gI_Stages > 1)
 			{
 				continue;
 			}
 
 			IntToString(i, sInfo, 8);
-			submenu.AddItem(sInfo, gS_ZoneNames[i]);
+			submenu.AddItem(sInfo, sZoneName);
 		}
 
 		submenu.Display(param1, 300);
@@ -1997,20 +1973,23 @@ public int MenuHandler_SelectZoneTrack(Menu menu, MenuAction action, int param1,
 		Menu submenu = new Menu(MenuHandler_SelectZoneType);
 		submenu.SetTitle("%T\n ", "ZoneMenuTitle", param1, sTrack);
 
-		for(int i = 0; i < sizeof(gS_ZoneNames); i++)
+		for(int i = 0; i < ZONETYPES_SIZE; i++)
 		{
-			if(StrEqual(gS_ZoneNames[i], "Stage Zone") && gI_Checkpoints > 0)
+			char sZoneName[64];
+			GetZoneName(param1, i, sZoneName, 64);
+
+			if(i == Zone_Stage && gI_Checkpoints > 0)
 			{
 				continue;
 			}
 
-			else if(StrEqual(gS_ZoneNames[i], "Checkpoint Zone") && gI_Stages > 1)
+			else if(i == Zone_Checkpoint && gI_Stages > 1)
 			{
 				continue;
 			}
 
 			IntToString(i, sInfo, 8);
-			submenu.AddItem(sInfo, gS_ZoneNames[i]);
+			submenu.AddItem(sInfo, sZoneName);
 		}
 
 		submenu.Display(param1, 300);
@@ -2068,7 +2047,10 @@ void OpenEditMenu(int client)
 		char sTrack[32];
 		GetTrackName(client, gA_ZoneCache[i].iZoneTrack, sTrack, 32);
 
-		FormatEx(sDisplay, 64, "#%d - %s #%d (%s)", (i + 1), gS_ZoneNames[gA_ZoneCache[i].iZoneType], gA_ZoneCache[i].iZoneData, sTrack);
+		char sZoneName[32];
+		GetZoneName(client, gA_ZoneCache[i].iZoneType, sZoneName, 32);
+
+		FormatEx(sDisplay, 64, "#%d - %s #%d (%s)", (i + 1), sZoneName, gA_ZoneCache[i].iZoneData, sTrack);
 
 		if(gB_InsideZoneID[client][i])
 		{
@@ -2165,7 +2147,10 @@ Action OpenDeleteMenu(int client)
 			char sTrack[32];
 			GetTrackName(client, gA_ZoneCache[i].iZoneTrack, sTrack, 32);
 
-			FormatEx(sDisplay, 64, "#%d - %s #%d (%s)", (i + 1), gS_ZoneNames[gA_ZoneCache[i].iZoneType], gA_ZoneCache[i].iZoneData, sTrack);
+			char sZoneName[32];
+			GetZoneName(client, gA_ZoneCache[i].iZoneType, sZoneName, 32);
+
+			FormatEx(sDisplay, 64, "#%d - %s #%d (%s)", (i + 1), sZoneName, gA_ZoneCache[i].iZoneData, sTrack);
 
 			char sInfo[8];
 			IntToString(i, sInfo, 8);
@@ -2214,7 +2199,10 @@ public int MenuHandler_DeleteZone(Menu menu, MenuAction action, int param1, int 
 
 			default:
 			{
-				Shavit_LogMessage("%L - deleted %s (id %d) from map `%s`.", param1, gS_ZoneNames[gA_ZoneCache[id].iZoneType], gA_ZoneCache[id].iDatabaseID, gS_Map);
+				char sZoneName[32];
+				GetZoneName(param1, gA_ZoneCache[id].iZoneType, sZoneName, 32);
+
+				Shavit_LogMessage("%L - deleted %s (id %d) from map `%s`.", param1, sZoneName, gA_ZoneCache[id].iDatabaseID, gS_Map);
 				
 				char sQuery[256];
 				FormatEx(sQuery, 256, "DELETE FROM %smapzones WHERE %s = %d;", gS_MySQLPrefix, (gB_MySQL)? "id":"rowid", gA_ZoneCache[id].iDatabaseID);
@@ -2261,7 +2249,10 @@ public void SQL_DeleteZone_Callback(Database db, DBResultSet results, const char
 	LoadStageZones();
 	LoadCheckpointZones();
 
-	Shavit_PrintToChat(client, "%T", "ZoneDeleteSuccessful", client, gS_ZoneNames[type]);
+	char sZoneName[32];
+	GetZoneName(client, type, sZoneName, 32);
+
+	Shavit_PrintToChat(client, "%T", "ZoneDeleteSuccessful", client, sZoneName);
 	CreateTimer(0.05, Timer_OpenDeleteMenu, client);
 }
 
@@ -2918,10 +2909,12 @@ void InsertZone(int client)
 	bool bInsert = (gI_ZoneDatabaseID[client] == -1 && (iIndex == -1 || iType >= Zone_Start));
 
 	char sQuery[512];
+	char sZoneName[32];
+	GetZoneName(client, iType, sZoneName, 32);
 
 	if(bInsert) // insert
 	{
-		Shavit_LogMessage("%L - added %s to map `%s`.", client, gS_ZoneNames[iType], gS_Map);
+		Shavit_LogMessage("%L - added %s to map `%s`.", client, sZoneName, gS_Map);
 
 		FormatEx(sQuery, 512,
 			"INSERT INTO %smapzones (map, type, corner1_x, corner1_y, corner1_z, corner2_x, corner2_y, corner2_z, destination_x, destination_y, destination_z, track, flags, data, hookname) VALUES ('%s', %d, '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', %d, %d, %d, '%s');",
@@ -2930,7 +2923,7 @@ void InsertZone(int client)
 
 	else // update
 	{
-		Shavit_LogMessage("%L - updated %s in map `%s`.", client, gS_ZoneNames[iType], gS_Map);
+		Shavit_LogMessage("%L - updated %s in map `%s`.", client, sZoneName, gS_Map);
 
 		if(gI_ZoneDatabaseID[client] == -1)
 		{

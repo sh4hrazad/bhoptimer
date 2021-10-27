@@ -20,6 +20,41 @@
 		"#format"	"{1:d}"
 		"en"		"Bonus {1}"
 	}
+	"Zone_Start"
+	{
+		"en"		"Start Zone"
+		"chi"		"起点"
+	}
+	"Zone_End"
+	{
+		"en"		"End Zone"
+		"chi"		"终点"
+	}
+	"Zone_Stage"
+	{
+		"en"		"Stage Zone"
+		"chi"		"关卡"
+	}
+	"Zone_Checkpoint"
+	{
+		"en"		"Checkpoint Zone"
+		"chi"		"检查点"
+	}
+	"Zone_Stop"
+	{
+		"en"		"Stop Timer"
+		"chi"		"停止计时器区域"
+	}
+	"Zone_Teleport"
+	{
+		"en"		"Teleport Zone"
+		"chi"		"标记用"
+	}
+	"Zone_Mark"
+	{
+		"en"		"Mark Zone"
+		"chi"		"起点"
+	}
 	// ---------- Commands ---------- //
 	"NoCommandAccess"
 	{
