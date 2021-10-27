@@ -892,6 +892,7 @@ public void OnMapStart()
 	gI_Bonuses = 0;
 	gI_Stages = 1;
 	gI_Checkpoints = 0;
+
 	UnloadZones(0);
 	FindTriggers();
 	FindTeles();
@@ -988,6 +989,7 @@ public void SQL_GetCheckpointZone_Callback(Database db, DBResultSet results, con
 
 public void OnMapEnd()
 {
+	UnloadZones(0);
 	delete gH_DrawEverything;
 }
 
@@ -2366,6 +2368,7 @@ void Reset(int client)
 	gB_EnterCheckpoint[client] = false;
 	gB_ShowTriggers[client] = false;
 	gB_EditMaxData[client] = false;
+	gH_DrawZonesToClient[client] = null;
 
 	for(int i = 0; i < 3; i++)
 	{
@@ -3187,7 +3190,7 @@ public void SQL_CreateTable_Callback(Database db, DBResultSet results, const cha
 	}
 
 	gB_Connected = true;
-	
+
 	OnMapStart();
 }
 
@@ -3273,12 +3276,12 @@ public void Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
 	gB_ZonesCreated = false;
 
-	RequestFrame(Frame_CreateZoneEntities);
+	RequestFrame(Frame_InitZones);
 }
 
-public void Frame_CreateZoneEntities(any data)
+public void Frame_InitZones(any data)
 {
-	CreateZoneEntities();
+	OnMapStart();
 }
 
 float Abs(float input)
