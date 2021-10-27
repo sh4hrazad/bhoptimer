@@ -3235,7 +3235,10 @@ public Action CommandListener_Noclip(int client, const char[] command, int args)
 			}
 
 			SetEntityMoveType(client, MOVETYPE_NOCLIP);
-			Shavit_SetPracticeMode(client, true, false);
+			if(Shavit_GetTimerStatus(client) != Timer_Paused)
+			{
+				Shavit_SetPracticeMode(client, true, false);
+			}
 			Shavit_PrintToChat(client, "%T", (gB_CanTouchTrigger[client])?"NoclipCanTrigger":"NoclipCannotTrigger", client);
 		}
 

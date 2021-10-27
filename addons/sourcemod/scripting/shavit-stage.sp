@@ -158,7 +158,7 @@ public void OnPluginStart()
 	gH_Forwards_OnWRCP = CreateGlobalForward("Shavit_OnWRCP", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_String);
 	gH_Forwards_OnWRCPDeleted = CreateGlobalForward("Shavit_OnWRCPDeleted", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_String);
 	gH_Forwards_OnFinishStagePre = CreateGlobalForward("Shavit_OnFinishStagePre", ET_Event, Param_Cell, Param_Cell, Param_Cell);
-	gH_Forwards_OnFinishStage = CreateGlobalForward("Shavit_OnFinishStage", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
+	gH_Forwards_OnFinishStage = CreateGlobalForward("Shavit_OnFinishStage", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Cell);
 	gH_Forwards_OnFinishCheckpointPre = CreateGlobalForward("Shavit_OnFinishCheckpointPre", ET_Event, Param_Cell, Param_Cell, Param_Cell);
 	gH_Forwards_OnFinishCheckpoint = CreateGlobalForward("Shavit_OnFinishCheckpoint", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_Float);
 
@@ -1332,10 +1332,10 @@ public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const c
 	int stage = dp.ReadCell();
 	int style = dp.ReadCell();
 	float time = dp.ReadFloat();
-	delete dp;
 
 	if(results == null)
 	{
+		delete dp;
 		LogError("Timer SQL query failed. Reason: %s", error);
 
 		return;
@@ -1344,6 +1344,7 @@ public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const c
 	stage_t stagepr;
 	gA_StageInfo[client][style].GetArray(stage, stagepr, sizeof(stage_t));
 	float postSpeed = gF_PostSpeed[client][stage];
+	int iOverwrite = 1;
 
 	char sQuery[512];
 
@@ -1361,6 +1362,8 @@ public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const c
 			FormatEx(sQuery, 512,
 			"UPDATE `%sstagetimes` SET completions = completions + 1 WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
 			gS_MySQLPrefix, stage, style, gS_Map, GetSteamAccountID(client));
+
+			iOverwrite = 0;
 		}
 	}
 	else
@@ -1370,11 +1373,22 @@ public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const c
 		gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, time, style, stage, postSpeed, GetTime());
 	}
 
-	gH_SQL.Query(SQL_PrCheck_Callback, sQuery, GetClientSerial(client));
+	dp.WriteCell(iOverwrite);
+
+	gH_SQL.Query(SQL_PrCheck_Callback, sQuery, dp);
 }
 
-public void SQL_PrCheck_Callback(Database db, DBResultSet results, const char[] error, any data)
+public void SQL_PrCheck_Callback(Database db, DBResultSet results, const char[] error, DataPack dp)
 {
+	dp.Reset();
+
+	int client = GetClientFromSerial(dp.ReadCell());
+	int stage = dp.ReadCell();
+	int style = dp.ReadCell();
+	float time = dp.ReadFloat();
+	bool bImproved = (dp.ReadCell() == 1);
+	delete dp;
+
 	if(results == null)
 	{
 		LogError("Insert PR error! Reason: %s", error);
@@ -1382,7 +1396,15 @@ public void SQL_PrCheck_Callback(Database db, DBResultSet results, const char[] 
 		return;
 	}
 
-	ReloadStageInfo(GetClientFromSerial(data));
+	Call_StartForward(gH_Forwards_OnFinishStage);
+	Call_PushCell(client);
+	Call_PushCell(stage);
+	Call_PushCell(style);
+	Call_PushFloat(time);
+	Call_PushCell(bImproved);
+	Call_Finish();
+
+	ReloadStageInfo(client);
 	ReloadWRStages();
 }
 
@@ -1656,13 +1678,6 @@ public int Native_FinishStage(Handle handler, int numParams)
 				return;
 			}
 		}
-
-		Call_StartForward(gH_Forwards_OnFinishStage);
-		Call_PushCell(client);
-		Call_PushCell(stage - 1);
-		Call_PushCell(style);
-		Call_PushFloat(time);
-		Call_Finish();
 
 		OnWRCPCheck(client, stage - 1, style, time); // check if wrcp
 		Insert_WRCP_PR(client, stage - 1, style, time); // check if wrcp and pr, insert or update

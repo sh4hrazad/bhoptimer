@@ -329,11 +329,17 @@
 		"en"		"{grey}Start: {grey2}{1} u/s {default}"
 		"chi"		"{grey}起点 Prestrafe: {grey2}{1} u/s {default}"
 	}
-	"StageCPPrestrafe"
+	"CPStagePrestrafe"
 	{
 		"#format"	"{1:d},{2:d},{3:s}"
-		"en"		"{grey}Stage {1}: {grey2}{2} u/s {default}| {gold}WR:{default} {3}"
-		"chi"		"{grey}关卡 [{1}] Prestrafe: {grey2}{2} u/s {default}| {gold}WR:{default} {3}"
+		"en"		"{grey}CP{default} [{orchid}{1}{default}] | Prestrafe: {grey2}{2} u/s{default} | WR: {3}."
+		"chi"		"{grey}检查点{default} [{orchid}{1}{default}] | Prestrafe: {grey2}{2} u/s{default} | WR: {3}."
+	}
+	"CPLinearPrestrafe"
+	{
+		"#format"	"{1:d},{2:d},{3:s}"
+		"en"		"{grey}CP{default} [{orchid}{1}{default}] | Speed: {grey2}{2} u/s{default} | WR: {3}."
+		"chi"		"{grey}检查点{default} [{orchid}{1}{default}] | Speed: {grey2}{2} u/s{default} | WR: {3}."
 	}
 	"StageWRCPPrestrafe"
 	{
@@ -362,7 +368,13 @@
 		"en"		"{grey}CP{default} [{orchid}{1}{default}] | {orchid}{2}{default} | {gold}WR{default} {orchid}{3}{default}."
 		"chi"		"{grey}检查点{default} [{orchid}{1}{default}] | {orchid}{2}{default} | {gold}WR{default} {orchid}{3}{default}."
 	}
-	"ZoneStageTime"
+	"ZoneStageTime-Improved"
+	{
+		"#format"	"{1:d},{2:s},{3:s},{4:s}"
+		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {orchid}{2}{default} | {gold}WRCP{default} {orchid}{3}{default} | {gold}Rank{default}: {blue}{4}{default}."
+		"chi"		"{grey}关卡{default} [{orchid}{1}{default}] | {orchid}{2}{default} | {gold}WRCP{default} {orchid}{3}{default} | {gold}排名{default}: {blue}{4}{default}."
+	}
+	"ZoneStageTime-Noimproved"
 	{
 		"#format"	"{1:d},{2:s},{3:s}"
 		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {orchid}{2}{default} | {gold}WRCP{default} {orchid}{3}{default}."

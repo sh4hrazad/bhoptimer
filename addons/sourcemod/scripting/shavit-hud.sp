@@ -403,7 +403,7 @@ public void Shavit_OnStartTimer_Post(int client, int style, int track, float spe
 		wrSpeed = Shavit_GetWRCPPostspeed(1, style);
 	}
 
-	FormatPreStrafeSpeed(gS_PreStrafeDiff[client], speed, wrSpeed);
+	FormatDiffPreStrafeSpeed(gS_PreStrafeDiff[client], speed, wrSpeed);
 
 	char sPrestrafe[128];
 	if(track == Track_Main)
@@ -438,21 +438,10 @@ public void Shavit_OnStageTimer_Post(int client, int style, int stage, float spe
 		return;
 	}
 
-	float wrcpSpeed;
-
-	if(Shavit_IsClientStageTimer(client))
-	{
-		wrcpSpeed = Shavit_GetWRStagePostspeed(stage, style);
-	}
-	else
-	{
-		wrcpSpeed = Shavit_GetWRCPPostspeed(stage, style);
-	}
-
-	FormatPreStrafeSpeed(gS_PreStrafeDiff[client], speed, wrcpSpeed);
+	FormatDiffPreStrafeSpeed(gS_PreStrafeDiff[client], speed, Shavit_GetWRStagePostspeed(stage, style));
 
 	char sPrestrafe[128];
-	FormatEx(sPrestrafe, 128, "%T", (Shavit_IsClientStageTimer(client))?"StageWRCPPrestrafe":"StageCPPrestrafe", client, stage, RoundToFloor(speed), gS_PreStrafeDiff[client]);
+	FormatEx(sPrestrafe, 128, "%T", "StageWRCPPrestrafe", client, stage, RoundToFloor(speed), gS_PreStrafeDiff[client]);
 	Shavit_PrintToChat(client, sPrestrafe);
 
 	for(int i = 1; i <= MaxClients; i++)
@@ -464,32 +453,7 @@ public void Shavit_OnStageTimer_Post(int client, int style, int stage, float spe
 	}
 }
 
-void FormatPreStrafeSpeed(char[] buffer, float originSpeed, float wrSpeed)
-{
-	float diff = originSpeed - wrSpeed;
-
-	if(wrSpeed <= 0.0)
-	{
-		strcopy(buffer, 64, "N/A");
-	}
-	else
-	{
-		if(diff > 0.0)
-		{
-			FormatEx(buffer, 64, "%t", "PrestrafeIncrease", RoundToFloor(diff));
-		}
-		else if(diff == 0.0)
-		{
-			FormatEx(buffer, 64, "%t", "PrestrafeNochange", RoundToFloor(diff));
-		}
-		else
-		{
-			FormatEx(buffer, 64, "%t", "PrestrafeDecrease", RoundToFloor(diff));
-		}
-	}
-}
-
-public void Shavit_OnFinishStage(int client, int stage, int style, float time)
+public void Shavit_OnFinishStage(int client, int stage, int style, float time, bool improved)
 {
 	float wrcpTime = Shavit_GetWRStageTime(stage, style);
 	float diff = time - wrcpTime;
@@ -513,7 +477,17 @@ public void Shavit_OnFinishStage(int client, int stage, int style, float time)
 	}
 
 	char sMessage[255];
-	FormatEx(sMessage, 255, "%T", "ZoneStageTime", client, stage, sTime, sDifftime);
+	if(improved)
+	{
+		char sRank[32];
+		FormatEx(sRank, 32, "%d/%d", Shavit_GetStageRankForTime(style, time, stage), Shavit_GetStageRecordAmount(style, stage));
+		FormatEx(sMessage, 255, "%T", "ZoneStageTime-Improved", client, stage, sTime, sDifftime, sRank);
+	}
+	else
+	{
+		FormatEx(sMessage, 255, "%T", "ZoneStageTime-Noimproved", client, stage, sTime, sDifftime);
+	}
+
 	Shavit_PrintToChat(client, "%s", sMessage);
 }
 
@@ -548,7 +522,72 @@ public void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float ti
 
 	char sMessage[255];
 	FormatEx(sMessage, 255, "%T", "ZoneCheckpointTime", client, cpnum, sTime, sDifftime);
+
+	DataPack dp = new DataPack();
+	dp.WriteCell(GetClientSerial(client));
+	dp.WriteString(sMessage);
+
+	// make sure cpmessage is after stagemessage, in order to print cp prestrafe and get a smoother sight
+	CreateTimer(0.1, Timer_CPTimeMessage, dp);
+}
+
+public Action Timer_CPTimeMessage(Handle timer, DataPack dp)
+{
+	dp.Reset();
+
+	int client = GetClientFromSerial(dp.ReadCell());
+	char sMessage[255];
+	dp.ReadString(sMessage, 255);
+
+	delete dp;
+
 	Shavit_PrintToChat(client, "%s", sMessage);
+
+	return Plugin_Stop;
+}
+
+public void Shavit_OnLeaveStage(int client, int stage, int style, float leavespeed, float time, bool stagetimer)
+{
+	if(stagetimer || Shavit_GetClientTime(client) == 0.0)
+	{
+		return;
+	}
+
+	FormatDiffPreStrafeSpeed(gS_PreStrafeDiff[client], leavespeed, Shavit_GetWRCPPostspeed(stage, style));
+
+	Shavit_PrintToChat(client, "%T", "CPStagePrestrafe", client, stage, RoundToFloor(leavespeed), gS_PreStrafeDiff[client]);
+}
+
+public void Shavit_OnEnterCheckpoint(int client, int cp, int style, float enterspeed, float time)
+{
+	FormatDiffPreStrafeSpeed(gS_PreStrafeDiff[client], enterspeed, Shavit_GetWRCPPrespeed(cp, style));
+
+	Shavit_PrintToChat(client, "%T", "CPLinearPrestrafe", client, cp, RoundToFloor(enterspeed), gS_PreStrafeDiff[client]);
+}
+
+void FormatDiffPreStrafeSpeed(char[] buffer, float originSpeed, float wrSpeed)
+{
+	float diff = originSpeed - wrSpeed;
+
+	if(wrSpeed <= 0.0)
+	{
+		strcopy(buffer, 64, "N/A");
+	}
+	else
+	{
+		if(diff > 0.0)
+		{
+			FormatEx(buffer, 64, "%t", "PrestrafeIncrease", RoundToFloor(diff));
+		}
+		else if(diff == 0.0)
+		{
+			FormatEx(buffer, 64, "%t", "PrestrafeNochange", RoundToFloor(diff));
+		}
+		else
+		{
+			FormatEx(buffer, 64, "%t", "PrestrafeDecrease", RoundToFloor(diff));
+		}
+	}
 }
 
 public void OnClientPutInServer(int client)
@@ -1096,7 +1135,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
-			if(0 < data.fDiffTimer <= 5.0 && GetGameTime() > 5.0 && data.iCheckpoint != 0 && !data.bStageTimer)
+			if(0 < data.fDiffTimer <= 5.0 && GetGameTime() > 5.0 && data.iCheckpoint != 0 && !data.bStageTimer && data.iTimerStatus != Timer_Stopped)
 			{
 				int iDiffColor;
 				if(Shavit_GetWRCPTime(data.iCheckpoint, data.iStyle) == -1.0)

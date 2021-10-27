@@ -1562,7 +1562,7 @@ forward bool Shavit_OnFinishStagePre(int client, int stage, int style);
  * @param time						Record time.
  * @noreturn
  */
-forward void Shavit_OnFinishStage(int client, int stage, int style, float time);
+forward void Shavit_OnFinishStage(int client, int stage, int style, float time, bool improved);
 
 /**
  * Called before a player finishes a checkpoint.
