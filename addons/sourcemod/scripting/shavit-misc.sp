@@ -313,7 +313,7 @@ public void OnPluginStart()
 	LoadTranslations("shavit-misc.phrases");
 
 	// advertisements
-	gA_Advertisements = new ArrayList(300);
+	gA_Advertisements = new ArrayList(600);
 	hostname = FindConVar("hostname");
 	hostport = FindConVar("hostport");
 	RegConsoleCmd("sm_toggleadverts", Command_ToggleAdverts, "Toggles visibility of advertisements");
@@ -769,8 +769,8 @@ bool LoadAdvertisementsConfig()
 
 	do
 	{
-		char sTempMessage[300];
-		kv.GetString(NULL_STRING, sTempMessage, 300, "<EMPTY ADVERTISEMENT>");
+		char sTempMessage[600];
+		kv.GetString(NULL_STRING, sTempMessage, 600, "<EMPTY ADVERTISEMENT>");
 
 		gA_Advertisements.PushString(sTempMessage);
 	}
@@ -1187,6 +1187,23 @@ public Action Timer_Advertisement(Handle timer)
 		FormatEx(sIPAddress, 64, "%d.%d.%d.%d:%d", iAddress[0], iAddress[1], iAddress[2], iAddress[3], hostport.IntValue);
 	}
 
+	bool bLinear = Shavit_IsLinearMap();
+
+	char sMapType[16];
+	strcopy(sMapType, 16, bLinear? "竞速图":"关卡图");
+
+	char sMapCPType[16];
+	strcopy(sMapCPType, 16, bLinear? "检查点数":"关卡数");
+
+	char sMapCPs[4];
+	IntToString(bLinear? Shavit_GetMapCheckpoints():Shavit_GetMapStages(), sMapCPs, 4);
+
+	char sMapTier[4];
+	IntToString(Shavit_GetMapTier(gS_Map), sMapTier, 4);
+
+	char sMapBonuses[4];
+	IntToString(Shavit_GetMapBonuses(), sMapBonuses, 4);
+
 	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(IsClientConnected(i) && IsClientInGame(i))
@@ -1202,17 +1219,22 @@ public Action Timer_Advertisement(Handle timer)
 				}
 			}
 
-			char sTempMessage[300];
-			gA_Advertisements.GetString(gI_AdvertisementsCycle, sTempMessage, 300);
+			char sTempMessage[600];
+			gA_Advertisements.GetString(gI_AdvertisementsCycle, sTempMessage, 600);
 
 			char sName[MAX_NAME_LENGTH];
 			GetClientName(i, sName, MAX_NAME_LENGTH);
-			ReplaceString(sTempMessage, 300, "{name}", sName);
-			ReplaceString(sTempMessage, 300, "{timeleft}", sTimeLeft);
-			ReplaceString(sTempMessage, 300, "{timeleftraw}", sTimeLeftRaw);
-			ReplaceString(sTempMessage, 300, "{hostname}", sHostname);
-			ReplaceString(sTempMessage, 300, "{serverip}", sIPAddress);
-			ReplaceString(sTempMessage, 300, "{map}", gS_Map);
+			ReplaceString(sTempMessage, 600, "{name}", sName);
+			ReplaceString(sTempMessage, 600, "{timeleft}", sTimeLeft);
+			ReplaceString(sTempMessage, 600, "{timeleftraw}", sTimeLeftRaw);
+			ReplaceString(sTempMessage, 600, "{hostname}", sHostname);
+			ReplaceString(sTempMessage, 600, "{serverip}", sIPAddress);
+			ReplaceString(sTempMessage, 600, "{map}", gS_Map);
+			ReplaceString(sTempMessage, 600, "{maptype}", sMapType);
+			ReplaceString(sTempMessage, 600, "{mapcptype}", sMapCPType);
+			ReplaceString(sTempMessage, 600, "{mapcps}", sMapCPs);
+			ReplaceString(sTempMessage, 600, "{maptier}", sMapTier);
+			ReplaceString(sTempMessage, 600, "{mapbonuses}", sMapBonuses);
 
 			Shavit_PrintToChat(i, "%s", sTempMessage);
 		}
