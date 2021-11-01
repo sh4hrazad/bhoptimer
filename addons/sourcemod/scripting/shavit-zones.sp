@@ -21,6 +21,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
+#include <regex>
 #include <convar_class>
 
 #undef REQUIRE_PLUGIN
@@ -130,6 +131,8 @@ ArrayList gA_Triggers;
 ArrayList gA_HookTriggers;
 ArrayList gA_TeleDestination;
 bool gB_ZonesCreated = false;
+bool gB_MainHasStart = false;
+bool gB_MainHasEnd = false;
 int gI_Bonuses;
 int gI_Stages; // how many stages in a map, default 1.
 int gI_Checkpoints; // how many checkpoint zones in a map, default 0.
@@ -888,6 +891,8 @@ public void OnMapStart()
 	PrecacheModel("models/props/cs_office/vending_machine.mdl");
 
 	gB_LinearMap = false;
+	gB_MainHasStart = false;
+	gB_MainHasEnd = false;
 	gI_MapZones = 0;
 	gI_Bonuses = 0;
 	gI_Stages = 1;
@@ -960,8 +965,6 @@ public void SQL_GetStageZone_Callback(Database db, DBResultSet results, const ch
 	}
 
 	gB_LinearMap = (gI_Stages == 1);
-
-	Shavit_ReloadWRStages();
 }
 
 void LoadCheckpointZones()
@@ -983,8 +986,6 @@ public void SQL_GetCheckpointZone_Callback(Database db, DBResultSet results, con
 	{
 		gI_Checkpoints = results.FetchInt(1);
 	}
-
-	Shavit_ReloadWRCPs();
 }
 
 public void OnMapEnd()
@@ -1035,16 +1036,14 @@ void KillZoneEntity(int index)
 			gB_InsideZoneID[i][index] = false;
 		}
 
+		UnhookEntity(entity);
+
 		char sTargetname[32];
 		GetEntPropString(entity, Prop_Data, "m_iName", sTargetname, 32);
-
-		if(StrContains(sTargetname, "shavit_zones_") == -1)
+		if(StrContains(sTargetname, "shavit_zones_") != -1)
 		{
-			return;
+			AcceptEntityInput(entity, "Kill");
 		}
-
-		UnhookEntity(entity);
-		AcceptEntityInput(entity, "Kill");
 	}
 }
 
@@ -1082,8 +1081,6 @@ void UnloadZones(int zone)
 			}
 		}
 	}
-
-	return;
 }
 
 void RefreshZones()
@@ -1144,10 +1141,283 @@ public void SQL_RefreshZones_Callback(Database db, DBResultSet results, const ch
 		results.FetchString(14, gA_ZoneCache[gI_MapZones].sZoneHookname, 128);
 		gA_ZoneCache[gI_MapZones].iEntityID = -1;
 
+		if(gA_ZoneCache[gI_MapZones].iZoneTrack == Track_Main)
+		{
+			if(type == Zone_Start)
+			{
+				gB_MainHasStart = true;
+			}
+			else if(type == Zone_End)
+			{
+				gB_MainHasEnd = true;
+			}
+		}
+
 		gI_MapZones++;
 	}
 
+	if(!gB_MainHasStart)
+	{
+		Shavit_PrintToChatAll("主线缺少起点区域，请联系管理员添加.");
+	}
+
+	if(!gB_MainHasEnd)
+	{
+		Shavit_PrintToChatAll("主线缺少终点区域，请联系管理员添加.");
+	}
+
 	CreateZoneEntities();
+}
+
+bool PreBuildZones()
+{
+	Shavit_PrintToChatAll("该地图没有区域，系统将自动设置区域中...");
+
+	bool bHaveZones = false;
+
+	for(int i = 0; i < gA_Triggers.Length; i++)
+	{
+		int iEnt = gA_Triggers.Get(i);
+
+		char sTriggerName[128];
+		GetEntPropString(iEnt, Prop_Send, "m_iName", sTriggerName, 128);
+		if(StrContains(sTriggerName, "trigger_") != -1)
+		{
+			continue;
+		}
+
+		int iData = 0;
+		int iType = Zone_Start;
+		int iTrack = Track_Main;
+
+		if(!PreBuildMainTrack(sTriggerName, iData, iType) && 
+			!PreBuildBonusTrack(sTriggerName, iTrack, iType) && 
+			!PreBuildStages(sTriggerName, iData, iType) && 
+			!PreBuildCheckpoints(sTriggerName, iData, iType))
+		{
+			continue;
+		}
+
+		bHaveZones = true;
+
+		float origin[3];
+		GetEntPropVector(iEnt, Prop_Send, "m_vecOrigin", origin);
+
+		float fMins[3], fMaxs[3];
+		GetEntPropVector(iEnt, Prop_Send, "m_vecMins", fMins);
+		GetEntPropVector(iEnt, Prop_Send, "m_vecMaxs", fMaxs);
+
+		for (int j = 0; j < 3; j++)
+		{
+			fMins[j] = (fMins[j] + origin[j]);
+		}
+
+		for (int j = 0; j < 3; j++)
+		{
+			fMaxs[j] = (fMaxs[j] + origin[j]);
+		}
+
+		char sQuery[512];
+		FormatEx(sQuery, 512,
+				"INSERT INTO `%smapzones` (map, type, corner1_x, corner1_y, corner1_z, corner2_x, corner2_y, corner2_z, destination_x, destination_y, destination_z, track, flags, data, hookname) VALUES ('%s', %d, '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', %d, %d, %d, '%s');",
+				gS_MySQLPrefix, gS_Map, iType, fMins[0], fMins[1], fMins[2], fMaxs[0], fMaxs[1], fMaxs[2], 0.0, 0.0, 0.0, iTrack, 0, iData, sTriggerName);
+
+		DataPack dp = new DataPack();
+		dp.WriteCell(iTrack);
+		dp.WriteCell(iType);
+
+		gH_SQL.Query(SQL_InsertPrebuildZone_Callback, sQuery, dp);
+	}
+
+	if(bHaveZones)
+	{
+		CreateTimer(5.0, Timer_PrebuildZoneDone);
+
+		return true;
+	}
+
+	Shavit_PrintToChatAll("无法预设地图，请管理员手动添加区域...");
+
+	return false;
+}
+
+bool PreBuildMainTrack(const char[] sTemp, int& data, int& type)
+{
+	char sTriggerName[128];
+	strcopy(sTriggerName, 128, sTemp);
+	LowercaseString(sTriggerName);
+
+	if(StrContains(sTriggerName, "bonus") != -1)
+	{
+		return false;
+	}
+
+	if(StrContains(sTriggerName, "map") == -1 && StrContains(sTriggerName, "s1") == -1 && StrContains(sTriggerName, "stage1") == -1)
+	{
+		return false;
+	}
+
+	if(StrContains(sTriggerName, "start") == -1 && StrContains(sTriggerName, "end") == -1 && !StrEqual(sTriggerName, "s1") && !StrEqual(sTriggerName, "stage1"))
+	{
+		return false;
+	}
+
+	Regex sRegex = new Regex("[0-9]{1,}");
+	if(sRegex.Match(sTriggerName) > 0)
+	{
+		char sTracknum[4];
+		sRegex.GetSubString(0, sTracknum, 4);
+		data = StringToInt(sTracknum);
+	}
+
+	delete sRegex;
+
+	if(StrContains(sTriggerName, "end") != -1)
+	{
+		type = Zone_End;
+	}
+
+	return true;
+}
+
+bool PreBuildBonusTrack(const char[] sTemp, int& track, int& type)
+{
+	char sTriggerName[128];
+	strcopy(sTriggerName, 128, sTemp);
+	LowercaseString(sTriggerName);
+
+	Regex sRegex = new Regex("^([b][0-9]{1,})|([b][_0-9]{1,})$");
+	if(sRegex.Match(sTriggerName) == 0 && StrContains(sTriggerName, "bonus") == -1)
+	{
+		return false;
+	}
+
+	track = Track_Bonus;
+
+	sRegex = new Regex("[0-9]{1,}");
+	if(sRegex.Match(sTriggerName) > 0)
+	{
+		char sTracknum[4];
+		sRegex.GetSubString(0, sTracknum, 4);
+		track = StringToInt(sTracknum);
+	}
+
+	delete sRegex;
+
+	if(StrContains(sTriggerName, "end") != -1)
+	{
+		type = Zone_End;
+	}
+
+	return true;
+}
+
+bool PreBuildStages(const char[] sTemp, int& data, int& type)
+{
+	char sTriggerName[128];
+	strcopy(sTriggerName, 128, sTemp);
+	LowercaseString(sTriggerName);
+
+	// prevent some stupid authors making a end zone for stage.
+	if(StrContains(sTriggerName, "end") != -1)
+	{
+		return false;
+	}
+
+	Regex sRegex = new Regex("^([s][0-9]{1,})|([s][_0-9]{1,})$");
+	if(sRegex.Match(sTriggerName) == 0 && StrContains(sTriggerName, "stage") == -1)
+	{
+		return false;
+	}
+
+	data = 2;
+
+	sRegex = new Regex("[0-9]{1,}");
+	if(sRegex.Match(sTriggerName) > 0)
+	{
+		char sTracknum[4];
+		sRegex.GetSubString(0, sTracknum, 4);
+		data = StringToInt(sTracknum);
+	}
+
+	delete sRegex;
+
+	type = Zone_Stage;
+
+	return true;
+}
+
+bool PreBuildCheckpoints(const char[] sTemp, int& data, int& type)
+{
+	char sTriggerName[128];
+	strcopy(sTriggerName, 128, sTemp);
+	LowercaseString(sTriggerName);
+
+	if(StrContains(sTriggerName, "cp") == -1 && StrContains(sTriggerName, "checkpoint") == -1)
+	{
+		return false;
+	}
+
+	data = 1;
+
+	Regex sRegex = new Regex("[0-9]{1,}");
+	if(sRegex.Match(sTriggerName) > 0)
+	{
+		char sTracknum[4];
+		sRegex.GetSubString(0, sTracknum, 4);
+		data = StringToInt(sTracknum);
+	}
+
+	delete sRegex;
+
+	type = Zone_Checkpoint;
+
+	return true;
+}
+
+public void SQL_InsertPrebuildZone_Callback(Database db, DBResultSet results, const char[] error, DataPack dp)
+{
+	dp.Reset();
+	int track = dp.ReadCell();
+	int type = dp.ReadCell();
+
+	delete dp;
+
+	if(results == null)
+	{
+		LogError("Insert prebuild zones error! Reason: %s", error);
+
+		return;
+	}
+
+	if(track == Track_Main)
+	{
+		if(type == Zone_Start || type == Zone_End)
+		{
+			Shavit_PrintToChatAll("主线区域预设成功");
+		}
+		else if(type == Zone_Stage)
+		{
+			Shavit_PrintToChatAll("关卡区域预设成功");
+		}
+		else if(type == Zone_Checkpoint)
+		{
+			Shavit_PrintToChatAll("检查点区域预设成功");
+		}
+	}
+	else
+	{
+		Shavit_PrintToChatAll("奖励区域预设成功");
+	}
+}
+
+public Action Timer_PrebuildZoneDone(Handle timer)
+{
+	Shavit_PrintToChatAll("预设地图区域成功，可能会漏设区域，如发现请及时联系OP...");
+
+	OnMapStart();
+
+	return Plugin_Stop;
 }
 
 public void OnClientPutInServer(int client)
@@ -2104,6 +2374,15 @@ public int MenuHandler_ZoneEdit(Menu menu, MenuAction action, int param1, int pa
 				gI_ZoneDatabaseID[param1] = gA_ZoneCache[id].iDatabaseID;
 				gI_ZoneFlags[param1] = gA_ZoneCache[id].iZoneFlags;
 				gI_ZoneData[param1][gI_ZoneType[param1]] = gA_ZoneCache[id].iZoneData;
+				if(gI_ZoneType[param1] == Zone_Stage && gA_ZoneCache[id].iZoneData != 0)
+				{
+					gI_ZoneData[param1][gI_ZoneType[param1]] = 2;
+				}
+				else if(gI_ZoneType[param1] == Zone_Checkpoint && gA_ZoneCache[id].iZoneData != 0)
+				{
+					gI_ZoneData[param1][gI_ZoneType[param1]] = 1;
+				}
+
 				gI_ZoneID[param1] = id;
 				strcopy(gS_ZoneHookname[param1], 128, gA_ZoneCache[id].sZoneHookname);
 
@@ -3444,6 +3723,18 @@ void CreateZoneEntities()
 
 		gB_ZonesCreated = true;
 	}
+
+	if(!gB_ZonesCreated)
+	{
+		CreateTimer(10.0, Timer_DelayPreBuildZones);
+	}
+}
+
+public Action Timer_DelayPreBuildZones(Handle timer)
+{
+	PreBuildZones();
+
+	return Plugin_Stop;
 }
 
 public void StartTouchPost(int entity, int other)

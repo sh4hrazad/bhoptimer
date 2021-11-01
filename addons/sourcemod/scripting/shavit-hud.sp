@@ -1135,7 +1135,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
-			if(0 < data.fDiffTimer <= 5.0 && GetGameTime() > 5.0 && data.iCheckpoint != 0 && !data.bStageTimer && data.iTimerStatus != Timer_Stopped)
+			if(data.iCheckpoint != 0 && !data.bStageTimer && data.iTimerStatus != Timer_Stopped)
 			{
 				int iDiffColor;
 				if(Shavit_GetWRCPTime(data.iCheckpoint, data.iStyle) == -1.0)
@@ -1265,7 +1265,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 				iColor = 0xFFC966;
 			}
 
-			if(!StrEqual(data.sPreStrafe, "None") && data.iTrack == Track_Main)
+			if(!StrEqual(data.sPreStrafe, "None") && 0 < data.fDiffTimer <= 5.0 && GetGameTime() > 5.0 && data.iTrack == Track_Main)
 			{
 				int iDiffColor = 0x00FF7F;
 				if(StrContains(data.sPreStrafe, "-") != -1)
