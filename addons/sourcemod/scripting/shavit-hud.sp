@@ -1135,7 +1135,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
-			if(data.iCheckpoint != 0 && !data.bStageTimer && data.iTimerStatus != Timer_Stopped)
+			if(data.iCheckpoint != 0 && data.iStyle != -1 && !data.bStageTimer && data.iTimerStatus != Timer_Stopped)
 			{
 				int iDiffColor;
 				if(Shavit_GetWRCPTime(data.iCheckpoint, data.iStyle) == -1.0)
@@ -1319,6 +1319,7 @@ void UpdateMainHUD(int client)
 	huddata_t huddata;
 	huddata.iStyle = (bReplay) ? Shavit_GetReplayBotStyle(target) : Shavit_GetBhopStyle(target);
 	huddata.iTrack = (bReplay) ? Shavit_GetReplayBotTrack(target) : Shavit_GetClientTrack(target);
+	huddata.iStage = (bReplay) ? Shavit_GetReplayBotStage(target) : Shavit_GetClientStage(target);
 
 	if(!bReplay)
 	{
@@ -1350,9 +1351,6 @@ void UpdateMainHUD(int client)
 	huddata.iTarget = target;
 	huddata.iSpeed = RoundToNearest(fSpeedHUD);
 	huddata.iZoneHUD = iZoneHUD;
-	huddata.iStyle = (bReplay)? iReplayStyle:Shavit_GetBhopStyle(target);
-	huddata.iTrack = (bReplay)? iReplayTrack:Shavit_GetClientTrack(target);
-	huddata.iStage = (bReplay)? iReplayStage:Shavit_GetClientStage(target);
 	huddata.fTime = (bReplay)? fReplayTime:Shavit_GetClientTime(target);
 	huddata.iJumps = (bReplay)? 0:Shavit_GetClientJumps(target);
 	huddata.iStrafes = (bReplay)? 0:Shavit_GetStrafeCount(target);

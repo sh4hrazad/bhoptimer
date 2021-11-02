@@ -662,6 +662,10 @@ public Action Command_StartTimer(int client, int args)
 		else if (args < 1)
 		{
 			track = Shavit_GetClientTrack(client);
+			if(track == Track_Main)
+			{
+				return OpenBonusMenu(client);
+			}
 		}
 		else
 		{
@@ -717,6 +721,58 @@ public Action Command_StartTimer(int client, int args)
 	}
 
 	return Plugin_Handled;
+}
+
+Action OpenBonusMenu(int client)
+{
+	Menu menu = new Menu(OpenBonusMenu_Handler);
+	menu.SetTitle("Select a bonus\n ");
+
+	int lastbonus = Track_Bonus;
+
+	for(int i = Track_Bonus; i <= Track_Bonus_Last; i++)
+	{
+		if(gB_Zones && Shavit_ZoneExists(Zone_Start, i))
+		{
+			char sItem[4];
+			IntToString(i, sItem, 4);
+
+			char sDisplay[16];
+			FormatEx(sDisplay, 16, "Bonus %d", i);
+			menu.AddItem(sItem, sDisplay);
+
+			lastbonus = i;
+		}
+	}
+
+	if(menu.ItemCount <= 1)
+	{
+		delete menu;
+		FakeClientCommand(client, "sm_b%d", lastbonus);
+	}
+	else
+	{
+		menu.Display(client, -1);
+	}
+
+	return Plugin_Handled;
+}
+
+public int OpenBonusMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		char sInfo[4];
+		menu.GetItem(param2, sInfo, 4);
+
+		FakeClientCommand(param1, "sm_b%d", StringToInt(sInfo));
+	}
+	else if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
 }
 
 public Action Command_TeleportEnd(int client, int args)
