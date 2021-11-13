@@ -793,6 +793,7 @@ public int Maptop_FinalMenu_Handler(Menu menu, MenuAction action, int param1, in
 			
 			DataPack dp = new DataPack();
 			dp.WriteCell(GetClientSerial(param1));
+			dp.WriteCell(param2 + 1);
 			dp.WriteCell(steamid);
 
 			gH_SQL.Query(SQL_DeleteMaptop_Callback, sQuery, dp);
@@ -822,6 +823,7 @@ public void SQL_DeleteMaptop_Callback(Database db, DBResultSet results, const ch
 	dp.Reset();
 
 	int client = GetClientFromSerial(dp.ReadCell());
+	int rank = dp.ReadCell();
 	int steamid = dp.ReadCell();
 
 	delete dp;
@@ -839,6 +841,16 @@ public void SQL_DeleteMaptop_Callback(Database db, DBResultSet results, const ch
 	if(StrEqual(gS_MapChoice[client], gS_Map))
 	{
 		ResetWRStages();
+	}
+
+	if(rank == 1)
+	{
+		Call_StartForward(gH_Forwards_OnWRCPDeleted);
+		Call_PushCell(stage);
+		Call_PushCell(style);
+		Call_PushCell(steamid);
+		Call_PushString(gS_Map);
+		Call_Finish();
 	}
 
 	Shavit_PrintToChat(client, "%T", "StageRecordDeleteSuccessful", client, stage, gS_StyleStrings[style].sStyleName, steamid);
