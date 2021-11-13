@@ -872,7 +872,7 @@ public void Handler_VoteFinishedGeneric(Menu menu, int num_votes, int num_client
 				Call_Finish();
 			}
 
-			DataPack data;
+			DataPack data = new DataPack();
 			CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, data);
 			data.WriteString(map);
 			data.WriteString("RTV Mapvote");
@@ -1649,7 +1649,7 @@ public int MapsMenuHandler(Menu menu, MenuAction action, int param1, int param2)
 		ShowActivity2(param2, g_cPrefix, "%t", "Changing map", map);
 		LogAction(param2, -1, "\"%L\" changed map to \"%s\"", param2, map);
 
-		DataPack dp;
+		DataPack dp = new DataPack();
 		CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, dp);
 		dp.WriteString(map);
 		dp.WriteString("sm_map");
@@ -1833,7 +1833,7 @@ int CheckRTV(int client = 0)
 			}
 
 			SetNextMap(map);
-			DataPack data;
+			DataPack data = new DataPack();
 			CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, data);
 			data.WriteString(map);
 		}
@@ -1971,7 +1971,7 @@ public void FindUnzonedMapCallback(Database db, DBResultSet results, const char[
 	{
 		Shavit_PrintToChatAll("Loading unzoned map %s", buffer);
 
-		DataPack dp;
+		DataPack dp = new DataPack();
 		CreateDataTimer(1.0, Timer_ChangeMap, dp);
 		dp.WriteString(buffer);
 		dp.WriteString("sm_loadunzonedmap");
@@ -1989,7 +1989,7 @@ public Action Command_LoadUnzonedMap(int client, int args)
 public Action Command_ReloadMap(int client, int args)
 {
 	PrintToChatAll("%sReloading current map..", g_cPrefix);
-	DataPack dp;
+	DataPack dp = new DataPack();
 	CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, dp);
 	dp.WriteString(g_cMapName);
 	dp.WriteString("sm_reloadmap");
@@ -2056,7 +2056,7 @@ public Action BaseCommands_Command_Map_Menu(int client, int args)
 			ShowActivity2(client, g_cPrefix, "%t", "Changing map", map);
 			LogAction(client, -1, "\"%L\" changed map to \"%s\"", client, map);
 
-			DataPack dp;
+			DataPack dp = new DataPack();
 			CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, dp);
 			dp.WriteString(map);
 			dp.WriteString("sm_map");
@@ -2141,7 +2141,7 @@ public Action BaseCommands_Command_Map(int client, int args)
 	ShowActivity2(client, g_cPrefix, "%t", "Changing map", displayName);
 	LogAction(client, -1, "\"%L\" changed map to \"%s\"", client, map);
 
-	DataPack dp;
+	DataPack dp = new DataPack();
 	CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, dp);
 	dp.WriteString(map);
 	dp.WriteString("sm_map");
