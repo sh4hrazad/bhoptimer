@@ -115,6 +115,7 @@ int gI_ZoneDatabaseID[MAXPLAYERS+1];
 int gI_ZoneID[MAXPLAYERS+1];
 char gS_ZoneHookname[MAXPLAYERS+1][128];
 int gI_HookZoneIndex[MAXPLAYERS+1];
+int gI_LastStartZoneIndex[MAXPLAYERS+1][TRACKS_SIZE];
 
 // zone cache
 zone_settings_t gA_ZoneSettings[ZONETYPES_SIZE][TRACKS_SIZE];
@@ -1252,12 +1253,8 @@ bool PreBuildMainTrack(const char[] sTemp, int& data, int& type)
 		return false;
 	}
 
-	if(StrContains(sTriggerName, "map") == -1 && StrContains(sTriggerName, "s1") == -1 && StrContains(sTriggerName, "stage1") == -1)
-	{
-		return false;
-	}
-
-	if(StrContains(sTriggerName, "start") == -1 && StrContains(sTriggerName, "end") == -1 && !StrEqual(sTriggerName, "s1") && !StrEqual(sTriggerName, "stage1"))
+	if(StrContains(sTriggerName, "map") == -1 && StrContains(sTriggerName, "s1") == -1 && StrContains(sTriggerName, "stage1") == -1 && 
+		StrContains(sTriggerName, "start") == -1 && StrContains(sTriggerName, "end") == -1 && !StrEqual(sTriggerName, "s1") && !StrEqual(sTriggerName, "stage1"))
 	{
 		return false;
 	}
@@ -1271,6 +1268,11 @@ bool PreBuildMainTrack(const char[] sTemp, int& data, int& type)
 	}
 
 	delete sRegex;
+
+	if(StrContains(sTriggerName, "right") != -1)
+	{
+		data = 1;
+	}
 
 	if(StrContains(sTriggerName, "end") != -1)
 	{
@@ -2214,6 +2216,8 @@ void OpenAddZonesMenu(int client)
 {
 	Reset(client);
 
+	gB_EditMaxData[client] = true;
+
 	Menu menu = new Menu(MenuHandler_SelectZoneTrack);
 	menu.SetTitle("%T", "ZoneMenuTrack", client);
 
@@ -2283,6 +2287,13 @@ public int MenuHandler_SelectZoneType(Menu menu, MenuAction action, int param1, 
 		menu.GetItem(param2, info, 8);
 
 		gI_ZoneType[param1] = StringToInt(info);
+
+		gI_ZoneData[param1][gI_ZoneType[param1]] = gI_ZoneMaxData[gI_ZoneType[param1]] + 1;
+
+		if(gI_Stages == 0)
+		{
+			gI_ZoneData[param1][gI_ZoneType[param1]] = 2; // hack fix for creating first stage zone
+		}
 
 		ShowPanel(param1, 1);
 	}
@@ -2374,14 +2385,6 @@ public int MenuHandler_ZoneEdit(Menu menu, MenuAction action, int param1, int pa
 				gI_ZoneDatabaseID[param1] = gA_ZoneCache[id].iDatabaseID;
 				gI_ZoneFlags[param1] = gA_ZoneCache[id].iZoneFlags;
 				gI_ZoneData[param1][gI_ZoneType[param1]] = gA_ZoneCache[id].iZoneData;
-				if(gI_ZoneType[param1] == Zone_Stage && gA_ZoneCache[id].iZoneData != 0)
-				{
-					gI_ZoneData[param1][gI_ZoneType[param1]] = 2;
-				}
-				else if(gI_ZoneType[param1] == Zone_Checkpoint && gA_ZoneCache[id].iZoneData != 0)
-				{
-					gI_ZoneData[param1][gI_ZoneType[param1]] = 1;
-				}
 
 				gI_ZoneID[param1] = id;
 				strcopy(gS_ZoneHookname[param1], 128, gA_ZoneCache[id].sZoneHookname);
@@ -2660,6 +2663,11 @@ void Reset(int client)
 	for(int i = 0; i < ZONETYPES_SIZE; i++)
 	{
 		gI_ZoneData[client][i] = 0;
+	}
+
+	for(int i = 0; i < TRACKS_SIZE; i++)
+	{
+		gI_LastStartZoneIndex[client][i] = -1;
 	}
 }
 
@@ -3482,7 +3490,7 @@ public void Shavit_OnRestart(int client, int track)
 		// standard zoning
 		if((iIndex = GetZoneIndex(Zone_Start, track)) != -1)
 		{
-			iIndex = GetZoneIndex(Zone_Start, track);
+			iIndex = gI_LastStartZoneIndex[client][track] != -1? gI_LastStartZoneIndex[client][track] : GetZoneIndex(Zone_Start, track);
 
 			if(!EmptyVector(gV_CustomDestinations[client][iIndex]))
 			{
@@ -3499,6 +3507,8 @@ public void Shavit_OnRestart(int client, int track)
 				TeleportEntity(client, gV_ZoneCenter[iIndex], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
 			}
 		}
+
+		DispatchKeyValue(client, "targetname", "");
 
 		Shavit_StartTimer(client, track);
 	}
@@ -3726,7 +3736,7 @@ void CreateZoneEntities()
 
 	if(!gB_ZonesCreated)
 	{
-		CreateTimer(10.0, Timer_DelayPreBuildZones);
+		CreateTimer(5.0, Timer_DelayPreBuildZones);
 	}
 }
 
@@ -3767,6 +3777,7 @@ public void StartTouchPost(int entity, int other)
 				gI_LastStage[other] = 1;
 				gI_LastCheckpoint[other] = (gB_LinearMap) ? 0 : 1;
 				gI_InsideZoneIndex[other] = gI_EntityZone[entity];
+				gI_LastStartZoneIndex[other][track] = gI_EntityZone[entity];
 			}
 
 			case Zone_End:

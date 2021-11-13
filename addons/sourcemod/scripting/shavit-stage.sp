@@ -162,8 +162,8 @@ public void OnPluginStart()
 	gH_Forwards_OnFinishCheckpointPre = CreateGlobalForward("Shavit_OnFinishCheckpointPre", ET_Event, Param_Cell, Param_Cell, Param_Cell);
 	gH_Forwards_OnFinishCheckpoint = CreateGlobalForward("Shavit_OnFinishCheckpoint", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_Float);
 
-	SQL_DBConnect();
 	Shavit_OnStyleConfigLoaded(Shavit_GetStyleCount());
+	SQL_DBConnect();
 }
 
 public void OnClientPutInServer(int client)
@@ -255,22 +255,15 @@ public void Shavit_OnStyleConfigLoaded(int styles)
 
 	for(int i = 0; i < STYLE_LIMIT; i++)
 	{
-		for(int j = 1; j <= MAX_STAGES; j++)
+		for(int j = 0; j <= MAX_STAGES; j++)
 		{
-			if(i < styles)
-			{
-				if(gA_StageLeaderboard[i][j] == null)
-				{
-					gA_StageLeaderboard[i][j] = new ArrayList(sizeof(stage_t));
-				}
-
-				gA_StageLeaderboard[i][j].Clear();
-			}
-
-			else
+			if(gA_StageLeaderboard[i][j] != null)
 			{
 				delete gA_StageLeaderboard[i][j];
 			}
+
+			gA_StageLeaderboard[i][j] = new ArrayList(sizeof(stage_t));
+			gA_StageLeaderboard[i][j].Clear();
 		}
 	}
 

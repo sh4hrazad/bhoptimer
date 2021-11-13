@@ -112,7 +112,7 @@ public void OnPluginStart()
 
 	gCV_Config = new Convar("shavit_timelimit_config", "1", "Enables the following game settings:\n\"mp_do_warmup_period\" \"0\"\n\"mp_freezetime\" \"0\"\n\"mp_ignore_round_win_conditions\" \"1\"", 0, true, 0.0, true, 1.0);
 	gCV_DefaultLimit = new Convar("shavit_timelimit_default", "60.0", "Default timelimit to use in case there isn't an average.", 0);
-	gCV_DynamicTimelimits = new Convar("shavit_timelimit_dynamic", "1", "Use dynamic timelimits.\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
+	gCV_DynamicTimelimits = new Convar("shavit_timelimit_dynamic", "0", "Use dynamic timelimits.\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_MinimumLimit = new Convar("shavit_timelimit_minimum", "20.0", "Minimum timelimit to use.\nREQUIRES \"shavit_timelimit_dynamic\" TO BE ENABLED!", 0);
 	gCV_MaximumLimit = new Convar("shavit_timelimit_maximum", "120.0", "Maximum timelimit to use.\nREQUIRES \"shavit_timelimit_dynamic\" TO BE ENABLED!\n0 - No maximum", 0);
 	gCV_ForceMapEnd = new Convar("shavit_timelimit_forcemapend", "1", "Force the map to end after the timelimit.\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
