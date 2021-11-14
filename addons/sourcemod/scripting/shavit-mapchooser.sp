@@ -1836,6 +1836,7 @@ int CheckRTV(int client = 0)
 			DataPack data = new DataPack();
 			CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, data);
 			data.WriteString(map);
+			data.WriteString("no reason");
 		}
 		else
 		{
