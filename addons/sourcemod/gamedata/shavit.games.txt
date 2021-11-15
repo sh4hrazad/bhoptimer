@@ -36,6 +36,20 @@
 
 	"csgo"
 	{
+		"Addresses"
+		{
+			"WalkMoveMaxSpeed"
+			{
+				"windows"
+				{
+					"signature" "CGameMovement::WalkMove"
+				}
+				"linux"
+				{
+					"signature" "CGameMovement::WalkMove"
+				}
+			}
+		}
 		"Offsets"
 		{
 			// search string "#SFUI_Notice_SprayPaint_TooClose" to find IsAbleToApplySpray and then go to the next function to find GetPlayerMaxSpeed. Then calculate the vtable offset.
@@ -66,6 +80,18 @@
 				"windows"   "409"
 				"linux"     "410"
 			}
+			// Get the offset from the start of the signature to the start of our patch area.
+			"CappingOffset"
+			{
+				"windows"	"31"
+				"linux"		"27"
+			}
+			// patch CGameMovement::WalkMove VectorScale
+			"PatchBytes"
+			{
+				"windows"	"42"
+				"linux"		"15"
+			}
 		}
 
 		"Signatures"
@@ -94,6 +120,12 @@
 			{
 				"windows"   "\x55\x8B\xEC\x83\xEC\x08\x56\x8B\xF1\x8B\x86\xD0\x00\x00\x00"
 				"linux"     "\x55\x89\xE5\x57\x56\x53\x83\xEC\x2C\x8B\x5D\x08\xC7\x44\x24\x04\x01\x00\x00\x00\x89\x1C\x24"
+			}
+			// TODO
+			"CGameMovement::WalkMove"
+			{
+				"windows"	"\xF3\x0F\x59\xC0\xF3\x0F\x59\xD2\xF3\x0F\x59\xC9\xF3\x0F\x58\xD0\xF3\x0F\x58\xD1\x0F\x28\xC2\xF3\x0F\x51\xC0\xF3\x0F\x5E\xD8"
+				"linux"		"\xF3\x0F\x10\xF0\x0F\x28\xC6\xF3\x0F\x51\xC6\xF3\x0F\x5E\xE8"
 			}
 		}
 	}

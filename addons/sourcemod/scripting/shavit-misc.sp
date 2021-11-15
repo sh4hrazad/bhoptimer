@@ -137,6 +137,7 @@ Convar gCV_BotFootsteps = null;
 Convar gCV_SpecScoreboardOrder = null;
 Convar gCV_ExperimentalSegmentedEyeAngleFix = null;
 ConVar gCV_PauseMovement = null;
+ConVar gCV_CSGOUnlockMovement = null;
 
 // external cvars
 ConVar sv_cheats = null;
@@ -183,6 +184,11 @@ bool gB_InStage[MAXPLAYERS+1];
 int gI_OtherClientIndex[MAXPLAYERS+1];
 int gI_OtherCurrentCheckpoint[MAXPLAYERS+1];
 bool gB_UsingOtherCheckpoint[MAXPLAYERS+1];
+
+// movement unlocker
+Address gI_PatchAddress;
+int gI_PatchRestore[100];
+int gI_PatchRestoreBytes;
 
 public Plugin myinfo =
 {
@@ -361,8 +367,10 @@ public void OnPluginStart()
 	gCV_BotFootsteps = new Convar("shavit_misc_botfootsteps", "1", "Enable footstep sounds for replay bots. Only works if shavit_misc_bhopsounds is less than 2.", 0, true, 0.0, true, 1.0);
 	gCV_ExperimentalSegmentedEyeAngleFix = new Convar("shavit_misc_experimental_segmented_eyeangle_fix", "1", "When teleporting to a segmented checkpoint, the player's old eye-angles persist in replay-frames for as many ticks they're behind the server in latency. This applies the teleport-position angles to the replay-frame for that many ticks.", 0, true, 0.0, true, 1.0);
 	gCV_SpecScoreboardOrder = new Convar("shavit_misc_spec_scoreboard_order", "1", "Use scoreboard ordering for players when changing target when spectating.", 0, true, 0.0, true, 1.0);
+	gCV_CSGOUnlockMovement = new Convar("shavit_misc_csgo_unlock_movement", "1", "Removes max speed limitation from players on the ground. Feels like CS:S.", 0, true, 0.0, true, 1.0);
 
 	gCV_HideRadar.AddChangeHook(OnConVarChanged);
+	gCV_CSGOUnlockMovement.AddChangeHook(OnConVarChanged);
 	Convar.AutoExecConfig();
 
 	mp_humanteam = FindConVar((gEV_Type == Engine_TF2) ? "mp_humans_must_join_team" : "mp_humanteam");
@@ -372,6 +380,7 @@ public void OnPluginStart()
 	CreateTimer(10.0, Timer_Cron, 0, TIMER_REPEAT);
 
 	LoadDHooks();
+	UnlockMovement();
 
 	if(gEV_Type != Engine_TF2)
 	{
@@ -455,11 +464,83 @@ void LoadDHooks()
 	delete hGameData;
 }
 
+void UnlockMovement()
+{
+	if(gEV_Type != Engine_CSGO || !gCV_CSGOUnlockMovement.BoolValue)
+	{
+		return;
+	}
+
+	Handle hGameData = LoadGameConfigFile("shavit.games");
+
+	if (hGameData == null)
+	{
+		SetFailState("Failed to load shavit gamedata");
+	}
+
+	Address iAddr = GameConfGetAddress(hGameData, "WalkMoveMaxSpeed");
+	if (iAddr == Address_Null)
+	{
+		SetFailState("Can't find WalkMoveMaxSpeed address.");
+	}
+
+	int iOffset = GameConfGetOffset(hGameData, "CappingOffset");
+	if (iOffset == -1)
+	{
+		SetFailState("Can't find CappingOffset in gamedata.");
+	}
+
+	iAddr += view_as<Address>(iOffset);
+	gI_PatchAddress = iAddr;
+
+	if ((gI_PatchRestoreBytes = GameConfGetOffset(hGameData, "PatchBytes")) == -1)
+	{
+		SetFailState("Can't find PatchBytes in gamedata.");
+	}
+
+	for (int i = 0; i < gI_PatchRestoreBytes; i++)
+	{
+		gI_PatchRestore[i] = LoadFromAddress(iAddr, NumberType_Int8);
+		StoreToAddress(iAddr++, 0x90, NumberType_Int8);
+	}
+
+	delete hGameData;
+}
+
+void LockMovement()
+{
+	if(gI_PatchAddress != Address_Null)
+	{
+		for(int i = 0; i < gI_PatchRestoreBytes; i++)
+		{
+			StoreToAddress(gI_PatchAddress + view_as<Address>(i), gI_PatchRestore[i], NumberType_Int8);
+		}
+	}
+}
+
+public void OnPluginEnd()
+{
+	LockMovement();
+}
+
 public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	if (sv_disable_radar != null)
+	if (convar == gCV_HideRadar && sv_disable_radar != null)
 	{
 		sv_disable_radar.BoolValue = gCV_HideRadar.BoolValue;
+	}
+
+	else if (convar == gCV_CSGOUnlockMovement)
+	{
+		if(!gCV_CSGOUnlockMovement.BoolValue)
+		{
+			LockMovement();
+		}
+
+		else
+		{
+			UnlockMovement();
+		}
 	}
 }
 
