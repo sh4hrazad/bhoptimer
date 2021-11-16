@@ -56,8 +56,8 @@ Convar g_cvEnhancedMenu;
 
 Convar g_cvMapChangeSound;
 
-Convar g_cvMinTier;
-Convar g_cvMaxTier;
+ConVar g_cvMinTier;
+ConVar g_cvMaxTier;
 
 Convar g_cvAntiSpam;
 float g_fLastRtvTime[MAXPLAYERS+1];
@@ -191,8 +191,8 @@ public void OnPluginStart()
 
 	g_cvMapChangeSound = new Convar("smc_mapchange_sound", "0", "Play the Dr. Kleiner `3,2,1 Intializing` sound");
 
-	g_cvMinTier = new Convar("smc_min_tier", "0", "The minimum tier to show on the enhanced menu",  _, true, 0.0, true, 10.0);
-	g_cvMaxTier = new Convar("smc_max_tier", "10", "The maximum tier to show on the enhanced menu",  _, true, 0.0, true, 10.0);
+	g_cvMinTier = CreateConVar("smc_min_tier", "0", "The minimum tier to show on the enhanced menu",  _, true, 0.0, true, 10.0);
+	g_cvMaxTier = CreateConVar("smc_max_tier", "10", "The maximum tier to show on the enhanced menu",  _, true, 0.0, true, 10.0);
 
 	g_cvAntiSpam = new Convar("smc_anti_spam", "15.0", "The number of seconds a player needs to wait before rtv/unrtv/nominate/unnominate.", 0, true, 0.0, true, 300.0);
 
@@ -265,22 +265,70 @@ public void OnMapStart()
 	g_bMapVoteStarted = false;
 
 	g_aNominateList.Clear();
+
 	for(int i = 1; i <= MaxClients; ++i)
 	{
 		g_cNominatedMap[i][0] = '\0';
 	}
+
 	ClearRTV();
 
 	CreateTimer(0.5, Timer_SpecCooldown, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(2.0, Timer_OnMapTimeLeftChanged, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
 }
 
+void ResetMaplistByTiers()
+{
+	if(gB_Rankings)
+	{
+		int min = g_cvMinTier.IntValue;
+		int max = g_cvMaxTier.IntValue;
+
+		if (max < min)
+		{
+			int temp = max;
+			max = min;
+			min = temp;
+			g_cvMinTier.IntValue = min;
+			g_cvMaxTier.IntValue = max;
+		}
+
+		StringMap tiersMap = Shavit_GetMapTiers();
+
+		for(int i = 0; i < g_aMapList.Length; i++)
+		{
+			char mapname[PLATFORM_MAX_PATH];
+			g_aMapList.GetString(i, mapname, sizeof(mapname));
+
+			int tier = 0;
+			tiersMap.GetValue(mapname, tier);
+
+			if(tier == 0)
+			{
+				// continue
+			}
+
+			else if(tier < min || tier > max)
+			{
+				g_aMapList.Erase(i);
+				i--;
+			}
+		}
+
+		delete tiersMap;
+	}
+}
+
 public void OnConfigsExecuted()
 {
 	g_cvPrefix.GetString(g_cPrefix, sizeof(g_cPrefix));
+
 	// reload maplist array
-	LoadMapList();
 	// cache the nominate menu so that it isn't being built every time player opens it
+	LoadMapList();
+	
+	// reset the maplist for tiers distinguishing server
+	ResetMaplistByTiers();
 }
 
 public void OnMapEnd()
