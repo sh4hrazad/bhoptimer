@@ -48,12 +48,12 @@
 	"Zone_Teleport"
 	{
 		"en"		"Teleport Zone"
-		"chi"		"标记用"
+		"chi"		"传送区域"
 	}
 	"Zone_Mark"
 	{
 		"en"		"Mark Zone"
-		"chi"		"起点"
+		"chi"		"标记区域"
 	}
 	// ---------- Commands ---------- //
 	"NoCommandAccess"
