@@ -201,6 +201,7 @@ bool gB_Button[MAXPLAYERS+1];
 int gI_PlayerFrames[MAXPLAYERS+1];
 int gI_PlayerPrerunFrames[MAXPLAYERS+1];
 int gI_PlayerPrerunFrames_Stage[MAXPLAYERS+1];
+int gI_PlayerLastStageFrame[MAXPLAYERS+1];
 ArrayList gA_PlayerFrames[MAXPLAYERS+1];
 int gI_MenuTrack[MAXPLAYERS+1];
 int gI_MenuStyle[MAXPLAYERS+1];
@@ -3010,16 +3011,20 @@ public Action Shavit_OnStart(int client)
 	return Plugin_Continue;
 }
 
-/* public void Shavit_OnEnterStage(int client, int stage, int style, float finalspeed)
+public void Shavit_OnEnterStage(int client, int stage, int style, float enterspeed, float time, bool stagetimer)
 {
-	if(!gB_GrabbingPostFrames_Stage[client] && Shavit_IsClientStageTimer(client))
+	if(!stagetimer && Shavit_GetClientLastStage(client) == stage)
 	{
-		PrintToChatAll("onenterstage");
-		ClearFrames(client);
+		gA_PlayerFrames[client].SwapAt(gI_PlayerLastStageFrame[client], gI_PlayerFrames[client]);
+		gI_PlayerFrames[client] = gI_PlayerLastStageFrame[client];
+		//Shavit_PrintToChat(client, "my gI_PlayerFrames[client]-> %d", gI_PlayerFrames[client]);
 	}
-} */
 
-public void Shavit_OnLeaveStage(int client, int stage, int style, float prespeed)
+	gI_PlayerLastStageFrame[client] = gI_PlayerFrames[client];
+	//Shavit_PrintToChat(client, "gI_PlayerLastStageFrame[client]-> %d", gI_PlayerLastStageFrame[client]);
+}
+
+public void Shavit_OnLeaveStage(int client, int stage, int style, float leavespeed, float time, bool stagetimer)
 {
 	if(gB_GrabbingPostFrames_Stage[client])
 	{
@@ -4571,7 +4576,7 @@ float GetReplayLength(int style, int track, frame_cache_t aCache, int stage = 0)
 	{
 		return 0.0;
 	}
-	
+
 	if(aCache.bNewFormat)
 	{
 		return aCache.fTime;

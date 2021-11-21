@@ -1256,9 +1256,10 @@ forward void Shavit_OnStageTimer_Post(int client, int style, int stage, float sp
  * @param style						Style index.
  * @param enterspeed				Speed when client enters stage zone.
  * @param time						Client current time.
+ * @param stagetimer				Check client is not finishing the map, only stage timer.
  * @noreturn
  */
-forward void Shavit_OnEnterStage(int client, int stage, int style, float enterspeed, float time);
+forward void Shavit_OnEnterStage(int client, int stage, int style, float enterspeed, float time, bool stagetimer);
 
 /**
  * Called when a player enters a checkpoint-zone.
