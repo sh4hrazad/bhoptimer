@@ -62,6 +62,8 @@ cp_t gA_WRCPInfo[STYLE_LIMIT][MAX_STAGES+1];
 float gF_CPTime[MAXPLAYERS+1][MAX_STAGES+1];
 float gF_PreSpeed[MAXPLAYERS+1][MAX_STAGES+1];
 float gF_PostSpeed[MAXPLAYERS+1][MAX_STAGES+1];
+float gF_StageStayTime[MAXPLAYERS+1][MAX_STAGES+1];
+float gF_EnterStageTime[MAXPLAYERS+1];
 float gF_LeaveStageTime[MAXPLAYERS+1];
 float gF_DiffTime[MAXPLAYERS+1];
 
@@ -109,6 +111,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetWRCPDiffTime", Native_GetWRCPDiffTime);
 	CreateNative("Shavit_FinishStage", Native_FinishStage);
 	CreateNative("Shavit_FinishCheckpoint", Native_FinishCheckpoint);
+	CreateNative("Shavit_GetClientStageStayTime", Native_GetClientStageStayTime);
 
 	RegPluginLibrary("shavit-stage");
 
@@ -151,7 +154,7 @@ public void OnPluginStart()
 	RegAdminCmd("sm_deletemtop", Command_DeleteMaptop, ADMFLAG_RCON, "Alias of sm_delmtop");
 	RegAdminCmd("sm_deletemaptop", Command_DeleteMaptop, ADMFLAG_RCON, "Alias of sm_delmtop");
 
-	gH_Forwards_EnterStage = CreateGlobalForward("Shavit_OnEnterStage", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float);
+	gH_Forwards_EnterStage = CreateGlobalForward("Shavit_OnEnterStage", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_Cell);
 	gH_Forwards_EnterCheckpoint = CreateGlobalForward("Shavit_OnEnterCheckpoint", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float);
 	gH_Forwards_LeaveStage = CreateGlobalForward("Shavit_OnLeaveStage", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_Cell);
 	gH_Forwards_LeaveCheckpoint = CreateGlobalForward("Shavit_OnLeaveCheckpoint", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float);
@@ -903,7 +906,8 @@ void OpenCPRMenu(int client, int rank)
 		"SELECT p1.time, p1.cp, p1.postspeed, p1.auth, p2.name FROM `%scptimes` p1 "...
 		"JOIN `%susers` p2 "...
 		"ON p1.auth = p2.auth "...
-		"WHERE map = '%s' AND p1.auth = %d ORDER BY p1.cp ASC;", 
+		"WHERE map = '%s' AND style = 0 AND p1.auth = %d "...
+		"ORDER BY p1.cp ASC;", 
 		gS_MySQLPrefix, gS_MySQLPrefix, gS_Map, steamid);
 
 	DataPack dp = new DataPack();
@@ -1050,6 +1054,11 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 			gF_CPTime[client][1] = 0.0;
 
 			gF_DiffTime[client] = 0.0;
+
+			for(int i = 0; i <= Shavit_GetMapStages(); i++)
+			{
+				gF_StageStayTime[client][i] = 0.0;
+			}
 		}
 
 		case Zone_End:
@@ -1063,13 +1072,27 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 		case Zone_Stage:
 		{
 			gF_PreSpeed[client][data] = fPrespeed;
+			float curTime = Shavit_GetClientTime(client);
+
+			if(data == Shavit_GetClientLastStage(client)) // bug: resistdata 
+			{
+				gF_StageStayTime[client][data] += curTime - gF_EnterStageTime[client];
+			}
+			else
+			{
+				int last = Shavit_GetClientLastStage(client);
+				Shavit_PrintToChat(client, "you stayed stage[%d] for %f", last, Shavit_GetClientStageStayTime(client, last));
+			}
+
+			gF_EnterStageTime[client] = curTime;
 
 			Call_StartForward(gH_Forwards_EnterStage);
 			Call_PushCell(client);
 			Call_PushCell(data);
 			Call_PushCell(Shavit_GetBhopStyle(client));
 			Call_PushFloat(fPrespeed);
-			Call_PushFloat(Shavit_GetClientTime(client));
+			Call_PushFloat(curTime);
+			Call_PushCell(Shavit_IsClientStageTimer(client));
 			Call_Finish();
 		}
 
@@ -1757,6 +1780,12 @@ public int Native_GetStageRankForTime(Handle handler, int numParams)
 	}
 
 	return GetStageRankForTime(style, GetNativeCell(2), stage);
+}
+
+//native int Shavit_GetClientStageStayTime(int client, int stage)
+public int Native_GetClientStageStayTime(Handle handler, int numParams)
+{
+	return view_as<int>(gF_StageStayTime[GetNativeCell(1)][GetNativeCell(2)]);
 }
 
 void SQL_DBConnect()

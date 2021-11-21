@@ -2004,6 +2004,15 @@ native int Shavit_GetStageRecordAmount(int style, int stage);
 native int Shavit_GetStageRankForTime(int style, float time, int stage);
 
 /**
+ * Get the total time of a player stayed at a stage.
+ *
+ * @param client					Client index.
+ * @param stage						Stage.
+ * @return							Total time of player stay at a stage.
+ */
+native float Shavit_GetClientStageStayTime(int client, int stage);
+
+/**
  * Retrieves the best time of a player.
  *
  * @param client					Client index.

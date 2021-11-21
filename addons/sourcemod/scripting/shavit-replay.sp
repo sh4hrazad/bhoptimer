@@ -3013,15 +3013,18 @@ public Action Shavit_OnStart(int client)
 
 public void Shavit_OnEnterStage(int client, int stage, int style, float enterspeed, float time, bool stagetimer)
 {
-	if(!stagetimer && Shavit_GetClientLastStage(client) == stage)
+	if(stagetimer)
+	{
+		return;
+	}
+
+	if(Shavit_GetClientLastStage(client) == stage)
 	{
 		gA_PlayerFrames[client].SwapAt(gI_PlayerLastStageFrame[client], gI_PlayerFrames[client]);
 		gI_PlayerFrames[client] = gI_PlayerLastStageFrame[client];
-		//Shavit_PrintToChat(client, "my gI_PlayerFrames[client]-> %d", gI_PlayerFrames[client]);
 	}
 
 	gI_PlayerLastStageFrame[client] = gI_PlayerFrames[client];
-	//Shavit_PrintToChat(client, "gI_PlayerLastStageFrame[client]-> %d", gI_PlayerLastStageFrame[client]);
 }
 
 public void Shavit_OnLeaveStage(int client, int stage, int style, float leavespeed, float time, bool stagetimer)

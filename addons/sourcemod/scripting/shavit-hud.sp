@@ -1054,7 +1054,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 				char sPlayerName[MAX_NAME_LENGTH];
 				Shavit_GetReplayName(data.iStyle, data.iTrack, sPlayerName, MAX_NAME_LENGTH, data.iStage);
 
-				FormatEx(sLine, 128, "%s: <span color='#FFFF00'>%s / %s</span> (%s)", sTransTime, sTime, sWR, sPlayerName);
+				FormatEx(sLine, 128, "%s: <span color='#FFFF00'>%s / %s</span> (%s) (stage->%d)", sTransTime, sTime, sWR, sPlayerName, Shavit_GetClientStage(data.iTarget));
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 				iLines++;
 			}

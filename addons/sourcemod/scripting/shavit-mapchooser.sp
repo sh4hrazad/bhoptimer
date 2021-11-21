@@ -331,6 +331,12 @@ public void OnConfigsExecuted()
 	ResetMaplistByTiers();
 }
 
+public void OnAllPluginsLoaded()
+{
+	// reset the maplist for tiers distinguishing server
+	ResetMaplistByTiers();
+}
+
 public void OnMapEnd()
 {
 	if(g_cvMapVoteBlockMapInterval.IntValue > 0)

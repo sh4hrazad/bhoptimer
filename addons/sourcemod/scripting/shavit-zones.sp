@@ -3768,6 +3768,15 @@ public void StartTouchPost(int entity, int other)
 			return;
 		}
 
+		Call_StartForward(gH_Forwards_EnterZone);
+		Call_PushCell(other);
+		Call_PushCell(type);
+		Call_PushCell(track);
+		Call_PushCell(gI_EntityZone[entity]);
+		Call_PushCell(entity);
+		Call_PushCell(data);
+		Call_Finish();
+
 		switch(type)
 		{
 			case Zone_Start:
@@ -3869,21 +3878,12 @@ public void StartTouchPost(int entity, int other)
 
 			case Zone_Mark:
 			{
-				return; // cant do anything in mark zone, insidezone or else are not permitted.
+				return; // cant do anything in mark zone, insidezone is not permitted.
 			}
 		}
 
 		gB_InsideZone[other][type][track] = true;
 		gB_InsideZoneID[other][gI_EntityZone[entity]] = true;
-
-		Call_StartForward(gH_Forwards_EnterZone);
-		Call_PushCell(other);
-		Call_PushCell(type);
-		Call_PushCell(track);
-		Call_PushCell(gI_EntityZone[entity]);
-		Call_PushCell(entity);
-		Call_PushCell(data);
-		Call_Finish();
 	}
 
 	else
@@ -3892,7 +3892,13 @@ public void StartTouchPost(int entity, int other)
 		{
 			case Zone_Start:
 			{
+				gI_ClientCurrentStage[other] = 1;
 				gI_ClientCurrentCP[other] = 0;
+			}
+
+			case Zone_Stage:
+			{
+				gI_ClientCurrentStage[other] = data;
 			}
 
 			case Zone_Checkpoint:
