@@ -62,8 +62,6 @@ cp_t gA_WRCPInfo[STYLE_LIMIT][MAX_STAGES+1];
 float gF_CPTime[MAXPLAYERS+1][MAX_STAGES+1];
 float gF_PreSpeed[MAXPLAYERS+1][MAX_STAGES+1];
 float gF_PostSpeed[MAXPLAYERS+1][MAX_STAGES+1];
-float gF_StageStayTime[MAXPLAYERS+1][MAX_STAGES+1];
-float gF_EnterStageTime[MAXPLAYERS+1];
 float gF_LeaveStageTime[MAXPLAYERS+1];
 float gF_DiffTime[MAXPLAYERS+1];
 
@@ -1054,11 +1052,6 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 			gF_CPTime[client][1] = 0.0;
 
 			gF_DiffTime[client] = 0.0;
-
-			for(int i = 0; i <= Shavit_GetMapStages(); i++)
-			{
-				gF_StageStayTime[client][i] = 0.0;
-			}
 		}
 
 		case Zone_End:
@@ -1072,26 +1065,13 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 		case Zone_Stage:
 		{
 			gF_PreSpeed[client][data] = fPrespeed;
-			float curTime = Shavit_GetClientTime(client);
-
-			if(data == Shavit_GetClientLastStage(client)) // bug: resistdata 
-			{
-				gF_StageStayTime[client][data] += curTime - gF_EnterStageTime[client];
-			}
-			else
-			{
-				int last = Shavit_GetClientLastStage(client);
-				Shavit_PrintToChat(client, "you stayed stage[%d] for %f", last, Shavit_GetClientStageStayTime(client, last));
-			}
-
-			gF_EnterStageTime[client] = curTime;
 
 			Call_StartForward(gH_Forwards_EnterStage);
 			Call_PushCell(client);
 			Call_PushCell(data);
 			Call_PushCell(Shavit_GetBhopStyle(client));
 			Call_PushFloat(fPrespeed);
-			Call_PushFloat(curTime);
+			Call_PushFloat(Shavit_GetClientTime(client));
 			Call_PushCell(Shavit_IsClientStageTimer(client));
 			Call_Finish();
 		}
@@ -1782,10 +1762,11 @@ public int Native_GetStageRankForTime(Handle handler, int numParams)
 	return GetStageRankForTime(style, GetNativeCell(2), stage);
 }
 
+// TODO
 //native int Shavit_GetClientStageStayTime(int client, int stage)
 public int Native_GetClientStageStayTime(Handle handler, int numParams)
 {
-	return view_as<int>(gF_StageStayTime[GetNativeCell(1)][GetNativeCell(2)]);
+	return 0;
 }
 
 void SQL_DBConnect()

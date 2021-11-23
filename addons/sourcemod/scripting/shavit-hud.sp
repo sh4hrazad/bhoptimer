@@ -590,6 +590,25 @@ void FormatDiffPreStrafeSpeed(char[] buffer, float originSpeed, float wrSpeed)
 	}
 }
 
+public void Shavit_OnEnterStageZone_Bot(int bot, int stage)
+{
+	if(Shavit_GetReplayBotStage(bot) != 0)
+	{
+		return;
+	}
+
+	char sTime[32];
+	FormatHUDSeconds(Shavit_GetWRCPTime(stage, Shavit_GetReplayBotStyle(bot)), sTime, 32);
+
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(i != bot && (IsValidClient(i) && GetSpectatorTarget(i, i) == bot))
+		{
+			Shavit_PrintToChat(i, "%T", "EnterStageMessage_Bot", i, stage, sTime);
+		}
+	}
+}
+
 public void OnClientPutInServer(int client)
 {
 	gI_LastScrollCount[client] = 0;
@@ -1045,8 +1064,8 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 
 			if((gI_HUD2Settings[client] & HUD2_TIME) == 0)
 			{
-				char sTime[32];
-				FormatSeconds(data.fTime, sTime, 32, false);
+				/* char sTime[32];
+				FormatSeconds(data.fTime, sTime, 32, false); */
 
 				char sWR[32];
 				FormatSeconds(data.fWR, sWR, 32, false);
@@ -1054,7 +1073,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 				char sPlayerName[MAX_NAME_LENGTH];
 				Shavit_GetReplayName(data.iStyle, data.iTrack, sPlayerName, MAX_NAME_LENGTH, data.iStage);
 
-				FormatEx(sLine, 128, "%s: <span color='#FFFF00'>%s / %s</span> (%s) (stage->%d)", sTransTime, sTime, sWR, sPlayerName, Shavit_GetClientStage(data.iTarget));
+				FormatEx(sLine, 128, "%s: <span color='#FFFF00'>%s</span> (%s)", sTransTime, sWR, sPlayerName);
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 				iLines++;
 			}

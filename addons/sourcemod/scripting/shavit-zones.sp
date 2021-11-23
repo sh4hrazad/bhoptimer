@@ -167,6 +167,8 @@ char gS_MySQLPrefix[32];
 
 // forwards
 Handle gH_Forwards_EnterZone = null;
+Handle gH_Forwards_EnterStageZone = null;
+Handle gH_Forwards_EnterCheckpointZone = null;
 Handle gH_Forwards_LeaveZone = null;
 Handle gH_Forwards_StartTimer_Post = null;
 Handle gH_Forwards_StageTimer_Post = null;
@@ -276,6 +278,8 @@ public void OnPluginStart()
 
 	// forwards
 	gH_Forwards_EnterZone = CreateGlobalForward("Shavit_OnEnterZone", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
+	gH_Forwards_EnterStageZone = CreateGlobalForward("Shavit_OnEnterStageZone_Bot", ET_Event, Param_Cell, Param_Cell);
+	gH_Forwards_EnterCheckpointZone = CreateGlobalForward("Shavit_OnEnterCheckpointZone_Bot", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_LeaveZone = CreateGlobalForward("Shavit_OnLeaveZone", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
 	gH_Forwards_StartTimer_Post = CreateGlobalForward("Shavit_OnStartTimer_Post", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
 	gH_Forwards_StageTimer_Post = CreateGlobalForward("Shavit_OnStageTimer_Post", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
@@ -3899,11 +3903,21 @@ public void StartTouchPost(int entity, int other)
 			case Zone_Stage:
 			{
 				gI_ClientCurrentStage[other] = data;
+
+				Call_StartForward(gH_Forwards_EnterStageZone);
+				Call_PushCell(other);
+				Call_PushCell(data);
+				Call_Finish();
 			}
 
 			case Zone_Checkpoint:
 			{
 				gI_ClientCurrentCP[other] = data;
+
+				Call_StartForward(gH_Forwards_EnterCheckpointZone);
+				Call_PushCell(other);
+				Call_PushCell(data);
+				Call_Finish();
 			}
 		}
 	}
