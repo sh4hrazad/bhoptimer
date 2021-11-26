@@ -3020,7 +3020,6 @@ public void Shavit_OnEnterStage(int client, int stage, int style, float enterspe
 
 	if(Shavit_GetClientLastStage(client) == stage)
 	{
-		gA_PlayerFrames[client].SwapAt(gI_PlayerLastStageFrame[client], gI_PlayerFrames[client] - 1);
 		gI_PlayerFrames[client] = gI_PlayerLastStageFrame[client];
 	}
 
