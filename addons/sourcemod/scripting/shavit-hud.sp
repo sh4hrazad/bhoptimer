@@ -597,8 +597,14 @@ public void Shavit_OnEnterStageZone_Bot(int bot, int stage)
 		return;
 	}
 
+	int style = Shavit_GetReplayBotStyle(bot);
+	if(style == -1)
+	{
+		return;
+	}
+
 	char sTime[32];
-	FormatHUDSeconds(Shavit_GetWRCPTime(stage, Shavit_GetReplayBotStyle(bot)), sTime, 32);
+	FormatHUDSeconds(Shavit_GetWRCPTime(stage, style), sTime, 32);
 
 	for(int i = 1; i <= MaxClients; i++)
 	{

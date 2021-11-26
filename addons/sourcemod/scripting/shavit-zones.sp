@@ -3822,6 +3822,10 @@ public void StartTouchPost(int entity, int other)
 				{
 					Shavit_FinishMap(other, track);
 				}
+				else if(gB_StageTimer[other])
+				{
+					Shavit_StopTimer(other);
+				}
 			}
 
 			case Zone_Stage:

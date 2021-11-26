@@ -1054,14 +1054,6 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 			gF_DiffTime[client] = 0.0;
 		}
 
-		case Zone_End:
-		{
-			if(Shavit_IsClientStageTimer(client))
-			{
-				Shavit_StopTimer(client);
-			}
-		}
-
 		case Zone_Stage:
 		{
 			gF_PreSpeed[client][data] = fPrespeed;
