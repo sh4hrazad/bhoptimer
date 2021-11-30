@@ -3906,22 +3906,22 @@ public void StartTouchPost(int entity, int other)
 
 			case Zone_Stage:
 			{
-				gI_ClientCurrentStage[other] = data;
-
 				Call_StartForward(gH_Forwards_EnterStageZone);
 				Call_PushCell(other);
 				Call_PushCell(data);
 				Call_Finish();
+
+				gI_ClientCurrentStage[other] = data;
 			}
 
 			case Zone_Checkpoint:
 			{
-				gI_ClientCurrentCP[other] = data;
-
 				Call_StartForward(gH_Forwards_EnterCheckpointZone);
 				Call_PushCell(other);
 				Call_PushCell(data);
 				Call_Finish();
+
+				gI_ClientCurrentCP[other] = data;
 			}
 		}
 	}

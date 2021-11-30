@@ -573,7 +573,7 @@ public void Shavit_OnEnterStageZone_Bot(int bot, int stage)
 	}
 
 	int style = Shavit_GetReplayBotStyle(bot);
-	if(style == -1)
+	if(style == -1 || Shavit_GetClientStage(bot) == stage) // invalid style or get into the same stage(dont print twice)
 	{
 		return;
 	}

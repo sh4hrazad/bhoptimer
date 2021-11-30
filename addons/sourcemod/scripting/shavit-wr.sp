@@ -2068,7 +2068,7 @@ public void SQL_RR_Callback(Database db, DBResultSet results, const char[] error
 		GetTrackName(client, results.FetchInt(5), sTrack, 32);
 
 		char sDisplay[192];
-		FormatEx(sDisplay, 192, "[%s/%c] %s - %s @ %s", gS_StyleStrings[iStyle].sShortName, sTrack[0], sMap, sName, sTime);
+		FormatEx(sDisplay, 192, "[%s/%s] %s - %s @ %s", gS_StyleStrings[iStyle].sShortName, sTrack, sMap, sName, sTime);
 
 		char sInfo[192];
 		FormatEx(sInfo, 192, "%d;%s", results.FetchInt(0), sMap);
