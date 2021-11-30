@@ -1891,8 +1891,16 @@ public int SemiNative_PrintToChat(int client, int formatParam)
 
 	// space before message needed show colors in cs:go
 	// strlen(sBuffer)>252 is when CSS stops printing the messages
+	char sPrefix[sizeof(chatstrings_t::sPrefix)];
+	char sText[sizeof(chatstrings_t::sText)];
+
+	strcopy(sPrefix, sizeof(sPrefix), gS_ChatStrings.sPrefix);
+	strcopy(sText, sizeof(sText), gS_ChatStrings.sText);
+
+	ReplaceColors(sPrefix, sizeof(sPrefix));
+	ReplaceColors(sText, sizeof(sText));
 	ReplaceColors(sInput, 300);
-	FormatEx(sBuffer, (gB_Protobuf ? sizeof(sBuffer) : 253), "%s%s%s %s%s", (gB_Protobuf ? " ":""), sTime, gS_ChatStrings.sPrefix, gS_ChatStrings.sText, sInput);
+	FormatEx(sBuffer, (gB_Protobuf ? sizeof(sBuffer) : 253), "%s%s%s %s%s", (gB_Protobuf ? " ":""), sTime, sPrefix, sText, sInput);
 
 	if(client == 0)
 	{
@@ -2928,6 +2936,7 @@ void ReplaceColors(char[] string, int size)
 
 	ReplaceString(string, size, "{RGB}", "\x07");
 	ReplaceString(string, size, "{RGBA}", "\x08");
+	ReplaceString(string, size, "{rand}", gS_CSGOColors[GetRandomInt(0, sizeof(gS_CSGOColors) - 1)]);
 }
 
 bool LoadMessages()
@@ -2964,23 +2973,6 @@ bool LoadMessages()
 	kv.GetString("style", gS_ChatStrings.sStyle, sizeof(chatstrings_t::sStyle), "\x07db88c2");
 
 	delete kv;
-
-	ReplaceColors(gS_ChatStrings.sPrefix, sizeof(chatstrings_t::sPrefix));
-	ReplaceColors(gS_ChatStrings.sText, sizeof(chatstrings_t::sText));
-	ReplaceColors(gS_ChatStrings.sWarning, sizeof(chatstrings_t::sWarning));
-	ReplaceColors(gS_ChatStrings.sVariable, sizeof(chatstrings_t::sVariable));
-	ReplaceColors(gS_ChatStrings.sVariable2, sizeof(chatstrings_t::sVariable2));
-	ReplaceColors(gS_ChatStrings.sVariable3, sizeof(chatstrings_t::sVariable3));
-	ReplaceColors(gS_ChatStrings.sVariable4, sizeof(chatstrings_t::sVariable4));
-	ReplaceColors(gS_ChatStrings.sVariable5, sizeof(chatstrings_t::sVariable5));
-	ReplaceColors(gS_ChatStrings.sVariable6, sizeof(chatstrings_t::sVariable6));
-	ReplaceColors(gS_ChatStrings.sVariable7, sizeof(chatstrings_t::sVariable7));
-	ReplaceColors(gS_ChatStrings.sVariable8, sizeof(chatstrings_t::sVariable8));
-	ReplaceColors(gS_ChatStrings.sVariable9, sizeof(chatstrings_t::sVariable9));
-	ReplaceColors(gS_ChatStrings.sVariable10, sizeof(chatstrings_t::sVariable10));
-	ReplaceColors(gS_ChatStrings.sVariable11, sizeof(chatstrings_t::sVariable11));
-	ReplaceColors(gS_ChatStrings.sTeam, sizeof(chatstrings_t::sTeam));
-	ReplaceColors(gS_ChatStrings.sStyle, sizeof(chatstrings_t::sStyle));
 
 	Call_StartForward(gH_Forwards_OnChatConfigLoaded);
 	Call_Finish();

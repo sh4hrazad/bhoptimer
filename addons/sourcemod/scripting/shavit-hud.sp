@@ -27,7 +27,6 @@
 
 #undef REQUIRE_PLUGIN
 #include <shavit>
-#include <bhopstats>
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -39,7 +38,7 @@
 #define HUD2_PRESTRAFE			(1 << 3)
 
 #define HUD_DEFAULT				(HUD_MASTER|HUD_CENTER|HUD_ZONEHUD|HUD_OBSERVE|HUD_TOPLEFT|HUD_SYNC|HUD_TIMELEFT|HUD_2DVEL|HUD_SPECTATORS)
-#define HUD_DEFAULT2			(HUD2_PRESTRAFE)
+#define HUD_DEFAULT2			(HUD2_TIME|HUD2_SPEED|HUD2_WRPB|HUD2_PRESTRAFE)
 
 #define MAX_HINT_SIZE 1024
 
@@ -102,14 +101,10 @@ char gS_CSGOColorNames[][] =
 	"{palered}"
 };
 
-// game type (CS:S/CS:GO/TF2)
-EngineVersion gEV_Type = Engine_Unknown;
-
 // modules
 bool gB_Replay = false;
 bool gB_Zones = false;
 bool gB_Sounds = false;
-bool gB_BhopStats = false;
 
 // cache
 int gI_Styles = 0;
@@ -118,11 +113,7 @@ Handle gH_HUDCookie = null;
 Handle gH_HUDCookieMain = null;
 int gI_HUDSettings[MAXPLAYERS+1];
 int gI_HUD2Settings[MAXPLAYERS+1];
-int gI_LastScrollCount[MAXPLAYERS+1];
-int gI_ScrollCount[MAXPLAYERS+1];
 int gI_Buttons[MAXPLAYERS+1];
-float gF_ConnectTime[MAXPLAYERS+1];
-bool gB_FirstPrint[MAXPLAYERS+1];
 int gI_PreviousSpeed[MAXPLAYERS+1];
 float gF_Angle[MAXPLAYERS+1];
 float gF_PreviousAngle[MAXPLAYERS+1];
@@ -134,7 +125,6 @@ char gS_HintPadding[MAX_HINT_SIZE+1];
 // plugin cvars
 Convar gCV_TicksPerUpdate = null;
 Convar gCV_SpectatorList = null;
-Convar gCV_UseHUDFix = null;
 Convar gCV_SpecNameSymbolLength = null;
 Convar gCV_PrestrafeMessage = null;
 Convar gCV_DefaultHUD = null;
@@ -178,25 +168,20 @@ public void OnPluginStart()
 	LoadTranslations("shavit-hud.phrases");
 
 	// game-specific
-	gEV_Type = GetEngineVersion();
-
-	if(gEV_Type == Engine_TF2)
+	if(GetEngineVersion() != Engine_CSGO)
 	{
-		HookEvent("player_changeclass", Player_ChangeClass);
-		HookEvent("player_team", Player_ChangeClass);
-		HookEvent("teamplay_round_start", Teamplay_Round_Start);
+		SetFailState("This plugin is only support for CS:GO");
+		return;
 	}
 
 	// prevent errors in case the replay bot isn't loaded
 	gB_Replay = LibraryExists("shavit-replay");
 	gB_Zones = LibraryExists("shavit-zones");
 	gB_Sounds = LibraryExists("shavit-sounds");
-	gB_BhopStats = LibraryExists("bhopstats");
 
 	// plugin convars
-	gCV_TicksPerUpdate = new Convar("shavit_hud_ticksperupdate", "5", "How often (in ticks) should the HUD update?\nPlay around with this value until you find the best for your server.\nThe maximum value is your tickrate.", 0, true, 1.0, true, (1.0 / GetTickInterval()));
+	gCV_TicksPerUpdate = new Convar("shavit_hud_ticksperupdate", "1", "How often (in ticks) should the HUD update?\nPlay around with this value until you find the best for your server.\nThe maximum value is your tickrate.", 0, true, 1.0, true, (1.0 / GetTickInterval()));
 	gCV_SpectatorList = new Convar("shavit_hud_speclist", "0", "Who to show in the specators list?\n0 - everyone\n1 - all admins (admin_speclisthide override to bypass)\n2 - players you can target", 0, true, 0.0, true, 2.0);
-	gCV_UseHUDFix = new Convar("shavit_hud_csgofix", "1", "Apply the csgo color fix to the center hud?\nThis will add a dollar sign and block sourcemod hooks to hint message", 0, true, 0.0, true, 1.0);
 	gCV_SpecNameSymbolLength = new Convar("shavit_hud_specnamesymbollength", "32", "Maximum player name length that should be displayed in spectators panel", 0, true, 0.0, true, float(MAX_NAME_LENGTH));
 	gCV_PrestrafeMessage = new Convar("shavit_misc_prestrafemessage", "1", "Enable prestrafe message. Only works when player leave start/stage/checkpoint zone.", 0, true, 0.0, true, 1.0);
 
@@ -301,11 +286,6 @@ public void OnLibraryAdded(const char[] name)
 	{
 		gB_Sounds = true;
 	}
-
-	else if(StrEqual(name, "bhopstats"))
-	{
-		gB_BhopStats = true;
-	}
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -324,11 +304,6 @@ public void OnLibraryRemoved(const char[] name)
 	{
 		gB_Sounds = false;
 	}
-
-	else if(StrEqual(name, "bhopstats"))
-	{
-		gB_BhopStats = false;
-	}
 }
 
 public void OnConfigsExecuted()
@@ -337,7 +312,7 @@ public void OnConfigsExecuted()
 
 	if(sv_hudhint_sound != null)
 	{
-		sv_hudhint_sound.SetBool(false);
+		sv_hudhint_sound.BoolValue = false;
 	}
 }
 
@@ -617,9 +592,6 @@ public void Shavit_OnEnterStageZone_Bot(int bot, int stage)
 
 public void OnClientPutInServer(int client)
 {
-	gI_LastScrollCount[client] = 0;
-	gI_ScrollCount[client] = 0;
-	gB_FirstPrint[client] = false;
 	strcopy(gS_PreStrafeDiff[client], 64, "None");
 
 	if(IsFakeClient(client))
@@ -686,53 +658,6 @@ public void OnClientCookiesCached(int client)
 	{
 		gI_HUD2Settings[client] = StringToInt(sHUDSettings);
 	}
-}
-
-public void Player_ChangeClass(Event event, const char[] name, bool dontBroadcast)
-{
-	int client = GetClientOfUserId(event.GetInt("userid"));
-
-	if((gI_HUDSettings[client] & HUD_MASTER) > 0 && (gI_HUDSettings[client] & HUD_CENTER) > 0)
-	{
-		CreateTimer(0.5, Timer_FillerHintText, GetClientSerial(client), TIMER_FLAG_NO_MAPCHANGE);
-	}
-}
-
-public void Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
-{
-	CreateTimer(0.5, Timer_FillerHintTextAll, 0, TIMER_FLAG_NO_MAPCHANGE);
-}
-
-public Action Timer_FillerHintTextAll(Handle timer, any data)
-{
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(IsClientConnected(i) && IsClientInGame(i))
-		{
-			FillerHintText(i);
-		}
-	}
-
-	return Plugin_Stop;
-}
-
-public Action Timer_FillerHintText(Handle timer, any data)
-{
-	int client = GetClientFromSerial(data);
-
-	if(client != 0)
-	{
-		FillerHintText(client);
-	}
-
-	return Plugin_Stop;
-}
-
-void FillerHintText(int client)
-{
-	PrintHintText(client, "...");
-	gF_ConnectTime[client] = GetEngineTime();
-	gB_FirstPrint[client] = true;
 }
 
 void ToggleHUD(int client, int hud, bool chat)
@@ -926,11 +851,6 @@ public int MenuHandler_HUD(Menu menu, MenuAction action, int param1, int param2)
 			gI_HUD2Settings[param1] ^= iSelection;
 			IntToString(gI_HUD2Settings[param1], sCookie, 16);
 			SetClientCookie(param1, gH_HUDCookieMain, sCookie);
-		}
-
-		if(gEV_Type == Engine_TF2 && iSelection == HUD_CENTER && (gI_HUDSettings[param1] & HUD_MASTER) > 0)
-		{
-			FillerHintText(param1);
 		}
 
 		ShowHUDMenu(param1, GetMenuSelectionPosition());
@@ -1323,8 +1243,7 @@ void UpdateMainHUD(int client)
 
 	if(target < 1 || target > MaxClients ||
 		(gI_HUDSettings[client] & HUD_CENTER) == 0 ||
-		((gI_HUDSettings[client] & HUD_OBSERVE) == 0 && client != target) ||
-		(gEV_Type == Engine_TF2 && (!gB_FirstPrint[target] || GetEngineTime() - gF_ConnectTime[target] < 1.5))) // TF2 has weird handling for hint text
+		((gI_HUDSettings[client] & HUD_OBSERVE) == 0 && client != target))
 	{
 		return;
 	}
@@ -1416,14 +1335,7 @@ void UpdateMainHUD(int client)
 
 	if(iLines > 0)
 	{
-		if(gCV_UseHUDFix.BoolValue)
-		{
-			PrintCSGOHUDText(client, sBuffer);
-		}
-		else
-		{
-			PrintHintText(client, "%s", sBuffer);
-		}
+		PrintCSGOHUDText(client, sBuffer);
 	}
 }
 
@@ -1477,11 +1389,6 @@ void UpdateKeyOverlay(int client, Panel panel, bool &draw)
 	char autobhop[4];
 	Shavit_GetStyleSetting(style, "autobhop", autobhop, 4);
 
-	if(gB_BhopStats && !StringToInt(autobhop))
-	{
-		FormatEx(sPanelLine, 64, " %d%s%d\n", gI_ScrollCount[target], (gI_ScrollCount[target] > 9)? "   ":"     ", gI_LastScrollCount[target]);
-	}
-
 	Format(sPanelLine, 128, "%s［%s］　［%s］\n%s  %s  %s\n%s　 %s 　%s\n　%s　　%s", sPanelLine,
 		(buttons & IN_JUMP) > 0? "Ｊ":"ｰ", (buttons & IN_DUCK) > 0? "Ｃ":"ｰ",
 		(fAngleDiff > 0) ? "←":"   ", (buttons & IN_FORWARD) > 0 ? "Ｗ":"ｰ", (fAngleDiff < 0) ? "→":"",
@@ -1491,16 +1398,6 @@ void UpdateKeyOverlay(int client, Panel panel, bool &draw)
 	panel.DrawItem(sPanelLine, ITEMDRAW_RAWLINE);
 
 	draw = true;
-}
-
-public void Bunnyhop_OnTouchGround(int client)
-{
-	gI_LastScrollCount[client] = BunnyhopStats.GetScrollCount(client);
-}
-
-public void Bunnyhop_OnJumpPressed(int client)
-{
-	gI_ScrollCount[client] = BunnyhopStats.GetScrollCount(client);
 }
 
 void UpdateSpectatorList(int client, Panel panel, bool &draw)
@@ -1636,7 +1533,7 @@ void PrintCSGOHUDText(int client, const char[] str)
 	pb.AddString("params", NULL_STRING);
 	pb.AddString("params", NULL_STRING);
 	pb.AddString("params", NULL_STRING);
-	
+
 	EndMessage();
 }
 
