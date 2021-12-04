@@ -1214,6 +1214,24 @@ forward Action Shavit_OnDelete(int client, int index);
 forward void Shavit_OnEnterZone(int client, int type, int track, int id, int entity, int data);
 
 /**
+ * Called when a bot enters a stage zone.
+ *
+ * @param bot						Bot index.
+ * @param stage						Stage id.
+ * @noreturn
+ */
+forward void Shavit_OnEnterStageZone_Bot(int bot, int stage);
+
+/**
+ * Called when a bot enters a checkpoint zone.
+ *
+ * @param bot						Bot index.
+ * @param cp						Checkpoint id.
+ * @noreturn
+ */
+forward void Shavit_OnEnterCheckpointZone_Bot(int bot, int cp);
+
+/**
  * Called when a player leaves a zone.
  *
  * @param client					Client index.
@@ -1297,6 +1315,17 @@ forward void Shavit_OnLeaveStage(int client, int stage, int style, float leavesp
  * @noreturn
  */
 forward void Shavit_OnLeaveCheckpoint(int client, int cp, int style, float leavespeed, float time);
+
+/**
+ * Called when a player sm_back to a stage-zone.
+ *
+ * @param client					Client index.
+ * @param stage						Stage number.
+ * @param style						Style index.
+ * @param stagetimer				Check client is not finishing the map, only stage timer.
+ * @noreturn
+ */
+forward void Shavit_OnTeleportBackStagePost(int client, int stage, int style, bool stagetimer);
 
 /**
  * Called when a player gets the worst record in the server for the style.
@@ -1793,6 +1822,7 @@ native int Shavit_GetClientLastStage(int client);
 
 /**
  * Retrieve the current stage ID for client.
+ * Note: Dont use this in Shavit_OnEnterZone or Shavit_OnEnterStage, use their data instead.
  *
  * @param client					Client index.
  * @return                          stage ID.

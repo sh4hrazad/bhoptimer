@@ -3013,9 +3013,19 @@ public Action Shavit_OnStart(int client)
 
 public void Shavit_OnEnterStage(int client, int stage, int style, float enterspeed, float time, bool stagetimer)
 {
-	if(stagetimer)
+	CutStageFailureFrames(client, stage, style, stagetimer);
+}
+
+public void Shavit_OnTeleportBackStagePost(int client, int stage, int style, bool stagetimer)
+{
+	CutStageFailureFrames(client, stage, style, stagetimer);
+}
+
+static bool CutStageFailureFrames(int client, int stage, int style, bool stagetimer)
+{
+	if(stagetimer || StrContains(gS_StyleStrings[style].sSpecialString, "segment") != -1)
 	{
-		return;
+		return false;
 	}
 
 	if(Shavit_GetClientLastStage(client) == stage)
@@ -3024,6 +3034,8 @@ public void Shavit_OnEnterStage(int client, int stage, int style, float enterspe
 	}
 
 	gI_PlayerLastStageFrame[client] = gI_PlayerFrames[client];
+
+	return true;
 }
 
 public void Shavit_OnLeaveStage(int client, int stage, int style, float leavespeed, float time, bool stagetimer)

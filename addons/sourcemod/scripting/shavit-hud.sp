@@ -32,13 +32,14 @@
 #pragma semicolon 1
 
 // HUD2 - these settings will *disable* elements for the main hud
+#define HUD2_NONE				0
 #define HUD2_TIME				(1 << 0)
 #define HUD2_SPEED				(1 << 1)
 #define HUD2_WRPB				(1 << 2)// 0 pb | 1 WR
 #define HUD2_PRESTRAFE			(1 << 3)
 
 #define HUD_DEFAULT				(HUD_MASTER|HUD_CENTER|HUD_ZONEHUD|HUD_OBSERVE|HUD_TOPLEFT|HUD_SYNC|HUD_TIMELEFT|HUD_2DVEL|HUD_SPECTATORS)
-#define HUD_DEFAULT2			(HUD2_TIME|HUD2_SPEED|HUD2_WRPB|HUD2_PRESTRAFE)
+#define HUD_DEFAULT2			(HUD2_NONE)
 
 #define MAX_HINT_SIZE 1024
 
@@ -362,7 +363,7 @@ public Action Shavit_OnStart(int client, int track)
 
 public void Shavit_OnStartTimer_Post(int client, int style, int track, float speed)
 {
-	if(gCV_PrestrafeMessage.IntValue != 1 || (gI_HUD2Settings[client] & HUD2_PRESTRAFE) != 0)
+	if(gCV_PrestrafeMessage.IntValue != 1 || (gI_HUD2Settings[client] & HUD2_PRESTRAFE) != 0 || (gI_HUDSettings[client] & HUD_MASTER) == 0)
 	{
 		return;
 	}
@@ -408,7 +409,7 @@ public Action Shavit_OnStage(int client, int stage)
 
 public void Shavit_OnStageTimer_Post(int client, int style, int stage, float speed)
 {
-	if(gCV_PrestrafeMessage.IntValue != 1 || (gI_HUD2Settings[client] & HUD2_PRESTRAFE) != 0)
+	if(gCV_PrestrafeMessage.IntValue != 1 || (gI_HUD2Settings[client] & HUD2_PRESTRAFE) != 0 || (gI_HUDSettings[client] & HUD_MASTER) == 0)
 	{
 		return;
 	}

@@ -174,6 +174,7 @@ Handle gH_Forwards_StartTimer_Post = null;
 Handle gH_Forwards_StageTimer_Post = null;
 Handle gH_Forwards_OnStage = null;
 Handle gH_Forwards_OnEndZone = null;
+Handle gH_Forwards_OnTeleportBackStagePost = null;
 
 int gI_LastStage[MAXPLAYERS+1];
 int gI_LastCheckpoint[MAXPLAYERS+1];
@@ -285,6 +286,7 @@ public void OnPluginStart()
 	gH_Forwards_StageTimer_Post = CreateGlobalForward("Shavit_OnStageTimer_Post", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
 	gH_Forwards_OnStage = CreateGlobalForward("Shavit_OnStage", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_OnEndZone = CreateGlobalForward("Shavit_OnEndZone", ET_Event, Param_Cell);
+	gH_Forwards_OnTeleportBackStagePost = CreateGlobalForward("Shavit_OnTeleportBackStagePost", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
 
 	// cvars and stuff
 	gCV_Interval = new Convar("shavit_zones_interval", "1.0", "Interval between each time a mapzone is being drawn to the players.", 0, true, 0.5, true, 5.0);
@@ -1592,6 +1594,16 @@ public Action Command_Back(int client, int args)
 	else
 	{
 		TeleportEntity(client, gV_ZoneCenter[index], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+	}
+
+	if(gA_ZoneCache[index].iZoneType == Zone_Stage)
+	{
+		Call_StartForward(gH_Forwards_OnTeleportBackStagePost);
+		Call_PushCell(client);
+		Call_PushCell(gA_ZoneCache[index].iZoneData);
+		Call_PushCell(Shavit_GetBhopStyle(client));
+		Call_PushCell(gB_StageTimer[client]);
+		Call_Finish();
 	}
 
 	return Plugin_Handled;
