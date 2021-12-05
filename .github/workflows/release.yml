@@ -42,7 +42,7 @@ jobs:
           spcomp64 -O2 -i $INCLUDE_PATH shavit-timelimit.sp
           spcomp64 -O2 -i $INCLUDE_PATH shavit-wr.sp
           spcomp64 -O2 -i $INCLUDE_PATH shavit-zones.sp
-          zip -r Plugins.zip ./*.smx
+          zip --junk-paths Plugins ./*.smx
         working-directory: ${{ env.SCRIPTING_PATH }}/
 
       - name: Create Release
