@@ -1611,14 +1611,16 @@ public Action Command_Back(int client, int args)
 
 public Action Command_Stages(int client, int args)
 {
-	if(!IsValidClient(client))
+	if(!IsValidClient(client, true))
 	{
+		Shavit_PrintToChat(client, "%T", "StageCommandAlive", client);
+
 		return Plugin_Handled;
 	}
 
-	if(!IsPlayerAlive(client))
+	if(Shavit_GetClientTrack(client) != Track_Main)
 	{
-		Shavit_PrintToChat(client, "%T", "StageCommandAlive", client);
+		Shavit_PrintToChat(client, "%T", "InvalidStage", client);
 
 		return Plugin_Handled;
 	}
@@ -1672,6 +1674,8 @@ public Action Command_Stages(int client, int args)
 				{
 					TeleportEntity(client, gV_ZoneCenter[i], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
 				}
+
+				break;
 			}
 		}
 	}
