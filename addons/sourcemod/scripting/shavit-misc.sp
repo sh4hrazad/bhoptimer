@@ -2851,7 +2851,6 @@ bool SaveCheckpoint(int client)
 
 	if (target > MaxClients)
 	{
-		// TODO: Replay_Prop...
 		return false;
 	}
 

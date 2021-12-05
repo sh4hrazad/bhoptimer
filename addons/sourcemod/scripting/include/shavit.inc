@@ -68,7 +68,6 @@ enum //ReplayBotType
 	Replay_Central,
 	Replay_Looping, // these are the ones that loop styles, tracks, and (eventually) stages...
 	Replay_Dynamic, // these are bots that spawn on !replay when the central bot is taken
-	Replay_Prop,    // A prop entity that is being used as a replay...
 };
 
 enum
@@ -1375,7 +1374,7 @@ forward void Shavit_OnRankAssigned(int client, int rank, float points, bool firs
  * Will be called twice for every replay bot unless the replay is canceled before the second call. Use `delay_elapsed` to check for the first & second time.
  *
  * @param ent						Entity index for the replay.
- * @param type						The type of replay. Replay_Prop means `ent` is not a fakeclient, but instead a prop.
+ * @param type						The type of replay.
  * @param delay_elapsed             `false` when the replay bot just spawned but before the start delay has elapsed. `true` when the start delay has elapsed.
  * @noreturn
  */
@@ -1386,7 +1385,7 @@ forward void Shavit_OnReplayStart(int ent, int type, bool delay_elapsed);
  * Will be called twice for most replay bots unless the replay bot is canceled before it finishes. See `actually_finished`.
  *
  * @param client					Entity index for the replay.
- * @param type						The type of replay. Replay_Prop means `ent` is not a fakeclient, but instead a prop.
+ * @param type						The type of replay.
  * @param actually_finished         `false` when the replay runs out of frames and is starting the timer to despawn. `true` when the replay bot is about to despawn. `true` will always run.
  * @noreturn
  */
@@ -2765,7 +2764,7 @@ native void Shavit_SetReplayCacheName(int bot, char[] name);
  * @param delay						Delay until starting. If -1.0, then uses shavit_replay_delay
  * @param client					Client index.
  * @param bot						Bot to play on. Should be of type Replay_Central or Replay_Dynamic. -1 to create new replay bot.
- * @param type						ReplayBotType. Replay_Prop needs `bot` to be -1.
+ * @param type						ReplayBotType.
  * @param ignorelimit				Ignore cvar limit for dynamic bots.
  * @return							Replay entity. 0 is returned if couldn't be created.
  */
@@ -2780,7 +2779,7 @@ native int Shavit_StartReplay(int style, int track, float delay, int client, int
  * @param delay						Delay until starting. If -1.0, then uses shavit_replay_delay
  * @param client					Client index.
  * @param bot						Bot to play on. Should be of type Replay_Central or Replay_Dynamic. -1 to create new replay bot.
- * @param type						ReplayBotType. Replay_Prop needs `bot` to be -1.
+ * @param type						ReplayBotType.
  * @param ignorelimit				Ignore cvar limit for dynamic bots.
  * @param cache						frame_cache_t filled with replay info and frames.
  * @param size						sizeof(frame_cache_t). Used to throw errors at you if you don't recompile plugins.
@@ -2797,7 +2796,7 @@ native int Shavit_StartReplayFromFrameCache(int style, int track, float delay, i
  * @param delay						Delay until starting. If -1.0, then uses shavit_replay_delay
  * @param client					Client index.
  * @param bot						Bot to play on. Should be of type Replay_Central or Replay_Dynamic. -1 to create new replay bot.
- * @param type						ReplayBotType. Replay_Prop needs `bot` to be -1.
+ * @param type						ReplayBotType.
  * @param ignorelimit				Ignore cvar limit for dynamic bots.
  * @param path						File path to replay
  * @return							Replay entity. 0 is returned if couldn't be created.
