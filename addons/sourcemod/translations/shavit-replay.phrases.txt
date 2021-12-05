@@ -107,11 +107,6 @@
 		"en"		"Spawn dynamic bot"
 		"chi"		"复活一个动态录像的电脑"
 	}
-	"Menu_Replay_Prop"
-	{
-		"en"		"Spawn physics prop bot"
-		"chi"		"复活一个不好看的实体电脑"
-	}
 	"TooManyDynamicBots"
 	{
 		"en"		"Too many dynamic bots are playing. Can't spawn more."
@@ -134,9 +129,9 @@
 	}
 	"Menu_Replay2X"
 	{
-		"#format"	"{1:s}"
-		"en"		"[{1}] Toggle 2x speed"
-		"chi"		"[{1}] 设置为 2倍速"
+		"#format"	"{1:d}"
+		"en"		"Toggle {1}x speed"
+		"chi"		"设置为{1}倍速"
 	}
 	"Menu_RefreshReplay"
 	{

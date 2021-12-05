@@ -380,4 +380,10 @@
 		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {orchid}{2}{default} | {gold}WRCP{default} {orchid}{3}{default}."
 		"chi"		"{grey}关卡{default} [{orchid}{1}{default}] | {orchid}{2}{default} | {gold}WRCP{default} {orchid}{3}{default}."
 	}
+	"EnterStageMessage_Bot"
+	{
+		"#format"	"{1:d},{2:s}"
+		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {grey}Time:{default} {green}{2}{default}"
+		"chi"		"{grey}关卡{default} [{orchid}{1}{default}] | {grey}到达时间:{default} {green}{2}{default}"
+	}
 }
