@@ -56,10 +56,6 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Test Dir
-        run: |
-          ls
-
       - name: Upload Plugins
         id: upload-plugins
         uses: actions/upload-release-asset@v1
@@ -70,3 +66,4 @@ jobs:
           asset_path: ./Plugins.zip
           asset_name: Plugins.zip
           asset_content_type: application/zip
+          working-directory: ${{ env.SCRIPTING_PATH }}/
