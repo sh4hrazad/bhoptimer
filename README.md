@@ -18,7 +18,6 @@ Map strippers, zones and tiers are from [HERE](https://github.com/Kyli3Boi/Surft
 * [MomSurfFix](https://github.com/GAMMACASE/MomSurfFix)
 * [RNGFix](https://github.com/jason-e/rngfix)
 * [HeadBugFix](https://github.com/GAMMACASE/HeadBugFix)
-* [sm_closestpos](https://github.com/rtldg/sm_closestpos)
 
 # Optional requirements, for the best experience:
 * [SteamWorks](https://forums.alliedmods.net/showthread.php?t=229556)
@@ -28,3 +27,5 @@ Map strippers, zones and tiers are from [HERE](https://github.com/Kyli3Boi/Surft
   * Used to fix maps(download git129 or above)
 * [Boostfix](https://github.com/t5mat/boostfix)
   * Prevent client getting double push/boost
+* [sm_closestpos](https://github.com/rtldg/sm_closestpos)
+  * Get dynamic time and velocity difference, written in c++ and much faster than sourcepawn
