@@ -3947,25 +3947,26 @@ public int MenuHandler_ReplayTrack(Menu menu, MenuAction action, int param1, int
 				
 				for(int i = 1; i < TRACKS_SIZE; i++)
 				{
-					bool records = false;
-
 					for(int j = 0; j < gI_Styles; j++)
 					{
 						if(gA_FrameCache[j][i].iFrameCount > 0)
 						{
-							records = true;
+							char sInfo[8];
+							IntToString(i, sInfo, 8);
 
-							continue;
+							char sTrack[32];
+							GetTrackName(param1, i, sTrack, 32);
+
+							submenu.AddItem(sInfo, sTrack);
 						}
 					}
+				}
 
-					char sInfo[8];
-					IntToString(i, sInfo, 8);
-
-					char sTrack[32];
-					GetTrackName(param1, i, sTrack, 32);
-
-					submenu.AddItem(sInfo, sTrack, (records)? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+				if(submenu.ItemCount == 0)
+				{
+					char sItem[32];
+					FormatEx(sItem, sizeof(sItem), "%T", "ReplaysUnavailable", param1);
+					submenu.AddItem("-1", sItem, ITEMDRAW_DISABLED);
 				}
 
 				gB_MenuBonus[param1] = true;
@@ -3989,6 +3990,13 @@ public int MenuHandler_ReplayTrack(Menu menu, MenuAction action, int param1, int
 						
 						submenu.AddItem(sInfo, sStage);
 					}
+				}
+
+				if(submenu.ItemCount == 0)
+				{
+					char sItem[32];
+					FormatEx(sItem, sizeof(sItem), "%T", "ReplaysUnavailable", param1);
+					submenu.AddItem("-1", sItem, ITEMDRAW_DISABLED);
 				}
 
 				gB_MenuStage[param1] = true;
@@ -4084,17 +4092,25 @@ void OpenReplayStyleMenu(int client, int track, int stage = 0)
 
 		if(stage == 0)
 		{
-			menu.AddItem(sInfo, sDisplay, (gA_FrameCache[iStyle][track].iFrameCount > 0)? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+			if(gA_FrameCache[iStyle][track].iFrameCount > 0)
+			{
+				menu.AddItem(sInfo, sDisplay);
+			}
 		}
 		else
 		{
-			menu.AddItem(sInfo, sDisplay, (gA_FrameCache_Stage[iStyle][stage].iFrameCount > 0)? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+			if(gA_FrameCache_Stage[iStyle][stage].iFrameCount > 0)
+			{
+				menu.AddItem(sInfo, sDisplay);
+			}
 		}
 	}
 
 	if(menu.ItemCount == 0)
 	{
-		menu.AddItem("-1", "ERROR");
+		char sItem[32];
+		FormatEx(sItem, sizeof(sItem), "%T", "ReplaysUnavailable", client);
+		menu.AddItem("-1", sItem, ITEMDRAW_DISABLED);
 	}
 
 	menu.ExitBackButton = true;
