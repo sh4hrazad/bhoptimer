@@ -1271,6 +1271,14 @@ bool PreBuildMainTrack(const char[] sTemp, int& data, int& type)
 		char sTracknum[4];
 		sRegex.GetSubString(0, sTracknum, 4);
 		data = StringToInt(sTracknum);
+
+		char sCheck[8], sCheck2[8];
+		FormatEx(sCheck, 8, "s%d", data);
+		FormatEx(sCheck2, 8, "stage%d", data);
+		if((StrContains(sTriggerName, sCheck, false) != -1 || StrContains(sTriggerName, sCheck2, false) != -1) && data != 1)
+		{
+			return false;
+		}
 	}
 
 	delete sRegex;
@@ -3698,14 +3706,16 @@ void CreateZoneEntities()
 
 		else // create hookzones
 		{
+			gI_LastEntityIndex = -1;
+
 			for(int index = 0; index < gA_Triggers.Length; index++)
 			{
 				int iEnt = gA_Triggers.Get(index);
 
 				char sTriggerName[128];
-				GetEntPropString(iEnt, Prop_Send, "m_iName", sTriggerName, 128, 0);
+				GetEntPropString(iEnt, Prop_Send, "m_iName", sTriggerName, sizeof(sTriggerName));
 
-				if(StrEqual(gA_ZoneCache[i].sZoneHookname, sTriggerName) && gI_LastEntityIndex != iEnt)
+				if(StrEqual(sTriggerName, gA_ZoneCache[i].sZoneHookname) && gI_LastEntityIndex != iEnt)
 				{
 					if(gA_ZoneCache[i].iZoneType != Zone_Mark)
 					{
