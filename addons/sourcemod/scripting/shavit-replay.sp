@@ -95,6 +95,8 @@ enum struct bot_info_t
 	int iTrack; // Shavit_GetReplayBotTrack
 	int iStarterSerial; // Shavit_GetReplayStarter
 	int iTick; // Shavit_GetReplayBotCurrentFrame
+	int iRealTick;
+	float fRealTime;
 	Handle hTimer;
 	float fFirstFrameTime; // Shavit_GetReplayBotFirstFrameTime
 	bool bCustomFrames;
@@ -1287,7 +1289,14 @@ public any Native_GetReplayTime(Handle handler, int numParams)
 		return float(gA_BotInfo[index].iTick - preframes) / gF_Tickrate * Shavit_GetStyleSettingFloat(gA_BotInfo[index].iStyle, "timescale");
 	}
 
-	return float(gA_BotInfo[index].iTick - gA_BotInfo[index].aCache.iPreFrames) / gF_Tickrate * Shavit_GetStyleSettingFloat(gA_BotInfo[index].iStyle, "timescale");
+	if(gA_BotInfo[index].iTrack != 0)
+	{
+		return float(gA_BotInfo[index].iTick - gA_BotInfo[index].aCache.iPreFrames) / gF_Tickrate * Shavit_GetStyleSettingFloat(gA_BotInfo[index].iStyle, "timescale");
+	}
+	else
+	{
+		return float(gA_BotInfo[index].iRealTick - gA_BotInfo[index].aCache.iPreFrames) / gF_Tickrate * Shavit_GetStyleSettingFloat(gA_BotInfo[index].iStyle, "timescale") + gA_BotInfo[index].fRealTime;
+	}
 }
 
 public int Native_HijackAngles(Handle handler, int numParams)
@@ -2530,15 +2539,23 @@ void FormatStyle(int bot, const char[] source, int style, int track, char dest[M
 	{
 		FormatSeconds(0.0, sTime, 16);
 		sName = "you should never see this";
-		ReplaceString(temp, sizeof(temp), "{style}", "");
-		ReplaceString(temp, sizeof(temp), "{styletag}", "");
+		ReplaceString(temp, sizeof(temp), "{style} ", "");
+		ReplaceString(temp, sizeof(temp), "{styletag} ", "");
 	}
 	else
 	{
 		FormatSeconds(GetReplayLength(style, track, aCache), sTime, 16);
 		GetReplayName(style, track, sName, sizeof(sName), stage);
-		ReplaceString(temp, sizeof(temp), "{style}", style == 0 ? "" : gS_StyleStrings[style].sStyleName);
-		ReplaceString(temp, sizeof(temp), "{styletag}", style == 0 ? "" : gS_StyleStrings[style].sClanTag);
+		if(style == 0)
+		{
+			ReplaceString(temp, sizeof(temp), "{style} ", "");
+			ReplaceString(temp, sizeof(temp), "{styletag} ", "");
+		}
+		else
+		{
+			ReplaceString(temp, sizeof(temp), "{style}", gS_StyleStrings[style].sStyleName);
+			ReplaceString(temp, sizeof(temp), "{styletag}", gS_StyleStrings[style].sClanTag);
+		}
 	}
 
 	char sType[32];
@@ -2569,26 +2586,27 @@ void FormatStyle(int bot, const char[] source, int style, int track, char dest[M
 	char sTrack[32];
 	GetTrackName(LANG_SERVER, track, sTrack, 32);
 
+	char sStage[32];
+	FormatEx(sStage, 32, "WRCP #%d", stage);
+
 	if(track == 0)
 	{
-		ReplaceString(temp, sizeof(temp), "{track} ", "");
+		if(stage == 0)
+		{
+			ReplaceString(temp, sizeof(temp), "{track} ", "WR ");
+			ReplaceString(temp, sizeof(temp), "{stage} ", "");
+		}
+		else
+		{
+			ReplaceString(temp, sizeof(temp), "{track} ", "");
+			ReplaceString(temp, sizeof(temp), "{stage}", sStage);
+		}
 	}
 	else
 	{
 		ReplaceString(sTrack, sizeof(sTrack), "Bonus ", "WRB #");
 		ReplaceString(temp, sizeof(temp), "{track}", sTrack);
-	}
-
-	char sStage[32];
-	FormatEx(sStage, 32, "WRCP #%d", stage);
-
-	if(stage == 0)
-	{
 		ReplaceString(temp, sizeof(temp), "{stage} ", "");
-	}
-	else
-	{
-		ReplaceString(temp, sizeof(temp), "{stage}", sStage);
 	}
 
 	strcopy(dest, MAX_NAME_LENGTH, temp);
@@ -3204,6 +3222,7 @@ Action ReplayOnPlayerRunCmd(bot_info_t info, int &buttons, int &impulse, float v
 			}
 
 			info.iTick += info.b2x ? 2 : 1;
+			info.iRealTick += info.b2x ? 2 : 1;
 
 			int limit = (info.aCache.iFrameCount + info.aCache.iPreFrames + info.aCache.iPostFrames);
 
@@ -3329,6 +3348,17 @@ Action ReplayOnPlayerRunCmd(bot_info_t info, int &buttons, int &impulse, float v
 	}
 
 	return Plugin_Changed;
+}
+
+public void Shavit_OnEnterStageZone_Bot(int bot, int stage)
+{
+	if(gA_BotInfo[bot].iStyle || gA_BotInfo[bot].iStage != 0 || gA_BotInfo[bot].iStage == stage) // invalid style or get into the same stage(dont print twice)
+	{
+		return;
+	}
+
+	gA_BotInfo[bot].iRealTick = gA_BotInfo[bot].aCache.iPreFrames;
+	gA_BotInfo[bot].fRealTime = Shavit_GetWRCPRealTime(stage, gA_BotInfo[bot].iStyle);
 }
 
 int LimitMoveVelFloat(float vel)
@@ -3958,6 +3988,7 @@ public int MenuHandler_ReplayTrack(Menu menu, MenuAction action, int param1, int
 							GetTrackName(param1, i, sTrack, 32);
 
 							submenu.AddItem(sInfo, sTrack);
+							break;
 						}
 					}
 				}

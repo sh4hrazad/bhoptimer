@@ -964,7 +964,8 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 	char sSpeed[8];
 	FormatEx(sSpeed, 8, "%T", "Speed", client);
 
-	StrCat(buffer, MAX_HINT_SIZE, "<font class='fontSize-m'>");
+	StrCat(buffer, MAX_HINT_SIZE, "<span class='fontSize-m'>");
+	StrCat(buffer, MAX_HINT_SIZE, "<span class='fontWeight-Light'>");
 
 	if(data.bReplay)
 	{
@@ -984,34 +985,31 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			FormatEx(sLine, 128, "%T ", "ReplayText", client);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 			
-			FormatEx(sLine, 128, "[<span color='#B400FF'>%s - %s</span>]", sTrack, gS_StyleStrings[data.iStyle].sStyleName);
+			FormatEx(sLine, 128, "[<span color='#00FF00'>%s - %s</span>]", sTrack, gS_StyleStrings[data.iStyle].sStyleName);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
 			iLines++;
 
 			if((gI_HUD2Settings[client] & HUD2_TIME) == 0)
 			{
-				/* char sTime[32];
-				FormatSeconds(data.fTime, sTime, 32, false); */
-
-				char sWR[32];
-				FormatSeconds(data.fWR, sWR, 32, false);
+				char sTime[32];
+				FormatSeconds(data.fTime, sTime, 32, false);
 
 				char sPlayerName[MAX_NAME_LENGTH];
 				Shavit_GetReplayName(data.iStyle, data.iTrack, sPlayerName, MAX_NAME_LENGTH, data.iStage);
 
-				FormatEx(sLine, 128, "%s: <span color='#FFFF00'>%s</span> (%s)", sTransTime, sWR, sPlayerName);
+				FormatEx(sLine, 128, "%s: <span color='#FFFF00'>%s</span> (%s)", sTransTime, sTime, sPlayerName);
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 				iLines++;
 			}
 
 			if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
 			{
-				int iColor = 0xA0FFFF;
+				int iColor = 0x66BCFF;
 
 				if(data.iSpeed < gI_PreviousSpeed[client])
 				{
-					iColor = 0xFFC966;
+					iColor = 0xFF6767;
 				}
 
 				FormatEx(sLine, 128, "%s: <span color='#%06X'>%d</span>", sSpeed, iColor, data.iSpeed);
@@ -1204,29 +1202,14 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 
 		if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
 		{
-			int iColor = 0xA0FFFF;
-	
+			int iColor = 0x66BCFF;
+
 			if(data.iSpeed < gI_PreviousSpeed[client])
 			{
-				iColor = 0xFFC966;
+				iColor = 0xFF6767;
 			}
 
-			if(!StrEqual(data.sPreStrafe, "None") && 0 < data.fDiffTimer <= 5.0 && GetGameTime() > 5.0 && data.iTrack == Track_Main)
-			{
-				int iDiffColor = 0x00FF7F;
-				if(StrContains(data.sPreStrafe, "-") != -1)
-				{
-					iDiffColor = 0xFF0000;
-				}
-
-				RemoveColors(data.sPreStrafe, 64);
-				FormatEx(sLine, 128, "Speed: <span color='#%06X'>%d</span> [<span color='#%06X'>%s</span>]", iColor, data.iSpeed, iDiffColor, data.sPreStrafe);
-			}
-
-			else
-			{
-				FormatEx(sLine, 128, "Speed: <span color='#%06X'>%d</span>", iColor, data.iSpeed);
-			}
+			FormatEx(sLine, 128, "Speed: <span color='#%06X'>%d</span>", iColor, data.iSpeed);
 
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
@@ -1234,7 +1217,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 		}
 	}
 
-	StrCat(buffer, MAX_HINT_SIZE, "</font>");
+	StrCat(buffer, MAX_HINT_SIZE, "</span></span>");
 	return iLines;
 }
 
@@ -1538,7 +1521,7 @@ void PrintCSGOHUDText(int client, const char[] str)
 	EndMessage();
 }
 
-void RemoveColors(char[] string, int size)
+stock void RemoveColors(char[] string, int size)
 {
 	for(int x = 0; x < sizeof(gS_GlobalColorNames); x++)
 	{

@@ -32,6 +32,7 @@ enum struct cp_t
 {
 	int iDate;
 	float fTime;
+	float fRealTime;
 	float fPrespeed;
 	float fPostspeed;
 }
@@ -62,6 +63,7 @@ cp_t gA_WRCPInfo[STYLE_LIMIT][MAX_STAGES+1];
 float gF_CPTime[MAXPLAYERS+1][MAX_STAGES+1];
 float gF_PreSpeed[MAXPLAYERS+1][MAX_STAGES+1];
 float gF_PostSpeed[MAXPLAYERS+1][MAX_STAGES+1];
+float gF_CPEnterStageTime[MAXPLAYERS+1][MAX_STAGES+1];
 float gF_LeaveStageTime[MAXPLAYERS+1];
 float gF_DiffTime[MAXPLAYERS+1];
 
@@ -104,6 +106,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetWRStagePostspeed", Native_GetWRStagePostspeed);
 	CreateNative("Shavit_GetWRStageName", Native_GetWRStageName);
 	CreateNative("Shavit_GetWRCPTime", Native_GetWRCPTime);
+	CreateNative("Shavit_GetWRCPRealTime", Native_GetWRCPRealTime);
 	CreateNative("Shavit_GetWRCPPrespeed", Native_GetWRCPPrespeed);
 	CreateNative("Shavit_GetWRCPPostspeed", Native_GetWRCPPostspeed);
 	CreateNative("Shavit_GetWRCPDiffTime", Native_GetWRCPDiffTime);
@@ -184,6 +187,7 @@ void ResetPlayerStatus(int client)
 		gF_CPTime[client][i] = -1.0;
 		gF_PreSpeed[client][i] = -1.0;
 		gF_PostSpeed[client][i] = -1.0;
+		gF_CPEnterStageTime[client][i] = -1.0;
 	}
 
 	for(int i = 0; i < STYLE_LIMIT; i++)
@@ -1050,6 +1054,8 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 			// stage map hackfix
 			gF_PreSpeed[client][1] = fPrespeed;
 			gF_CPTime[client][1] = 0.0;
+			gF_CPEnterStageTime[client][0] = 0.0;
+			gF_CPEnterStageTime[client][1] = 0.0;
 
 			gF_DiffTime[client] = 0.0;
 		}
@@ -1057,6 +1063,10 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 		case Zone_Stage:
 		{
 			gF_PreSpeed[client][data] = fPrespeed;
+			if(!Shavit_IsClientStageTimer(client))
+			{
+				gF_CPEnterStageTime[client][data] = Shavit_GetClientTime(client);
+			}
 
 			Call_StartForward(gH_Forwards_EnterStage);
 			Call_PushCell(client);
@@ -1164,7 +1174,7 @@ public void SQL_DeleteWRCPs_Callback(Database db, DBResultSet results, const cha
 void ReloadWRCPs()
 {
 	char sQuery[192];
-	FormatEx(sQuery, 192, "SELECT style, cp, time, prespeed, postspeed FROM `%scpwrs` WHERE map = '%s';", gS_MySQLPrefix, gS_Map);
+	FormatEx(sQuery, 192, "SELECT style, cp, time, marktime, prespeed, postspeed FROM `%scpwrs` WHERE map = '%s';", gS_MySQLPrefix, gS_Map);
 	gH_SQL.Query(SQL_ReloadWRCPs_Callback, sQuery);
 }
 
@@ -1181,8 +1191,9 @@ public void SQL_ReloadWRCPs_Callback(Database db, DBResultSet results, const cha
 		int style = results.FetchInt(0);
 		int cpnum = results.FetchInt(1);
 		gA_WRCPInfo[style][cpnum].fTime = results.FetchFloat(2);
-		gA_WRCPInfo[style][cpnum].fPrespeed = results.FetchFloat(3);
-		gA_WRCPInfo[style][cpnum].fPostspeed = results.FetchFloat(4);
+		gA_WRCPInfo[style][cpnum].fRealTime = results.FetchFloat(3);
+		gA_WRCPInfo[style][cpnum].fPrespeed = results.FetchFloat(4);
+		gA_WRCPInfo[style][cpnum].fPostspeed = results.FetchFloat(5);
 	}
 }
 
@@ -1226,14 +1237,14 @@ public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, i
 			if(overwrite == 1) // insert
 			{
 				FormatEx(sQuery, 512,
-					"REPLACE INTO `%scptimes` (auth, map, time, style, cp, prespeed, postspeed, date) VALUES (%d, '%s', %f, %d, %d, %f, %f, %d);",
-					gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, gF_CPTime[client][i], style, i, prespeed, postspeed, GetTime());
+					"REPLACE INTO `%scptimes` (auth, map, time, marktime, style, cp, prespeed, postspeed, date) VALUES (%d, '%s', %f, %f, %d, %d, %f, %f, %d);",
+					gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, gF_CPTime[client][i], gF_CPEnterStageTime[client][i], style, i, prespeed, postspeed, GetTime());
 			}
 			else // update
 			{
 				FormatEx(sQuery, 512,
-					"UPDATE `%scptimes` SET time = %f, style = %d, prespeed = %f, postspeed = %f, date = %d WHERE (auth = %d AND cp = %d ) AND map = '%s';",
-					gS_MySQLPrefix, gF_CPTime[client][i], style, prespeed, postspeed, GetTime(), GetSteamAccountID(client), i, gS_Map);
+					"UPDATE `%scptimes` SET time = %f, marktime = %f, style = %d, prespeed = %f, postspeed = %f, date = %d WHERE (auth = %d AND cp = %d ) AND map = '%s';",
+					gS_MySQLPrefix, gF_CPTime[client][i], gF_CPEnterStageTime[client][i], style, prespeed, postspeed, GetTime(), GetSteamAccountID(client), i, gS_Map);
 			}
 
 			hTransaction.AddQuery(sQuery);
@@ -1268,10 +1279,10 @@ public void Trans_InsertCP_PR_Failed(Database db, any data, int numQueries, cons
 	LogError("Insert CP error! cp %d failed , failIndex: %d. Reason: %s", numQueries, failIndex, error);
 }
 
-void OnWRCPCheck(int client, int stage, int style, float time)
+void OnFinishStage(int client, int stage, int style, float time)
 {
 	float wrcpTime = gA_WRStageInfo[style][stage].fTime;
-	if(time < wrcpTime || wrcpTime == -1.0)// check if wrcp
+	if(time < wrcpTime || wrcpTime == -1.0)
 	{
 		char sName[MAX_NAME_LENGTH];
 		GetClientName(client, sName, sizeof(sName));
@@ -1307,10 +1318,7 @@ void OnWRCPCheck(int client, int stage, int style, float time)
 		Call_PushString(gS_Map);
 		Call_Finish();
 	}
-}
 
-void Insert_WRCP_PR(int client, int stage, int style, float time)
-{
 	char sQuery[512];
 	FormatEx(sQuery, 512, "SELECT completions FROM `%sstagetimes` WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
 			gS_MySQLPrefix, stage, style, gS_Map, GetSteamAccountID(client));
@@ -1625,6 +1633,12 @@ public int Native_GetWRCPTime(Handle handler, int numParams)
 	return view_as<int>(gA_WRCPInfo[GetNativeCell(2)][GetNativeCell(1)].fTime);
 }
 
+//native float Shavit_GetWRCPRealTime(int cp, int style)
+public int Native_GetWRCPRealTime(Handle handler, int numParams)
+{
+	return view_as<int>(gA_WRCPInfo[GetNativeCell(2)][GetNativeCell(1)].fRealTime);
+}
+
 //native float Shavit_GetWRCPPostspeed(int cp, int style)
 public int Native_GetWRCPPrespeed(Handle handler, int numParams)
 {
@@ -1679,8 +1693,7 @@ public int Native_FinishStage(Handle handler, int numParams)
 			}
 		}
 
-		OnWRCPCheck(client, stage - 1, style, time); // check if wrcp
-		Insert_WRCP_PR(client, stage - 1, style, time); // check if wrcp and pr, insert or update
+		OnFinishStage(client, stage - 1, style, time);
 	}
 }
 
@@ -1777,7 +1790,7 @@ void SQL_DBConnect()
 	hTransaction.AddQuery(sQuery);
 
 	FormatEx(sQuery, 1024, 
-			"CREATE TABLE IF NOT EXISTS `%scptimes` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `style` TINYINT, `cp` INT, `prespeed` FLOAT, `postspeed` FLOAT, `date` INT, PRIMARY KEY (`id`))%s;",
+			"CREATE TABLE IF NOT EXISTS `%scptimes` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `marktime` FLOAT, `style` TINYINT, `cp` INT, `prespeed` FLOAT, `postspeed` FLOAT, `date` INT, PRIMARY KEY (`id`))%s;",
 			gS_MySQLPrefix, (bMysql) ? " ENGINE=INNODB" : "");
 	hTransaction.AddQuery(sQuery);
 
@@ -1792,7 +1805,7 @@ void SQL_DBConnect()
 
 	FormatEx(sQuery, 1024, 
 		"%s `%scpwrs` "...
-		"AS SELECT p.map, p.style, p.cp, p.time, p.prespeed, p.postspeed, p.auth, p.date "...
+		"AS SELECT p.map, p.style, p.cp, p.time, p.marktime, p.prespeed, p.postspeed, p.auth, p.date "...
 		"FROM `%scptimes` p "...
 		"JOIN `%swrs` u "...
 		"ON p.map = u.map AND p.auth = u.auth "...
