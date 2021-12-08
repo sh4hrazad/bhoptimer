@@ -580,13 +580,24 @@ public void Shavit_OnEnterStageZone_Bot(int bot, int stage)
 	}
 
 	char sTime[32];
-	FormatHUDSeconds(Shavit_GetWRCPTime(stage, style), sTime, 32);
+	float realtime = Shavit_GetWRCPRealTime(stage, style);
+	float time = Shavit_GetWRCPTime(stage, style);
+	int attemps = Shavit_GetWRCPAttemps(stage, style);
+	bool failed = (attemps > 1);
+	if(failed)
+	{
+		FormatHUDSeconds(realtime, sTime, 32);
+	}
+	else
+	{
+		FormatHUDSeconds(time, sTime, 32);
+	}
 
 	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(i != bot && (IsValidClient(i) && GetSpectatorTarget(i, i) == bot))
 		{
-			Shavit_PrintToChat(i, "%T", "EnterStageMessage_Bot", i, stage, sTime);
+			Shavit_PrintToChat(i, "%T", failed ? "EnterStageMessage_Bot_NoImproved" : "EnterStageMessage_Bot_Improved", i, stage, sTime, attemps);
 		}
 	}
 }
@@ -969,7 +980,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 
 	if(data.bReplay)
 	{
-		if(data.iStyle != -1 && data.fTime <= data.fWR && Shavit_IsReplayDataLoaded(data.iStyle, data.iTrack, data.iStage))
+		if(data.iStyle != -1 && Shavit_IsReplayDataLoaded(data.iStyle, data.iTrack, data.iStage))
 		{
 			char sTrack[64];
 			if(data.iStage == 0)

@@ -442,9 +442,9 @@ public void OnPluginStart()
 	gCV_StagePlaybackPreRunTime = new Convar("shavit_stage_replay_preruntime", "1.5", "Time (in seconds) to record before a player leaves stage zone.", 0, true, 0.0, true, 2.0);
 	gCV_StagePlaybackPostRunTime = new Convar("shavit_stage_replay_postruntime", "1.5", "Time (in seconds) to record after a player finished a stage.", 0, true, 0.0, true, 2.0);
 	gCV_PreRunAlways = new Convar("shavit_replay_prerun_always", "1", "Record prerun frames outside the start zone?", 0, true, 0.0, true, 1.0);
-	gCV_DynamicTimeCheap = new Convar("shavit_replay_timedifference_cheap", "0.0", "0 - Disabled\n1 - only clip the search ahead to shavit_replay_timedifference_search\n2 - only clip the search behind to players current frame\n3 - clip the search to +/- shavit_replay_timedifference_search seconds to the players current frame", 0, true, 0.0, true, 3.0);
-	gCV_DynamicTimeSearch = new Convar("shavit_replay_timedifference_search", "0.0", "Time in seconds to search the players current frame for dynamic time differences\n0 - Full Scan\nNote: Higher values will result in worse performance", 0, true, 0.0);
-	gCV_EnableDynamicTimeDifference = new Convar("shavit_replay_timedifference", "0", "Enabled dynamic time/velocity differences for the hud", 0, true, 0.0, true, 1.0);
+	gCV_DynamicTimeCheap = new Convar("shavit_replay_timedifference_cheap", "1", "0 - Disabled\n1 - only clip the search ahead to shavit_replay_timedifference_search\n2 - only clip the search behind to players current frame\n3 - clip the search to +/- shavit_replay_timedifference_search seconds to the players current frame", 0, true, 0.0, true, 3.0);
+	gCV_DynamicTimeSearch = new Convar("shavit_replay_timedifference_search", "60.0", "Time in seconds to search the players current frame for dynamic time differences\n0 - Full Scan\nNote: Higher values will result in worse performance", 0, true, 0.0);
+	gCV_EnableDynamicTimeDifference = new Convar("shavit_replay_timedifference", "1", "Enabled dynamic time/velocity differences for the hud", 0, true, 0.0, true, 1.0);
 
 	char tenth[6];
 	IntToString(RoundToFloor(1.0 / GetTickInterval() / 10), tenth, sizeof(tenth));
@@ -920,6 +920,8 @@ void StartReplay(bot_info_t info, int track, int style, int starter, float delay
 	info.iTrack = track;
 	info.iStarterSerial = (starter > 0) ? GetClientSerial(starter) : 0;
 	info.iTick = 0;
+	info.iRealTick = 0;
+	info.fRealTime = 0.0;
 	//info.iLoopingConfig
 	info.fDelay = delay;
 	info.hTimer = CreateTimer((delay / 2.0), Timer_StartReplay, info.iEnt, TIMER_FLAG_NO_MAPCHANGE);
@@ -3229,6 +3231,7 @@ Action ReplayOnPlayerRunCmd(bot_info_t info, int &buttons, int &impulse, float v
 			if(info.iTick >= limit)
 			{
 				info.iTick = limit;
+				info.iRealTick = limit;
 				info.iStatus = Replay_End;
 				info.hTimer = CreateTimer((info.fDelay / 2.0), Timer_EndReplay, info.iEnt, TIMER_FLAG_NO_MAPCHANGE);
 
@@ -3888,11 +3891,19 @@ public int MenuHandler_Replay(Menu menu, MenuAction action, int param1, int para
 
 			if (index != -1)
 			{
+				if(gA_BotInfo[index].iTrack == 0 && gA_BotInfo[index].iStage == 0)
+				{
+					Shavit_PrintToChat(param1, "{darkred}无法对主线电脑进行跳帧操作{default}");
+					OpenReplayMenu(param1);
+					return 0;
+				}
+
 				gA_BotInfo[index].iTick += RoundToFloor(seconds * gF_Tickrate);
 
 				if (gA_BotInfo[index].iTick < 0)
 				{
 					gA_BotInfo[index].iTick = 0;
+					gA_BotInfo[index].iRealTick = 0;
 				}
 				else
 				{
@@ -3901,6 +3912,7 @@ public int MenuHandler_Replay(Menu menu, MenuAction action, int param1, int para
 					if (gA_BotInfo[index].iTick > limit)
 					{
 						gA_BotInfo[index].iTick = limit;
+						gA_BotInfo[index].iRealTick = limit;
 					}
 				}
 			}
@@ -4265,6 +4277,8 @@ void ClearBotInfo(bot_info_t info)
 	info.iTrack = -1;
 	info.iStarterSerial = -1;
 	info.iTick = -1;
+	info.iRealTick = -1;
+	info.fRealTime = 0.0;
 	//info.iLoopingConfig
 	delete info.hTimer;
 	info.fFirstFrameTime = -1.0;

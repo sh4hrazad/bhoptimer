@@ -2282,12 +2282,12 @@ public int MenuHandler_SelectZoneTrack(Menu menu, MenuAction action, int param1,
 			char sZoneName[64];
 			GetZoneName(param1, i, sZoneName, 64);
 
-			if(i == Zone_Stage && gI_Checkpoints > 0)
+			if(i == Zone_Stage && (gI_Checkpoints > 0 || gI_ZoneTrack[param1] != 0))
 			{
 				continue;
 			}
 
-			else if(i == Zone_Checkpoint && gI_Stages > 1)
+			else if(i == Zone_Checkpoint && (gI_Stages > 1 || gI_ZoneTrack[param1] != 0))
 			{
 				continue;
 			}
