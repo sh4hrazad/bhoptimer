@@ -238,9 +238,9 @@
 	}
 	"WRNotice"
 	{
-		"#format"	"{1:s}"
-		"en"		"{darkred}NEW {1} WR!!!"
-		"chi"		"{darkred}新的 {1} 服务器记录!!!"
+		"#format"	"{1:s},{2:s}"
+		"en"		"{darkred}NEW{default} {green}{1}-{2}{default} WR!!!"
+		"chi"		"{darkred}新的{default} {green}{1}-{2}{default} {darkred}服务器记录!!!"
 	}
 	"AdvertisementsEnabled"
 	{

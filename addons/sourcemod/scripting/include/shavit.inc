@@ -1979,6 +1979,15 @@ native float Shavit_GetWRStagePostspeed(int stage, int style);
 native void Shavit_GetWRStageName(int style, int stage, char[] wrstagename, int wrstagemaxlength);
 
 /**
+ * Gets the WRCP's attemps on the stage on a variable.
+ *
+ * @param cp						WRCP checkpoint.
+ * @param style						Style to get the WRCP for.
+ * @return							WRCP Attemps.
+ */
+native int Shavit_GetWRCPAttemps(int cp, int style);
+
+/**
  * Gets the WRCP's time on the map on a variable.
  *
  * @param cp						WRCP checkpoint.
@@ -3432,6 +3441,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetWRStageTime");
 	MarkNativeAsOptional("Shavit_GetWRStagePostspeed");
 	MarkNativeAsOptional("Shavit_GetWRStageName");
+	MarkNativeAsOptional("Shavit_GetWRCPAttemps");
 	MarkNativeAsOptional("Shavit_GetWRCPTime");
 	MarkNativeAsOptional("Shavit_GetWRCPRealTime")
 	MarkNativeAsOptional("Shavit_GetWRCPPrespeed");

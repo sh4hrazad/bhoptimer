@@ -1505,7 +1505,7 @@ public void DeleteConfirm_Callback(Database db, DBResultSet results, const char[
 	int client = GetClientFromSerial(iSerial);
 
 	char sTrack[32];
-	GetTrackName(LANG_SERVER, iTrack, sTrack, 32);
+	GetTrackName(client, iTrack, sTrack, 32);
 
 	char sDate[32];
 	FormatTime(sDate, 32, "%Y-%m-%d %H:%M:%S", iTimestamp);
@@ -2470,10 +2470,10 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 	int iSteamID = GetSteamAccountID(client);
 
 	char sTime[32];
-	FormatSeconds(time, sTime, 32);
+	FormatHUDSeconds(time, sTime, sizeof(sTime));
 
 	char sTrack[32];
-	GetTrackName(LANG_SERVER, track, sTrack, 32);
+	GetTrackName(client, track, sTrack, 32);
 
 	// 0 - no query
 	// 1 - insert
@@ -2497,7 +2497,7 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 		iOverwrite = 2;
 	}
 
-	bool bEveryone = (iOverwrite > 0);
+	bool bEveryone = true;
 	char sMessage[255];
 	char sMessage2[255];
 
@@ -2530,8 +2530,9 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 	}
 
 	int iRank = GetRankForTime(style, time, track);
+	int iRecords = GetRecordAmount(style, track);
 
-	if(iRank >= GetRecordAmount(style, track))
+	if(iRank >= iRecords)
 	{
 		Call_StartForward(gH_OnWorstRecord);
 		Call_PushCell(client);
@@ -2556,8 +2557,8 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 		fDifference = -fDifference;
 	}
 
-	char sDifference[16];
-	FormatSeconds(fDifference, sDifference, 16, true);
+	char sDifference[32];
+	FormatHUDSeconds(fDifference, sDifference, sizeof(sDifference));
 
 	char sSync[32]; // 32 because colors
 	FormatEx(sSync, 32, (sync != -1.0)? " @ %s%.02f%%":"", gS_ChatStrings.sVariable, sync);
@@ -2570,8 +2571,16 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 
 		if(iOverwrite == 1) // insert
 		{
-			FormatEx(sMessage, 255, "%s[%s]%s %T",
-				gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "FirstCompletion", LANG_SERVER, client, gS_StyleStrings[style].sStyleName, sTime, iRank, jumps, strafes, sSync);
+			if(style == 0)
+			{
+				FormatEx(sMessage, 255, "%T", "FirstCompletion-Normal", client, 
+					client, sTrack, sTime, iRank, iRecords + 1);
+			}
+			else
+			{
+				FormatEx(sMessage, 255, "%T", "FirstCompletion-Other", client, 
+					client, sTrack, sTime, gS_StyleStrings[style].sStyleName, iRank, iRecords + 1);
+			}
 
 			FormatEx(sQuery, sizeof(sQuery),
 				"INSERT INTO %splayertimes (auth, map, time, jumps, date, style, strafes, sync, points, track, perfs, exact_time_int) VALUES (%d, '%s', %f, %d, %d, %d, %d, %.2f, %f, %d, %.2f, %d);",
@@ -2579,8 +2588,16 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 		}
 		else // update
 		{
-			FormatEx(sMessage, 255, "%s[%s]%s %T",
-				gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "NotFirstCompletion", LANG_SERVER, client, gS_StyleStrings[style].sStyleName, sTime, iRank, jumps, strafes, sSync, sDifference);
+			if(style == 0)
+			{
+				FormatEx(sMessage, 255, "%T", "NotFirstCompletion-Normal", client, 
+					client, sTrack, sTime, iRank, iRecords, sDifference);
+			}
+			else
+			{
+				FormatEx(sMessage, 255, "%T", "NotFirstCompletion-Other", client, 
+					client, sTrack, sTime, gS_StyleStrings[style].sStyleName, iRank, iRecords, sDifference);
+			}
 
 			FormatEx(sQuery, sizeof(sQuery),
 				"UPDATE %splayertimes SET time = %f, jumps = %d, date = %d, strafes = %d, sync = %.02f, points = %f, perfs = %.2f, exact_time_int = %d, completions = completions + 1 WHERE map = '%s' AND auth = %d AND style = %d AND track = %d;",
@@ -2623,23 +2640,34 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 
 		if(iOverwrite == 0 && !Shavit_GetStyleSettingInt(style, "unranked"))
 		{
-			FormatEx(sMessage, 255, "%s[%s]%s %T",
-				gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "WorseTime", client, gS_StyleStrings[style].sStyleName, sTime, jumps, strafes, sSync, sDifference);
+			if(style == 0)
+			{
+				FormatEx(sMessage, 255, "%T", "WorseTime-Normal", client, 
+					client, sTrack, sTime, sDifference);
+			}
+			else
+			{
+				FormatEx(sMessage, 255, "%T", "WorseTime-Other", client, 
+					client, sTrack, sTime, gS_StyleStrings[style].sStyleName, sDifference);
+			}
 		}
 	}
 	else
 	{
-		FormatEx(sMessage, 255, "%s[%s]%s %T",
-			gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "UnrankedTime", client, gS_StyleStrings[style].sStyleName, sTime, jumps, strafes, sSync);
+		if(style == 0)
+		{
+			FormatEx(sMessage, 255, "%T", "UnrankedTime-Normal", client, 
+				client, sTrack, sTime, Shavit_IsPracticeMode(client) ? "[练习模式]" : "[未排名模式]");
+		}
+		else
+		{
+			FormatEx(sMessage, 255, "%T", "UnrankedTime-Other", client, 
+				client, sTrack, sTime, gS_StyleStrings[style].sStyleName, Shavit_IsPracticeMode(client) ? "[练习模式]" : "[未排名模式]");
+		}
 	}
 
 	timer_snapshot_t aSnapshot;
 	Shavit_SaveSnapshot(client, aSnapshot);
-
-	if (!Shavit_GetStyleSettingBool(style, "autobhop"))
-	{
-		FormatEx(sMessage2, sizeof(sMessage2), "%s[%s]%s %T", gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "CompletionExtraInfo", LANG_SERVER, avgvel, maxvel, perfs);
-	}
 
 	Action aResult = Plugin_Continue;
 	Call_StartForward(gH_OnFinishMessage);
@@ -2668,8 +2696,17 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 			{
 				if(client != i && IsValidClient(i) && GetSpectatorTarget(i) == client)
 				{
-					FormatEx(sMessage, sizeof(sMessage), "%s[%s]%s %T",
-						gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "NotFirstCompletionWorse", i, client, gS_StyleStrings[style].sStyleName, sTime, gS_ChatStrings.sText, iRank, gS_ChatStrings.sText, jumps, strafes, sSync, sDifference);
+					if(style == 0)
+					{
+						FormatEx(sMessage, sizeof(sMessage), "%T", "NotFirstCompletionWorse-Normal", i, 
+							client, sTrack, sTime, iRank, iRecords, sDifference);
+					}
+					else
+					{
+						FormatEx(sMessage, sizeof(sMessage), "%T", "NotFirstCompletionWorse-Other", i, 
+							client, sTrack, sTime, gS_StyleStrings[style].sStyleName, iRank, iRecords, sDifference);
+					}
+
 					Shavit_PrintToChat(i, "%s", sMessage);
 
 					if (sMessage2[0] != 0)

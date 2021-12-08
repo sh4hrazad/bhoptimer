@@ -3530,18 +3530,13 @@ public void Shavit_OnWorldRecord(int client, int style, float time, int jumps, i
 	}
 
 	char sTrack[32];
-	GetTrackName(LANG_SERVER, track, sTrack, 32);
+	GetTrackName(client, track, sTrack, 32);
 
 	for(int i = 1; i <= gCV_WRMessages.IntValue; i++)
 	{
 		if(track == Track_Main)
 		{
-			Shavit_PrintToChatAll("%t", "WRNotice", sUpperCase);
-		}
-
-		else
-		{
-			Shavit_PrintToChatAll("%s[%s]%s %t", gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "WRNotice", sUpperCase);
+			Shavit_PrintToChatAll("%t", "WRNotice", sTrack, sUpperCase);
 		}
 	}
 }
