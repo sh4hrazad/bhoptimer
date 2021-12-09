@@ -50,7 +50,7 @@ jobs:
 
           mkdir ../plugins && mv ./*.smx ../plugins
           cd $GITHUB_WORKSPACE
-          zip --junk-paths Package ./*
+          zip -r Package ./*
         working-directory: ${{ env.SCRIPTING_PATH }}/
 
       - name: Create Release
