@@ -3443,7 +3443,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetWRStageName");
 	MarkNativeAsOptional("Shavit_GetWRCPAttemps");
 	MarkNativeAsOptional("Shavit_GetWRCPTime");
-	MarkNativeAsOptional("Shavit_GetWRCPRealTime")
+	MarkNativeAsOptional("Shavit_GetWRCPRealTime");
 	MarkNativeAsOptional("Shavit_GetWRCPPrespeed");
 	MarkNativeAsOptional("Shavit_GetWRCPPostspeed");
 	MarkNativeAsOptional("Shavit_GetWRCPDiffTime");
