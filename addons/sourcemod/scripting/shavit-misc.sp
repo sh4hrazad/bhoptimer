@@ -136,7 +136,6 @@ Convar gCV_RestrictNoclip = null;
 Convar gCV_BotFootsteps = null;
 Convar gCV_SpecScoreboardOrder = null;
 Convar gCV_ExperimentalSegmentedEyeAngleFix = null;
-ConVar gCV_PauseMovement = null;
 ConVar gCV_CSGOUnlockMovement = null;
 
 // external cvars
@@ -392,11 +391,6 @@ public void OnPluginStart()
 	gB_Replay = LibraryExists("shavit-replay");
 	gB_Zones = LibraryExists("shavit-zones");
 	gB_Chat = LibraryExists("shavit-chat");
-}
-
-public void OnAllPluginsLoaded()
-{
-	gCV_PauseMovement = FindConVar("shavit_core_pause_movement");
 }
 
 void LoadDHooks()
@@ -3282,33 +3276,7 @@ public Action Command_Noclip(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(GetEntityMoveType(client) != MOVETYPE_NOCLIP)
-	{
-		if (gCV_PauseMovement.BoolValue && Shavit_IsPaused(client))
-		{
-			SetEntityMoveType(client, MOVETYPE_NOCLIP);
-			return Plugin_Handled;
-		}
-
-		if(Shavit_GetTimerStatus(client) != Timer_Paused)
-		{
-			Shavit_PauseTimer(client);
-			Shavit_PrintToChat(client, "%T", (gB_CanTouchTrigger[client])?"NoclipCanTrigger":"NoclipCannotTrigger", client);
-		}
-
-		SetEntityMoveType(client, MOVETYPE_NOCLIP);
-	}
-	else
-	{
-		if (gCV_PauseMovement.BoolValue && Shavit_IsPaused(client))
-		{
-			Shavit_PrintToChat(client, "输入{palered}%s{default}恢复计时器", Shavit_GetClientTime(client) != 0.0 ? "!pause" : "!r");
-			SetEntityMoveType(client, MOVETYPE_WALK);
-			return Plugin_Handled;
-		}
-
-		SetEntityMoveType(client, MOVETYPE_WALK);
-	}
+	UpdateByNoclipStatus(client, GetEntityMoveType(client) == MOVETYPE_WALK);
 
 	return Plugin_Handled;
 }
@@ -3322,35 +3290,32 @@ public Action CommandListener_Noclip(int client, const char[] command, int args)
 
 	gI_LastNoclipTick[client] = GetGameTickCount();
 
-	if(command[0] == '+')
-	{
-		if (gCV_PauseMovement.BoolValue && Shavit_IsPaused(client))
-		{
-			SetEntityMoveType(client, MOVETYPE_NOCLIP);
-			return Plugin_Handled;
-		}
+	UpdateByNoclipStatus(client, command[0] == '+');
 
-		if(Shavit_GetTimerStatus(client) != Timer_Paused)
+	return Plugin_Handled;
+}
+
+void UpdateByNoclipStatus(int client, bool walking)
+{
+	if(walking)
+	{
+		if(Shavit_GetTimerStatus(client) != Timer_Paused && !Shavit_IsPracticeMode(client))
 		{
 			Shavit_PauseTimer(client);
-			Shavit_PrintToChat(client, "%T", (gB_CanTouchTrigger[client])?"NoclipCanTrigger":"NoclipCannotTrigger", client);
 		}
 
+		Shavit_PrintToChat(client, "%T", (gB_CanTouchTrigger[client])?"NoclipCanTrigger":"NoclipCannotTrigger", client);
 		SetEntityMoveType(client, MOVETYPE_NOCLIP);
 	}
 	else
 	{
-		if (gCV_PauseMovement.BoolValue && Shavit_IsPaused(client))
+		if(Shavit_GetTimerStatus(client) == Timer_Paused)
 		{
 			Shavit_PrintToChat(client, "输入{palered}%s{default}恢复计时器", Shavit_GetClientTime(client) != 0.0 ? "!pause" : "!r");
-			SetEntityMoveType(client, MOVETYPE_WALK);
-			return Plugin_Handled;
 		}
 
 		SetEntityMoveType(client, MOVETYPE_WALK);
 	}
-
-	return Plugin_Handled;
 }
 
 public Action Command_NoclipIgnoreTrigger(int client, int args)
