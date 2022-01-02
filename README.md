@@ -29,3 +29,5 @@ Map strippers, zones and tiers are from [HERE](https://github.com/Kyli3Boi/Surft
   * Prevent client getting double push/boost
 * [sm_closestpos](https://github.com/rtldg/sm_closestpos)
   * Get dynamic time and velocity difference, written in c++ and much faster than sourcepawn
+* [Noclipspeed](https://github.com/GAMMACASE/NoclipSpeed)
+  * Set dynamic noclip speed by your custom value, differs from setting sv_noclipspeed convar directly
