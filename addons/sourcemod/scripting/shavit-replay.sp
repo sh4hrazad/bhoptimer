@@ -4211,8 +4211,6 @@ public int MenuHandler_ReplayStyle(Menu menu, MenuAction action, int param1, int
 			Shavit_PrintToChat(param1, "%T", "FailedToCreateReplay", param1);
 			return 0;
 		}
-
-		OpenReplayMenu(param1, true);
 	}
 	else if(action == MenuAction_Cancel && param2 == MenuCancel_ExitBack)
 	{
