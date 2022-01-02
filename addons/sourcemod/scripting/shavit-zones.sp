@@ -1628,7 +1628,7 @@ public Action Command_Stages(int client, int args)
 
 	if(Shavit_GetClientTrack(client) != Track_Main)
 	{
-		Shavit_PrintToChat(client, "%T", "InvalidStage", client);
+		Shavit_PrintToChat(client, "%T(因为奖励关没有关卡)", "InvalidStage", client);
 
 		return Plugin_Handled;
 	}
@@ -3764,10 +3764,10 @@ void CreateZoneEntities()
 		gB_ZonesCreated = true;
 	}
 
-	if(!gB_ZonesCreated)
+	/* if(!gB_ZonesCreated)
 	{
 		CreateTimer(5.0, Timer_DelayPreBuildZones);
-	}
+	} */
 }
 
 public Action Timer_DelayPreBuildZones(Handle timer)
@@ -3985,25 +3985,29 @@ public void EndTouchPost(int entity, int other)
 	float fSpeed[3];
 	GetEntPropVector(other, Prop_Data, "m_vecAbsVelocity", fSpeed);
 	float fSpeed3D = (SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0) + Pow(fSpeed[2], 2.0)));
+	float fTime = Shavit_GetClientTime(other);
 
-	if(type == Zone_Start && Shavit_GetClientTime(other) != 0.0)
+	if(fTime > 0.0 && fTime <= 0.5)
 	{
-		Call_StartForward(gH_Forwards_StartTimer_Post);
-		Call_PushCell(other);
-		Call_PushCell(Shavit_GetBhopStyle(other));
-		Call_PushCell(track);
-		Call_PushFloat(fSpeed3D);
-		Call_Finish();
-	}
+		if(type == Zone_Start)
+		{
+			Call_StartForward(gH_Forwards_StartTimer_Post);
+			Call_PushCell(other);
+			Call_PushCell(Shavit_GetBhopStyle(other));
+			Call_PushCell(track);
+			Call_PushFloat(fSpeed3D);
+			Call_Finish();
+		}
 
-	else if(type == Zone_Stage && Shavit_GetClientTime(other) != 0.0 && gB_StageTimer[other])
-	{
-		Call_StartForward(gH_Forwards_StageTimer_Post);
-		Call_PushCell(other);
-		Call_PushCell(Shavit_GetBhopStyle(other));
-		Call_PushCell(gA_ZoneCache[entityzone].iZoneData);
-		Call_PushFloat(fSpeed3D);
-		Call_Finish();
+		else if(type == Zone_Stage && gB_StageTimer[other])
+		{
+			Call_StartForward(gH_Forwards_StageTimer_Post);
+			Call_PushCell(other);
+			Call_PushCell(Shavit_GetBhopStyle(other));
+			Call_PushCell(gA_ZoneCache[entityzone].iZoneData);
+			Call_PushFloat(fSpeed3D);
+			Call_Finish();
+		}
 	}
 }
 
