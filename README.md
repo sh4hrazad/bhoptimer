@@ -28,3 +28,19 @@
   * 获得动态时间差和速度差，用c++编写的扩展，比sourcepawn快得多。
 * [NoclipSpeed](https://github.com/GAMMACASE/NoclipSpeed)
   * 通过自定义值设置穿墙速度，不同于直接设置sv_noclipspeed cvar值
+
+# 安装流程
+
+* [编译仓库里的源码](https://github.com/shavitush/bhoptimer/wiki/1.-Installation)
+* [或者直接从release下载插件包](https://github.com/Ciallo-Ani/surftimer/releases) - 只需拖放到游戏服务器的目录中即可.
+
+# 配置
+
+在[wiki](https://github.com/shavitush/bhoptimer/wiki)第二个类别的页面下包含了详细的配置信息。
+
+配置文件在 `cfg/sourcemod/plugin.shavit-*.cfg` 和 `addons/sourcemod/configs/shavit-*`.
+
+
+
+# 不懂就亲自 **出钱** [QQ找我](https://wpa.qq.com/msgrd?v=3&uin=1593464801)，我吐了
+
