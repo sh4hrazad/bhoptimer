@@ -38,8 +38,6 @@
 //#define DEBUG
 #define EF_NODRAW 32
 
-EngineVersion gEV_Type = Engine_Unknown;
-
 Database2 gH_SQL = null;
 bool gB_Connected = false;
 bool gB_MySQL = false;
@@ -227,11 +225,14 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
+	if(GetEngineVersion() != Engine_CSGO)
+	{
+		SetFailState("This plugin only support for CSGO!");
+		return;
+	}
+
 	LoadTranslations("shavit-common.phrases");
 	LoadTranslations("shavit-zones.phrases");
-
-	// game specific
-	gEV_Type = GetEngineVersion();
 
 	gI_Offset_m_fEffects = FindSendPropInfo("CBaseEntity", "m_fEffects");
 
@@ -761,20 +762,10 @@ void LoadZoneSettings()
 		SetFailState("Cannot open \"configs/shavit-zones.cfg\". Make sure this file exists and that the server has read permissions to it.");
 	}
 
-	int defaultBeam;
-	int defaultHalo;
-	int customBeam;
+	int defaultBeam = PrecacheModel("sprites/laserbeam.vmt", true);
+	int defaultHalo = PrecacheModel("sprites/glow01.vmt", true);
 
-	if(IsSource2013(gEV_Type))
-	{
-		defaultBeam = PrecacheModel("sprites/laser.vmt", true);
-		defaultHalo = PrecacheModel("sprites/halo01.vmt", true);
-	}
-	else
-	{
-		defaultBeam = PrecacheModel("sprites/laserbeam.vmt", true);
-		defaultHalo = PrecacheModel("sprites/glow01.vmt", true);
-	}
+	int customBeam;
 
 	if(gCV_UseCustomSprite.BoolValue)
 	{
@@ -3632,7 +3623,7 @@ bool CreateNormalZone(int zone)
 	float distance_y = FloatAbs(gV_MapZones[zone][0][1] - gV_MapZones[zone][1][1]) / 2;
 	float distance_z = FloatAbs(gV_MapZones[zone][0][2] - gV_MapZones[zone][1][2]) / 2;
 
-	float height = ((IsSource2013(gEV_Type))? 62.0:72.0) / 2;
+	float height = 36.0;
 
 	float min[3];
 	min[0] = -distance_x + gCV_BoxOffset.FloatValue;
