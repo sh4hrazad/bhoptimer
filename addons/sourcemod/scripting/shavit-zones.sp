@@ -46,6 +46,14 @@ bool gB_MySQL = false;
 
 char gS_Map[160];
 
+enum
+{
+	EditStep_None, // 0 - nothing
+	EditStep_First, // 1 - wait for E tap to setup first coord
+	EditStep_Second, // 2 - wait for E tap to setup second coord
+	EditStep_Final // 3 - confirm
+};
+
 enum struct zone_cache_t
 {
 	bool bZoneInitialized;
@@ -81,10 +89,6 @@ enum
 
 int gI_ZoneType[MAXPLAYERS+1];
 
-// 0 - nothing
-// 1 - wait for E tap to setup first coord
-// 2 - wait for E tap to setup second coord
-// 3 - confirm
 int gI_MapStep[MAXPLAYERS+1];
 
 float gF_Modifier[MAXPLAYERS+1];
@@ -574,7 +578,7 @@ bool InsideZone(int client, int type, int track)
 
 public int Native_IsClientCreatingZone(Handle handler, int numParams)
 {
-	return (gI_MapStep[GetNativeCell(1)] != 0);
+	return (gI_MapStep[GetNativeCell(1)] != EditStep_None);
 }
 
 public int Native_IsClientStageTimer(Handle handler, int numParams)
@@ -2284,7 +2288,7 @@ public int MenuHandler_SelectZoneType(Menu menu, MenuAction action, int param1, 
 			gI_ZoneData[param1][gI_ZoneType[param1]] = 2; // hack fix for creating first stage zone
 		}
 
-		ShowPanel(param1, 1);
+		ShowPanel(param1, EditStep_First);
 	}
 
 	else if(action == MenuAction_End)
@@ -2365,7 +2369,7 @@ public int MenuHandler_ZoneEdit(Menu menu, MenuAction action, int param1, int pa
 			default:
 			{
 				// a hack to place the player in the last step of zone editing
-				gI_MapStep[param1] = 3;
+				gI_MapStep[param1] = EditStep_Final;
 				gV_Point1[param1] = gV_MapZones[id][0];
 				gV_Point2[param1] = gV_MapZones[id][1];
 				gI_ZoneType[param1] = gA_ZoneCache[id].iZoneType;
@@ -2621,7 +2625,7 @@ void Reset(int client)
 {
 	gI_ZoneTrack[client] = Track_Main;
 	gF_Modifier[client] = 16.0;
-	gI_MapStep[client] = 0;
+	gI_MapStep[client] = EditStep_None;
 	gI_GridSnap[client] = 16;
 	gB_SnapToWall[client] = false;
 	gB_CursorTracing[client] = true;
@@ -2858,7 +2862,7 @@ public bool TraceFilter_World(int entity, int contentsMask)
 
 public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float vel[3], float angles[3], TimerStatus status, int track, int style)
 {
-	if(gI_MapStep[client] > 0 && gI_MapStep[client] != 3)
+	if(gI_MapStep[client] > EditStep_None && gI_MapStep[client] != EditStep_Final)
 	{
 		int button = IN_USE;
 
@@ -2886,18 +2890,18 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 					gV_WallSnap[client] = origin;
 				}
 
-				if(gI_MapStep[client] == 1)
+				if(gI_MapStep[client] == EditStep_First)
 				{
 					gV_Point1[client] = origin;
 
-					ShowPanel(client, 2);
+					ShowPanel(client, EditStep_Second);
 				}
 
-				else if(gI_MapStep[client] == 2)
+				else if(gI_MapStep[client] == EditStep_Second)
 				{
 					gV_Point2[client] = origin;
 
-					gI_MapStep[client]++;
+					gI_MapStep[client] = EditStep_Final;
 
 					CreateEditMenu(client);
 				}
@@ -2930,7 +2934,7 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 		if(StrEqual(sInfo, "yes"))
 		{
 			InsertZone(param1);
-			gI_MapStep[param1] = 0;
+			gI_MapStep[param1] = EditStep_None;
 
 			return 0;
 		}
@@ -3010,7 +3014,7 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
 {
-	if(((gB_WaitingForChatInput[client] || gB_WaitingForChatInput_HookName[client]) && gI_MapStep[client] == 3) || gB_HookZoneConfirm[client])
+	if(((gB_WaitingForChatInput[client] || gB_WaitingForChatInput_HookName[client]) && gI_MapStep[client] == EditStep_Final) || gB_HookZoneConfirm[client])
 	{
 		if(gB_WaitingForChatInput[client])
 		{
@@ -3299,7 +3303,7 @@ public Action Timer_Draw(Handle Timer, any data)
 {
 	int client = GetClientFromSerial(data);
 
-	if(client == 0 || gI_MapStep[client] == 0)
+	if(client == 0 || gI_MapStep[client] == EditStep_None)
 	{
 		Reset(client);
 
@@ -3326,7 +3330,7 @@ public Action Timer_Draw(Handle Timer, any data)
 		gV_WallSnap[client] = origin;
 	}
 
-	if(gI_MapStep[client] == 3)
+	if(gI_MapStep[client] == EditStep_Final)
 	{
 		origin = gV_Point2[client];
 	}
@@ -3353,7 +3357,7 @@ public Action Timer_Draw(Handle Timer, any data)
 		}
 	}
 
-	if(gI_MapStep[client] != 3 && !EmptyVector(origin))
+	if(gI_MapStep[client] != EditStep_Final && !EmptyVector(origin))
 	{
 		TE_SetupBeamPoints(vPlayerOrigin, origin, gI_BeamSpriteIgnoreZ, gA_ZoneSettings[type][track].iHalo, 0, 0, 0.1, 1.0, 1.0, 0, 0.0, {255, 255, 255, 75}, 0);
 		TE_SendToAll(0.0);
