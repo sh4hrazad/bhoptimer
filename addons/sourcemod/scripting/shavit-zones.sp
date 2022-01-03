@@ -230,12 +230,12 @@ public void OnPluginStart()
 	gEV_Type = GetEngineVersion();
 
 	gI_Offset_m_fEffects = FindSendPropInfo("CBaseEntity", "m_fEffects");
-	
+
 	if(gI_Offset_m_fEffects == -1)
 	{
-		SetFailState("[Show Zones] Could not find CBaseEntity:m_fEffects");
+		SetFailState("Could not find CBaseEntity:m_fEffects");
 	}
-	
+
 	RegConsoleCmd("sm_showzones", Command_Showzones, "Command to dynamically toggle shavit's zones trigger visibility");
 	RegConsoleCmd("sm_findtele", Command_FindTeleDestination, "Show teleport_destination entities menu");
 	RegConsoleCmd("sm_findteles", Command_FindTeleDestination, "Show teleport_destination entities menu. Alias of sm_findtele");
@@ -1757,18 +1757,18 @@ public Action Command_Showzones(int client, int args)
 	{
 		return Plugin_Handled;
 	}
-	
+
 	gB_ShowTriggers[client] = !gB_ShowTriggers[client];
-	
+
 	if(gB_ShowTriggers[client])
 	{
-		Shavit_PrintToChat(client, "Showing zones.");
+		Shavit_PrintToChat(client, "[显示区域] {green}已打开{default}.");
 	}
 	else
 	{
-		Shavit_PrintToChat(client, "Stopped showing zones.");
+		Shavit_PrintToChat(client, "[显示区域] {darkred}已关闭{default}.");
 	}
-	
+
 	TransmitTriggers(client, gB_ShowTriggers[client]);
 
 	return Plugin_Handled;
@@ -3601,16 +3601,6 @@ public void Frame_InitZones(any data)
 	OnMapStart();
 }
 
-float Abs(float input)
-{
-	if(input < 0.0)
-	{
-		return -input;
-	}
-
-	return input;
-}
-
 void CreateZoneEntities()
 {
 	if(gB_ZonesCreated)
@@ -3645,121 +3635,19 @@ void CreateZoneEntities()
 			continue;
 		}
 
-		if(StrEqual(gA_ZoneCache[i].sZoneHookname, "NONE")) // create non-hooked zones
+		if(StrEqual(gA_ZoneCache[i].sZoneHookname, "NONE"))
 		{
-			int entity = CreateEntityByName("trigger_multiple");
-
-			if(entity == -1)
+			if(!CreateNormalZone(i))
 			{
-				LogError("\"trigger_multiple\" creation failed, map %s.", gS_Map);
-
 				continue;
 			}
-
-			DispatchKeyValue(entity, "wait", "0");
-			DispatchKeyValue(entity, "spawnflags", "4097");
-			
-			if(!DispatchSpawn(entity))
-			{
-				LogError("\"trigger_multiple\" spawning failed, map %s.", gS_Map);
-
-				continue;
-			}
-
-			ActivateEntity(entity);
-			SetEntityModel(entity, "models/props/cs_office/vending_machine.mdl");
-			SetEntProp(entity, Prop_Send, "m_fEffects", 32);
-
-			TeleportEntity(entity, gV_ZoneCenter[i], NULL_VECTOR, NULL_VECTOR);
-
-			float distance_x = Abs(gV_MapZones[i][0][0] - gV_MapZones[i][1][0]) / 2;
-			float distance_y = Abs(gV_MapZones[i][0][1] - gV_MapZones[i][1][1]) / 2;
-			float distance_z = Abs(gV_MapZones[i][0][2] - gV_MapZones[i][1][2]) / 2;
-
-			float height = ((IsSource2013(gEV_Type))? 62.0:72.0) / 2;
-
-			float min[3];
-			min[0] = -distance_x + gCV_BoxOffset.FloatValue;
-			min[1] = -distance_y + gCV_BoxOffset.FloatValue;
-			min[2] = -distance_z + height;
-			SetEntPropVector(entity, Prop_Send, "m_vecMins", min);
-
-			float max[3];
-			max[0] = distance_x - gCV_BoxOffset.FloatValue;
-			max[1] = distance_y - gCV_BoxOffset.FloatValue;
-			max[2] = distance_z - height;
-			SetEntPropVector(entity, Prop_Send, "m_vecMaxs", max);
-
-			SetEntProp(entity, Prop_Send, "m_nSolidType", 2);
-
-			SDKHook(entity, SDKHook_StartTouchPost, StartTouchPost);
-			SDKHook(entity, SDKHook_EndTouchPost, EndTouchPost);
-			SDKHook(entity, SDKHook_TouchPost, TouchPost);
-
-			gI_EntityZone[entity] = i;
-			gA_ZoneCache[i].iEntityID = entity;
-
-			char sTargetname[32];
-			FormatEx(sTargetname, 32, "shavit_zones_%d_%d", gA_ZoneCache[i].iZoneTrack, gA_ZoneCache[i].iZoneType);
-			DispatchKeyValue(entity, "targetname", sTargetname);
 		}
-
-		else // create hookzones
+		else
 		{
-			gI_LastEntityIndex = -1;
-
-			for(int index = 0; index < gA_Triggers.Length; index++)
-			{
-				int iEnt = gA_Triggers.Get(index);
-
-				char sTriggerName[128];
-				GetEntPropString(iEnt, Prop_Send, "m_iName", sTriggerName, sizeof(sTriggerName));
-
-				if(StrEqual(sTriggerName, gA_ZoneCache[i].sZoneHookname) && gI_LastEntityIndex != iEnt)
-				{
-					if(gA_ZoneCache[i].iZoneType != Zone_Mark)
-					{
-						for(int j = 0; j < 8; j++)
-						{
-							for(int k = 0; k < 3; k++)
-							{
-								gV_MapZones_Visual[i][j][k] = 0.0; // do not set their visual point, use trigger material instead
-							}
-						}
-
-						gA_HookTriggers.Push(iEnt); // do not push markzone index to arraylist
-					}
-
-					SDKHook(iEnt, SDKHook_StartTouchPost, StartTouchPost);
-					SDKHook(iEnt, SDKHook_EndTouchPost, EndTouchPost);
-					SDKHook(iEnt, SDKHook_TouchPost, TouchPost);
-
-					gI_EntityZone[iEnt] = i;
-					gA_ZoneCache[i].iEntityID = iEnt;
-					gI_LastEntityIndex = iEnt;
-
-					break; // stop looping from finding triggers to hook
-				}
-			}
+			CreateHookZone(i);
 		}
 
-		for(int j = 0; j < gA_TeleDestination.Length; j++)
-		{
-			int entity = gA_TeleDestination.Get(j);
-			float origin[3];
-			GetEntPropVector(entity, Prop_Send, "m_vecOrigin", origin);
-
-			float bmin[3], bmax[3];
-			FillBoxMinMax(gV_MapZones[i][0], gV_MapZones[i][1], bmin, bmax);
-
-			if(PointInBox(origin, bmin, bmax))
-			{
-				gV_ZoneCenter[i][0] = origin[0];
-				gV_ZoneCenter[i][1] = origin[1];
-				gV_ZoneCenter[i][2] = origin[2];
-				break;
-			}
-		}
+		SetCenterByDestination(i);
 
 		gB_ZonesCreated = true;
 	}
@@ -3768,6 +3656,127 @@ void CreateZoneEntities()
 	{
 		CreateTimer(5.0, Timer_DelayPreBuildZones);
 	} */
+}
+
+bool CreateNormalZone(int zone)
+{
+	int entity = CreateEntityByName("trigger_multiple");
+
+	if(entity == -1)
+	{
+		LogError("\"trigger_multiple\" creation failed, map %s.", gS_Map);
+
+		return false;
+	}
+
+	DispatchKeyValue(entity, "wait", "0");
+	DispatchKeyValue(entity, "spawnflags", "4097");
+	
+	if(!DispatchSpawn(entity))
+	{
+		LogError("\"trigger_multiple\" spawning failed, map %s.", gS_Map);
+
+		return false;
+	}
+
+	ActivateEntity(entity);
+	SetEntityModel(entity, "models/props/cs_office/vending_machine.mdl");
+	SetEntProp(entity, Prop_Send, "m_fEffects", 32);
+
+	TeleportEntity(entity, gV_ZoneCenter[zone], NULL_VECTOR, NULL_VECTOR);
+
+	float distance_x = FloatAbs(gV_MapZones[zone][0][0] - gV_MapZones[zone][1][0]) / 2;
+	float distance_y = FloatAbs(gV_MapZones[zone][0][1] - gV_MapZones[zone][1][1]) / 2;
+	float distance_z = FloatAbs(gV_MapZones[zone][0][2] - gV_MapZones[zone][1][2]) / 2;
+
+	float height = ((IsSource2013(gEV_Type))? 62.0:72.0) / 2;
+
+	float min[3];
+	min[0] = -distance_x + gCV_BoxOffset.FloatValue;
+	min[1] = -distance_y + gCV_BoxOffset.FloatValue;
+	min[2] = -distance_z + height;
+	SetEntPropVector(entity, Prop_Send, "m_vecMins", min);
+
+	float max[3];
+	max[0] = distance_x - gCV_BoxOffset.FloatValue;
+	max[1] = distance_y - gCV_BoxOffset.FloatValue;
+	max[2] = distance_z - height;
+	SetEntPropVector(entity, Prop_Send, "m_vecMaxs", max);
+
+	SetEntProp(entity, Prop_Send, "m_nSolidType", 2);
+
+	SDKHook(entity, SDKHook_StartTouchPost, StartTouchPost);
+	SDKHook(entity, SDKHook_EndTouchPost, EndTouchPost);
+	SDKHook(entity, SDKHook_TouchPost, TouchPost);
+
+	gI_EntityZone[entity] = zone;
+	gA_ZoneCache[zone].iEntityID = entity;
+
+	char sTargetname[32];
+	FormatEx(sTargetname, 32, "shavit_zones_%d_%d", gA_ZoneCache[zone].iZoneTrack, gA_ZoneCache[zone].iZoneType);
+	DispatchKeyValue(entity, "targetname", sTargetname);
+
+	return true;
+}
+
+void CreateHookZone(int zone)
+{
+	gI_LastEntityIndex = -1;
+
+	for(int i = 0; i < gA_Triggers.Length; i++)
+	{
+		int entity = gA_Triggers.Get(i);
+
+		char sTriggerName[128];
+		GetEntPropString(entity, Prop_Send, "m_iName", sTriggerName, sizeof(sTriggerName));
+
+		if(StrEqual(sTriggerName, gA_ZoneCache[zone].sZoneHookname) && gI_LastEntityIndex != entity)
+		{
+			if(gA_ZoneCache[zone].iZoneType != Zone_Mark)
+			{
+				for(int j = 0; j < 8; j++)
+				{
+					for(int k = 0; k < 3; k++)
+					{
+						gV_MapZones_Visual[zone][j][k] = 0.0; // do not set their visual point, use trigger material instead
+					}
+				}
+
+				gA_HookTriggers.Push(entity); // do not push markzone index to arraylist
+			}
+
+			SDKHook(entity, SDKHook_StartTouchPost, StartTouchPost);
+			SDKHook(entity, SDKHook_EndTouchPost, EndTouchPost);
+			SDKHook(entity, SDKHook_TouchPost, TouchPost);
+
+			gI_EntityZone[entity] = zone;
+			gA_ZoneCache[zone].iEntityID = entity;
+			gI_LastEntityIndex = entity;
+
+			break; // stop looping from finding triggers to hook
+		}
+	}
+}
+
+void SetCenterByDestination(int zone)
+{
+	for(int i = 0; i < gA_TeleDestination.Length; i++)
+	{
+		int entity = gA_TeleDestination.Get(i);
+		float origin[3];
+		GetEntPropVector(entity, Prop_Send, "m_vecOrigin", origin);
+
+		float bmin[3], bmax[3];
+		FillBoxMinMax(gV_MapZones[zone][0], gV_MapZones[zone][1], bmin, bmax);
+
+		if(PointInBox(origin, bmin, bmax))
+		{
+			gV_ZoneCenter[zone][0] = origin[0];
+			gV_ZoneCenter[zone][1] = origin[1];
+			gV_ZoneCenter[zone][2] = origin[2];
+			break;
+		}
+	}
 }
 
 public Action Timer_DelayPreBuildZones(Handle timer)
@@ -4118,7 +4127,7 @@ void TransmitTriggers(int client, bool btransmit)
 		int entity = gA_HookTriggers.Get(i);
 		int effectFlags = GetEntData(entity, gI_Offset_m_fEffects);
 		int edictFlags = GetEdictFlags(entity);
-		
+
 		if(btransmit)
 		{
 			effectFlags &= ~EF_NODRAW;
@@ -4130,11 +4139,11 @@ void TransmitTriggers(int client, bool btransmit)
 			effectFlags |= EF_NODRAW;
 			edictFlags |= FL_EDICT_DONTSEND;
 		}
-		
+
 		SetEntData(entity, gI_Offset_m_fEffects, effectFlags);
 		ChangeEdictState(entity, gI_Offset_m_fEffects);
 		SetEdictFlags(entity, edictFlags);
-		
+
 		if(btransmit)
 		{
 			SDKHook(entity, SDKHook_SetTransmit, Hook_SetTransmit);
