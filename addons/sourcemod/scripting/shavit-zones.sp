@@ -1589,20 +1589,7 @@ public Action Command_Back(int client, int args)
 
 	int index = gI_InsideZoneIndex[client];
 
-	if(!EmptyVector(gV_CustomDestinations[client][index]))
-	{
-		TeleportEntity(client, gV_CustomDestinations[client][index], gV_CustomDestinationsAngle[client][index], view_as<float>({0.0, 0.0, 0.0}));
-	}
-
-	else if(!EmptyVector(gV_Destinations[index]))
-	{
-		TeleportEntity(client, gV_Destinations[index], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
-	}
-
-	else
-	{
-		TeleportEntity(client, gV_ZoneCenter[index], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
-	}
+	DoTeleport(client, index);
 
 	if(gA_ZoneCache[index].iZoneType == Zone_Stage)
 	{
@@ -1668,20 +1655,7 @@ public Action Command_Stages(int client, int args)
 				Shavit_SetPracticeMode(client, false, false);
 				gB_StageTimer[client] = true;
 
-				if(!EmptyVector(gV_CustomDestinations[client][i]))
-				{
-					TeleportEntity(client, gV_CustomDestinations[client][i],gV_CustomDestinationsAngle[client][i], view_as<float>({0.0, 0.0, 0.0}));
-				}
-
-				else if(!EmptyVector(gV_Destinations[i]))
-				{
-					TeleportEntity(client, gV_Destinations[i], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
-				}
-
-				else
-				{
-					TeleportEntity(client, gV_ZoneCenter[i], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
-				}
+				DoTeleport(client, i);
 
 				break;
 			}
@@ -1722,25 +1696,12 @@ public int MenuHandler_SelectStage(Menu menu, MenuAction action, int param1, int
 	{
 		char sInfo[8];
 		menu.GetItem(param2, sInfo, 8);
-		int iIndex = StringToInt(sInfo);
+		int index = StringToInt(sInfo);
 		
 		Shavit_StopTimer(param1);
 		gB_StageTimer[param1] = true;
 
-		if(!EmptyVector(gV_CustomDestinations[param1][iIndex]))
-		{
-			TeleportEntity(param1, gV_CustomDestinations[param1][iIndex], gV_CustomDestinationsAngle[param1][iIndex], view_as<float>({0.0, 0.0, 0.0}));
-		}
-
-		else if(!EmptyVector(gV_Destinations[iIndex]))
-		{
-			TeleportEntity(param1, gV_Destinations[iIndex], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
-		}
-
-		else
-		{
-			TeleportEntity(param1, gV_ZoneCenter[iIndex], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
-		}
+		DoTeleport(param1, index);
 	}
 
 	else if(action == MenuAction_End)
@@ -3520,20 +3481,7 @@ public void Shavit_OnRestart(int client, int track)
 		{
 			iIndex = gI_LastStartZoneIndex[client][track] != -1? gI_LastStartZoneIndex[client][track] : GetZoneIndex(Zone_Start, track);
 
-			if(!EmptyVector(gV_CustomDestinations[client][iIndex]))
-			{
-				TeleportEntity(client, gV_CustomDestinations[client][iIndex], gV_CustomDestinationsAngle[client][iIndex], view_as<float>({0.0, 0.0, 0.0}));
-			}
-
-			else if(!EmptyVector(gV_Destinations[iIndex]))
-			{
-				TeleportEntity(client, gV_Destinations[iIndex], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
-			}
-
-			else
-			{
-				TeleportEntity(client, gV_ZoneCenter[iIndex], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
-			}
+			DoTeleport(client, iIndex);
 		}
 
 		DispatchKeyValue(client, "targetname", "");
@@ -3552,15 +3500,7 @@ public void Shavit_OnEnd(int client, int track)
 		{
 			iIndex = GetZoneIndex(Zone_End, track);
 
-			if(!EmptyVector(gV_Destinations[iIndex]))
-			{
-				TeleportEntity(client, gV_Destinations[iIndex], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
-			}
-
-			else
-			{
-				TeleportEntity(client, gV_ZoneCenter[iIndex], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
-			}
+			DoTeleport(client, iIndex);
 		}
 	}
 }
@@ -4250,5 +4190,23 @@ void DrawZoneToSingleClient(int client, float points[8][3], int color[4], float 
 	{
 		TE_SetupBeamPoints(points[pairs[i][0]], points[pairs[i][1]], beam, halo, 0, 0, life, width, width, 0, 0.0, color, 0);
 		TE_SendToClient(client, 0.0);
+	}
+}
+
+void DoTeleport(int client, int zone)
+{
+	if(!EmptyVector(gV_CustomDestinations[client][zone]))
+	{
+		TeleportEntity(client, gV_CustomDestinations[client][zone], gV_CustomDestinationsAngle[client][zone], view_as<float>({0.0, 0.0, 0.0}));
+	}
+
+	else if(!EmptyVector(gV_Destinations[zone]))
+	{
+		TeleportEntity(client, gV_Destinations[zone], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+	}
+
+	else
+	{
+		TeleportEntity(client, gV_ZoneCenter[zone], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
 	}
 }
