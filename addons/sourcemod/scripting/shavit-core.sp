@@ -2599,9 +2599,7 @@ public void OnClientPutInServer(int client)
 	SDKHook(client, SDKHook_PreThinkPost, PreThinkPost);
 	SDKHook(client, SDKHook_PostThinkPost, PostThinkPost);
 
-	int iSteamID = GetSteamAccountID(client);
-
-	if(iSteamID == 0)
+	if(GetSteamAccountID(client) == 0)
 	{
 		KickClient(client, "%T", "VerificationFailed", client);
 
@@ -2628,14 +2626,14 @@ public void OnClientPutInServer(int client)
 	{
 		FormatEx(sQuery, 512,
 			"INSERT INTO %susers (auth, name, ip, lastlogin) VALUES (%d, '%s', %d, %d) ON DUPLICATE KEY UPDATE name = '%s', ip = %d, lastlogin = %d;",
-			gS_MySQLPrefix, iSteamID, sEscapedName, iIPAddress, iTime, sEscapedName, iIPAddress, iTime);
+			gS_MySQLPrefix, GetSteamAccountID(client), sEscapedName, iIPAddress, iTime, sEscapedName, iIPAddress, iTime);
 	}
 
 	else
 	{
 		FormatEx(sQuery, 512,
 			"REPLACE INTO %susers (auth, name, ip, lastlogin) VALUES (%d, '%s', %d, %d);",
-			gS_MySQLPrefix, iSteamID, sEscapedName, iIPAddress, iTime);
+			gS_MySQLPrefix, GetSteamAccountID(client), sEscapedName, iIPAddress, iTime);
 	}
 
 	gH_SQL.Query(SQL_InsertUser_Callback, sQuery, GetClientSerial(client));
