@@ -57,9 +57,6 @@ enum struct persistent_data_t
 
 typedef StopTimerCallback = function void (int data);
 
-// game specific
-EngineVersion gEV_Type = Engine_Unknown;
-
 char gS_RadioCommands[][] = { "coverme", "takepoint", "holdpos", "regroup", "followme", "takingfire", "go", "fallback", "sticktog",
 	"getinpos", "stormfront", "report", "roger", "enemyspot", "needbackup", "sectorclear", "inposition", "reportingin",
 	"getout", "negative", "enemydown", "compliment", "thanks", "cheer", "go_a", "go_b", "sorry", "needrop", "playerradio", "playerchatwheel", "player_ping", "chatwheel_ping" };
@@ -102,7 +99,6 @@ Convar gCV_HideTeamChanges = null;
 Convar gCV_RespawnOnTeam = null;
 Convar gCV_RespawnOnRestart = null;
 Convar gCV_StartOnSpawn = null;
-Convar gCV_PrestrafeLimit = null;
 Convar gCV_HideRadar = null;
 Convar gCV_TeleportCommands = null;
 Convar gCV_NoWeaponDrops = null;
@@ -159,7 +155,6 @@ Handle gH_Forwards_OnCheckpointMenuSelect = null;
 Handle gH_GetPlayerMaxSpeed = null;
 DynamicHook gH_UpdateStepSound = null;
 DynamicHook gH_IsSpawnPointValid = null;
-DynamicDetour gH_CalcPlayerScore = null;
 
 // modules
 bool gB_Rankings = false;
@@ -218,6 +213,12 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
+	if(GetEngineVersion() != Engine_CSGO)
+	{
+		SetFailState("This plugin only support for CSGO!");
+		return;
+	}
+
 	// forwards
 	gH_Forwards_OnClanTagChangePre = CreateGlobalForward("Shavit_OnClanTagChangePre", ET_Event, Param_Cell, Param_String, Param_Cell);
 	gH_Forwards_OnClanTagChangePost = CreateGlobalForward("Shavit_OnClanTagChangePost", ET_Event, Param_Cell, Param_String, Param_Cell);
@@ -226,9 +227,6 @@ public void OnPluginStart()
 	gH_Forwards_OnCheckpointMenuMade = CreateGlobalForward("Shavit_OnCheckpointMenuMade", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_OnCheckpointMenuSelect = CreateGlobalForward("Shavit_OnCheckpointMenuSelect", ET_Event, Param_Cell, Param_Cell, Param_String, Param_Cell, Param_Cell, Param_Cell);
 	gH_Forwards_OnDelete = CreateGlobalForward("Shavit_OnDelete", ET_Event, Param_Cell, Param_Cell);
-
-	// cache
-	gEV_Type = GetEngineVersion();
 
 	sv_cheats = FindConVar("sv_cheats");
 	sv_disable_immunity_alpha = FindConVar("sv_disable_immunity_alpha");
@@ -309,7 +307,7 @@ public void OnPluginStart()
 	AddCommandListener(Command_Drop, "drop");
 	AddTempEntHook("EffectDispatch", EffectDispatch);
 	AddTempEntHook("World Decal", WorldDecal);
-	AddTempEntHook((gEV_Type != Engine_TF2)? "Shotgun Shot":"Fire Bullets", Shotgun_Shot);
+	AddTempEntHook("Shotgun Shot", Shotgun_Shot);
 	AddNormalSoundHook(NormalSound);
 
 	// phrases
@@ -326,13 +324,12 @@ public void OnPluginStart()
 
 	// cvars and stuff
 	gCV_GodMode = new Convar("shavit_misc_godmode", "3", "Enable godmode for players?\n0 - Disabled\n1 - Only prevent fall/world damage.\n2 - Only prevent damage from other players.\n3 - Full godmode.", 0, true, 0.0, true, 3.0);
-	gCV_PreSpeed = new Convar("shavit_misc_prespeed", "6", "Stop prespeeding in the start zone?\n0 - Disabled, fully allow prespeeding.\n1 - Limit relatively to prestrafelimit.\n2 - Block bunnyhopping in startzone.\n3 - Limit to prestrafelimit and block bunnyhopping.\n4 - Limit to prestrafelimit but allow prespeeding. Combine with shavit_core_nozaxisspeed 1 for SourceCode timer's behavior.\n5 - Limit horizontal speed to prestrafe but allow prespeeding.\n6 - SurfHeaven Limitspeed", 0, true, 0.0, true, 6.0);
+	gCV_PreSpeed = new Convar("shavit_misc_prespeed", "1", "Stop prespeeding in the start zone?\n0 - Disabled, fully allow prespeeding.\n1 - SurfHeaven Limitspeed", 0, true, 0.0, true, 1.0);
 	gCV_EntrySpeedLimit = new Convar("shavit_misc_entryzonespeedlimit", "500", "Maximum speed at which entry into the start/stage zone will not be slowed down.\n(***Make sure shavit_misc_prespeed set to 6***)", 0, true, 0.0);
 	gCV_HideTeamChanges = new Convar("shavit_misc_hideteamchanges", "1", "Hide team changes in chat?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_RespawnOnTeam = new Convar("shavit_misc_respawnonteam", "1", "Respawn whenever a player joins a team?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_RespawnOnRestart = new Convar("shavit_misc_respawnonrestart", "1", "Respawn a dead player if they use the timer restart command?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_StartOnSpawn = new Convar("shavit_misc_startonspawn", "1", "Restart the timer for a player after they spawn?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
-	gCV_PrestrafeLimit = new Convar("shavit_misc_prestrafelimit", "30", "Prestrafe limitation in startzone.\nThe value used internally is style run speed + this.\ni.e. run speed of 250 can prestrafe up to 278 (+28) with regular settings.", 0, true, 0.0, false);
 	gCV_HideRadar = new Convar("shavit_misc_hideradar", "1", "Should the plugin hide the in-game radar?", 0, true, 0.0, true, 1.0);
 	gCV_TeleportCommands = new Convar("shavit_misc_tpcmds", "1", "Enable teleport-related commands? (sm_goto/sm_tpto)\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_NoWeaponDrops = new Convar("shavit_misc_noweapondrops", "1", "Remove every dropped weapon.\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
@@ -372,19 +369,15 @@ public void OnPluginStart()
 	gCV_CSGOUnlockMovement.AddChangeHook(OnConVarChanged);
 	Convar.AutoExecConfig();
 
-	mp_humanteam = FindConVar((gEV_Type == Engine_TF2) ? "mp_humans_must_join_team" : "mp_humanteam");
+	mp_humanteam = FindConVar("mp_humanteam");
 	sv_disable_radar = FindConVar("sv_disable_radar");
 
 	// crons
 	CreateTimer(10.0, Timer_Cron, 0, TIMER_REPEAT);
+	CreateTimer(1.0, Timer_Scoreboard, 0, TIMER_REPEAT);
 
 	LoadDHooks();
 	UnlockMovement();
-
-	if(gEV_Type != Engine_TF2)
-	{
-		CreateTimer(1.0, Timer_Scoreboard, 0, TIMER_REPEAT);
-	}
 
 	// modules
 	gB_Rankings = LibraryExists("shavit-rankings");
@@ -404,33 +397,12 @@ void LoadDHooks()
 
 	int iOffset;
 
-	if (gEV_Type == Engine_TF2)
+	if ((iOffset = GameConfGetOffset(hGameData, "CCSPlayer::GetPlayerMaxSpeed")) == -1)
 	{
-		if (!(gH_CalcPlayerScore = DHookCreateDetour(Address_Null, CallConv_CDECL, ReturnType_Int, ThisPointer_Ignore)))
-		{
-			SetFailState("Failed to create detour for CTFGameRules::CalcPlayerScore");
-		}
-
-		if (DHookSetFromConf(gH_CalcPlayerScore, hGameData, SDKConf_Signature, "CTFGameRules::CalcPlayerScore"))
-		{
-			gH_CalcPlayerScore.AddParam(HookParamType_Int);
-			gH_CalcPlayerScore.AddParam(HookParamType_CBaseEntity);
-			gH_CalcPlayerScore.Enable(Hook_Pre, Detour_CalcPlayerScore);
-		}
-		else
-		{
-			LogError("Couldn't get the address for \"CTFGameRules::CalcPlayerScore\" - make sure your gamedata is updated!");
-		}
+		SetFailState("Couldn't get the offset for \"CCSPlayer::GetPlayerMaxSpeed\" - make sure your gamedata is updated!");
 	}
-	else
-	{
-		if ((iOffset = GameConfGetOffset(hGameData, "CCSPlayer::GetPlayerMaxSpeed")) == -1)
-		{
-			SetFailState("Couldn't get the offset for \"CCSPlayer::GetPlayerMaxSpeed\" - make sure your gamedata is updated!");
-		}
 
-		gH_GetPlayerMaxSpeed = DHookCreate(iOffset, HookType_Entity, ReturnType_Float, ThisPointer_CBaseEntity, CCSPlayer__GetPlayerMaxSpeed);
-	}
+	gH_GetPlayerMaxSpeed = DHookCreate(iOffset, HookType_Entity, ReturnType_Float, ThisPointer_CBaseEntity, CCSPlayer__GetPlayerMaxSpeed);
 
 	if ((iOffset = GameConfGetOffset(hGameData, "CBasePlayer::UpdateStepSound")) != -1)
 	{
@@ -460,7 +432,7 @@ void LoadDHooks()
 
 void UnlockMovement()
 {
-	if(gEV_Type != Engine_CSGO || !gCV_CSGOUnlockMovement.BoolValue)
+	if(!gCV_CSGOUnlockMovement.BoolValue)
 	{
 		return;
 	}
@@ -549,7 +521,7 @@ public MRESReturn Hook_IsSpawnPointValid(Handle hReturn, Handle hParams)
 	return MRES_Ignored;
 }
 
-MRESReturn Detour_CalcPlayerScore(DHookReturn hReturn, DHookParam hParams)
+public MRESReturn Detour_CalcPlayerScore(DHookReturn hReturn, DHookParam hParams)
 {
 	if (!gCV_Scoreboard.BoolValue)
 	{
@@ -687,15 +659,10 @@ void LoadMapFixes()
 
 void CreateSpawnPoint(int iTeam, float fOrigin[3], float fAngles[3])
 {
-	int iSpawnPoint = CreateEntityByName((gEV_Type == Engine_TF2)? "info_player_teamspawn":((iTeam == 2)? "info_player_terrorist":"info_player_counterterrorist"));
+	int iSpawnPoint = CreateEntityByName((iTeam == 2)? "info_player_terrorist":"info_player_counterterrorist");
 
 	if (DispatchSpawn(iSpawnPoint))
 	{
-		if (gEV_Type == Engine_TF2)
-		{
-			SetEntProp(iSpawnPoint, Prop_Send, "m_iTeamNum", iTeam);
-		}
-
 		TeleportEntity(iSpawnPoint, fOrigin, fAngles, NULL_VECTOR);
 	}
 }
@@ -777,40 +744,14 @@ public void OnConfigsExecuted()
 			GetEntPropVector(iEntity, Prop_Send, "m_vecOrigin", fOrigin);
 			GetEntPropVector(iEntity, Prop_Data, "m_angAbsRotation", fAngles);
 
-			if (gEV_Type == Engine_TF2)
+			if (info_player_terrorist == -1)
 			{
-				int iSearch = -1;
-				bool haveRed = false;
-				bool haveBlu = false;
-
-				while ((iSearch = FindEntityByClassname(iSearch, "info_player_teamspawn")) != -1)
-				{
-					int team = GetEntProp(iSearch, Prop_Send, "m_iTeamNum");
-					haveRed = haveRed || team == 2;
-					haveBlu = haveBlu || team == 3;
-				}
-
-				if (!haveRed)
-				{
-					CreateSpawnPoint(2, fOrigin, fAngles);
-				}
-
-				if (!haveBlu)
-				{
-					CreateSpawnPoint(3, fOrigin, fAngles);
-				}
+				CreateSpawnPoint(2, fOrigin, fAngles);
 			}
-			else
-			{
-				if (info_player_terrorist == -1)
-				{
-					CreateSpawnPoint(2, fOrigin, fAngles);
-				}
 
-				if (info_player_counterterrorist == -1)
-				{
-					CreateSpawnPoint(3, fOrigin, fAngles);
-				}
+			if (info_player_counterterrorist == -1)
+			{
+				CreateSpawnPoint(3, fOrigin, fAngles);
 			}
 		}
 	}
@@ -945,19 +886,8 @@ public int ScoreboardSort(int index1, int index2, Handle array, Handle hndl)
 		return a_team > b_team ? -1 : 1;
 	}
 
-	int a_score;
-	int b_score;
-
-	if (gEV_Type == Engine_CSGO)
-	{
-		a_score = CS_GetClientContributionScore(a);
-		b_score = CS_GetClientContributionScore(b);
-	}
-	else
-	{
-		a_score = GetEntProp(a, Prop_Data, "m_iFrags");
-		b_score = GetEntProp(b, Prop_Data, "m_iFrags");
-	}
+	int a_score = CS_GetClientContributionScore(a);
+	int b_score = CS_GetClientContributionScore(b);
 
 	if (a_score != b_score)
 	{
@@ -1071,15 +1001,8 @@ public Action Command_Jointeam(int client, const char[] command, int args)
 
 	if(gCV_RespawnOnTeam.BoolValue && iTeam != 1)
 	{
-		if(gEV_Type == Engine_TF2)
-		{
-			TF2_RespawnPlayer(client);
-		}
-		else
-		{
-			RemoveAllWeapons(client); // so weapons are removed and we don't hit the edict limit
-			CS_RespawnPlayer(client);
-		}
+		RemoveAllWeapons(client); // so weapons are removed and we don't hit the edict limit
+		CS_RespawnPlayer(client);
 
 		return Plugin_Handled;
 	}
@@ -1089,7 +1012,7 @@ public Action Command_Jointeam(int client, const char[] command, int args)
 
 void CleanSwitchTeam(int client, int team)
 {
-	if (gEV_Type == Engine_CSGO && GetClientTeam(client) == team)
+	if (GetClientTeam(client) == team)
 	{
 		// Close the team menu when selecting your own team...
 		Event event = CreateEvent("player_team");
@@ -1100,23 +1023,12 @@ void CleanSwitchTeam(int client, int team)
 		event.Cancel();
 	}
 
-	if(gEV_Type == Engine_TF2)
-	{
-		TF2_ChangeClientTeam(client, view_as<TFTeam>(team));
-	}
-	else if(team != 1)
+	if(team != 1)
 	{
 		CS_SwitchTeam(client, team);
 	}
 	else
 	{
-		// Remove flashlight :)
-		if (gEV_Type == Engine_CSS)
-		{
-			int EF_DIMLIGHT = 4;
-			SetEntProp(client, Prop_Send, "m_fEffects", ~EF_DIMLIGHT & GetEntProp(client, Prop_Send, "m_fEffects"));
-		}
-
 		ChangeClientTeam(client, team);
 	}
 }
@@ -1171,19 +1083,6 @@ public MRESReturn Hook_UpdateStepSound_Post(int pThis, DHookParam hParams)
 
 public Action Timer_Cron(Handle timer)
 {
-	if(gCV_HideRadar.BoolValue && gEV_Type == Engine_CSS)
-	{
-		float salt = GetURandomFloat();
-
-		for(int i = 1; i <= MaxClients; i++)
-		{
-			if(IsValidClient(i))
-			{
-				RemoveRadar(i, salt);
-			}
-		}
-	}
-
 	if (gCV_NoWeaponDrops.BoolValue)
 	{
 		int ent = -1;
@@ -1325,25 +1224,11 @@ public Action Timer_Advertisement(Handle timer)
 
 void UpdateScoreboard(int client)
 {
-	// this doesn't work on tf2 for some reason
-	if(gEV_Type == Engine_TF2)
-	{
-		return;
-	}
-
 	float fPB = Shavit_GetClientPB(client, 0, Track_Main);
 
 	int iScore = (fPB != 0.0 && fPB < 2000)? -RoundToFloor(fPB):-2000;
 
-	if(gEV_Type == Engine_CSGO)
-	{
-		CS_SetClientContributionScore(client, iScore);
-	}
-
-	else
-	{
-		SetEntProp(client, Prop_Data, "m_iFrags", iScore);
-	}
+	CS_SetClientContributionScore(client, iScore);
 
 	if(gB_Rankings)
 	{
@@ -1357,7 +1242,7 @@ void UpdateClanTag(int client)
 	char sCustomTag[32];
 	gCV_ClanTag.GetString(sCustomTag, 32);
 
-	if(gEV_Type == Engine_TF2 || StrEqual(sCustomTag, "0"))
+	if(StrEqual(sCustomTag, "0"))
 	{
 		return;
 	}
@@ -1487,6 +1372,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 		{
 			Shavit_StopTimer(client);
 		}
+
 		if(bInStart && gCV_RestrictNoclip.BoolValue)
 		{
 			if(gCV_RestrictNoclip.IntValue == 1)
@@ -1510,49 +1396,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 
 	if(!bNoclip && Shavit_GetStyleSettingInt(gI_Style[client], "prespeed") == 0 && (bInStart || bInStage))
 	{
-		int iPrevGroundEntity = (gI_GroundEntity[client] != -1) ? EntRefToEntIndex(gI_GroundEntity[client]) : -1;
-		if((gCV_PreSpeed.IntValue == 2 || gCV_PreSpeed.IntValue == 3) && iPrevGroundEntity == -1 && iGroundEntity != -1 && (buttons & IN_JUMP) > 0)
-		{
-			DumbSetVelocity(client, view_as<float>({0.0, 0.0, 0.0}));
-		}
-
-		if(gCV_PreSpeed.IntValue == 1 || (gCV_PreSpeed.IntValue >= 3 && gCV_PreSpeed.IntValue <= 5))
-		{
-			float fSpeed[3];
-			GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
-
-			float fLimit = (Shavit_GetStyleSettingFloat(gI_Style[client], "runspeed") + gCV_PrestrafeLimit.FloatValue);
-
-			// if trying to jump, add a very low limit to stop prespeeding in an elegant way
-			// otherwise, make sure nothing weird is happening (such as sliding at ridiculous speeds, at zone enter)
-			if(gCV_PreSpeed.IntValue < 4 && fSpeed[2] > 0.0)
-			{
-				fLimit /= 3.0;
-			}
-
-			float fSpeedXY = (SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0)));
-			float fScale = (fLimit / fSpeedXY);
-
-			if(fScale < 1.0)
-			{
-				if(gCV_PreSpeed.IntValue == 5)
-				{
-					float zSpeed = fSpeed[2];
-					fSpeed[2] = 0.0;
-					
-					ScaleVector(fSpeed, fScale);
-					fSpeed[2] = zSpeed;
-				}
-				else
-				{
-					ScaleVector(fSpeed, fScale);
-				}
-			}
-
-			DumbSetVelocity(client, fSpeed);
-		}
-		
-		if(gCV_PreSpeed.IntValue == 6)
+		if(gCV_PreSpeed.IntValue >= 1)
 		{
 			// surfheaven prespeed
 			// limit speed since 2 jumps
@@ -1574,7 +1418,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 				{
 					fSpeed[0] *= 0.1;
 					fSpeed[1] *= 0.1;
-					TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed);
+					DumbSetVelocity(client, fSpeed);
 				}
 			}
 
@@ -1593,7 +1437,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 					{
 						fSpeed[0] *= fScale;
 						fSpeed[1] *= fScale;
-						TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed);
+						DumbSetVelocity(client, fSpeed);
 					}
 				}
 			}
@@ -1852,17 +1696,9 @@ void ClearViewPunch(int victim)
 {
 	if (1 <= victim <= MaxClients)
 	{
-		if(gEV_Type == Engine_CSGO)
-		{
-			SetEntPropVector(victim, Prop_Send, "m_viewPunchAngle", NULL_VECTOR);
-			SetEntPropVector(victim, Prop_Send, "m_aimPunchAngle", NULL_VECTOR);
-			SetEntPropVector(victim, Prop_Send, "m_aimPunchAngleVel", NULL_VECTOR);
-		}
-		else
-		{
-			SetEntPropVector(victim, Prop_Send, "m_vecPunchAngle", NULL_VECTOR);
-			SetEntPropVector(victim, Prop_Send, "m_vecPunchAngleVel", NULL_VECTOR);
-		}
+		SetEntPropVector(victim, Prop_Send, "m_viewPunchAngle", NULL_VECTOR);
+		SetEntPropVector(victim, Prop_Send, "m_aimPunchAngle", NULL_VECTOR);
+		SetEntPropVector(victim, Prop_Send, "m_aimPunchAngleVel", NULL_VECTOR);
 	}
 }
 
@@ -2203,12 +2039,6 @@ public Action Hook_GunTouch(int entity, int client)
 				SetEntProp(entity, Prop_Send, "m_bBurstMode", 1);
 			}
 		}
-		else if (gEV_Type == Engine_CSS && StrEqual(classname, "weapon_usp"))
-		{
-			SetEntProp(entity, Prop_Send, "m_bSilencerOn", 1);
-			SetEntProp(entity, Prop_Send, "m_weaponMode", 1);
-			SetEntPropFloat(entity, Prop_Send, "m_flDoneSwitchingSilencer", GetGameTime() - 0.1);  
-		}
 	}
 
 	return Plugin_Continue;
@@ -2216,8 +2046,7 @@ public Action Hook_GunTouch(int entity, int client)
 
 public void OnEntityCreated(int entity, const char[] classname)
 {
-	if (((gCV_WeaponsSpawnGood.IntValue & 1) && gEV_Type == Engine_CSS && StrEqual(classname, "weapon_usp"))
-	||  ((gCV_WeaponsSpawnGood.IntValue & 2) && StrEqual(classname, "weapon_glock")))
+	if (((gCV_WeaponsSpawnGood.IntValue & 2) && StrEqual(classname, "weapon_glock")))
 	{
 		SDKHook(entity, SDKHook_Touch, Hook_GunTouch);
 	}
@@ -2250,7 +2079,7 @@ public Action HookTrigger(int entity, int other)
 
 public Action Command_Weapon(int client, int args)
 {
-	if(!IsValidClient(client) || gEV_Type == Engine_TF2)
+	if(!IsValidClient(client))
 	{
 		return Plugin_Handled;
 	}
@@ -2284,7 +2113,7 @@ public Action Command_Weapon(int client, int args)
 
 	if(StrContains(sCommand, "usp", false) != -1)
 	{
-		strcopy(sWeapon, 32, (gEV_Type == Engine_CSS)? "weapon_usp":"weapon_usp_silencer");
+		strcopy(sWeapon, 32, "weapon_usp_silencer");
 	}
 	else if(StrContains(sCommand, "glock", false) != -1)
 	{
@@ -2320,10 +2149,7 @@ void SetWeaponAmmo(int client, int weapon, bool setClip1)
 	int iAmmo = GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType");
 	SetEntProp(client, Prop_Send, "m_iAmmo", 255, 4, iAmmo);
 
-	if(gEV_Type == Engine_CSGO)
-	{
-		SetEntProp(weapon, Prop_Send, "m_iPrimaryReserveAmmoCount", 255);
-	}
+	SetEntProp(weapon, Prop_Send, "m_iPrimaryReserveAmmoCount", 255);
 
 	if (gCV_WeaponCommands.IntValue >= 3 && setClip1)
 	{
@@ -2961,22 +2787,11 @@ void SaveCheckpointCache(int target, cp_cache_t cpcache, bool actually_a_checkpo
 
 	cpcache.iFlags = GetEntityFlags(target) & ~(FL_ATCONTROLS|FL_FAKECLIENT);
 
-	if(gEV_Type != Engine_TF2)
-	{
-		cpcache.fStamina = GetEntPropFloat(target, Prop_Send, "m_flStamina");
-		cpcache.bDucked = view_as<bool>(GetEntProp(target, Prop_Send, "m_bDucked"));
-		cpcache.bDucking = view_as<bool>(GetEntProp(target, Prop_Send, "m_bDucking"));
-	}
-
-	if(gEV_Type == Engine_CSS)
-	{
-		cpcache.fDucktime = GetEntPropFloat(target, Prop_Send, "m_flDucktime");
-	}
-	else if(gEV_Type == Engine_CSGO)
-	{
-		cpcache.fDucktime = GetEntPropFloat(target, Prop_Send, "m_flDuckAmount");
-		cpcache.fDuckSpeed = GetEntPropFloat(target, Prop_Send, "m_flDuckSpeed");
-	}
+	cpcache.fStamina = GetEntPropFloat(target, Prop_Send, "m_flStamina");
+	cpcache.bDucked = view_as<bool>(GetEntProp(target, Prop_Send, "m_bDucked"));
+	cpcache.bDucking = view_as<bool>(GetEntProp(target, Prop_Send, "m_bDucking"));
+	cpcache.fDucktime = GetEntPropFloat(target, Prop_Send, "m_flDuckAmount");
+	cpcache.fDuckSpeed = GetEntPropFloat(target, Prop_Send, "m_flDuckSpeed");
 
 	timer_snapshot_t snapshot;
 
@@ -3087,23 +2902,13 @@ void LoadCheckpointCache(int client, cp_cache_t cpcache, bool isPersistentData)
 	int ground = (cpcache.iGroundEntity != -1) ? EntRefToEntIndex(cpcache.iGroundEntity) : -1;
 	SetEntPropEnt(client, Prop_Data, "m_hGroundEntity", ground);
 
-	if(gEV_Type != Engine_TF2)
-	{
-		SetEntPropVector(client, Prop_Data, "m_vecLadderNormal", cpcache.vecLadderNormal);
-		SetEntPropFloat(client, Prop_Send, "m_flStamina", cpcache.fStamina);
-		SetEntProp(client, Prop_Send, "m_bDucked", cpcache.bDucked);
-		SetEntProp(client, Prop_Send, "m_bDucking", cpcache.bDucking);
-	}
+	SetEntPropVector(client, Prop_Data, "m_vecLadderNormal", cpcache.vecLadderNormal);
+	SetEntPropFloat(client, Prop_Send, "m_flStamina", cpcache.fStamina);
+	SetEntProp(client, Prop_Send, "m_bDucked", cpcache.bDucked);
+	SetEntProp(client, Prop_Send, "m_bDucking", cpcache.bDucking);
 
-	if(gEV_Type == Engine_CSS)
-	{
-		SetEntPropFloat(client, Prop_Send, "m_flDucktime", cpcache.fDucktime);
-	}
-	else if(gEV_Type == Engine_CSGO)
-	{
-		SetEntPropFloat(client, Prop_Send, "m_flDuckAmount", cpcache.fDucktime);
-		SetEntPropFloat(client, Prop_Send, "m_flDuckSpeed", cpcache.fDuckSpeed);
-	}
+	SetEntPropFloat(client, Prop_Send, "m_flDuckAmount", cpcache.fDucktime);
+	SetEntPropFloat(client, Prop_Send, "m_flDuckSpeed", cpcache.fDuckSpeed);
 
 	Shavit_LoadSnapshot(client, cpcache.aSnapshot);
 
@@ -3508,33 +3313,16 @@ public void Shavit_OnWorldRecord(int client, int style, float time, int jumps, i
 
 public void Shavit_OnRestart(int client, int track)
 {
-	if(gEV_Type != Engine_TF2)
-	{
-		SetEntPropFloat(client, Prop_Send, "m_flStamina", 0.0);
-	}
+	SetEntPropFloat(client, Prop_Send, "m_flStamina", 0.0);
 }
 
 public Action Shavit_OnRestartPre(int client, int track)
 {
 	if(gCV_RespawnOnRestart.BoolValue && !IsPlayerAlive(client))
 	{
-		if(gEV_Type == Engine_TF2)
-		{
-			TF2_ChangeClientTeam(client, view_as<TFTeam>(GetRandomInt(2, 3)));
-		}
-		else
-		{
-			CS_SwitchTeam(client, GetRandomInt(2, 3));
-		}
+		CS_SwitchTeam(client, GetRandomInt(2, 3));
 
-		if(gEV_Type == Engine_TF2)
-		{
-			TF2_RespawnPlayer(client);
-		}
-		else
-		{
-			CS_RespawnPlayer(client);
-		}
+		CS_RespawnPlayer(client);
 
 		return Plugin_Handled;
 	}
@@ -3548,15 +3336,7 @@ public Action Respawn(Handle timer, any data)
 
 	if(IsValidClient(client) && !IsPlayerAlive(client) && GetClientTeam(client) >= 2)
 	{
-		if(gEV_Type == Engine_TF2)
-		{
-			TF2_RespawnPlayer(client);
-		}
-
-		else
-		{
-			CS_RespawnPlayer(client);
-		}
+		CS_RespawnPlayer(client);
 
 		if(gCV_RespawnOnRestart.BoolValue)
 		{
@@ -3582,11 +3362,6 @@ public void Player_Spawn(Event event, const char[] name, bool dontBroadcast)
 	if(!IsFakeClient(client))
 	{
 		int serial = GetClientSerial(client);
-
-		if(gCV_HideRadar.BoolValue && gEV_Type == Engine_CSS)
-		{
-			RequestFrame(Frame_RemoveRadar, serial);
-		}
 
 		bool bCanStartOnSpawn = true;
 
@@ -3638,28 +3413,11 @@ public void Player_Spawn(Event event, const char[] name, bool dontBroadcast)
 	}
 }
 
-void RemoveRadar(int client, float salt)
-{
-	if(client == 0 || !IsPlayerAlive(client))
-	{
-		return;
-	}
-
-	SetEntPropFloat(client, Prop_Send, "m_flFlashDuration", 20.0 + salt);
-	SetEntPropFloat(client, Prop_Send, "m_flFlashMaxAlpha", 0.5);
-}
-
-void Frame_RemoveRadar(any data)
-{
-	int client = GetClientFromSerial(data);
-	RemoveRadar(client, GetURandomFloat());
-}
-
 public Action Player_Notifications(Event event, const char[] name, bool dontBroadcast)
 {
 	if(gCV_HideTeamChanges.BoolValue)
 	{
-		if (StrEqual(name, "player_team") && gEV_Type == Engine_CSGO)
+		if (StrEqual(name, "player_team"))
 		{
 			event.SetBool("silent", true);
 		}
@@ -3762,30 +3520,13 @@ public Action Shotgun_Shot(const char[] te_name, const int[] Players, int numCli
 	TE_WriteNum("m_iSeed", TE_ReadNum("m_iSeed"));
 	TE_WriteNum("m_iPlayer", (client - 1));
 
-	if(gEV_Type == Engine_CSS)
-	{
-		TE_WriteNum("m_iWeaponID", TE_ReadNum("m_iWeaponID"));
-		TE_WriteFloat("m_fInaccuracy", TE_ReadFloat("m_fInaccuracy"));
-		TE_WriteFloat("m_fSpread", TE_ReadFloat("m_fSpread"));
-	}
+	TE_WriteNum("m_weapon", TE_ReadNum("m_weapon"));
+	TE_WriteFloat("m_fInaccuracy", TE_ReadFloat("m_fInaccuracy"));
+	TE_WriteFloat("m_flRecoilIndex", TE_ReadFloat("m_flRecoilIndex"));
+	TE_WriteFloat("m_fSpread", TE_ReadFloat("m_fSpread"));
+	TE_WriteNum("m_nItemDefIndex", TE_ReadNum("m_nItemDefIndex"));
+	TE_WriteNum("m_iSoundType", TE_ReadNum("m_iSoundType"));
 
-	else if(gEV_Type == Engine_CSGO)
-	{
-		TE_WriteNum("m_weapon", TE_ReadNum("m_weapon"));
-		TE_WriteFloat("m_fInaccuracy", TE_ReadFloat("m_fInaccuracy"));
-		TE_WriteFloat("m_flRecoilIndex", TE_ReadFloat("m_flRecoilIndex"));
-		TE_WriteFloat("m_fSpread", TE_ReadFloat("m_fSpread"));
-		TE_WriteNum("m_nItemDefIndex", TE_ReadNum("m_nItemDefIndex"));
-		TE_WriteNum("m_iSoundType", TE_ReadNum("m_iSoundType"));
-	}
-
-	else if(gEV_Type == Engine_TF2)
-	{
-		TE_WriteNum("m_iWeaponID", TE_ReadNum("m_iWeaponID"));
-		TE_WriteFloat("m_flSpread", TE_ReadFloat("m_flSpread"));
-		TE_WriteNum("m_bCritical", TE_ReadNum("m_bCritical"));
-	}
-	
 	TE_Send(clients, count, delay);
 
 	return Plugin_Stop;
@@ -3848,28 +3589,6 @@ public Action WorldDecal(const char[] te_name, const int[] Players, int numClien
 
 public Action NormalSound(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 {
-	if (gEV_Type != Engine_CSGO && IsValidClient(entity) && IsFakeClient(entity) && StrContains(sample, "footsteps/") != -1)
-	{
-		numClients = 0;
-
-		if (gCV_BhopSounds.IntValue < 2)
-		{
-			// The server removes recipients that are in the PVS because CS:S generates the footsteps clientside.
-			// UpdateStepSound clientside bails because of MOVETYPE_NOCLIP though.
-			// So fuck it, add all the clients xd.
-			// Alternatively and preferably you'd patch out the RemoveRecipientsByPVS call in PlayStepSound.
-			for (int i = 1; i <= MaxClients; i++)
-			{
-				if (IsValidClient(i) && (!gB_Hide[i] || GetSpectatorTarget(i) == entity))
-				{
-					clients[numClients++] = i;
-				}
-			}
-		}
-
-		return Plugin_Changed;
-	}
-
 	if(!gCV_BhopSounds.BoolValue)
 	{
 		return Plugin_Continue;
@@ -3953,7 +3672,7 @@ public void Shavit_OnFinish(int client)
 
 public Action Command_Drop(int client, const char[] command, int argc)
 {
-	if(!gCV_DropAll.BoolValue || !IsValidClient(client) || gEV_Type == Engine_TF2)
+	if(!gCV_DropAll.BoolValue || !IsValidClient(client))
 	{
 		return Plugin_Continue;
 	}
