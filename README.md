@@ -19,6 +19,7 @@
 * [SteamWorks](https://forums.alliedmods.net/showthread.php?t=229556)
   * 用于抓取广告中的`{serverip}`.
 * [ShowPlayerClips](https://forums.alliedmods.net/showthread.php?p=2661942)
+  - 用于显示空气墙.
 * [Stripper](http://www.bailopan.net/stripper/snapshots/1.2/)
   * 用于修复地图(下载git129或更高版本)
 * [Boostfix](https://github.com/t5mat/boostfix)
