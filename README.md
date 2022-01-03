@@ -31,7 +31,7 @@
 
 # 安装流程
 
-* [编译仓库里的源码](https://github.com/shavitush/bhoptimer/wiki/1.-Installation)
+* [编译仓库里的源码](https://github.com/shavitush/bhoptimer/wiki/1.-Installation-(from-source))
 * [或者直接从release下载插件包](https://github.com/Ciallo-Ani/surftimer/releases) - 只需拖放到游戏服务器的目录中即可.
 
 # 配置
