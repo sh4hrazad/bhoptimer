@@ -3083,17 +3083,16 @@ void CreateEditMenu(int client)
 	FormatEx(sMenuItem, 64, "%T", "ZoneForceMaxData", client, (gB_EditMaxData[client])? "＋":"－");
 	menu.AddItem("setmaxdata", sMenuItem);
 
-	FormatEx(sMenuItem, 64, "hookname: %s", gS_ZoneHookname[client]);
-	menu.AddItem("hookname", sMenuItem);
-
 	FormatEx(sMenuItem, 64, "%T", "ZoneSetAdjust", client);
 	menu.AddItem("adjust", sMenuItem);
+
+	FormatEx(sMenuItem, 64, "hookname: %s", gS_ZoneHookname[client]);
+	menu.AddItem("hookname", sMenuItem);
 
 	FormatEx(sMenuItem, 64, "%T", "ZoneForceRender", client, ((gI_ZoneFlags[client] & ZF_ForceRender) > 0)? "＋":"－");
 	menu.AddItem("forcerender", sMenuItem);
 
 	menu.ExitButton = false;
-	menu.Pagination = MENU_NO_PAGINATION;
 	menu.Display(client, -1);
 }
 
