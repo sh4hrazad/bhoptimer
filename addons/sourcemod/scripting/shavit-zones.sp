@@ -153,12 +153,10 @@ TopMenuObject gH_TimerCommands = INVALID_TOPMENUOBJECT;
 
 // cvars
 Convar gCV_Interval = null;
-Convar gCV_TeleportToStart = null;
 Convar gCV_TeleportToEnd = null;
 Convar gCV_UseCustomSprite = null;
 Convar gCV_Offset = null;
 Convar gCV_EnforceTracks = null;
-Convar gCV_BoxOffset = null;
 
 // handles
 Handle gH_DrawEverything = null;
@@ -295,12 +293,10 @@ public void OnPluginStart()
 
 	// cvars and stuff
 	gCV_Interval = new Convar("shavit_zones_interval", "1.0", "Interval between each time a mapzone is being drawn to the players.", 0, true, 0.5, true, 5.0);
-	gCV_TeleportToStart = new Convar("shavit_zones_teleporttostart", "1", "Teleport players to the start zone on timer restart?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_TeleportToEnd = new Convar("shavit_zones_teleporttoend", "1", "Teleport players to the end zone on sm_end?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_UseCustomSprite = new Convar("shavit_zones_usecustomsprite", "1", "Use custom sprite for zone drawing?\nSee `configs/shavit-zones.cfg`.\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_Offset = new Convar("shavit_zones_offset", "0", "When calculating a zone's *VISUAL* box, by how many units, should we scale it to the center?\n0.0 - no downscaling. Values above 0 will scale it inward and negative numbers will scale it outwards.\nAdjust this value if the zones clip into walls.");
 	gCV_EnforceTracks = new Convar("shavit_zones_enforcetracks", "1", "Enforce zone tracks upon entry?\n0 - allow every zone to affect users on every zone.\n1 - require the user's track to match the zone's track.", 0, true, 0.0, true, 1.0);
-	gCV_BoxOffset = new Convar("shavit_zones_box_offset", "0", "Offset zone trigger boxes by this many unit\n0 - matches players bounding box\n16 - matches players center");
 
 	gCV_Interval.AddChangeHook(OnConVarChanged);
 	gCV_UseCustomSprite.AddChangeHook(OnConVarChanged);
@@ -3466,22 +3462,19 @@ public void SQL_CreateTable_Callback(Database db, DBResultSet results, const cha
 
 public void Shavit_OnRestart(int client, int track)
 {
-	if(gCV_TeleportToStart.BoolValue)
+	int iIndex = -1;
+
+	// standard zoning
+	if((iIndex = GetZoneIndex(Zone_Start, track)) != -1)
 	{
-		int iIndex = -1;
+		iIndex = gI_LastStartZoneIndex[client][track] != -1? gI_LastStartZoneIndex[client][track] : GetZoneIndex(Zone_Start, track);
 
-		// standard zoning
-		if((iIndex = GetZoneIndex(Zone_Start, track)) != -1)
-		{
-			iIndex = gI_LastStartZoneIndex[client][track] != -1? gI_LastStartZoneIndex[client][track] : GetZoneIndex(Zone_Start, track);
-
-			DoTeleport(client, iIndex);
-		}
-
-		DispatchKeyValue(client, "targetname", "");
-
-		Shavit_StartTimer(client, track);
+		DoTeleport(client, iIndex);
 	}
+
+	DispatchKeyValue(client, "targetname", "");
+
+	Shavit_StartTimer(client, track);
 }
 
 public void Shavit_OnEnd(int client, int track)
@@ -3626,14 +3619,14 @@ bool CreateNormalZone(int zone)
 	float height = 36.0;
 
 	float min[3];
-	min[0] = -distance_x + gCV_BoxOffset.FloatValue;
-	min[1] = -distance_y + gCV_BoxOffset.FloatValue;
+	min[0] = -distance_x;
+	min[1] = -distance_y;
 	min[2] = -distance_z + height;
 	SetEntPropVector(entity, Prop_Send, "m_vecMins", min);
 
 	float max[3];
-	max[0] = distance_x - gCV_BoxOffset.FloatValue;
-	max[1] = distance_y - gCV_BoxOffset.FloatValue;
+	max[0] = distance_x;
+	max[1] = distance_y;
 	max[2] = distance_z - height;
 	SetEntPropVector(entity, Prop_Send, "m_vecMaxs", max);
 
