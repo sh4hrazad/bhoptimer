@@ -2906,11 +2906,6 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 	return Plugin_Continue;
 }
 
-public bool TRFilter_NoPlayers(int entity, int mask, any data)
-{
-	return (entity != view_as<int>(data) || (entity < 1 || entity > MaxClients));
-}
-
 public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_Select)
