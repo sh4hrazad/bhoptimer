@@ -919,6 +919,11 @@ stock bool IsSurfing(int client)
 	return false;
 }
 
+stock bool TRFilter_NoPlayers(int entity, int mask, any data)
+{
+	return (entity != view_as<int>(data) || (entity < 1 || entity > MaxClients));
+}
+
 /**
  * Called before shavit-core processes the client's usercmd.
  * Before this is called, safety checks (fake/dead clients) happen.
