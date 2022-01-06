@@ -28,8 +28,6 @@
 #undef REQUIRE_EXTENSIONS
 #include <SteamWorks>
 #include <cstrike>
-#include <tf2>
-#include <tf2_stocks>
 
 #undef REQUIRE_PLUGIN
 #include <shavit>
@@ -353,7 +351,7 @@ public void OnPluginStart()
 	gCV_JointeamHook = new Convar("shavit_misc_jointeamhook", "1", "Hook `jointeam`?\n0 - Disabled\n1 - Enabled, players can instantly change teams.", 0, true, 0.0, true, 1.0);
 	gCV_SpectatorList = new Convar("shavit_misc_speclist", "1", "Who to show in !specs?\n0 - everyone\n1 - all admins (admin_speclisthide override to bypass)\n2 - players you can target", 0, true, 0.0, true, 2.0);
 	gCV_MaxCP = new Convar("shavit_misc_maxcp", "1000", "Maximum amount of checkpoints.\nNote: Very high values will result in high memory usage!", 0, true, 1.0, true, 10000.0);
-	gCV_MaxCP_Segmented = new Convar("shavit_misc_maxcp_seg", "30", "Maximum amount of segmented checkpoints. Make this less or equal to shavit_misc_maxcp.\nNote: Very high values will result in HUGE memory usage! Segmented checkpoints contain frame data!", 0, true, 1.0, true, 50.0);
+	gCV_MaxCP_Segmented = new Convar("shavit_misc_maxcp_seg", "100", "Maximum amount of segmented checkpoints. Make this less or equal to shavit_misc_maxcp.\nNote: Very high values will result in HUGE memory usage! Segmented checkpoints contain frame data!", 0, true, 10.0);
 	gCV_HideChatCommands = new Convar("shavit_misc_hidechatcmds", "1", "Hide commands from chat?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_PersistData = new Convar("shavit_misc_persistdata", "-1", "How long to persist timer data for disconnected users in seconds?\n-1 - Until map change\n0 - Disabled");
 	gCV_StopTimerWarning = new Convar("shavit_misc_stoptimerwarning", "180", "Time in seconds to display a warning before stopping the timer with noclip or !stop.\n0 - Disabled");
@@ -919,7 +917,7 @@ public Action Command_SpecNextPrev(int client, const char[] command, int args)
 		return Plugin_Continue;
 	}
 
-	ArrayList players = new ArrayList(1);
+	ArrayList players = new ArrayList();
 
 	// add valid alive players
 	for (int i = 1; i <= MaxClients; i++)
@@ -965,6 +963,8 @@ public Action Command_SpecNextPrev(int client, const char[] command, int args)
 	}
 
 	SetEntPropEnt(client, Prop_Send, "m_hObserverTarget", players.Get(pos));
+
+	delete players;
 
 	return Plugin_Handled;
 }
@@ -2063,17 +2063,12 @@ public Action HookTrigger(int entity, int other)
 {
     if(IsValidClient(other))
     {
-		if(gB_CanTouchTrigger[other] && GetEntityMoveType(other) & MOVETYPE_NOCLIP)
-		{
-			return Plugin_Continue;
-		}
-		
-		if(GetEntityMoveType(other) & MOVETYPE_NOCLIP)
+		if(!gB_CanTouchTrigger[other] && GetEntityMoveType(other) & MOVETYPE_NOCLIP)
 		{
 			return Plugin_Handled;
 		}
     }
-    
+
     return Plugin_Continue;
 }
 
