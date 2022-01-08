@@ -71,9 +71,7 @@ enum struct huddata_t
 	TimerStatus iTimerStatus;
 	ZoneHUD iZoneHUD;
 	int iFinishNum;
-	bool bFinishCP;
 	bool bStageTimer;
-	float fDiffTimer;
 	char sDiff[64];
 	char sPreStrafe[64];
 }
@@ -135,7 +133,6 @@ Convar gCV_DefaultHUD2 = null;
 stylestrings_t gS_StyleStrings[STYLE_LIMIT];
 
 // stuff
-float gF_LastCPTime[MAXPLAYERS+1];
 char gS_PreStrafeDiff[MAXPLAYERS+1][64];
 char gS_DiffTime[MAXPLAYERS+1][64];
 char gS_Map[160];
@@ -181,7 +178,7 @@ public void OnPluginStart()
 	gB_Sounds = LibraryExists("shavit-sounds");
 
 	// plugin convars
-	gCV_TicksPerUpdate = new Convar("shavit_hud_ticksperupdate", "1", "How often (in ticks) should the HUD update?\nPlay around with this value until you find the best for your server.\nThe maximum value is your tickrate.", 0, true, 1.0, true, (1.0 / GetTickInterval()));
+	gCV_TicksPerUpdate = new Convar("shavit_hud_ticksperupdate", "5", "How often (in ticks) should the HUD update?\nPlay around with this value until you find the best for your server.\nThe maximum value is your tickrate.", 0, true, 1.0, true, (1.0 / GetTickInterval()));
 	gCV_SpectatorList = new Convar("shavit_hud_speclist", "0", "Who to show in the specators list?\n0 - everyone\n1 - all admins (admin_speclisthide override to bypass)\n2 - players you can target", 0, true, 0.0, true, 2.0);
 	gCV_SpecNameSymbolLength = new Convar("shavit_hud_specnamesymbollength", "32", "Maximum player name length that should be displayed in spectators panel", 0, true, 0.0, true, float(MAX_NAME_LENGTH));
 	gCV_PrestrafeMessage = new Convar("shavit_misc_prestrafemessage", "1", "Enable prestrafe message. Only works when player leave start/stage/checkpoint zone.", 0, true, 0.0, true, 1.0);
@@ -964,7 +961,7 @@ void AddHUDLine(char[] buffer, int maxlen, const char[] line, int lines)
 	}
 }
 
-int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
+int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 {
 	int iLines = 0;
 	char sLine[256];
@@ -1049,7 +1046,6 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			{
 				FormatEx(sTime, 32, "Stopped");
 			}
-
 			else
 			{
 				FormatHUDSeconds(data.fTime, sTime, 32);
@@ -1061,17 +1057,14 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			{
 				// 不计时 | 起点 红色
 			}
-
 			else if(data.bPractice || data.iTimerStatus == Timer_Paused)
 			{
 				iColor = 0xE066FF; // 暂停 中兰紫
 			}
-
 			else if(data.fTime < data.fWR || data.fWR == 0.0) 
 			{
 				iColor = 0x00FA9A; // 小于WR 青绿
 			}
-
 			else if(data.fTime < data.fPB || data.fPB == 0.0)
 			{
 				iColor = 0xFFFACD; // 小于PB 黄色
@@ -1090,7 +1083,7 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
-			if(data.iCheckpoint != 0 && data.iStyle != -1 && data.iCheckpoint != -1 && !data.bStageTimer && data.iTimerStatus != Timer_Stopped)
+			if(data.iCheckpoint > 0 && data.iStyle >= 0 && !data.bStageTimer && data.iTimerStatus == Timer_Running)
 			{
 				int iDiffColor;
 				if(Shavit_GetWRCPTime(data.iCheckpoint, data.iStyle) == -1.0)
@@ -1133,7 +1126,6 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			{
 				FormatEx(sTargetSR, 64, "None");
 			}
-
 			else
 			{
 				FormatHUDSeconds(data.fWR, sTargetSR, 64);
@@ -1151,7 +1143,6 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 			{
 				FormatEx(sTargetPB, 64, "None");
 			}
-
 			else
 			{
 				FormatHUDSeconds(data.fPB, sTargetPB, 64);
@@ -1171,13 +1162,11 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 				{
 					FormatEx(sLine, 32, " | Map Start");
 				}
-
 				else
 				{
 					FormatEx(sLine, 32, " | Bonus %d Start", data.iTrack);
 				}
 			}
-
 			else if(data.iZoneHUD == ZoneHUD_Stage)
 			{
 				FormatEx(sLine, 32, " | Stage %d Start", data.iStage);
@@ -1194,13 +1183,11 @@ int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
 				{
 					FormatEx(sLine, 32, " | Linear Map");
 				}
-
 				else
 				{
 					FormatEx(sLine, 32, " | Stage %d / %d", data.iStage, Shavit_GetMapStages());
 				}
 			}
-
 			else
 			{
 				FormatEx(sLine, 32, " | Bonus %d", data.iTrack);
@@ -1249,9 +1236,6 @@ void UpdateMainHUD(int client)
 	float fSpeedHUD = ((gI_HUDSettings[client] & HUD_2DVEL) == 0)? GetVectorLength(fSpeed):(SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0)));
 	bool bReplay = (gB_Replay && Shavit_IsReplayEntity(target));
 	ZoneHUD iZoneHUD = ZoneHUD_None;
-	int iReplayStyle = 0;
-	int iReplayTrack = 0;
-	int iReplayStage = 0;
 	float fReplayTime = 0.0;
 	float fReplayLength = 0.0;
 
@@ -1277,9 +1261,10 @@ void UpdateMainHUD(int client)
 		}
 	}
 
-	iReplayStyle = Shavit_GetReplayBotStyle(target);
-	iReplayTrack = Shavit_GetReplayBotTrack(target);
-	iReplayStage = Shavit_GetReplayBotStage(target);
+	int iReplayStyle = Shavit_GetReplayBotStyle(target);
+	int iReplayTrack = Shavit_GetReplayBotTrack(target);
+	int iReplayStage = Shavit_GetReplayBotStage(target);
+
 	if(iReplayStyle != -1)
 	{
 		fReplayTime = Shavit_GetReplayTime(target);
@@ -1301,16 +1286,9 @@ void UpdateMainHUD(int client)
 	huddata.bReplay = bReplay;
 	huddata.bPractice = (bReplay)? false:Shavit_IsPracticeMode(target);
 	huddata.iFinishNum = (huddata.iStyle == -1 || huddata.iTrack == -1)?Shavit_GetRecordAmount(0, 0):Shavit_GetRecordAmount(huddata.iStyle, huddata.iTrack);
-	huddata.bFinishCP = (Shavit_EnterCheckpoint(target) || Shavit_EnterStage(target));
 	huddata.bStageTimer = Shavit_IsClientStageTimer(target);
-	huddata.fDiffTimer = GetGameTime() - gF_LastCPTime[target];
 	strcopy(huddata.sDiff, 64, gS_DiffTime[target]);
 	strcopy(huddata.sPreStrafe, 64, gS_PreStrafeDiff[target]);
-
-	if(huddata.bFinishCP)
-	{
-		gF_LastCPTime[target] = GetGameTime();
-	}
 
 	if(huddata.iStage > Shavit_GetMapStages())
 	{
@@ -1325,7 +1303,7 @@ void UpdateMainHUD(int client)
 	char sBuffer[512];
 	
 	StrCat(sBuffer, 512, "<pre>");
-	int iLines = AddHUDToBuffer_CSGO(client, huddata, sBuffer, 512);
+	int iLines = AddHUDToBuffer(client, huddata, sBuffer, 512);
 	StrCat(sBuffer, 512, "</pre>");
 
 	if(iLines > 0)
