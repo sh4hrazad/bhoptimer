@@ -55,6 +55,7 @@ enum
 enum struct zone_cache_t
 {
 	bool bZoneInitialized;
+	bool bHooked;
 	int iZoneType;
 	int iZoneTrack; // 0 - main, 1 - bonus etc
 	int iEntityID;
@@ -1003,12 +1004,14 @@ void ClearZone(int index)
 	}
 
 	gA_ZoneCache[index].bZoneInitialized = false;
+	gA_ZoneCache[index].bHooked = false;
 	gA_ZoneCache[index].iZoneType = -1;
 	gA_ZoneCache[index].iZoneTrack = -1;
 	gA_ZoneCache[index].iEntityID = -1;
 	gA_ZoneCache[index].iDatabaseID = -1;
 	gA_ZoneCache[index].iZoneFlags = 0;
 	gA_ZoneCache[index].iZoneData = 0;
+	strcopy(gA_ZoneCache[index].sZoneHookname, sizeof(zone_cache_t::sZoneHookname), "NONE");
 }
 
 void UnhookEntity(int entity)
@@ -3672,8 +3675,9 @@ void CreateHookZone(int zone)
 			SDKHook(entity, SDKHook_TouchPost, TouchPost);
 
 			gI_EntityZone[entity] = zone;
-			gA_ZoneCache[zone].iEntityID = entity;
 			gI_LastEntityIndex = entity;
+			gA_ZoneCache[zone].iEntityID = entity;
+			gA_ZoneCache[zone].bHooked = true;
 
 			break; // stop looping from finding triggers to hook
 		}

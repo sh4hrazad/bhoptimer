@@ -61,7 +61,6 @@ bool gB_HavePlaytimeOnStyle[MAXPLAYERS+1][STYLE_LIMIT];
 bool gB_QueriedPlaytime[MAXPLAYERS+1];
 
 bool gB_Late = false;
-EngineVersion gEV_Type = Engine_Unknown;
 
 // timer settings
 int gI_Styles = 0;
@@ -100,7 +99,11 @@ public void OnAllPluginsLoaded()
 
 public void OnPluginStart()
 {
-	gEV_Type = GetEngineVersion();
+	if(GetEngineVersion() != Engine_CSGO)
+	{
+		SetFailState("This plugin only support for CSGO!");
+		return;
+	}
 
 	// player commands
 	RegConsoleCmd("sm_p", Command_Profile, "Show the player's profile. Usage: sm_profile [target]");
@@ -506,7 +509,7 @@ public void SQL_TopPlaytime_Callback(Database db, DBResultSet results, const cha
 
 	menu.SetTitle("%T\n%T (#%d): %s", "Playtime", client, "YourPlaytime", client, own_rank, sOwnPlaytime);
 
-	if (menu.ItemCount <= ((gEV_Type == Engine_CSS) ? 9 : 8))
+	if (menu.ItemCount <= 8)
 	{
 		menu.Pagination = MENU_NO_PAGINATION;
 	}

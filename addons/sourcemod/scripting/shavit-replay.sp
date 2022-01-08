@@ -178,8 +178,7 @@ char gS_ForcedCvars[][][] =
 	{ "bot_controllable", "0" }
 };
 
-// game type
-EngineVersion gEV_Type = Engine_Unknown;
+// os type
 bool gB_Linux;
 
 // cache
@@ -382,6 +381,12 @@ public void OnAllPluginsLoaded()
 
 public void OnPluginStart()
 {
+	if(GetEngineVersion() != Engine_CSGO)
+	{
+		SetFailState("This plugin only support for CSGO!");
+		return;
+	}
+
 	LoadTranslations("shavit-common.phrases");
 	LoadTranslations("shavit-replay.phrases");
 
@@ -391,9 +396,8 @@ public void OnPluginStart()
 	gH_OnReplaysLoaded = CreateGlobalForward("Shavit_OnReplaysLoaded", ET_Event);
 	gH_ShouldSaveReplayCopy = CreateGlobalForward("Shavit_ShouldSaveReplayCopy", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
 	gH_OnReplaySaved = CreateGlobalForward("Shavit_OnReplaySaved", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_String);
-	
+
 	// game specific
-	gEV_Type = GetEngineVersion();
 	gF_Tickrate = (1.0 / GetTickInterval());
 
 	ConVar bot_stop = FindConVar("bot_stop");
@@ -403,7 +407,7 @@ public void OnPluginStart()
 		bot_stop.Flags &= ~FCVAR_CHEAT;
 	}
 
-	bot_join_after_player = FindConVar(gEV_Type == Engine_TF2 ? "tf_bot_join_after_player" : "bot_join_after_player");
+	bot_join_after_player = FindConVar("bot_join_after_player");
 
 	mp_randomspawn = FindConVar("mp_randomspawn");
 
@@ -514,49 +518,28 @@ void LoadDHooks()
 
 	gB_Linux = (gamedata.GetOffset("OS") == 2);
 
-	if (gEV_Type == Engine_TF2)
+	StartPrepSDKCall(gB_Linux ? SDKCall_Raw : SDKCall_Static);
+
+	if (!PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CCSBotManager::BotAddCommand"))
 	{
-		StartPrepSDKCall(SDKCall_Static);
-
-		if (!PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "NextBotCreatePlayerBot<CTFBot>"))
-		{
-			SetFailState("Failed to get NextBotCreatePlayerBot<CTFBot>");
-		}
-
-		PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);       // const char *name
-		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);   // bool bReportFakeClient
-		PrepSDKCall_SetReturnInfo(SDKType_CBasePlayer, SDKPass_Pointer); // CTFBot*
-
-		if (!(gH_BotAddCommand = EndPrepSDKCall()))
-		{
-			SetFailState("Unable to prepare SDKCall for NextBotCreatePlayerBot<CTFBot>");
-		}
+		SetFailState("Failed to get CCSBotManager::BotAddCommand");
 	}
-	else
+
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // int team
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // bool isFromConsole
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // const char *profileName
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // CSWeaponType weaponType
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // BotDifficultyType difficulty
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // bool
+
+	if (!(gH_BotAddCommand = EndPrepSDKCall()))
 	{
-		StartPrepSDKCall(gB_Linux ? SDKCall_Raw : SDKCall_Static);
+		SetFailState("Unable to prepare SDKCall for CCSBotManager::BotAddCommand");
+	}
 
-		if (!PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CCSBotManager::BotAddCommand"))
-		{
-			SetFailState("Failed to get CCSBotManager::BotAddCommand");
-		}
-
-		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // int team
-		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // bool isFromConsole
-		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // const char *profileName
-		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // CSWeaponType weaponType
-		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // BotDifficultyType difficulty
-		PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // bool
-
-		if (!(gH_BotAddCommand = EndPrepSDKCall()))
-		{
-			SetFailState("Unable to prepare SDKCall for CCSBotManager::BotAddCommand");
-		}
-
-		if ((gI_WEAPONTYPE_UNKNOWN = gamedata.GetOffset("WEAPONTYPE_UNKNOWN")) == -1)
-		{
-			SetFailState("Failed to get WEAPONTYPE_UNKNOWN");
-		}
+	if ((gI_WEAPONTYPE_UNKNOWN = gamedata.GetOffset("WEAPONTYPE_UNKNOWN")) == -1)
+	{
+		SetFailState("Failed to get WEAPONTYPE_UNKNOWN");
 	}
 
 	if (!(gH_MaintainBotQuota = DHookCreateDetour(Address_Null, CallConv_THISCALL, ReturnType_Void, ThisPointer_Address)))
@@ -570,21 +553,6 @@ void LoadDHooks()
 	}
 
 	gH_MaintainBotQuota.Enable(Hook_Pre, Detour_MaintainBotQuota);
-
-	if (gEV_Type == Engine_CSS)
-	{
-		if (!(gH_TeamFull = DHookCreateDetour(Address_Null, CallConv_THISCALL, ReturnType_Bool, ThisPointer_Address)))
-		{
-			SetFailState("Failed to create detour for CCSGameRules::TeamFull");
-		}
-
-		gH_TeamFull.AddParam(HookParamType_Int); // Team ID
-
-		if (!gH_TeamFull.SetFromConf(gamedata, SDKConf_Signature, "CCSGameRules::TeamFull"))
-		{
-			SetFailState("Failed to get address for CCSGameRules::TeamFull");
-		}
-	}
 
 	StartPrepSDKCall(gB_Linux ? SDKCall_Static : SDKCall_Player);
 
@@ -1598,7 +1566,7 @@ public void OnMapStart()
 		return;
 	}
 
-	PrecacheModel((gEV_Type == Engine_TF2)? "models/error.mdl":"models/props/cs_office/vending_machine.mdl");
+	PrecacheModel("models/props/cs_office/vending_machine.mdl");
 
 	if (!DirExists(gS_ReplayFolder) && !CreateDirectory(gS_ReplayFolder, 511))
 	{
@@ -1691,63 +1659,45 @@ int InternalCreateReplayBot()
 {
 	gI_LatestClient = -1;
 
-	if (gEV_Type == Engine_TF2)
+	// Do all this mp_randomspawn stuff on CSGO since it's easier than updating the signature for CCSGameRules::TeamFull.
+	int mp_randomspawn_orig;
+	
+	if (mp_randomspawn != null)
 	{
-		int bot = SDKCall(
-			gH_BotAddCommand,
-			"replaybot", // name
-			true // bReportFakeClient
-		);
+		mp_randomspawn_orig = mp_randomspawn.IntValue;
+		mp_randomspawn.IntValue = gCV_DefaultTeam.IntValue;
+	}
 
-		if (IsValidClient(bot))
-		{
-			TF2_ChangeClientTeam(bot, TFTeam_Red);
-			TF2_SetPlayerClass(bot, TFClass_Sniper);
-			SetFakeClientConVar(bot, "name", "replaybot");
-		}
+	if (gB_Linux)
+	{
+		/*int ret =*/ SDKCall(
+			gH_BotAddCommand,
+			0x10000,                   // thisptr           // unused (sourcemod needs > 0xFFFF though)
+			gCV_DefaultTeam.IntValue,  // team
+			false,                     // isFromConsole
+			0,                         // profileName       // unused
+			gI_WEAPONTYPE_UNKNOWN,     // CSWeaponType      // WEAPONTYPE_UNKNOWN
+			0                          // BotDifficultyType // unused
+		);
 	}
 	else
 	{
-		// Do all this mp_randomspawn stuff on CSGO since it's easier than updating the signature for CCSGameRules::TeamFull.
-		int mp_randomspawn_orig;
-		
-		if (mp_randomspawn != null)
-		{
-			mp_randomspawn_orig = mp_randomspawn.IntValue;
-			mp_randomspawn.IntValue = gCV_DefaultTeam.IntValue;
-		}
-
-		if (gB_Linux)
-		{
-			/*int ret =*/ SDKCall(
-				gH_BotAddCommand,
-				0x10000,                   // thisptr           // unused (sourcemod needs > 0xFFFF though)
-				gCV_DefaultTeam.IntValue,  // team
-				false,                     // isFromConsole
-				0,                         // profileName       // unused
-				gI_WEAPONTYPE_UNKNOWN,     // CSWeaponType      // WEAPONTYPE_UNKNOWN
-				0                          // BotDifficultyType // unused
-			);
-		}
-		else
-		{
-			/*int ret =*/ SDKCall(
-				gH_BotAddCommand,
-				gCV_DefaultTeam.IntValue,  // team
-				false,                     // isFromConsole
-				0,                         // profileName       // unused
-				gI_WEAPONTYPE_UNKNOWN,     // CSWeaponType      // WEAPONTYPE_UNKNOWN
-				0                          // BotDifficultyType // unused
-			);
-		}
-
-		if (mp_randomspawn != null)
-		{
-			mp_randomspawn.IntValue = mp_randomspawn_orig;
-		}
-
-		//bool success = (0xFF & ret) != 0;
+		/*int ret =*/ SDKCall(
+			gH_BotAddCommand,
+			gCV_DefaultTeam.IntValue,  // team
+			false,                     // isFromConsole
+			0,                         // profileName       // unused
+			gI_WEAPONTYPE_UNKNOWN,     // CSWeaponType      // WEAPONTYPE_UNKNOWN
+			0                          // BotDifficultyType // unused
+		);
 	}
+
+	if (mp_randomspawn != null)
+	{
+		mp_randomspawn.IntValue = mp_randomspawn_orig;
+	}
+
+	//bool success = (0xFF & ret) != 0;
 
 	return gI_LatestClient;
 }
@@ -2635,12 +2585,9 @@ void UpdateBotScoreboard(bot_info_t info)
 	bool central = (info.iType == Replay_Central);
 	bool idle = (info.iStatus == Replay_Idle);
 
-	if (gEV_Type != Engine_TF2)
-	{
-		char sTag[MAX_NAME_LENGTH];
-		FormatStyle(info.iEnt, gS_ReplayStrings.sClanTag, info.iStyle, info.iTrack, sTag, idle, info.aCache, info.iType, info.iStage);
-		CS_SetClientClanTag(client, sTag);
-	}
+	char sTag[MAX_NAME_LENGTH];
+	FormatStyle(info.iEnt, gS_ReplayStrings.sClanTag, info.iStyle, info.iTrack, sTag, idle, info.aCache, info.iType, info.iStage);
+	CS_SetClientClanTag(client, sTag);
 
 	int sv_duplicate_playernames_ok_original;
 	if (sv_duplicate_playernames_ok != null)
@@ -2662,14 +2609,7 @@ void UpdateBotScoreboard(bot_info_t info)
 
 	int iScore = (info.aCache.iFrameCount > 0 || central) ? 1337 : -1337;
 
-	if(gEV_Type == Engine_CSGO)
-	{
-		CS_SetClientContributionScore(client, iScore);
-	}
-	else if(gEV_Type == Engine_CSS)
-	{
-		SetEntProp(client, Prop_Data, "m_iFrags", iScore);
-	}
+	CS_SetClientContributionScore(client, iScore);
 
 	SetEntProp(client, Prop_Data, "m_iDeaths", 0);
 }
@@ -2741,29 +2681,14 @@ void UpdateReplayClient(int client)
 
 	if(GetClientTeam(client) != gCV_DefaultTeam.IntValue)
 	{
-		if(gEV_Type == Engine_TF2)
-		{
-			ChangeClientTeam(client, gCV_DefaultTeam.IntValue);
-		}
-
-		else
-		{
-			CS_SwitchTeam(client, gCV_DefaultTeam.IntValue);
-		}
+		CS_SwitchTeam(client, gCV_DefaultTeam.IntValue);
 	}
 
 	if(!IsPlayerAlive(client))
 	{
-		if(gEV_Type == Engine_TF2)
-		{
-			TF2_RespawnPlayer(client);
-		}
-		else
-		{
-			CS_RespawnPlayer(client);
-		}
+		CS_RespawnPlayer(client);
 	}
-		
+
 	int iFlags = GetEntityFlags(client);
 
 	if((iFlags & FL_ATCONTROLS) == 0)
@@ -2774,7 +2699,7 @@ void UpdateReplayClient(int client)
 	char sWeapon[32];
 	gCV_BotWeapon.GetString(sWeapon, 32);
 
-	if(gEV_Type != Engine_TF2 && strlen(sWeapon) > 0)
+	if(strlen(sWeapon) > 0)
 	{
 		int iWeapon = GetEntPropEnt(client, Prop_Data, "m_hActiveWeapon");
 
@@ -2793,16 +2718,13 @@ void UpdateReplayClient(int client)
 				bool same_thing = false;
 
 				// special case for csgo stuff because the usp classname becomes weapon_hpk2000
-				if (gEV_Type == Engine_CSGO)
+				if (StrEqual(sWeapon, "weapon_usp_silencer"))
 				{
-					if (StrEqual(sWeapon, "weapon_usp_silencer"))
-					{
-						same_thing = (61 == GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"));
-					}
-					else if (StrEqual(sWeapon, "weapon_hpk2000"))
-					{
-						same_thing = (32 == GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"));
-					}
+					same_thing = (61 == GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"));
+				}
+				else if (StrEqual(sWeapon, "weapon_hpk2000"))
+				{
+					same_thing = (32 == GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"));
 				}
 
 				if (!same_thing && !StrEqual(sWeapon, sClassname))
@@ -3199,7 +3121,7 @@ public void Shavit_OnTimescaleChanged(int client, float oldtimescale, float newt
 	gF_NextFrameTime[client] = 0.0;
 }
 
-Action ReplayOnPlayerRunCmd(bot_info_t info, int &buttons, int &impulse, float vel[3])
+Action OnReplayRunCmd(bot_info_t info, int &buttons, int &impulse, float vel[3])
 {
 	buttons = 0;
 
@@ -3255,7 +3177,7 @@ Action ReplayOnPlayerRunCmd(bot_info_t info, int &buttons, int &impulse, float v
 			{
 				frame_t aFramePrevious;
 				int previousTick = (info.iTick > 0) ? (info.iTick-1) : 0;
-				info.aCache.aFrames.GetArray(previousTick, aFramePrevious, (info.aCache.iReplayVersion >= 0x02) ? 8 : 6);
+				info.aCache.aFrames.GetArray(previousTick, aFramePrevious, 8);
 				vecPreviousPos = aFramePrevious.pos;
 			}
 			else
@@ -3264,7 +3186,7 @@ Action ReplayOnPlayerRunCmd(bot_info_t info, int &buttons, int &impulse, float v
 			}
 
 			frame_t aFrame;
-			info.aCache.aFrames.GetArray(info.iTick, aFrame, (info.aCache.iReplayVersion >= 0x02) ? 8 : 6);
+			info.aCache.aFrames.GetArray(info.iTick, aFrame, 8);
 			buttons = aFrame.buttons;
 
 			if((gCV_BotShooting.IntValue & iBotShooting_Attack1) == 0)
@@ -3285,42 +3207,38 @@ Action ReplayOnPlayerRunCmd(bot_info_t info, int &buttons, int &impulse, float v
 			bool bWalk = false;
 			MoveType mt = MOVETYPE_NOCLIP;
 
-			if(info.aCache.iReplayVersion >= 0x02)
+			int iReplayFlags = aFrame.flags;
+
+			int iEntityFlags = GetEntityFlags(info.iEnt);
+
+			ApplyFlags(iEntityFlags, iReplayFlags, FL_ONGROUND);
+			ApplyFlags(iEntityFlags, iReplayFlags, FL_PARTIALGROUND);
+			ApplyFlags(iEntityFlags, iReplayFlags, FL_INWATER);
+			ApplyFlags(iEntityFlags, iReplayFlags, FL_SWIM);
+
+			SetEntityFlags(info.iEnt, iEntityFlags);
+
+			if((gI_LastReplayFlags[info.iEnt] & FL_ONGROUND) && !(iReplayFlags & FL_ONGROUND) && gH_DoAnimationEvent != INVALID_HANDLE)
 			{
-				int iReplayFlags = aFrame.flags;
+				int jumpAnim = CSGO_ANIM_JUMP;
 
-				int iEntityFlags = GetEntityFlags(info.iEnt);
-
-				ApplyFlags(iEntityFlags, iReplayFlags, FL_ONGROUND);
-				ApplyFlags(iEntityFlags, iReplayFlags, FL_PARTIALGROUND);
-				ApplyFlags(iEntityFlags, iReplayFlags, FL_INWATER);
-				ApplyFlags(iEntityFlags, iReplayFlags, FL_SWIM);
-
-				SetEntityFlags(info.iEnt, iEntityFlags);
-
-				if((gI_LastReplayFlags[info.iEnt] & FL_ONGROUND) && !(iReplayFlags & FL_ONGROUND) && gH_DoAnimationEvent != INVALID_HANDLE)
+				if(gB_Linux)
 				{
-					int jumpAnim = (gEV_Type == Engine_CSS) ?
-						CSS_ANIM_JUMP : ((gEV_Type == Engine_TF2) ? TF2_ANIM_JUMP : CSGO_ANIM_JUMP);
-					
-					if(gB_Linux)
-					{
-						SDKCall(gH_DoAnimationEvent, EntIndexToEntRef(info.iEnt), jumpAnim, 0);
-					}
-					else
-					{
-						SDKCall(gH_DoAnimationEvent, info.iEnt, jumpAnim, 0);
-					}
+					SDKCall(gH_DoAnimationEvent, EntIndexToEntRef(info.iEnt), jumpAnim, 0);
 				}
+				else
+				{
+					SDKCall(gH_DoAnimationEvent, info.iEnt, jumpAnim, 0);
+				}
+			}
 
-				if(aFrame.mt == MOVETYPE_LADDER)
-				{
-					mt = aFrame.mt;
-				}
-				else if(aFrame.mt == MOVETYPE_WALK && (iReplayFlags & FL_ONGROUND) > 0)
-				{
-					bWalk = true;
-				}
+			if(aFrame.mt == MOVETYPE_LADDER)
+			{
+				mt = aFrame.mt;
+			}
+			else if(aFrame.mt == MOVETYPE_WALK && (iReplayFlags & FL_ONGROUND) > 0)
+			{
+				bWalk = true;
 			}
 
 			gI_LastReplayFlags[info.iEnt] = aFrame.flags; 
@@ -3335,8 +3253,8 @@ Action ReplayOnPlayerRunCmd(bot_info_t info, int &buttons, int &impulse, float v
 			ang[1] = aFrame.ang[1];
 
 			if(info.b2x || (info.iTick > 1 &&
-				// replay is going above 50k speed, just teleport at this point
-				(GetVectorLength(vecVelocity) > 50000.0 ||
+				// replay is going above 15k speed, just teleport at this point
+				(GetVectorLength(vecVelocity) > 15000.0 ||
 				// bot is on ground.. if the distance between the previous position is much bigger (1.5x) than the expected according
 				// to the bot's velocity, teleport to avoid sync issues
 				(bWalk && GetVectorDistance(vecPreviousPos, aFrame.pos) > GetVectorLength(vecVelocity) / gF_Tickrate * 1.5))))
@@ -3401,7 +3319,7 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 	{
 		if (gA_BotInfo[client].iEnt == client)
 		{
-			return ReplayOnPlayerRunCmd(gA_BotInfo[client], buttons, impulse, vel);
+			return OnReplayRunCmd(gA_BotInfo[client], buttons, impulse, vel);
 		}
 	}
 	else if (gB_GrabbingPostFrames[client] || (ReplayEnabled(Shavit_GetBhopStyle(client)) && Shavit_GetTimerStatus(client) == Timer_Running))
@@ -3462,6 +3380,22 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 			{
 				gF_NextFrameTime[client] -= fTimescale;
 			}
+		}
+
+		if (!gCV_EnableDynamicTimeDifference.BoolValue)
+		{
+			return Plugin_Continue;
+		}
+
+		if(Shavit_InsideZone(client, Zone_Start, -1))
+		{
+			gF_TimeDifference[client] = 0.0;
+			return Plugin_Continue;
+		}
+
+		if ((GetGameTickCount() % gCV_DynamicTimeTick.IntValue) == 0)
+		{
+			gF_TimeDifference[client] = GetClosestReplayTime(client);
 		}
 	}
 
@@ -3792,14 +3726,7 @@ public Action Command_Replay(int client, int args)
 
 	if(GetClientTeam(client) > 1)
 	{
-		if(gEV_Type == Engine_TF2)
-		{
-			TF2_ChangeClientTeam(client, TFTeam_Spectator);
-		}
-		else
-		{
-			ChangeClientTeam(client, CS_TEAM_SPECTATOR);
-		}
+		ChangeClientTeam(client, CS_TEAM_SPECTATOR);
 	}
 
 	OpenReplayMenu(client);
@@ -4458,26 +4385,6 @@ void GetReplayName(int style, int track, char[] buffer, int length, int stage = 
 public void TickRate_OnTickRateChanged(float fOld, float fNew)
 {
 	gF_Tickrate = fNew;
-}
-
-public void OnGameFrame()
-{
-	if (!gCV_EnableDynamicTimeDifference.BoolValue)
-	{
-		return;
-	}
-
-	int valid = 0;
-	int modtick = GetGameTickCount() % gCV_DynamicTimeTick.IntValue;
-
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		// Using modtick & valid to spread out client updates across different ticks.
-		if (IsValidClient(client, true) && !IsFakeClient(client) && Shavit_GetTimerStatus(client) == Timer_Running && !Shavit_InsideZone(client, Zone_Start, Shavit_GetClientTrack(client)) && (++valid % gCV_DynamicTimeTick.IntValue) == modtick)
-		{
-			gF_TimeDifference[client] = GetClosestReplayTime(client);
-		}
-	}
 }
 
 // also calculates gF_VelocityDifference2D & gF_VelocityDifference3D

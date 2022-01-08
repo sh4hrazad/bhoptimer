@@ -24,9 +24,10 @@
 #define _shavit_included
 
 #define SHAVIT_VERSION "3.0.9a"
+#define TRACK_LIMIT 16
 #define STYLE_LIMIT 16
 #define MAX_ZONES 128
-#define MAX_STAGES 64
+#define MAX_STAGES 32
 #define MAX_CPZONES 16
 
 // HUD
@@ -125,7 +126,7 @@ enum
 {
 	Track_Main,
 	Track_Bonus,
-	Track_Bonus_Last = 8,
+	Track_Bonus_Last = TRACK_LIMIT,
 	TRACKS_SIZE
 };
 

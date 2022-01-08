@@ -109,7 +109,6 @@ Handle g_hForward_OnSuccesfulRTV = null;
 
 StringMap g_mMapList;
 bool gB_Late = false;
-EngineVersion gEV_Type = Engine_Unknown;
 
 bool gB_Rankings = false;
 
@@ -144,13 +143,17 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
+	if(GetEngineVersion() != Engine_CSGO)
+	{
+		SetFailState("This plugin only support for CSGO!");
+		return;
+	}
+
 	LoadTranslations("mapchooser.phrases");
 	LoadTranslations("common.phrases");
 	LoadTranslations("rockthevote.phrases");
 	LoadTranslations("nominations.phrases");
 	LoadTranslations("plugin.basecommands");
-
-	gEV_Type = GetEngineVersion();
 
 	g_aMapList = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
 	g_aAllMapsList = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
@@ -654,7 +657,7 @@ void InitiateMapVote(MapChange when)
 	menu.Pagination = MENU_NO_PAGINATION;
 	menu.SetTitle("Vote Nextmap");
 
-	int maxPageItems = (gEV_Type == Engine_CSGO) ? 8 : 9;
+	int maxPageItems = 8;
 	int mapsToAdd = maxPageItems;
 	int mapsAdded = 0;
 

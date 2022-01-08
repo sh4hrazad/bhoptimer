@@ -83,7 +83,6 @@ float gF_Maxvelocity = 3500.0;
 float gF_MenuMaxvelocity[MAXPLAYERS+1];
 
 char gS_Map[PLATFORM_MAX_PATH];
-EngineVersion gEV_Type = Engine_Unknown;
 
 ArrayList gA_ValidMaps = null;
 StringMap gA_MapTiers = null;
@@ -157,7 +156,11 @@ public void OnAllPluginsLoaded()
 
 public void OnPluginStart()
 {
-	gEV_Type = GetEngineVersion();
+	if(GetEngineVersion() != Engine_CSGO)
+	{
+		SetFailState("This plugin only support for CSGO!");
+		return;
+	}
 
 	gH_Forwards_OnTierAssigned = CreateGlobalForward("Shavit_OnTierAssigned", ET_Event, Param_String, Param_Cell);
 	gH_Forwards_OnRankAssigned = CreateGlobalForward("Shavit_OnRankAssigned", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
@@ -211,10 +214,7 @@ public void OnPluginStart()
 
 	SQL_DBConnect();
 
-	if (gEV_Type != Engine_TF2)
-	{
-		CreateTimer(1.0, Timer_MVPs, 0, TIMER_REPEAT);
-	}
+	CreateTimer(1.0, Timer_MVPs, 0, TIMER_REPEAT);
 }
 
 public void Shavit_OnStyleConfigLoaded(int styles)
@@ -551,7 +551,7 @@ public void Player_Event(Event event, const char[] name, bool dontBroadcast)
 
 	int client = GetClientOfUserId(event.GetInt("userid"));
 
-	if(IsValidClient(client) && !IsFakeClient(client) && gEV_Type != Engine_TF2)
+	if(IsValidClient(client) && !IsFakeClient(client))
 	{
 		CS_SetMVPCount_Test(client, Shavit_GetWRCount(client, -1, -1, true));
 	}
@@ -633,7 +633,7 @@ public void SQL_GetWRs_Callback(Database db, DBResultSet results, const char[] e
 		}
 	}
 
-	if (gCV_MVPRankOnes.IntValue > 0 && gEV_Type != Engine_TF2 && IsValidClient(client))
+	if (gCV_MVPRankOnes.IntValue > 0 && IsValidClient(client))
 	{
 		CS_SetMVPCount_Test(client, Shavit_GetWRCount(client, -1, -1, true));
 	}

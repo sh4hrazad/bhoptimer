@@ -115,8 +115,6 @@ Convar gCV_CustomChat = null;
 Convar gCV_Colon = null;
 ConVar gCV_TimeInMessages = null;
 
-EngineVersion gEV_Type = Engine_Unknown;
-
 Handle gH_ChatCookie = null;
 
 // -2: auto-assign - user will fallback to this if they're on an index that they don't have access to.
@@ -163,7 +161,11 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
-	gEV_Type = GetEngineVersion();
+	if(GetEngineVersion() != Engine_CSGO)
+	{
+		SetFailState("This plugin only support for CSGO!");
+		return;
+	}
 
 	LoadTranslations("shavit-common.phrases");
 	LoadTranslations("shavit-chat.phrases");
@@ -347,22 +349,8 @@ bool LoadChatSettings()
 	}
 
 	gSM_Messages.Clear();
-	bool failed;
 
-	if(gEV_Type == Engine_CSS)
-	{
-		failed = !kv.JumpToKey("CS:S");
-	}
-
-	else if(gEV_Type == Engine_CSGO)
-	{
-		failed = !kv.JumpToKey("CS:GO");
-	}
-
-	if(gEV_Type == Engine_TF2)
-	{
-		failed = !kv.JumpToKey("TF2");
-	}
+	bool failed = !kv.JumpToKey("CS:GO");
 
 	if(failed || !kv.GotoFirstSubKey(false))
 	{
@@ -703,17 +691,7 @@ public Action Command_CCHelp(int client, int args)
 		"CCHelp_Generic", client,
 		"CCHelp_GenericVariables", client);
 
-	if(IsSource2013(gEV_Type))
-	{
-		PrintToConsole(client, "%T\n\n%T",
-			"CCHelp_CSS_1", client,
-			"CCHelp_CSS_2", client);
-	}
-
-	else
-	{
-		PrintToConsole(client, "%T", "CCHelp_CSGO_1", client);
-	}
+	PrintToConsole(client, "%T", "CCHelp_CSGO_1", client);
 
 	return Plugin_Handled;
 }
@@ -1019,7 +997,7 @@ public int MenuHandler_Ranks(Menu menu, MenuAction action, int param1, int param
 void PreviewChat(int client, int rank)
 {
 	char sTextFormatting[MAXLENGTH_BUFFER];
-	gSM_Messages.GetString((gEV_Type != Engine_TF2)? "Cstrike_Chat_All":"TF_Chat_All", sTextFormatting, MAXLENGTH_BUFFER);
+	gSM_Messages.GetString("Cstrike_Chat_All", sTextFormatting, MAXLENGTH_BUFFER);
 	Format(sTextFormatting, MAXLENGTH_BUFFER, "\x01%s", sTextFormatting);
 
 	char sOriginalName[MAXLENGTH_NAME];
@@ -1348,12 +1326,9 @@ void FormatColors(char[] buffer, int size, bool colors, bool escape)
 			ReplaceString(buffer, size, gS_GlobalColorNames[i], gS_GlobalColors[i]);
 		}
 
-		if(gEV_Type == Engine_CSGO)
+		for(int i = 0; i < sizeof(gS_CSGOColorNames); i++)
 		{
-			for(int i = 0; i < sizeof(gS_CSGOColorNames); i++)
-			{
-				ReplaceString(buffer, size, gS_CSGOColorNames[i], gS_CSGOColors[i]);
-			}
+			ReplaceString(buffer, size, gS_CSGOColorNames[i], gS_CSGOColors[i]);
 		}
 
 		ReplaceString(buffer, size, "^", "\x07");
@@ -1374,15 +1349,7 @@ void FormatRandom(char[] buffer, int size)
 
 	do
 	{
-		if(IsSource2013(gEV_Type))
-		{
-			FormatEx(temp, 8, "\x07%06X", GetRandomInt(0, 0xFFFFFF));
-		}
-
-		else
-		{
-			strcopy(temp, 8, gS_CSGOColors[GetRandomInt(0, sizeof(gS_CSGOColors) - 1)]);
-		}
+		strcopy(temp, 8, gS_CSGOColors[GetRandomInt(0, sizeof(gS_CSGOColors) - 1)]);
 	}
 
 	while(ReplaceStringEx(buffer, size, "{rand}", temp) > 0);
@@ -1394,12 +1361,8 @@ void FormatChat(int client, char[] buffer, int size)
 	FormatRandom(buffer, size);
 
 	char temp[32];
-
-	if(gEV_Type != Engine_TF2)
-	{
-		CS_GetClientClanTag(client, temp, 32);
-		ReplaceString(buffer, size, "{clan}", temp);
-	}
+	CS_GetClientClanTag(client, temp, 32);
+	ReplaceString(buffer, size, "{clan}", temp);
 
 	if(gB_Rankings)
 	{
@@ -1636,12 +1599,9 @@ public int Native_GetPlainChatrank(Handle handler, int numParams)
 		ReplaceString(buf, sizeof(buf), gS_GlobalColorNames[i], "");
 	}
 
-	if (gEV_Type == Engine_CSGO)
+	for (int i = 0; i < sizeof(gS_CSGOColorNames); i++)
 	{
-		for (int i = 0; i < sizeof(gS_CSGOColorNames); i++)
-		{
-			ReplaceString(buf, sizeof(buf), gS_CSGOColorNames[i], "");
-		}
+		ReplaceString(buf, sizeof(buf), gS_CSGOColorNames[i], "");
 	}
 
 	RemoveFromString(buf, "^", 6);
@@ -1658,12 +1618,9 @@ public int Native_GetPlainChatrank(Handle handler, int numParams)
 	ReplaceString(buf, sizeof(buf), "{name}", sName);
 	ReplaceString(buf, sizeof(buf), "{rand}", "");
 
-	if (gEV_Type != Engine_TF2)
-	{
-		char sTag[32];
-		CS_GetClientClanTag(client, sTag, 32);
-		ReplaceString(buf, sizeof(buf), "{clan}", sTag);
-	}
+	char sTag[32];
+	CS_GetClientClanTag(client, sTag, 32);
+	ReplaceString(buf, sizeof(buf), "{clan}", sTag);
 
 	if (gB_Rankings)
 	{

@@ -37,8 +37,7 @@
 
 #define EFL_CHECK_UNTOUCH (1<<24)
 
-// game type (CS:S/CS:GO/TF2)
-EngineVersion gEV_Type = Engine_Unknown;
+// game type (CS:GO)
 bool gB_Protobuf = false;
 
 // hook stuff
@@ -120,7 +119,7 @@ Convar gCV_SimplerLadders = null;
 Convar gCV_UseOffsets = null;
 Convar gCV_TimeInMessages;
 Convar gCV_DebugOffsets = null;
-Convar gCV_DisableSvCheats = null;
+
 // cached cvars
 int gI_DefaultStyle = 0;
 bool gB_StyleCookies = true;
@@ -154,25 +153,6 @@ bool gB_CookiesRetrieved[MAXPLAYERS+1];
 // flags
 int gI_StyleFlag[STYLE_LIMIT];
 char gS_StyleOverride[STYLE_LIMIT][32];
-
-#if !DEBUG
-ConVar sv_cheats = null;
-
-char gS_CheatCommands[][] = {
-	"ent_setpos",
-	"setpos",
-	"setpos_exact",
-	"setpos_player",
-
-	// can be used to kill other players
-	"explode",
-	"explodevector",
-	"kill",
-	"killvector",
-
-	"give",
-};
-#endif
 
 public Plugin myinfo =
 {
@@ -246,6 +226,12 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
+	if(GetEngineVersion() != Engine_CSGO)
+	{
+		SetFailState("This plugin only support for csgo!");
+		return;
+	}
+
 	// forwards
 	gH_Forwards_Start = CreateGlobalForward("Shavit_OnStart", ET_Ignore, Param_Cell, Param_Cell);
 	gH_Forwards_StartPre = CreateGlobalForward("Shavit_OnStartPre", ET_Event, Param_Cell, Param_Cell);
@@ -273,20 +259,10 @@ public void OnPluginStart()
 	LoadTranslations("shavit-core.phrases");
 	LoadTranslations("shavit-common.phrases");
 
-	// game types
-	gEV_Type = GetEngineVersion();
 	gB_Protobuf = (GetUserMessageType() == UM_Protobuf);
 
-	if(gEV_Type == Engine_CSGO)
-	{
-		sv_autobunnyhopping = FindConVar("sv_autobunnyhopping");
-		sv_autobunnyhopping.BoolValue = false;
-	}
-
-	else if(gEV_Type != Engine_CSS && gEV_Type != Engine_TF2)
-	{
-		SetFailState("This plugin was meant to be used in CS:S, CS:GO and TF2 *only*.");
-	}
+	sv_autobunnyhopping = FindConVar("sv_autobunnyhopping");
+	sv_autobunnyhopping.BoolValue = false;
 
 	LoadDHooks();
 
@@ -372,20 +348,9 @@ public void OnPluginStart()
 	gCV_UseOffsets = new Convar("shavit_core_useoffsets", "1", "Calculates more accurate times by subtracting/adding tick offsets from the time the server uses to register that a player has left or entered a trigger", 0, true, 0.0, true, 1.0);
 	gCV_TimeInMessages = new Convar("shavit_core_timeinmessages", "0", "Whether to prefix SayText2 messages with the time.", 0, true, 0.0, true, 1.0);
 	gCV_DebugOffsets = new Convar("shavit_core_debugoffsets", "0", "Print offset upon leaving or entering a zone?", 0, true, 0.0, true, 1.0);
-	gCV_DisableSvCheats = new Convar("shavit_core_disable_sv_cheats", "1", "Force sv_cheats to 0.", 0, true, 0.0, true, 1.0);
 	gCV_DefaultStyle.AddChangeHook(OnConVarChanged);
 
 	Convar.AutoExecConfig();
-
-#if !DEBUG
-	sv_cheats = FindConVar("sv_cheats");
-	sv_cheats.AddChangeHook(sv_cheats_hook);
-
-	for (int i = 0; i < sizeof(gS_CheatCommands); i++)
-	{
-		AddCommandListener(Command_Cheats, gS_CheatCommands[i]);
-	}
-#endif
 
 	sv_enablebunnyhopping = FindConVar("sv_enablebunnyhopping");
 
@@ -481,20 +446,7 @@ void LoadDHooks()
 	delete CreateInterface;
 	delete gamedataConf;
 
-	GameData AcceptInputGameData;
-
-	if (gEV_Type == Engine_CSS)
-	{
-		AcceptInputGameData = new GameData("sdktools.games/game.cstrike");
-	}
-	else if (gEV_Type == Engine_TF2)
-	{
-		AcceptInputGameData = new GameData("sdktools.games/game.tf");
-	}
-	else if (gEV_Type == Engine_CSGO)
-	{
-		AcceptInputGameData = new GameData("sdktools.games/engine.csgo");
-	}
+	GameData AcceptInputGameData = new GameData("sdktools.games/engine.csgo");
 
 	// Stolen from dhooks-test.sp
 	offset = AcceptInputGameData.GetOffset("AcceptInput");
@@ -512,42 +464,6 @@ public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] n
 	gB_StyleCookies = (newValue[0] != '!');
 	gI_DefaultStyle = StringToInt(newValue[1]);
 }
-
-#if !DEBUG
-public void sv_cheats_hook(ConVar convar, const char[] oldValue, const char[] newValue)
-{
-	if (gCV_DisableSvCheats.BoolValue)
-	{
-		sv_cheats.SetInt(0);
-	}
-}
-
-public Action Command_Cheats(int client, const char[] command, int args)
-{
-	if (!sv_cheats.BoolValue || client == 0)
-	{
-		return Plugin_Continue;
-	}
-
-	if (StrContains(command, "kill") != -1 || StrContains(command, "explode") != -1)
-	{
-		bool bVector = StrContains(command, "vector") != -1;
-		bool bKillOther = args > (bVector ? 3 : 0);
-
-		if (!bKillOther)
-		{
-			return Plugin_Continue;
-		}
-	}
-
-	if (!(GetUserFlagBits(client) & ADMFLAG_ROOT))
-	{
-		return Plugin_Handled;
-	}
-
-	return Plugin_Continue;
-}
-#endif
 
 public void OnLibraryAdded(const char[] name)
 {
@@ -617,16 +533,6 @@ public void OnMapStart()
 	if(!LoadMessages())
 	{
 		SetFailState("Could not load the chat messages configuration file. Make sure it exists (addons/sourcemod/configs/shavit-messages.cfg) and follows the proper syntax!");
-	}
-}
-
-public void OnConfigsExecuted()
-{
-	if (gCV_DisableSvCheats.BoolValue)
-	{
-#if !DEBUG
-		sv_cheats.SetInt(0);
-#endif
 	}
 }
 
@@ -1277,7 +1183,7 @@ public Action Command_Style(int client, int args)
 		menu.AddItem("-1", "Nothing");
 	}
 
-	else if(menu.ItemCount <= ((gEV_Type == Engine_CSS)? 9:8))
+	else if(menu.ItemCount <= 8)
 	{
 		menu.Pagination = MENU_NO_PAGINATION;
 	}
@@ -1445,8 +1351,7 @@ void DoJump(int client)
 		gA_Timers[client].bJumped = true;
 	}
 
-	// TF2 doesn't use stamina
-	if(gEV_Type != Engine_TF2 && (GetStyleSettingBool(gA_Timers[client].bsStyle, "easybhop")))
+	if(GetStyleSettingBool(gA_Timers[client].bsStyle, "easybhop"))
 	{
 		SetEntPropFloat(client, Prop_Send, "m_flStamina", 0.0);
 	}
@@ -1654,28 +1559,13 @@ public int Native_CanPause(Handle handler, int numParams)
 		iFlags |= CPR_Moving;
 	}
 
+	bool bDucked = view_as<bool>(GetEntProp(client, Prop_Send, "m_bDucked"));
+	bool bDucking = view_as<bool>(GetEntProp(client, Prop_Send, "m_bDucking"));
 
-	float CS_PLAYER_DUCK_SPEED_IDEAL = 8.0;
-	bool bDucked, bDucking;
-	float fDucktime, fDuckSpeed = CS_PLAYER_DUCK_SPEED_IDEAL;
+	float fDucktime = GetEntPropFloat(client, Prop_Send, "m_flDuckAmount");
+	float fDuckSpeed = GetEntPropFloat(client, Prop_Send, "m_flDuckSpeed");
 
-	if(gEV_Type != Engine_TF2)
-	{
-		bDucked = view_as<bool>(GetEntProp(client, Prop_Send, "m_bDucked"));
-		bDucking = view_as<bool>(GetEntProp(client, Prop_Send, "m_bDucking"));
-
-		if(gEV_Type == Engine_CSS)
-		{
-			fDucktime = GetEntPropFloat(client, Prop_Send, "m_flDucktime");
-		}
-		else if(gEV_Type == Engine_CSGO)
-		{
-			fDucktime = GetEntPropFloat(client, Prop_Send, "m_flDuckAmount");
-			fDuckSpeed = GetEntPropFloat(client, Prop_Send, "m_flDuckSpeed");
-		}
-	}
-
-	if (bDucked || bDucking || fDucktime > 0.0 || fDuckSpeed < CS_PLAYER_DUCK_SPEED_IDEAL || GetClientButtons(client) & IN_DUCK)
+	if (bDucked || bDucking || fDucktime > 0.0 || fDuckSpeed < 8.0 || GetClientButtons(client) & IN_DUCK)
 	{
 		iFlags |= CPR_Duck;
 	}
@@ -2951,7 +2841,7 @@ bool LoadMessages()
 		return false;
 	}
 
-	kv.JumpToKey((IsSource2013(gEV_Type))? "CS:S":"CS:GO");
+	kv.JumpToKey("CS:GO");
 
 	kv.GetString("prefix", gS_ChatStrings.sPrefix, sizeof(chatstrings_t::sPrefix), "\x075e70d0[Timer]");
 	kv.GetString("text", gS_ChatStrings.sText, sizeof(chatstrings_t::sText), "\x07ffffff");
@@ -3654,20 +3544,6 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		return Plugin_Continue;
 	}
 
-#if !DEBUG
-	if (impulse && sv_cheats.BoolValue && !(GetUserFlagBits(client) & ADMFLAG_ROOT))
-	{
-		// Block cheat impulses
-		switch (impulse)
-		{
-			case 76, 81, 82, 83, 102, 195, 196, 197, 202, 203:
-			{
-				impulse = 0;
-			}
-		}
-	}
-#endif
-
 	int flags = GetEntityFlags(client);
 
 	SetEntityFlags(client, (flags & ~FL_ATCONTROLS));
@@ -3739,16 +3615,6 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 			gA_Timers[client].fStrafeWarning = gA_Timers[client].fCurrentTime + 0.3;
 		}
 	}
-
-	#if DEBUG
-	static int cycle = 0;
-
-	if(++cycle % 50 == 0)
-	{
-		Shavit_StopChatSound();
-		Shavit_PrintToChat(client, "vel[0]: %.01f | vel[1]: %.01f", vel[0], vel[1]);
-	}
-	#endif
 
 	int iPButtons = buttons;
 
@@ -3906,16 +3772,6 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	}
 
 	bool bInWater = (GetEntProp(client, Prop_Send, "m_nWaterLevel") >= 2);
-
-	// enable duck-jumping/bhop in tf2
-	if (gEV_Type == Engine_TF2 && GetStyleSettingBool(gA_Timers[client].bsStyle, "bunnyhopping") && (buttons & IN_JUMP) > 0 && iGroundEntity != -1)
-	{
-		float fSpeed[3];
-		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
-
-		fSpeed[2] = 289.0;
-		SetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
-	}
 
 	if (GetStyleSettingBool(gA_Timers[client].bsStyle, "autobhop") && gB_Auto[client] && (buttons & IN_JUMP) > 0 && mtMoveType == MOVETYPE_WALK && !bInWater)
 	{

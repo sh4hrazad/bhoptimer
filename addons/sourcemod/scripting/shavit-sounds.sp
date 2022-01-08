@@ -222,7 +222,7 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 
 		if(StrContains(sSound, ".") != -1)
 		{
-			PlayEventSound(client, false, sSound);
+			PlayEventSound(client, true, sSound);
 		}
 	}
 
@@ -231,7 +231,7 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 		char sSound[PLATFORM_MAX_PATH];
 		gA_NoImprovementSounds.GetString(GetRandomInt(0, gA_NoImprovementSounds.Length - 1), sSound, PLATFORM_MAX_PATH);
 
-		PlayEventSound(client, false, sSound);
+		PlayEventSound(client, true, sSound);
 	}
 }
 
