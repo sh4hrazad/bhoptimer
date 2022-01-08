@@ -597,6 +597,9 @@ void KickAllReplays()
 			KickReplay(gA_BotInfo[i]);
 		}
 	}
+
+	gI_TrackBot = -1;
+	gI_StageBot = -1;
 }
 
 public void OnLibraryAdded(const char[] name)
@@ -1417,8 +1420,15 @@ public int Native_SetReplayCacheName(Handle plugin, int numParams)
 
 public Action Timer_Cron(Handle Timer)
 {
+	int valid = 0;
+
 	for (int i = 1; i <= MaxClients; i++)
 	{
+		if(IsValidClient(i) && !IsFakeClient(i))
+		{
+			valid++;
+		}
+
 		if (gA_BotInfo[i].iEnt != i)
 		{
 			continue;
@@ -1428,6 +1438,12 @@ public Action Timer_Cron(Handle Timer)
 		{
 			RequestFrame(Frame_UpdateReplayClient, GetClientSerial(gA_BotInfo[i].iEnt));
 		}
+	}
+
+	if(valid == 0)
+	{
+		KickAllReplays();
+		return Plugin_Continue;
 	}
 
 	if (!bot_join_after_player.BoolValue || GetClientCount() >= 1)
