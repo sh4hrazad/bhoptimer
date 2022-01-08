@@ -2585,6 +2585,11 @@ void FillBotName(bot_info_t info, char sName[MAX_NAME_LENGTH])
 void UpdateBotScoreboard(bot_info_t info)
 {
 	int client = info.iEnt;
+	if(!IsValidClient(client))
+	{
+		return;
+	}
+
 	bool central = (info.iType == Replay_Central);
 	bool idle = (info.iStatus == Replay_Idle);
 
