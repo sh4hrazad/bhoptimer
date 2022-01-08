@@ -139,19 +139,6 @@ enum
 
 enum
 {
-	CSS_ANIM_FIRE_GUN_PRIMARY,
-	CSS_ANIM_FIRE_GUN_SECONDARY,
-	CSS_ANIM_THROW_GRENADE,
-	CSS_ANIM_JUMP
-}
-
-enum
-{
-	TF2_ANIM_JUMP = 6
-}
-
-enum
-{
 	CSGO_ANIM_FIRE_GUN_PRIMARY,
 	CSGO_ANIM_FIRE_GUN_PRIMARY_OPT,
 	CSGO_ANIM_FIRE_GUN_PRIMARY__SPECIAL,
@@ -464,7 +451,7 @@ public void OnPluginStart()
 	HookEvent("player_death", Player_Event, EventHookMode_Pre);
 	HookEvent("player_connect", BotEvents, EventHookMode_Pre);
 	HookEvent("player_disconnect", BotEvents, EventHookMode_Pre);
-	HookEventEx("player_connect_client", BotEvents, EventHookMode_Pre);
+
 	// The spam from this one is really bad.: "\"%s<%i><%s><%s>\" changed name to \"%s\"\n"
 	HookEvent("player_changename", BotEventsStopLogSpam, EventHookMode_Pre);
 	// "\"%s<%i><%s><%s>\" joined team \"%s\"\n"
