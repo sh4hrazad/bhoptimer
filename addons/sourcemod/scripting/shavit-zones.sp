@@ -62,6 +62,7 @@ enum struct zone_cache_t
 	int iDatabaseID;
 	int iZoneFlags;
 	int iZoneData;
+	int iHookedHammerID;
 	char sZoneHookname[128];
 }
 
@@ -98,7 +99,6 @@ int gI_ZoneFlags[MAXPLAYERS+1];
 int gI_ZoneData[MAXPLAYERS+1][ZONETYPES_SIZE];
 int gI_ZoneMaxData[TRACKS_SIZE];
 bool gB_WaitingForChatInput[MAXPLAYERS+1];
-bool gB_WaitingForChatInput_HookName[MAXPLAYERS+1];
 bool gB_HookZoneConfirm[MAXPLAYERS+1];
 bool gB_StageTimer[MAXPLAYERS+1];
 bool gB_ShowTriggers[MAXPLAYERS+1];
@@ -116,9 +116,10 @@ int gI_InsideZoneIndex[MAXPLAYERS+1];
 int gI_ZoneTrack[MAXPLAYERS+1];
 int gI_ZoneDatabaseID[MAXPLAYERS+1];
 int gI_ZoneID[MAXPLAYERS+1];
-char gS_ZoneHookname[MAXPLAYERS+1][128];
+int gI_HookZoneHammerID[MAXPLAYERS+1];
 int gI_HookZoneIndex[MAXPLAYERS+1];
 int gI_LastStartZoneIndex[MAXPLAYERS+1][TRACKS_SIZE];
+char gS_ZoneHookname[MAXPLAYERS+1][128];
 
 // zone cache
 zone_settings_t gA_ZoneSettings[ZONETYPES_SIZE][TRACKS_SIZE];
@@ -135,8 +136,6 @@ ArrayList gA_Triggers;
 ArrayList gA_HookTriggers;
 ArrayList gA_TeleDestination;
 bool gB_ZonesCreated = false;
-bool gB_MainHasStart = false;
-bool gB_MainHasEnd = false;
 int gI_Bonuses;
 int gI_Stages; // how many stages in a map, default 1.
 int gI_Checkpoints; // how many checkpoint zones in a map, default 0.
@@ -179,10 +178,7 @@ Handle gH_Forwards_OnTeleportBackStagePost = null;
 
 int gI_LastStage[MAXPLAYERS+1];
 int gI_LastCheckpoint[MAXPLAYERS+1];
-bool gB_EnterStage[MAXPLAYERS+1];
-bool gB_EnterCheckpoint[MAXPLAYERS+1];
 bool gB_LinearMap;
-int gI_LastEntityIndex = -1;
 
 public Plugin myinfo =
 {
@@ -211,8 +207,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_IsLinearMap", Native_IsLinearMap);
 	CreateNative("Shavit_IsClientCreatingZone", Native_IsClientCreatingZone);
 	CreateNative("Shavit_IsClientStageTimer", Native_IsClientStageTimer);
-	CreateNative("Shavit_EnterStage", Native_EnterStage);
-	CreateNative("Shavit_EnterCheckpoint", Native_EnterCheckpoint);
 	CreateNative("Shavit_ZoneExists", Native_ZoneExists);
 	CreateNative("Shavit_Zones_DeleteMap", Native_Zones_DeleteMap);
 
@@ -584,44 +578,6 @@ public int Native_IsClientStageTimer(Handle handler, int numParams)
 	return gB_StageTimer[GetNativeCell(1)];
 }
 
-public int Native_EnterStage(Handle handler, int numParams)
-{
-	int client = GetNativeCell(1);
-
-	if(gB_EnterStage[client])
-	{
-		gB_EnterStage[client] = false;
-
-		if(Shavit_GetStyleSettingBool(Shavit_GetBhopStyle(client), "unranked"))
-		{
-			return false;
-		}
-
-		return true;
-	}
-
-	return false;
-}
-
-public int Native_EnterCheckpoint(Handle handler, int numParams)
-{
-	int client = GetNativeCell(1);
-
-	if(gB_EnterCheckpoint[client])
-	{
-		gB_EnterCheckpoint[client] = false;
-
-		if(Shavit_GetStyleSettingBool(Shavit_GetBhopStyle(client), "unranked"))
-		{
-			return false;
-		}
-
-		return true;
-	}
-	
-	return false;
-}
-
 public int Native_GetClientLastStage(Handle handler, int numParams)
 {
 	return (gI_LastStage[GetNativeCell(1)]);
@@ -890,8 +846,6 @@ public void OnMapStart()
 	PrecacheModel("models/props/cs_office/vending_machine.mdl");
 
 	gB_LinearMap = false;
-	gB_MainHasStart = false;
-	gB_MainHasEnd = false;
 	gI_MapZones = 0;
 	gI_Bonuses = 0;
 	gI_Stages = 1;
@@ -1011,6 +965,7 @@ void ClearZone(int index)
 	gA_ZoneCache[index].iDatabaseID = -1;
 	gA_ZoneCache[index].iZoneFlags = 0;
 	gA_ZoneCache[index].iZoneData = 0;
+	gA_ZoneCache[index].iHookedHammerID = -1;
 	strcopy(gA_ZoneCache[index].sZoneHookname, sizeof(zone_cache_t::sZoneHookname), "NONE");
 }
 
@@ -1088,8 +1043,8 @@ void RefreshZones()
 {
 	char sQuery[512];
 	FormatEx(sQuery, 512,
-		"SELECT type, corner1_x, corner1_y, corner1_z, corner2_x, corner2_y, corner2_z, destination_x, destination_y, destination_z, track, %s, flags, data, hookname FROM %smapzones WHERE map = '%s';",
-		(gB_MySQL)? "id":"rowid", gS_MySQLPrefix, gS_Map);
+		"SELECT type, corner1_x, corner1_y, corner1_z, corner2_x, corner2_y, corner2_z, destination_x, destination_y, destination_z, track, id, flags, data, hammerid, hookname FROM `%smapzones` WHERE map = '%s';",
+		gS_MySQLPrefix, gS_Map);
 
 	gH_SQL.Query(SQL_RefreshZones_Callback, sQuery, 0, DBPrio_High);
 }
@@ -1104,6 +1059,9 @@ public void SQL_RefreshZones_Callback(Database db, DBResultSet results, const ch
 	}
 
 	gI_MapZones = 0;
+
+	bool mainHasStart = false;
+	bool mainHasEnd = false;
 
 	while(results.FetchRow())
 	{
@@ -1139,30 +1097,32 @@ public void SQL_RefreshZones_Callback(Database db, DBResultSet results, const ch
 		gA_ZoneCache[gI_MapZones].iZoneFlags = results.FetchInt(12);
 		gA_ZoneCache[gI_MapZones].iZoneData = results.FetchInt(13);
 		gI_ZoneMaxData[type] = results.FetchInt(13);
-		results.FetchString(14, gA_ZoneCache[gI_MapZones].sZoneHookname, 128);
+		gA_ZoneCache[gI_MapZones].iHookedHammerID = results.FetchInt(14);
+		results.FetchString(15, gA_ZoneCache[gI_MapZones].sZoneHookname, 128);
+
 		gA_ZoneCache[gI_MapZones].iEntityID = -1;
 
 		if(gA_ZoneCache[gI_MapZones].iZoneTrack == Track_Main)
 		{
 			if(type == Zone_Start)
 			{
-				gB_MainHasStart = true;
+				mainHasStart = true;
 			}
 			else if(type == Zone_End)
 			{
-				gB_MainHasEnd = true;
+				mainHasEnd = true;
 			}
 		}
 
 		gI_MapZones++;
 	}
 
-	if(!gB_MainHasStart)
+	if(!mainHasStart)
 	{
 		Shavit_PrintToChatAll("主线缺少起点区域，请联系管理员添加.");
 	}
 
-	if(!gB_MainHasEnd)
+	if(!mainHasEnd)
 	{
 		Shavit_PrintToChatAll("主线缺少终点区域，请联系管理员添加.");
 	}
@@ -1874,20 +1834,20 @@ public int HookZoneMenuHandler_SelectMethod(Menu a, MenuAction action, int param
 	return 0;
 }
 
-public int MenuHandler_BeforeSelectHookZone(Menu a, MenuAction action, int param1, int param2)
+public int MenuHandler_BeforeSelectHookZone(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_Select)
 	{
 		gI_HookZoneIndex[param1] = gA_Triggers.Get(param2);
 
-		Menu menu = new Menu(MenuHandler_SelectHookZone);
-		menu.SetTitle("%T", "HookZoneMenuBefore", param1);
+		Menu submenu = new Menu(MenuHandler_SelectHookZone);
+		submenu.SetTitle("%T", "HookZoneMenuBefore", param1);
 
-		menu.AddItem("", "Teleport To");
-		menu.AddItem("", "Hook zone");
+		submenu.AddItem("", "Teleport To This Zone");
+		submenu.AddItem("", "Hook This Zone");
 
-		menu.ExitBackButton = true;
-		menu.Display(param1, -1);
+		submenu.ExitBackButton = true;
+		submenu.Display(param1, -1);
 	}
 
 	else if(action == MenuAction_Cancel)
@@ -1897,7 +1857,7 @@ public int MenuHandler_BeforeSelectHookZone(Menu a, MenuAction action, int param
 
 	else if(action == MenuAction_End)
 	{
-		delete a;
+		delete menu;
 	}
 
 	return 0;
@@ -1907,11 +1867,12 @@ public int MenuHandler_SelectHookZone(Menu menu, MenuAction action, int param1, 
 {
 	if(action == MenuAction_Select)
 	{
-		int iEnt = gI_HookZoneIndex[param1];
+		int entity = gI_HookZoneIndex[param1];
 		char sHookname[128];
-		GetEntPropString(iEnt, Prop_Send, "m_iName", sHookname, 128, 0);
+		GetEntPropString(entity, Prop_Send, "m_iName", sHookname, 128, 0);
+
 		float origin[3];
-		GetEntPropVector(iEnt, Prop_Send, "m_vecOrigin", origin);
+		GetEntPropVector(entity, Prop_Send, "m_vecOrigin", origin);
 
 		switch(param2)
 		{
@@ -1924,12 +1885,14 @@ public int MenuHandler_SelectHookZone(Menu menu, MenuAction action, int param1, 
 
 			case 1:
 			{
+				gI_HookZoneHammerID[param1] = GetEntProp(entity, Prop_Data, "m_iHammerID");
 				strcopy(gS_ZoneHookname[param1], 128, sHookname);
 				Shavit_PrintToChat(param1, "%T", "HookZonesItem", param1, sHookname);
+				
 
 				float fMins[3], fMaxs[3];
-				GetEntPropVector(iEnt, Prop_Send, "m_vecMins", fMins);
-				GetEntPropVector(iEnt, Prop_Send, "m_vecMaxs", fMaxs);
+				GetEntPropVector(entity, Prop_Send, "m_vecMins", fMins);
+				GetEntPropVector(entity, Prop_Send, "m_vecMaxs", fMaxs);
 
 				for (int j = 0; j < 3; j++)
 				{
@@ -2360,6 +2323,8 @@ public int MenuHandler_ZoneEdit(Menu menu, MenuAction action, int param1, int pa
 			{
 				// a hack to place the player in the last step of zone editing
 				gI_MapStep[param1] = EditStep_Final;
+
+				gI_ZoneID[param1] = id;
 				gV_Point1[param1] = gV_MapZones[id][0];
 				gV_Point2[param1] = gV_MapZones[id][1];
 				gI_ZoneType[param1] = gA_ZoneCache[id].iZoneType;
@@ -2368,9 +2333,8 @@ public int MenuHandler_ZoneEdit(Menu menu, MenuAction action, int param1, int pa
 				gI_ZoneDatabaseID[param1] = gA_ZoneCache[id].iDatabaseID;
 				gI_ZoneFlags[param1] = gA_ZoneCache[id].iZoneFlags;
 				gI_ZoneData[param1][gI_ZoneType[param1]] = gA_ZoneCache[id].iZoneData;
-
-				gI_ZoneID[param1] = id;
 				strcopy(gS_ZoneHookname[param1], 128, gA_ZoneCache[id].sZoneHookname);
+				gI_HookZoneHammerID[param1] = gA_ZoneCache[id].iHookedHammerID;
 
 				// draw the zone edit
 				CreateTimer(0.1, Timer_Draw, GetClientSerial(param1), TIMER_REPEAT);
@@ -2622,15 +2586,13 @@ void Reset(int client)
 	gI_ZoneFlags[client] = 0;
 	gI_ZoneDatabaseID[client] = -1;
 	gB_WaitingForChatInput[client] = false;
-	gB_WaitingForChatInput_HookName[client] = false;
 	gB_HookZoneConfirm[client] = false;
 	strcopy(gS_ZoneHookname[client], 128, "NONE");
+	gI_HookZoneHammerID[client] = -1;
 	gI_ZoneID[client] = -1;
 	gI_ClientCurrentStage[client] = 0;
 	gI_LastStage[client] = 0;
 	gI_LastCheckpoint[client] = 0;
-	gB_EnterStage[client] = false;
-	gB_EnterCheckpoint[client] = false;
 	gB_ShowTriggers[client] = false;
 	gB_EditMaxData[client] = false;
 	gH_DrawZonesToClient[client] = null;
@@ -2965,15 +2927,6 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 			}
 		}
 
-		else if(StrEqual(sInfo, "hookname"))
-		{
-			gB_WaitingForChatInput_HookName[param1] = true;
-
-			Shavit_PrintToChat(param1, "Please enter a name");
-
-			return 0;
-		}
-
 		else if(StrEqual(sInfo, "adjust"))
 		{
 			CreateAdjustMenu(param1, 0);
@@ -2999,15 +2952,11 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
 {
-	if(((gB_WaitingForChatInput[client] || gB_WaitingForChatInput_HookName[client]) && gI_MapStep[client] == EditStep_Final) || gB_HookZoneConfirm[client])
+	if((gB_WaitingForChatInput[client] && gI_MapStep[client] == EditStep_Final) || gB_HookZoneConfirm[client])
 	{
 		if(gB_WaitingForChatInput[client])
 		{
 			gI_ZoneData[client][gI_ZoneType[client]] = StringToInt(sArgs);
-		}
-		else if(gB_WaitingForChatInput_HookName[client])
-		{
-			strcopy(gS_ZoneHookname[client], 128, sArgs);
 		}
 
 		if(gB_HookZoneConfirm[client])
@@ -3075,11 +3024,14 @@ void CreateEditMenu(int client)
 	FormatEx(sMenuItem, 64, "%T", "ZoneSetAdjust", client);
 	menu.AddItem("adjust", sMenuItem);
 
-	FormatEx(sMenuItem, 64, "hookname: %s", gS_ZoneHookname[client]);
-	menu.AddItem("hookname", sMenuItem);
-
 	FormatEx(sMenuItem, 64, "%T", "ZoneForceRender", client, ((gI_ZoneFlags[client] & ZF_ForceRender) > 0)? "＋":"－");
 	menu.AddItem("forcerender", sMenuItem);
+
+	FormatEx(sMenuItem, 64, "hookname: %s", gS_ZoneHookname[client]);
+	menu.AddItem("null", sMenuItem, ITEMDRAW_DISABLED);
+
+	FormatEx(sMenuItem, 64, "hammerid: %d", gI_HookZoneHammerID[client]);
+	menu.AddItem("null", sMenuItem, ITEMDRAW_DISABLED);
 
 	menu.ExitButton = false;
 	menu.Display(client, -1);
@@ -3184,8 +3136,8 @@ void InsertZone(int client)
 		Shavit_LogMessage("%L - added %s to map `%s`.", client, sZoneName, gS_Map);
 
 		FormatEx(sQuery, 512,
-			"INSERT INTO %smapzones (map, type, corner1_x, corner1_y, corner1_z, corner2_x, corner2_y, corner2_z, destination_x, destination_y, destination_z, track, flags, data, hookname) VALUES ('%s', %d, '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', %d, %d, %d, '%s');",
-			gS_MySQLPrefix, gS_Map, iType, gV_Point1[client][0], gV_Point1[client][1], gV_Point1[client][2], gV_Point2[client][0], gV_Point2[client][1], gV_Point2[client][2], gV_Teleport[client][0], gV_Teleport[client][1], gV_Teleport[client][2], gI_ZoneTrack[client], gI_ZoneFlags[client], gI_ZoneData[client][iType], gS_ZoneHookname[client]);
+			"INSERT INTO %smapzones (map, type, corner1_x, corner1_y, corner1_z, corner2_x, corner2_y, corner2_z, destination_x, destination_y, destination_z, track, flags, data, hammerid, hookname) VALUES ('%s', %d, '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', %d, %d, %d, %d, '%s');",
+			gS_MySQLPrefix, gS_Map, iType, gV_Point1[client][0], gV_Point1[client][1], gV_Point1[client][2], gV_Point2[client][0], gV_Point2[client][1], gV_Point2[client][2], gV_Teleport[client][0], gV_Teleport[client][1], gV_Teleport[client][2], gI_ZoneTrack[client], gI_ZoneFlags[client], gI_ZoneData[client][iType], gI_HookZoneHammerID[client], gS_ZoneHookname[client]);
 	}
 
 	else // update
@@ -3204,8 +3156,8 @@ void InsertZone(int client)
 		}
 
 		FormatEx(sQuery, 512,
-			"UPDATE %smapzones SET corner1_x = '%.03f', corner1_y = '%.03f', corner1_z = '%.03f', corner2_x = '%.03f', corner2_y = '%.03f', corner2_z = '%.03f', destination_x = '%.03f', destination_y = '%.03f', destination_z = '%.03f', track = %d, flags = %d, data = %d, hookname = '%s' WHERE %s = %d;",
-			gS_MySQLPrefix, gV_Point1[client][0], gV_Point1[client][1], gV_Point1[client][2], gV_Point2[client][0], gV_Point2[client][1], gV_Point2[client][2], gV_Teleport[client][0], gV_Teleport[client][1], gV_Teleport[client][2], gI_ZoneTrack[client], gI_ZoneFlags[client], gI_ZoneData[client][iType], gS_ZoneHookname[client], (gB_MySQL)? "id":"rowid", gI_ZoneDatabaseID[client]);
+			"UPDATE %smapzones SET corner1_x = '%.03f', corner1_y = '%.03f', corner1_z = '%.03f', corner2_x = '%.03f', corner2_y = '%.03f', corner2_z = '%.03f', destination_x = '%.03f', destination_y = '%.03f', destination_z = '%.03f', track = %d, flags = %d, data = %d, hammerid = %d WHERE id = %d;",
+			gS_MySQLPrefix, gV_Point1[client][0], gV_Point1[client][1], gV_Point1[client][2], gV_Point2[client][0], gV_Point2[client][1], gV_Point2[client][2], gV_Teleport[client][0], gV_Teleport[client][1], gV_Teleport[client][2], gI_ZoneTrack[client], gI_ZoneFlags[client], gI_ZoneData[client][iType], gI_HookZoneHammerID[client], gI_ZoneDatabaseID[client]);
 	}
 
 	gH_SQL.Query(SQL_InsertZone_Callback, sQuery, GetClientSerial(client));
@@ -3438,8 +3390,8 @@ void SQL_DBConnect()
 
 	char sQuery[1024];
 	FormatEx(sQuery, 1024,
-		"CREATE TABLE IF NOT EXISTS `%smapzones` (`id` INT AUTO_INCREMENT, `map` VARCHAR(128), `type` INT, `corner1_x` FLOAT, `corner1_y` FLOAT, `corner1_z` FLOAT, `corner2_x` FLOAT, `corner2_y` FLOAT, `corner2_z` FLOAT, `destination_x` FLOAT NOT NULL DEFAULT 0, `destination_y` FLOAT NOT NULL DEFAULT 0, `destination_z` FLOAT NOT NULL DEFAULT 0, `track` INT NOT NULL DEFAULT 0, `flags` INT NOT NULL DEFAULT 0, `data` INT NOT NULL DEFAULT 0, `hookname` VARCHAR(128) NOT NULL DEFAULT 'NONE', PRIMARY KEY (`id`))%s;",
-		gS_MySQLPrefix, (gB_MySQL)? " ENGINE=INNODB":"");
+		"CREATE TABLE IF NOT EXISTS `%smapzones` (`id` INT AUTO_INCREMENT, `map` VARCHAR(128), `type` INT, `corner1_x` FLOAT, `corner1_y` FLOAT, `corner1_z` FLOAT, `corner2_x` FLOAT, `corner2_y` FLOAT, `corner2_z` FLOAT, `destination_x` FLOAT NOT NULL DEFAULT 0, `destination_y` FLOAT NOT NULL DEFAULT 0, `destination_z` FLOAT NOT NULL DEFAULT 0, `track` INT NOT NULL DEFAULT 0, `flags` INT NOT NULL DEFAULT 0, `data` INT NOT NULL DEFAULT 0, `hammerid` INT NOT NULL DEFAULT -1, `hookname` VARCHAR(128) NOT NULL DEFAULT 'NONE', PRIMARY KEY (`id`)) ENGINE=INNODB;",
+		gS_MySQLPrefix);
 
 	gH_SQL.Query(SQL_CreateTable_Callback, sQuery);
 }
@@ -3469,8 +3421,6 @@ public void Shavit_OnRestart(int client, int track)
 
 		DoTeleport(client, iIndex);
 	}
-
-	DispatchKeyValue(client, "targetname", "");
 
 	Shavit_StartTimer(client, track);
 }
@@ -3569,7 +3519,24 @@ void CreateZoneEntities()
 		}
 		else
 		{
-			CreateHookZone(i);
+			if(!CreateHookZone(i))
+			{
+				char sTrack[32];
+				GetTrackName(LANG_SERVER, gA_ZoneCache[i].iZoneTrack, sTrack, sizeof(sTrack));
+
+				char sType[32];
+				GetZoneName(LANG_SERVER, gA_ZoneCache[i].iZoneType, sType, sizeof(sType));
+
+				char sLogs[256];
+				FormatEx(sLogs, sizeof(sLogs), "该hook区域丢失hammerid, 请联系OP重新设置hook区域. Hookzone的名字是: \"%s\", Track: \"%s\", 类别为: \"%s\".", 
+					gA_ZoneCache[i].sZoneHookname, sTrack, sType);
+				Shavit_PrintToChatAll(sLogs);
+
+				Format(sLogs, sizeof(sLogs), "%s ***Map: %s***", sLogs, gS_Map);
+				Shavit_LogMessage(sLogs);
+
+				continue;
+			}
 		}
 
 		SetCenterByDestination(i);
@@ -3644,18 +3611,13 @@ bool CreateNormalZone(int zone)
 	return true;
 }
 
-void CreateHookZone(int zone)
+bool CreateHookZone(int zone)
 {
-	gI_LastEntityIndex = -1;
-
 	for(int i = 0; i < gA_Triggers.Length; i++)
 	{
 		int entity = gA_Triggers.Get(i);
 
-		char sTriggerName[128];
-		GetEntPropString(entity, Prop_Send, "m_iName", sTriggerName, sizeof(sTriggerName));
-
-		if(StrEqual(sTriggerName, gA_ZoneCache[zone].sZoneHookname) && gI_LastEntityIndex != entity)
+		if(gA_ZoneCache[zone].iHookedHammerID == GetEntProp(entity, Prop_Data, "m_iHammerID"))
 		{
 			if(gA_ZoneCache[zone].iZoneType != Zone_Mark)
 			{
@@ -3675,13 +3637,14 @@ void CreateHookZone(int zone)
 			SDKHook(entity, SDKHook_TouchPost, TouchPost);
 
 			gI_EntityZone[entity] = zone;
-			gI_LastEntityIndex = entity;
 			gA_ZoneCache[zone].iEntityID = entity;
 			gA_ZoneCache[zone].bHooked = true;
 
-			break; // stop looping from finding triggers to hook
+			return true;
 		}
 	}
+
+	return false;
 }
 
 void SetCenterByDestination(int zone)
@@ -3762,7 +3725,6 @@ public void StartTouchPost(int entity, int other)
 
 					if(gI_ClientCurrentStage[other] > gI_LastStage[other] && !gB_LinearMap)
 					{
-						gB_EnterStage[other] = true;
 						Shavit_FinishStage(other);
 					}
 
@@ -3773,7 +3735,6 @@ public void StartTouchPost(int entity, int other)
 
 				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && !gB_StageTimer[other])
 				{
-					gB_EnterCheckpoint[other] = true;
 					Shavit_FinishCheckpoint(other);
 				}
 
@@ -3797,13 +3758,11 @@ public void StartTouchPost(int entity, int other)
 
 				if(gI_ClientCurrentStage[other] > gI_LastStage[other])
 				{
-					gB_EnterStage[other] = true;
 					Shavit_FinishStage(other);
 				}
 
 				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && !gB_StageTimer[other])
 				{
-					gB_EnterCheckpoint[other] = true;
 					Shavit_FinishCheckpoint(other);
 				}
 
@@ -3817,7 +3776,6 @@ public void StartTouchPost(int entity, int other)
 
 				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other])
 				{
-					gB_EnterCheckpoint[other] = true;
 					Shavit_FinishCheckpoint(other);
 				}
 
@@ -4181,6 +4139,8 @@ void DrawZoneToSingleClient(int client, float points[8][3], int color[4], float 
 
 void DoTeleport(int client, int zone)
 {
+	DispatchKeyValue(client, "targetname", "");
+
 	if(!EmptyVector(gV_CustomDestinations[client][zone]))
 	{
 		TeleportEntity(client, gV_CustomDestinations[client][zone], gV_CustomDestinationsAngle[client][zone], view_as<float>({0.0, 0.0, 0.0}));
