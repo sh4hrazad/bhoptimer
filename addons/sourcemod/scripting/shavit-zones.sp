@@ -3759,11 +3759,11 @@ public void StartTouchPost(int entity, int other)
 				if(gI_ClientCurrentStage[other] > gI_LastStage[other])
 				{
 					Shavit_FinishStage(other);
-				}
 
-				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && !gB_StageTimer[other])
-				{
-					Shavit_FinishCheckpoint(other);
+					if(!gB_StageTimer[other])
+					{
+						Shavit_FinishCheckpoint(other);
+					}
 				}
 
 				gI_LastStage[other] = data;
