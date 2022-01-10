@@ -123,8 +123,8 @@
 	}
 	"MiscSegmentedCommand"
 	{
-		"en"		"Use {gold}!cp{default} to re-open the segmented checkpoints menu."
-		"chi"		"输入{gold}!CP{default}重新打开Segment存点菜单。"
+		"en"		"Use {gold}!cpmenu{default} to re-open the segmented checkpoints menu."
+		"chi"		"输入{gold}!cpmenu{default}重新打开Segment存点菜单。"
 	}
 	// ---------- Menus ---------- //
 	"StopTimerWarning"
