@@ -389,14 +389,7 @@ public void Shavit_OnStartTimer_Post(int client, int style, int track, float spe
 	}
 
 	Shavit_PrintToChat(client, sPrestrafe);
-
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
-		{
-			Shavit_PrintToChat(i, sPrestrafe);
-		}
-	}
+	SendMessageToSpectator(client, sPrestrafe);
 }
 
 public Action Shavit_OnStage(int client, int stage)
@@ -416,14 +409,7 @@ public void Shavit_OnStageTimer_Post(int client, int style, int stage, float spe
 	char sPrestrafe[128];
 	FormatEx(sPrestrafe, 128, "%T", "StageWRCPPrestrafe", client, stage, RoundToFloor(speed), gS_PreStrafeDiff[client]);
 	Shavit_PrintToChat(client, sPrestrafe);
-
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
-		{
-			Shavit_PrintToChat(i, sPrestrafe);
-		}
-	}
+	SendMessageToSpectator(client, sPrestrafe);
 }
 
 public void Shavit_OnFinishStage(int client, int stage, int style, float time, bool improved)
@@ -461,7 +447,8 @@ public void Shavit_OnFinishStage(int client, int stage, int style, float time, b
 		FormatEx(sMessage, 255, "%T", "ZoneStageTime-Noimproved", client, stage, sTime, sDifftime);
 	}
 
-	Shavit_PrintToChat(client, "%s", sMessage);
+	Shavit_PrintToChat(client, sMessage);
+	SendMessageToSpectator(client, sMessage);
 }
 
 public void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float time, float diff, float prespeed)
@@ -514,7 +501,8 @@ public Action Timer_CPTimeMessage(Handle timer, DataPack dp)
 
 	delete dp;
 
-	Shavit_PrintToChat(client, "%s", sMessage);
+	Shavit_PrintToChat(client, sMessage);
+	SendMessageToSpectator(client, sMessage);
 
 	return Plugin_Stop;
 }
@@ -528,14 +516,20 @@ public void Shavit_OnLeaveStage(int client, int stage, int style, float leavespe
 
 	FormatDiffPreStrafeSpeed(gS_PreStrafeDiff[client], leavespeed, Shavit_GetWRCPPostspeed(stage, style));
 
-	Shavit_PrintToChat(client, "%T", "CPStagePrestrafe", client, stage, RoundToFloor(leavespeed), gS_PreStrafeDiff[client]);
+	char sPrestrafe[128];
+	FormatEx(sPrestrafe, sizeof(sPrestrafe), "%T", "CPStagePrestrafe", client, stage, RoundToFloor(leavespeed), gS_PreStrafeDiff[client]);
+	Shavit_PrintToChat(client, sPrestrafe);
+	SendMessageToSpectator(client, sPrestrafe);
 }
 
 public void Shavit_OnEnterCheckpoint(int client, int cp, int style, float enterspeed, float time)
 {
 	FormatDiffPreStrafeSpeed(gS_PreStrafeDiff[client], enterspeed, Shavit_GetWRCPPrespeed(cp, style));
 
-	Shavit_PrintToChat(client, "%T", "CPLinearPrestrafe", client, cp, RoundToFloor(enterspeed), gS_PreStrafeDiff[client]);
+	char sPrestrafe[128];
+	FormatEx(sPrestrafe, sizeof(sPrestrafe), "%T", "CPLinearPrestrafe", client, cp, RoundToFloor(enterspeed), gS_PreStrafeDiff[client]);
+	Shavit_PrintToChat(client, sPrestrafe);
+	SendMessageToSpectator(client, sPrestrafe);
 }
 
 void FormatDiffPreStrafeSpeed(char[] buffer, float originSpeed, float wrSpeed)
@@ -1520,5 +1514,16 @@ stock void RemoveColors(char[] string, int size)
 	for(int x = 0; x < sizeof(gS_CSGOColorNames); x++)
 	{
 		ReplaceString(string, size, gS_CSGOColorNames[x], "");
+	}
+}
+
+stock void SendMessageToSpectator(int client, const char[] message)
+{
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
+		{
+			Shavit_PrintToChat(i, message);
+		}
 	}
 }

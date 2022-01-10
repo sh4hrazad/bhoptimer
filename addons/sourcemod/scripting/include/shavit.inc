@@ -3285,13 +3285,6 @@ native bool Shavit_IsClientStageTimer(int client);
 native void Shavit_FinishStage(int client, bool bypass = true);
 
 /**
- * Check player if they went to another stage.
- * @param client					Client index.
- * @return							True if they went.
- */
-native bool Shavit_EnterStage(int client);
-
-/**
  * Detect checkpoint conditions first.
  * If true, finishes the checkpoint for a player, with their current timer stats defaultly(depend on bypass).
  * Will not teleport the player to anywhere, it's handled inside the mapzones plugin.
@@ -3301,13 +3294,6 @@ native bool Shavit_EnterStage(int client);
  * @noreturn
  */
 native void Shavit_FinishCheckpoint(int client, bool bypass = true);
-
-/**
- * Check player if they went to another checkpoint.
- * @param client					Client index.
- * @return							True if they went.
- */
-native bool Shavit_EnterCheckpoint(int client);
 
 /*
  * Used to find a looping replay bot from the loop config name.
@@ -3491,9 +3477,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetWRCPPostspeed");
 	MarkNativeAsOptional("Shavit_GetWRCPDiffTime");
 	MarkNativeAsOptional("Shavit_FinishStage");
-	MarkNativeAsOptional("Shavit_EnterStage");
 	MarkNativeAsOptional("Shavit_FinishCheckpoint");
-	MarkNativeAsOptional("Shavit_EnterCheckpoint");
 	MarkNativeAsOptional("Shavit_GetReplayPreFrames");
 	MarkNativeAsOptional("Shavit_GetReplayPostFrames");
 	MarkNativeAsOptional("Shavit_GetReplayCachePreFrames");
