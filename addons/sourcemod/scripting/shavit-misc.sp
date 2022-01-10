@@ -36,6 +36,9 @@
 #pragma semicolon 1
 #pragma dynamic 524288
 
+// stolen from cs_shareddefs.cpp
+const float CS_PLAYER_DUCK_SPEED_IDEAL = 8.0;
+
 #define CP_ANGLES				(1 << 0)
 #define CP_VELOCITY				(1 << 1)
 
@@ -130,7 +133,8 @@ Convar gCV_RestrictNoclip = null;
 Convar gCV_BotFootsteps = null;
 Convar gCV_SpecScoreboardOrder = null;
 Convar gCV_ExperimentalSegmentedEyeAngleFix = null;
-ConVar gCV_CSGOUnlockMovement = null;
+Convar gCV_CSGOUnlockMovement = null;
+Convar gCV_CSGOFixDuckTime = null;
 
 // external cvars
 ConVar sv_cheats = null;
@@ -362,6 +366,7 @@ public void OnPluginStart()
 	gCV_ExperimentalSegmentedEyeAngleFix = new Convar("shavit_misc_experimental_segmented_eyeangle_fix", "1", "When teleporting to a segmented checkpoint, the player's old eye-angles persist in replay-frames for as many ticks they're behind the server in latency. This applies the teleport-position angles to the replay-frame for that many ticks.", 0, true, 0.0, true, 1.0);
 	gCV_SpecScoreboardOrder = new Convar("shavit_misc_spec_scoreboard_order", "1", "Use scoreboard ordering for players when changing target when spectating.", 0, true, 0.0, true, 1.0);
 	gCV_CSGOUnlockMovement = new Convar("shavit_misc_csgo_unlock_movement", "1", "Removes max speed limitation from players on the ground. Feels like CS:S.", 0, true, 0.0, true, 1.0);
+	gCV_CSGOFixDuckTime = new Convar("shavit_misc_csgo_fixduck", "1", "Fixing the broken duck. Feels like CS:S.", 0, true, 0.0, true, 1.0);
 
 	gCV_HideRadar.AddChangeHook(OnConVarChanged);
 	gCV_CSGOUnlockMovement.AddChangeHook(OnConVarChanged);
@@ -1366,6 +1371,11 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 	bool bInStart = Shavit_InsideZone(client, Zone_Start, track);
 	bool bInStage = Shavit_InsideZone(client, Zone_Stage, track);
 	bool bLimitpre = Shavit_GetMapLimitspeed();
+
+	if (gCV_CSGOFixDuckTime.BoolValue && (buttons & IN_DUCK))
+	{
+		SetEntPropFloat(client, Prop_Send, "m_flDuckSpeed", CS_PLAYER_DUCK_SPEED_IDEAL);
+	}
 
 	// i will not be adding a setting to toggle this off
 	if(bNoclip)
