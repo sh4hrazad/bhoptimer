@@ -584,13 +584,22 @@ public void Shavit_OnEnterStageZone_Bot(int bot, int stage)
 		FormatHUDSeconds(time, sTime, 32);
 	}
 
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(i != bot && (IsValidClient(i) && GetSpectatorTarget(i, i) == bot))
-		{
-			Shavit_PrintToChat(i, "%T", failed ? "EnterStageMessage_Bot_NoImproved" : "EnterStageMessage_Bot_Improved", i, stage, sTime, attemps);
-		}
-	}
+	SendMessageToSpectator(bot, "%t", failed ? "EnterStageMessage_Bot_NoImproved" : "EnterStageMessage_Bot_Improved", stage, sTime, attemps, true);
+}
+
+public void Shavit_OnLeaveStartZone_Bot(int bot, int track, float speed)
+{
+	SendMessageToSpectator(bot, "%t", "BotPrestrafe", RoundToFloor(speed), true);
+}
+
+public void Shavit_OnLeaveStageZone_Bot(int bot, int stage, float speed)
+{
+	SendMessageToSpectator(bot, "%t", "BotPrestrafe", RoundToFloor(speed), true);
+}
+
+public void Shavit_OnLeaveCheckpointZone_Bot(int bot, int cp, float speed)
+{
+	SendMessageToSpectator(bot, "%t", "BotPrestrafe", RoundToFloor(speed), true);
 }
 
 public void OnClientPutInServer(int client)
@@ -1517,13 +1526,24 @@ stock void RemoveColors(char[] string, int size)
 	}
 }
 
-stock void SendMessageToSpectator(int client, const char[] message)
+stock void SendMessageToSpectator(int client, const char[] message, any ..., bool translate = false)
 {
 	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
 		{
-			Shavit_PrintToChat(i, message);
+			if(!translate)
+			{
+				Shavit_PrintToChat(i, message);
+			}
+			else
+			{
+				SetGlobalTransTarget(i);
+
+				char sBuffer[256];
+				VFormat(sBuffer, sizeof(sBuffer), message, 3);
+				Shavit_PrintToChat(i, sBuffer);
+			}
 		}
 	}
 }

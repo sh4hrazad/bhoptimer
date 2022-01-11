@@ -1256,6 +1256,19 @@ forward Action Shavit_OnDelete(int client, int index);
 forward void Shavit_OnEnterZone(int client, int type, int track, int id, int entity, int data);
 
 /**
+ * Called when a player leaves a zone.
+ *
+ * @param client					Client index.
+ * @param type						Zone type.
+ * @param track						Zone track.
+ * @param id						Zone ID.
+ * @param entity					Zone trigger entity index.
+ * @param data						Zone data if any.
+ * @noreturn
+ */
+forward void Shavit_OnLeaveZone(int client, int type, int track, int id, int entity, int data);
+
+/**
  * Called when a bot enters a stage zone.
  *
  * @param bot						Bot index.
@@ -1274,17 +1287,34 @@ forward void Shavit_OnEnterStageZone_Bot(int bot, int stage);
 forward void Shavit_OnEnterCheckpointZone_Bot(int bot, int cp);
 
 /**
- * Called when a player leaves a zone.
+ * Called when a bot leaves a start zone.
  *
- * @param client					Client index.
- * @param type						Zone type.
- * @param track						Zone track.
- * @param id						Zone ID.
- * @param entity					Zone trigger entity index.
- * @param data						Zone data if any.
+ * @param bot						Bot index.
+ * @param track						Track id.
+ * @param speed						3D speed.
  * @noreturn
  */
-forward void Shavit_OnLeaveZone(int client, int type, int track, int id, int entity, int data);
+forward void Shavit_OnLeaveStartZone_Bot(int bot, int track, float speed);
+
+/**
+ * Called when a bot leaves a stage zone.
+ *
+ * @param bot						Bot index.
+ * @param stage						Stage id.
+ * @param speed						3D speed.
+ * @noreturn
+ */
+forward void Shavit_OnLeaveStageZone_Bot(int bot, int stage, float speed);
+
+/**
+ * Called when a bot leaves a checkpoint zone.
+ *
+ * @param bot						Bot index.
+ * @param cp						Checkpoint id.
+ * @param speed						3D speed.
+ * @noreturn
+ */
+forward void Shavit_OnLeaveCheckpointZone_Bot(int bot, int cp, float speed);
 
 /**
  * Called after a player start timer.

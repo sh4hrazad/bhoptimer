@@ -167,9 +167,12 @@ char gS_MySQLPrefix[32];
 
 // forwards
 Handle gH_Forwards_EnterZone = null;
-Handle gH_Forwards_EnterStageZone = null;
-Handle gH_Forwards_EnterCheckpointZone = null;
 Handle gH_Forwards_LeaveZone = null;
+Handle gH_Forwards_BotEnterStageZone = null;
+Handle gH_Forwards_BotEnterCheckpointZone = null;
+Handle gH_Forwards_BotLeaveStartZone = null;
+Handle gH_Forwards_BotLeaveStageZone = null;
+Handle gH_Forwards_BotLeaveCheckpointZone = null;
 Handle gH_Forwards_StartTimer_Post = null;
 Handle gH_Forwards_StageTimer_Post = null;
 Handle gH_Forwards_OnStage = null;
@@ -277,9 +280,12 @@ public void OnPluginStart()
 
 	// forwards
 	gH_Forwards_EnterZone = CreateGlobalForward("Shavit_OnEnterZone", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
-	gH_Forwards_EnterStageZone = CreateGlobalForward("Shavit_OnEnterStageZone_Bot", ET_Event, Param_Cell, Param_Cell);
-	gH_Forwards_EnterCheckpointZone = CreateGlobalForward("Shavit_OnEnterCheckpointZone_Bot", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_LeaveZone = CreateGlobalForward("Shavit_OnLeaveZone", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
+	gH_Forwards_BotEnterStageZone = CreateGlobalForward("Shavit_OnEnterStageZone_Bot", ET_Event, Param_Cell, Param_Cell);
+	gH_Forwards_BotEnterCheckpointZone = CreateGlobalForward("Shavit_OnEnterCheckpointZone_Bot", ET_Event, Param_Cell, Param_Cell);
+	gH_Forwards_BotLeaveStartZone = CreateGlobalForward("Shavit_OnLeaveStartZone_Bot", ET_Event, Param_Cell, Param_Cell, Param_Float);
+	gH_Forwards_BotLeaveStageZone = CreateGlobalForward("Shavit_OnLeaveStageZone_Bot", ET_Event, Param_Cell, Param_Cell, Param_Float);
+	gH_Forwards_BotLeaveCheckpointZone = CreateGlobalForward("Shavit_OnLeaveCheckpointZone_Bot", ET_Event, Param_Cell, Param_Cell, Param_Float);
 	gH_Forwards_StartTimer_Post = CreateGlobalForward("Shavit_OnStartTimer_Post", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
 	gH_Forwards_StageTimer_Post = CreateGlobalForward("Shavit_OnStageTimer_Post", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
 	gH_Forwards_OnStage = CreateGlobalForward("Shavit_OnStage", ET_Event, Param_Cell, Param_Cell);
@@ -3683,9 +3689,10 @@ public void StartTouchPost(int entity, int other)
 		return;
 	}
 
-	int type = gA_ZoneCache[gI_EntityZone[entity]].iZoneType;
-	int track = gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack;
-	int data = gA_ZoneCache[gI_EntityZone[entity]].iZoneData;
+	int entityzone = gI_EntityZone[entity];
+	int type = gA_ZoneCache[entityzone].iZoneType;
+	int track = gA_ZoneCache[entityzone].iZoneTrack;
+	int data = gA_ZoneCache[entityzone].iZoneData;
 
 	if(!IsFakeClient(other))
 	{
@@ -3700,7 +3707,7 @@ public void StartTouchPost(int entity, int other)
 		Call_PushCell(other);
 		Call_PushCell(type);
 		Call_PushCell(track);
-		Call_PushCell(gI_EntityZone[entity]);
+		Call_PushCell(entityzone);
 		Call_PushCell(entity);
 		Call_PushCell(data);
 		Call_Finish();
@@ -3713,8 +3720,8 @@ public void StartTouchPost(int entity, int other)
 				gI_ClientCurrentCP[other] = 0;
 				gI_LastStage[other] = 1;
 				gI_LastCheckpoint[other] = (gB_LinearMap) ? 0 : 1;
-				gI_InsideZoneIndex[other] = gI_EntityZone[entity];
-				gI_LastStartZoneIndex[other][track] = gI_EntityZone[entity];
+				gI_InsideZoneIndex[other] = entityzone;
+				gI_LastStartZoneIndex[other][track] = entityzone;
 			}
 
 			case Zone_End:
@@ -3752,7 +3759,7 @@ public void StartTouchPost(int entity, int other)
 
 			case Zone_Stage:
 			{
-				gI_InsideZoneIndex[other] = gI_EntityZone[entity];
+				gI_InsideZoneIndex[other] = entityzone;
 				gI_ClientCurrentStage[other] = data;
 				gI_ClientCurrentCP[other] = data;
 
@@ -3793,13 +3800,13 @@ public void StartTouchPost(int entity, int other)
 
 			case Zone_Teleport:
 			{
-				if(EmptyVector(gV_Destinations[gI_EntityZone[entity]]))
+				if(EmptyVector(gV_Destinations[entityzone]))
 				{
 					FakeClientCommand(other, "sm_r");
 				}
 				else
 				{
-					TeleportEntity(other, gV_Destinations[gI_EntityZone[entity]], NULL_VECTOR, NULL_VECTOR);
+					TeleportEntity(other, gV_Destinations[entityzone], NULL_VECTOR, NULL_VECTOR);
 				}
 			}
 
@@ -3810,7 +3817,7 @@ public void StartTouchPost(int entity, int other)
 		}
 
 		gB_InsideZone[other][type][track] = true;
-		gB_InsideZoneID[other][gI_EntityZone[entity]] = true;
+		gB_InsideZoneID[other][entityzone] = true;
 	}
 
 	else
@@ -3825,7 +3832,7 @@ public void StartTouchPost(int entity, int other)
 
 			case Zone_Stage:
 			{
-				Call_StartForward(gH_Forwards_EnterStageZone);
+				Call_StartForward(gH_Forwards_BotEnterStageZone);
 				Call_PushCell(other);
 				Call_PushCell(data);
 				Call_Finish();
@@ -3835,7 +3842,7 @@ public void StartTouchPost(int entity, int other)
 
 			case Zone_Checkpoint:
 			{
-				Call_StartForward(gH_Forwards_EnterCheckpointZone);
+				Call_StartForward(gH_Forwards_BotEnterCheckpointZone);
 				Call_PushCell(other);
 				Call_PushCell(data);
 				Call_Finish();
@@ -3848,7 +3855,7 @@ public void StartTouchPost(int entity, int other)
 
 public void EndTouchPost(int entity, int other)
 {
-	if(other < 1 || other > MaxClients || Shavit_GetTimerStatus(other) == Timer_Paused || gI_EntityZone[entity] == -1 || gI_EntityZone[entity] >= sizeof(gA_ZoneCache) || IsFakeClient(other))
+	if(other < 1 || other > MaxClients || Shavit_GetTimerStatus(other) == Timer_Paused || gI_EntityZone[entity] == -1 || gI_EntityZone[entity] >= sizeof(gA_ZoneCache))
 	{
 		return;
 	}
@@ -3856,50 +3863,93 @@ public void EndTouchPost(int entity, int other)
 	int entityzone = gI_EntityZone[entity];
 	int type = gA_ZoneCache[entityzone].iZoneType;
 	int track = gA_ZoneCache[entityzone].iZoneTrack;
-
-	gB_InsideZone[other][type][track] = false;
-	gB_InsideZoneID[other][entityzone] = false;
-
-	Action result = Plugin_Continue;
-	Call_StartForward(gH_Forwards_LeaveZone);
-	Call_PushCell(other);
-	Call_PushCell(type);
-	Call_PushCell(track);
-	Call_PushCell(entityzone);
-	Call_PushCell(entity);
-	Call_PushCell(gA_ZoneCache[entityzone].iZoneData);
-	Call_Finish(result);
-
-	if(result != Plugin_Continue)
-	{
-		return;
-	}
+	int data = gA_ZoneCache[entityzone].iZoneData;
 
 	float fSpeed[3];
 	GetEntPropVector(other, Prop_Data, "m_vecAbsVelocity", fSpeed);
 	float fSpeed3D = (SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0) + Pow(fSpeed[2], 2.0)));
-	float fTime = Shavit_GetClientTime(other);
 
-	if(fTime > 0.0 && fTime <= 0.5)
+	if(!IsFakeClient(other))
 	{
-		if(type == Zone_Start)
+		gB_InsideZone[other][type][track] = false;
+		gB_InsideZoneID[other][entityzone] = false;
+
+		Action result = Plugin_Continue;
+		Call_StartForward(gH_Forwards_LeaveZone);
+		Call_PushCell(other);
+		Call_PushCell(type);
+		Call_PushCell(track);
+		Call_PushCell(entityzone);
+		Call_PushCell(entity);
+		Call_PushCell(data);
+		Call_Finish(result);
+
+		if(result != Plugin_Continue)
 		{
-			Call_StartForward(gH_Forwards_StartTimer_Post);
-			Call_PushCell(other);
-			Call_PushCell(Shavit_GetBhopStyle(other));
-			Call_PushCell(track);
-			Call_PushFloat(fSpeed3D);
-			Call_Finish();
+			return;
 		}
 
-		else if(type == Zone_Stage && gB_StageTimer[other])
+		float fTime = Shavit_GetClientTime(other);
+
+		if(fTime > 0.0 && fTime <= 0.5)
 		{
-			Call_StartForward(gH_Forwards_StageTimer_Post);
-			Call_PushCell(other);
-			Call_PushCell(Shavit_GetBhopStyle(other));
-			Call_PushCell(gA_ZoneCache[entityzone].iZoneData);
-			Call_PushFloat(fSpeed3D);
-			Call_Finish();
+			if(type == Zone_Start)
+			{
+				Call_StartForward(gH_Forwards_StartTimer_Post);
+				Call_PushCell(other);
+				Call_PushCell(Shavit_GetBhopStyle(other));
+				Call_PushCell(track);
+				Call_PushFloat(fSpeed3D);
+				Call_Finish();
+			}
+
+			else if(type == Zone_Stage && gB_StageTimer[other])
+			{
+				Call_StartForward(gH_Forwards_StageTimer_Post);
+				Call_PushCell(other);
+				Call_PushCell(Shavit_GetBhopStyle(other));
+				Call_PushCell(data);
+				Call_PushFloat(fSpeed3D);
+				Call_Finish();
+			}
+		}
+	}
+
+	else
+	{
+		if(fSpeed3D == 0.0) // this is a invalid speed
+		{
+			return;
+		}
+
+		switch(type)
+		{
+			case Zone_Start:
+			{
+				Call_StartForward(gH_Forwards_BotLeaveStartZone);
+				Call_PushCell(other);
+				Call_PushCell(track);
+				Call_PushFloat(fSpeed3D);
+				Call_Finish();
+			}
+
+			case Zone_Stage:
+			{
+				Call_StartForward(gH_Forwards_BotLeaveStageZone);
+				Call_PushCell(other);
+				Call_PushCell(data);
+				Call_PushFloat(fSpeed3D);
+				Call_Finish();
+			}
+
+			case Zone_Checkpoint:
+			{
+				Call_StartForward(gH_Forwards_BotLeaveCheckpointZone);
+				Call_PushCell(other);
+				Call_PushCell(data);
+				Call_PushFloat(fSpeed3D);
+				Call_Finish();
+			}
 		}
 	}
 }

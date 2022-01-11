@@ -317,6 +317,12 @@
 		"chi"		"{gold}{1} {default}HUD设置{darkred}已禁用{default}."
 	}
 	// ---------- Misc ---------- //
+	"BotPrestrafe"
+	{
+		"#format"	"{1:d}"
+		"en"		"{grey}Speed: {grey2}{1} u/s{default}."
+		"chi"		"{grey}速度: {grey2}{1} u/s{default}."
+	}
 	"StartPrestrafe"
 	{
 		"#format"	"{1:d},{2:s}"
