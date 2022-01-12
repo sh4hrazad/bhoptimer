@@ -599,7 +599,8 @@ public void Shavit_OnLeaveStartZone_Bot(int bot, int track, float speed)
 
 public void Shavit_OnLeaveStageZone_Bot(int bot, int stage, float speed)
 {
-	if(Shavit_GetReplayBotTrack(bot) != Track_Main)
+	if(Shavit_GetReplayBotTrack(bot) != Track_Main || 
+		(Shavit_GetReplayBotStage(bot) != 0 && Shavit_GetReplayBotStage(bot) != stage))
 	{
 		return;
 	}
