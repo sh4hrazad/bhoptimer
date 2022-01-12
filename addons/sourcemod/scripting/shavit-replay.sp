@@ -3397,7 +3397,8 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 
 		if(Shavit_InsideZone(client, Zone_Start, -1))
 		{
-			gF_TimeDifference[client] = 0.0;
+			gF_VelocityDifference2D[client] = 0.0;
+			gF_VelocityDifference3D[client] = 0.0;
 			return Plugin_Continue;
 		}
 

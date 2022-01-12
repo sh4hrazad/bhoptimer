@@ -1565,7 +1565,7 @@ public int Native_CanPause(Handle handler, int numParams)
 	float fDucktime = GetEntPropFloat(client, Prop_Send, "m_flDuckAmount");
 	float fDuckSpeed = GetEntPropFloat(client, Prop_Send, "m_flDuckSpeed");
 
-	if (bDucked || bDucking || fDucktime > 0.0 || fDuckSpeed < 8.0 || GetClientButtons(client) & IN_DUCK)
+	if (bDucked || bDucking || fDucktime > 0.0 || fDuckSpeed <= 8.0 || GetClientButtons(client) & IN_DUCK)
 	{
 		iFlags |= CPR_Duck;
 	}

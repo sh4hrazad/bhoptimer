@@ -162,6 +162,7 @@ Convar gCV_Offset = null;
 Convar gCV_EnforceTracks = null;
 Convar gCV_PreSpeed = null;
 Convar gCV_EntrySpeedLimit = null;
+Convar gCV_PreBuildZone = null;
 
 // handles
 Handle gH_DrawEverything = null;
@@ -275,6 +276,8 @@ public void OnPluginStart()
 	RegAdminCmd("sm_editzone", Command_ZoneEdit, ADMFLAG_RCON, "Modify an existing zone.");
 	RegAdminCmd("sm_editzones", Command_ZoneEdit, ADMFLAG_RCON, "Modify an existing zone.");
 
+	RegAdminCmd("sm_prebuild", Command_ZonePreBuild, ADMFLAG_RCON, "Prebuild zones.");
+
 	RegAdminCmd("sm_reloadzonesettings", Command_ReloadZoneSettings, ADMFLAG_ROOT, "Reloads the zone settings.");
 
 	RegConsoleCmd("sm_stages", Command_Stages, "Opens the stage menu. Usage: sm_stages [stage #]");
@@ -312,6 +315,7 @@ public void OnPluginStart()
 	gCV_EnforceTracks = new Convar("shavit_zones_enforcetracks", "1", "Enforce zone tracks upon entry?\n0 - allow every zone to affect users on every zone.\n1 - require the user's track to match the zone's track.", 0, true, 0.0, true, 1.0);
 	gCV_PreSpeed = new Convar("shavit_zones_prespeed", "1", "Stop prespeeding in the start zone?\n0 - Disabled, fully allow prespeeding.\n1 - SurfHeaven Limitspeed", 0, true, 0.0, true, 1.0);
 	gCV_EntrySpeedLimit = new Convar("shavit_zones_entryzonespeedlimit", "500.0", "Maximum speed at which entry into the start/stage zone will not be slowed down.\n(***Make sure shavit_misc_prespeed set to 1***)", 0, true, 260.0);
+	gCV_PreBuildZone = new Convar("shavit_zones_prebuild", "1", "Auto prebuild zones when current map have no zones.\n0 - Disabled.\n1 - Enabled", 0, true, 0.0, true, 1.0);
 
 	gCV_Interval.AddChangeHook(OnConVarChanged);
 	gCV_UseCustomSprite.AddChangeHook(OnConVarChanged);
@@ -1171,12 +1175,12 @@ public void SQL_RefreshZones_Callback(Database db, DBResultSet results, const ch
 
 	if(!mainHasStart)
 	{
-		Shavit_PrintToChatAll("主线缺少起点区域，请联系管理员添加.");
+		Shavit_PrintToChatAll("主线缺少{lightgreen}起点{default}区域，请联系管理员添加.");
 	}
 
 	if(!mainHasEnd)
 	{
-		Shavit_PrintToChatAll("主线缺少终点区域，请联系管理员添加.");
+		Shavit_PrintToChatAll("主线缺少{darkred}终点{default}区域，请联系管理员添加.");
 	}
 
 	CreateZoneEntities();
@@ -1194,10 +1198,16 @@ bool PreBuildZones()
 
 		char sTriggerName[128];
 		GetEntPropString(iEnt, Prop_Send, "m_iName", sTriggerName, 128);
-		if(StrContains(sTriggerName, "trigger_") != -1)
+		if(StrContains(sTriggerName, "trigger_", false) != -1 ||
+			StrContains(sTriggerName, "tele", false) != -1 ||
+			StrContains(sTriggerName, "tp", false) != -1 ||
+			StrContains(sTriggerName, "to", false) != -1 ||
+			StrContains(sTriggerName, "jail", false) != -1)
 		{
 			continue;
 		}
+
+		int iHammerID = GetEntProp(iEnt, Prop_Data, "m_iHammerID");
 
 		int iData = 0;
 		int iType = Zone_Start;
@@ -1205,8 +1215,8 @@ bool PreBuildZones()
 
 		if(!PreBuildMainTrack(sTriggerName, iData, iType) && 
 			!PreBuildBonusTrack(sTriggerName, iTrack, iType) && 
-			!PreBuildStages(sTriggerName, iData, iType) && 
-			!PreBuildCheckpoints(sTriggerName, iData, iType))
+			!PreBuildStages(sTriggerName, iTrack, iData, iType) && 
+			!PreBuildCheckpoints(sTriggerName, iTrack, iData, iType))
 		{
 			continue;
 		}
@@ -1220,20 +1230,20 @@ bool PreBuildZones()
 		GetEntPropVector(iEnt, Prop_Send, "m_vecMins", fMins);
 		GetEntPropVector(iEnt, Prop_Send, "m_vecMaxs", fMaxs);
 
-		for (int j = 0; j < 3; j++)
+		for(int j = 0; j < 3; j++)
 		{
-			fMins[j] = (fMins[j] + origin[j]);
+			fMins[j] += origin[j];
 		}
 
-		for (int j = 0; j < 3; j++)
+		for(int j = 0; j < 3; j++)
 		{
-			fMaxs[j] = (fMaxs[j] + origin[j]);
+			fMaxs[j] += origin[j];
 		}
 
 		char sQuery[512];
 		FormatEx(sQuery, 512,
-				"INSERT INTO `%smapzones` (map, type, corner1_x, corner1_y, corner1_z, corner2_x, corner2_y, corner2_z, destination_x, destination_y, destination_z, track, flags, data, hookname) VALUES ('%s', %d, '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', %d, %d, %d, '%s');",
-				gS_MySQLPrefix, gS_Map, iType, fMins[0], fMins[1], fMins[2], fMaxs[0], fMaxs[1], fMaxs[2], 0.0, 0.0, 0.0, iTrack, 0, iData, sTriggerName);
+				"INSERT INTO `%smapzones` (map, type, corner1_x, corner1_y, corner1_z, corner2_x, corner2_y, corner2_z, destination_x, destination_y, destination_z, track, flags, data, hookname, hammerid) VALUES ('%s', %d, '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', %d, %d, %d, '%s', %d);",
+				gS_MySQLPrefix, gS_Map, iType, fMins[0], fMins[1], fMins[2], fMaxs[0], fMaxs[1], fMaxs[2], 0.0, 0.0, 0.0, iTrack, 0, iData, sTriggerName, iHammerID);
 
 		DataPack dp = new DataPack();
 		dp.WriteCell(iTrack);
@@ -1254,52 +1264,116 @@ bool PreBuildZones()
 	return false;
 }
 
+bool PreBuild_FindMainStart(const char[] str)
+{
+	if(StrContains(str, "end", false) != -1 || 
+		StrContains(str, "b", false) != -1 ||
+		FindNumberInString(str) >= 10) // found stage 10 above, wtf
+	{
+		return false;
+	}
+
+	if(StrEqual(str, "zone_start", false) || 
+		StrEqual(str, "zonestart", false) || 
+		StrEqual(str, "start_zone", false) ||
+		StrEqual(str, "startzone", false) ||
+		StrEqual(str, "start", false) || 
+		StrEqual(str, "stage01", false) || 
+		StrEqual(str, "stage1", false) || 
+		StrEqual(str, "s1", false) ||
+		StrEqual(str, "1", false))
+	{
+		return true;
+	}
+
+	if(StrContains(str, "main", false) != -1 ||
+		StrContains(str, "map", false) != -1 ||
+		StrContains(str, "stage01", false) != -1 ||
+		StrContains(str, "stage1", false) != -1 ||
+		StrContains(str, "s1", false) != -1)
+	{
+		// do start detecting
+		if(StrContains(str, "start", false) != -1 ||
+			StrContains(str, "begin", false) != -1)
+		{
+			return true;
+		}
+	}
+
+	// double check 's1'
+	if(StrContains(str, "stage01", false) != -1 ||
+		StrContains(str, "stage1", false) != -1 ||
+		StrContains(str, "s1", false) != -1)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool PreBuild_FindMainEnd(const char[] str)
+{
+	if(StrContains(str, "b", false) != -1)
+	{
+		return false;
+	}
+
+	if(StrEqual(str, "end_zone", false) ||
+		StrEqual(str, "endzone", false) ||
+		StrEqual(str, "zone_end", false) ||
+		StrEqual(str, "end", false))
+	{
+		return true;
+	}
+
+	if(StrContains(str, "map", false) != -1 ||
+		StrContains(str, "main", false) != -1)
+	{
+		// do end detecting
+		if(StrContains(str, "end", false) != -1)
+		{
+			return true;
+		}
+	}
+
+	// TODO:
+	// do last stage end detecting, but it's a hard thing
+	// fuck those stupid mapper
+
+	return false;
+}
+
 bool PreBuildMainTrack(const char[] sTemp, int& data, int& type)
 {
 	char sTriggerName[128];
 	strcopy(sTriggerName, 128, sTemp);
 	LowercaseString(sTriggerName);
 
-	if(StrContains(sTriggerName, "bonus") != -1)
+	if(PreBuild_FindMainStart(sTriggerName))
 	{
-		return false;
-	}
-
-	if(StrContains(sTriggerName, "map") == -1 && StrContains(sTriggerName, "s1") == -1 && StrContains(sTriggerName, "stage1") == -1 && 
-		StrContains(sTriggerName, "start") == -1 && StrContains(sTriggerName, "end") == -1 && !StrEqual(sTriggerName, "s1") && !StrEqual(sTriggerName, "stage1"))
-	{
-		return false;
-	}
-
-	Regex sRegex = new Regex("[0-9]{1,}");
-	if(sRegex.Match(sTriggerName) > 0)
-	{
-		char sTracknum[4];
-		sRegex.GetSubString(0, sTracknum, 4);
-		data = StringToInt(sTracknum);
-
-		char sCheck[8], sCheck2[8];
-		FormatEx(sCheck, 8, "s%d", data);
-		FormatEx(sCheck2, 8, "stage%d", data);
-		if((StrContains(sTriggerName, sCheck, false) != -1 || StrContains(sTriggerName, sCheck2, false) != -1) && data != 1)
+		if(StrContains(sTriggerName, "right", false) != -1)
 		{
-			return false;
+			data = 1;
 		}
+
+		type = Zone_Start;
+
+		return true;
 	}
 
-	delete sRegex;
-
-	if(StrContains(sTriggerName, "right") != -1)
+	else if(PreBuild_FindMainEnd(sTriggerName))
 	{
-		data = 1;
-	}
+		if(StrContains(sTriggerName, "right", false) != -1)
+		{
+			data = 1;
+		}
 
-	if(StrContains(sTriggerName, "end") != -1)
-	{
 		type = Zone_End;
+
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 bool PreBuildBonusTrack(const char[] sTemp, int& track, int& type)
@@ -1308,68 +1382,80 @@ bool PreBuildBonusTrack(const char[] sTemp, int& track, int& type)
 	strcopy(sTriggerName, 128, sTemp);
 	LowercaseString(sTriggerName);
 
-	Regex sRegex = new Regex("^([b][0-9]{1,})|([b][_0-9]{1,})$");
-	if(sRegex.Match(sTriggerName) == 0 && StrContains(sTriggerName, "bonus") == -1)
+	if(StrContains(sTriggerName, "b", false) == -1) // bonus not found.
 	{
 		return false;
 	}
 
-	track = Track_Bonus;
-
-	sRegex = new Regex("[0-9]{1,}");
-	if(sRegex.Match(sTriggerName) > 0)
+	int num = FindNumberInString(sTriggerName);
+	if(num != 0)
 	{
-		char sTracknum[4];
-		sRegex.GetSubString(0, sTracknum, 4);
-		track = StringToInt(sTracknum);
+		track = num;
+	}
+	else
+	{
+		track = Track_Bonus;
 	}
 
-	delete sRegex;
-
-	if(StrContains(sTriggerName, "end") != -1)
+	if(StrContains(sTriggerName, "end", false) != -1)
 	{
 		type = Zone_End;
+	}
+	else
+	{
+		type = Zone_Start;
 	}
 
 	return true;
 }
 
-bool PreBuildStages(const char[] sTemp, int& data, int& type)
+int PreBuild_FindStage(const char[] str)
+{
+	// prevent some stupid authors making a end zone for stage.
+	if(StrContains(str, "end", false) != -1)
+	{
+		return -1;
+	}
+
+	Regex sRegex = new Regex("^([s][0-9]{1,})|([s][_0-9]{1,})$");
+	int stage = -1;
+
+	if(sRegex.Match(str) > 0 || StrContains(str, "stage") != -1 || StrContains(str, "zone_s") != -1 || StrContains(str, "zone_stage") != -1)
+	{
+		delete sRegex;
+
+		stage = FindNumberInString(str);
+
+		return (stage >= 2) ? stage : -1;
+	}
+
+	delete sRegex;
+
+	stage = StringToInt(str);
+
+	return (stage >= 2) ? stage : -1;
+}
+
+bool PreBuildStages(const char[] sTemp, int& track, int& data, int& type)
 {
 	char sTriggerName[128];
 	strcopy(sTriggerName, 128, sTemp);
 	LowercaseString(sTriggerName);
 
-	// prevent some stupid authors making a end zone for stage.
-	if(StrContains(sTriggerName, "end") != -1)
+	int stage = PreBuild_FindStage(sTriggerName);
+	if(stage == -1)
 	{
 		return false;
 	}
 
-	Regex sRegex = new Regex("^([s][0-9]{1,})|([s][_0-9]{1,})$");
-	if(sRegex.Match(sTriggerName) == 0 && StrContains(sTriggerName, "stage") == -1)
-	{
-		return false;
-	}
-
-	data = 2;
-
-	sRegex = new Regex("[0-9]{1,}");
-	if(sRegex.Match(sTriggerName) > 0)
-	{
-		char sTracknum[4];
-		sRegex.GetSubString(0, sTracknum, 4);
-		data = StringToInt(sTracknum);
-	}
-
-	delete sRegex;
-
+	track = Track_Main;
+	data = stage;
 	type = Zone_Stage;
 
 	return true;
 }
 
-bool PreBuildCheckpoints(const char[] sTemp, int& data, int& type)
+bool PreBuildCheckpoints(const char[] sTemp, int& track, int& data, int& type)
 {
 	char sTriggerName[128];
 	strcopy(sTriggerName, 128, sTemp);
@@ -1380,18 +1466,14 @@ bool PreBuildCheckpoints(const char[] sTemp, int& data, int& type)
 		return false;
 	}
 
-	data = 1;
-
-	Regex sRegex = new Regex("[0-9]{1,}");
-	if(sRegex.Match(sTriggerName) > 0)
+	int cp = FindNumberInString(sTriggerName);
+	if(cp == 0)
 	{
-		char sTracknum[4];
-		sRegex.GetSubString(0, sTracknum, 4);
-		data = StringToInt(sTracknum);
+		return false;
 	}
 
-	delete sRegex;
-
+	track = Track_Main;
+	data = cp;
 	type = Zone_Checkpoint;
 
 	return true;
@@ -1412,24 +1494,24 @@ public void SQL_InsertPrebuildZone_Callback(Database db, DBResultSet results, co
 		return;
 	}
 
-	if(track == Track_Main)
+	char sTrack[32];
+	GetTrackName(LANG_SERVER, track, sTrack, sizeof(sTrack));
+
+	if(type == Zone_Start)
 	{
-		if(type == Zone_Start || type == Zone_End)
-		{
-			Shavit_PrintToChatAll("主线区域预设成功");
-		}
-		else if(type == Zone_Stage)
-		{
-			Shavit_PrintToChatAll("关卡区域预设成功");
-		}
-		else if(type == Zone_Checkpoint)
-		{
-			Shavit_PrintToChatAll("检查点区域预设成功");
-		}
+		Shavit_PrintToChatAll("{blue}%s{lightgreen}起点{default}区域预设成功", sTrack);
 	}
-	else
+	else if(type == Zone_End)
 	{
-		Shavit_PrintToChatAll("奖励区域预设成功");
+		Shavit_PrintToChatAll("{blue}%s{darkred}终点{default}区域预设成功", sTrack);
+	}
+	else if(type == Zone_Stage)
+	{
+		Shavit_PrintToChatAll("{yellow}关卡{default}区域预设成功");
+	}
+	else if(type == Zone_Checkpoint)
+	{
+		Shavit_PrintToChatAll("{gold}检查点{default}区域预设成功");
 	}
 }
 
@@ -1515,6 +1597,23 @@ public Action Command_ZoneEdit(int client, int args)
 	Reset(client);
 
 	OpenEditMenu(client);
+
+	return Plugin_Handled;
+}
+
+public Action Command_ZonePreBuild(int client, int args)
+{
+	if(!IsValidClient(client))
+	{
+		return Plugin_Handled;
+	}
+
+	if(gB_ZonesCreated)
+	{
+		Shavit_PrintToChat(client, "已经有区域了, 不能预设.");
+	}
+
+	PreBuildZones();
 
 	return Plugin_Handled;
 }
@@ -1812,13 +1911,6 @@ public Action Command_HookZones(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!IsPlayerAlive(client))
-	{
-		Shavit_PrintToChat(client, "%T", "ZonesCommand", client);
-
-		return Plugin_Handled;
-	}
-
 	OpenHookZonesMenu_SelectMethod(client);
 
 	return Plugin_Handled;
@@ -1940,20 +2032,20 @@ public int MenuHandler_SelectHookZone(Menu menu, MenuAction action, int param1, 
 				gI_HookZoneHammerID[param1] = GetEntProp(entity, Prop_Data, "m_iHammerID");
 				strcopy(gS_ZoneHookname[param1], 128, sHookname);
 				Shavit_PrintToChat(param1, "%T", "HookZonesItem", param1, sHookname);
-				
+
 
 				float fMins[3], fMaxs[3];
 				GetEntPropVector(entity, Prop_Send, "m_vecMins", fMins);
 				GetEntPropVector(entity, Prop_Send, "m_vecMaxs", fMaxs);
 
-				for (int j = 0; j < 3; j++)
+				for(int j = 0; j < 3; j++)
 				{
-					fMins[j] = (fMins[j] + origin[j]);
+					fMins[j] += origin[j];
 				}
 
-				for (int j = 0; j < 3; j++)
+				for(int j = 0; j < 3; j++)
 				{
-					fMaxs[j] = (fMaxs[j] + origin[j]);
+					fMaxs[j] += origin[j];
 				}
 
 				gV_Point1[param1][0] = fMins[0];
@@ -2051,7 +2143,7 @@ public int MenuHandler_SelectHookZone_Type(Menu menu, MenuAction action, int par
 		menu.GetItem(param2, info, 8);
 
 		gI_ZoneType[param1] = StringToInt(info);
-		gI_ZoneData[param1][gI_ZoneType[param1]] = FindNumbersInString(gS_ZoneHookname[param1]);
+		gI_ZoneData[param1][gI_ZoneType[param1]] = FindNumberInString(gS_ZoneHookname[param1]);
 
 		HookZoneConfirmMenu(param1);
 	}
@@ -3082,7 +3174,7 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 		{
 			gB_WaitingForLimitSpeedInput[param1] = true;
 
-			Shavit_PrintToChat(param1, "%T", "ZoneEnterDataChat", param1);
+			Shavit_PrintToChat(param1, "%T", "ZoneEnterLimitSpeedChat", param1);
 
 			return 0;
 		}
@@ -3188,7 +3280,7 @@ void CreateEditMenu(int client)
 	FormatEx(sMenuItem, 64, "hammerid: %d", gI_HookZoneHammerID[client]);
 	menu.AddItem("null", sMenuItem, ITEMDRAW_DISABLED);
 
-	FormatEx(sMenuItem, 64, "limitspeed: %.2f", gF_ZoneLimitSpeed[client]);
+	FormatEx(sMenuItem, 64, "%T", "ZoneSetLimitSpeed", client, gF_ZoneLimitSpeed[client]);
 	menu.AddItem("limitspeed", sMenuItem);
 
 	menu.ExitButton = false;
@@ -3702,10 +3794,10 @@ void CreateZoneEntities()
 		gB_ZonesCreated = true;
 	}
 
-	/* if(!gB_ZonesCreated)
+	if(!gB_ZonesCreated && gCV_PreBuildZone.BoolValue)
 	{
 		CreateTimer(5.0, Timer_DelayPreBuildZones);
-	} */
+	}
 }
 
 bool CreateNormalZone(int zone)
@@ -4359,21 +4451,18 @@ void DoTeleport(int client, int zone)
 	}
 }
 
-int FindNumbersInString(const char[] str)
+int FindNumberInString(const char[] str)
 {
 	Regex sRegex = new Regex("[0-9]{1,}");
 
+	char sNum[4];
+
 	if(sRegex.Match(str) > 0)
 	{
-		char sNum[4];
 		sRegex.GetSubString(0, sNum, 4);
-
-		delete sRegex;
-
-		return StringToInt(sNum);
 	}
 
 	delete sRegex;
 
-	return 0;
+	return StringToInt(sNum);
 }

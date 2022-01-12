@@ -244,11 +244,6 @@
 		"en"		"Press USE (default 'E') to set the {1} corner in your current position."
 		"chi"		"按E键 (默认E键是'使用键') 将{1}角点设置在当前位置."
 	}
-	"ZonePlaceTextTF2"
-	{
-		"#format"	"{1:s}"
-		"en"		"Press ATTACK2 (default 'right click') to set the {1} corner in your current position."
-	}
 	"ZonePoint"
 	{
 		"#format"	"{1:d},{2:c}"
@@ -271,6 +266,12 @@
 		"en"		"[{1}] Force zone drawing"
 		"chi"		"[{1}] 强制区域显示"
 	}
+	"ZoneSetLimitSpeed"
+	{
+		"#format"	"{1:.02f}"
+		"en"		"LimitSpeed: {1} \n  (when enter zone)"
+		"chi"		"区域限速: {1} \n  (进入区域时)"
+	}
 	"ZoneSetData"
 	{
 		"#format"	"{1:d}"
@@ -287,6 +288,11 @@
 	{
 		"en"		"Input your desired data in chat."
 		"chi"		"在聊天中输入您需要的数据."
+	}
+	"ZoneEnterLimitSpeedChat"
+	{
+		"en"		"Input your desired limitspeed in chat, {lightgreen}-1{default} is limitless."
+		"chi"		"在聊天中输入您需要的数据, {lightgreen}-1{default}则表示无限速."
 	}
 	"ZoneSetNo"
 	{
