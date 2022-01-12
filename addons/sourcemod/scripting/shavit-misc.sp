@@ -64,8 +64,6 @@ char gS_RadioCommands[][] = { "coverme", "takepoint", "holdpos", "regroup", "fol
 
 bool gB_Hide[MAXPLAYERS+1];
 bool gB_Late = false;
-bool gB_OnGround[MAXPLAYERS+1];
-int gI_GroundEntity[MAXPLAYERS+1];
 int gI_LastShot[MAXPLAYERS+1];
 ArrayList gA_Advertisements = null;
 int gI_AdvertisementsCycle = 0;
@@ -94,8 +92,6 @@ Cookie gH_BlockAdvertsCookie = null;
 
 // cvars
 Convar gCV_GodMode = null;
-Convar gCV_PreSpeed = null;
-Convar gCV_EntrySpeedLimit = null;
 Convar gCV_HideTeamChanges = null;
 Convar gCV_RespawnOnTeam = null;
 Convar gCV_RespawnOnRestart = null;
@@ -129,7 +125,6 @@ Convar gCV_PersistData = null;
 Convar gCV_StopTimerWarning = null;
 Convar gCV_WRMessages = null;
 Convar gCV_BhopSounds = null;
-Convar gCV_RestrictNoclip = null;
 Convar gCV_BotFootsteps = null;
 Convar gCV_SpecScoreboardOrder = null;
 Convar gCV_ExperimentalSegmentedEyeAngleFix = null;
@@ -171,10 +166,7 @@ stylestrings_t gS_StyleStrings[STYLE_LIMIT];
 chatstrings_t gS_ChatStrings;
 
 // misc
-int gI_Jumps[MAXPLAYERS+1];
 bool gB_CanTouchTrigger[MAXPLAYERS+1];
-bool gB_InStart[MAXPLAYERS+1];
-bool gB_InStage[MAXPLAYERS+1];
 
 // other client's checkpoint
 int gI_OtherClientIndex[MAXPLAYERS+1];
@@ -326,8 +318,6 @@ public void OnPluginStart()
 
 	// cvars and stuff
 	gCV_GodMode = new Convar("shavit_misc_godmode", "3", "Enable godmode for players?\n0 - Disabled\n1 - Only prevent fall/world damage.\n2 - Only prevent damage from other players.\n3 - Full godmode.", 0, true, 0.0, true, 3.0);
-	gCV_PreSpeed = new Convar("shavit_misc_prespeed", "1", "Stop prespeeding in the start zone?\n0 - Disabled, fully allow prespeeding.\n1 - SurfHeaven Limitspeed", 0, true, 0.0, true, 1.0);
-	gCV_EntrySpeedLimit = new Convar("shavit_misc_entryzonespeedlimit", "500", "Maximum speed at which entry into the start/stage zone will not be slowed down.\n(***Make sure shavit_misc_prespeed set to 6***)", 0, true, 0.0);
 	gCV_HideTeamChanges = new Convar("shavit_misc_hideteamchanges", "1", "Hide team changes in chat?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_RespawnOnTeam = new Convar("shavit_misc_respawnonteam", "1", "Respawn whenever a player joins a team?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_RespawnOnRestart = new Convar("shavit_misc_respawnonrestart", "1", "Respawn a dead player if they use the timer restart command?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
@@ -361,7 +351,6 @@ public void OnPluginStart()
 	gCV_StopTimerWarning = new Convar("shavit_misc_stoptimerwarning", "180", "Time in seconds to display a warning before stopping the timer with noclip or !stop.\n0 - Disabled");
 	gCV_WRMessages = new Convar("shavit_misc_wrmessages", "3", "How many \"NEW <style> WR!!!\" messages to print?\n0 - Disabled", 0,  true, 0.0, true, 100.0);
 	gCV_BhopSounds = new Convar("shavit_misc_bhopsounds", "1", "Should bhop (landing and jumping) sounds be muted?\n0 - Disabled\n1 - Blocked while !hide is enabled\n2 - Always blocked", 0,  true, 0.0, true, 2.0);
-	gCV_RestrictNoclip = new Convar("shavit_misc_restrictnoclip", "0", "Should noclip be be restricted\n0 - Disabled\n1 - No vertical velocity while in noclip in start zone\n2 - No noclip in start zone", 0, true, 0.0, true, 2.0);
 	gCV_BotFootsteps = new Convar("shavit_misc_botfootsteps", "1", "Enable footstep sounds for replay bots. Only works if shavit_misc_bhopsounds is less than 2.", 0, true, 0.0, true, 1.0);
 	gCV_ExperimentalSegmentedEyeAngleFix = new Convar("shavit_misc_experimental_segmented_eyeangle_fix", "1", "When teleporting to a segmented checkpoint, the player's old eye-angles persist in replay-frames for as many ticks they're behind the server in latency. This applies the teleport-position angles to the replay-frame for that many ticks.", 0, true, 0.0, true, 1.0);
 	gCV_SpecScoreboardOrder = new Convar("shavit_misc_spec_scoreboard_order", "1", "Use scoreboard ordering for players when changing target when spectating.", 0, true, 0.0, true, 1.0);
@@ -1355,116 +1344,17 @@ public void Shavit_OnStop(int client, int track)
 	}
 }
 
-// This is used instead of `TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed)`.
-// Why: TeleportEntity somehow triggers the zone EndTouch which fucks with `Shavit_InsideZone`.
-void DumbSetVelocity(int client, float fSpeed[3])
-{
-	// Someone please let me know if any of these are unnecessary.
-	SetEntPropVector(client, Prop_Data, "m_vecBaseVelocity", NULL_VECTOR);
-	SetEntPropVector(client, Prop_Data, "m_vecVelocity", fSpeed);
-	SetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed); // m_vecBaseVelocity+m_vecVelocity
-}
-
 public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float vel[3], float angles[3], TimerStatus status, int track, int style)
 {
-	bool bNoclip = (GetEntityMoveType(client) == MOVETYPE_NOCLIP);
-	bool bInStart = Shavit_InsideZone(client, Zone_Start, track);
-	bool bInStage = Shavit_InsideZone(client, Zone_Stage, track);
-	bool bLimitpre = Shavit_GetMapLimitspeed();
-
 	if (gCV_CSGOFixDuckTime.BoolValue && (buttons & IN_DUCK))
 	{
 		SetEntPropFloat(client, Prop_Send, "m_flDuckSpeed", CS_PLAYER_DUCK_SPEED_IDEAL);
 	}
 
-	// i will not be adding a setting to toggle this off
-	if(bNoclip)
+	if(GetEntityMoveType(client) == MOVETYPE_NOCLIP && status == Timer_Running)
 	{
-		if(status == Timer_Running)
-		{
-			Shavit_StopTimer(client);
-		}
-
-		if(bInStart && gCV_RestrictNoclip.BoolValue)
-		{
-			if(gCV_RestrictNoclip.IntValue == 1)
-			{
-				float fSpeed[3];
-				GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
-				fSpeed[2] = 0.0;
-				DumbSetVelocity(client, fSpeed);
-			}
-			else if(gCV_RestrictNoclip.IntValue == 2)
-			{
-				SetEntityMoveType(client, MOVETYPE_ISOMETRIC);
-			}
-		}
+		Shavit_StopTimer(client);
 	}
-
-
-	// prespeed
-	int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
-	bool onGround = view_as<bool>(GetEntityFlags(client) & FL_ONGROUND);
-
-	if(!bNoclip && Shavit_GetStyleSettingInt(gI_Style[client], "prespeed") == 0 && (bInStart || bInStage))
-	{
-		if(gCV_PreSpeed.IntValue >= 1)
-		{
-			// surfheaven prespeed
-			// limit speed since 2 jumps
-			// iGroundEntity == 0 ---> onGround
-			// iGroundEntity == -1 ---> onAir
-
-			if(bInStage && !bLimitpre)// do not limit all stages' speed
-			{
-				return Plugin_Continue;
-			}
-
-			float fSpeed[3];
-			GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
-			float fSpeedXY = SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0));
-
-			if((bInStart && !gB_InStart[client]) || (bInStage && !gB_InStage[client]))
-			{
-				if(fSpeedXY > gCV_EntrySpeedLimit.FloatValue)
-				{
-					fSpeed[0] *= 0.1;
-					fSpeed[1] *= 0.1;
-					DumbSetVelocity(client, fSpeed);
-				}
-			}
-
-			if(GetEntityFlags(client) & FL_BASEVELOCITY)// they are on booster, dont limit them
-			{
-				return Plugin_Continue;
-			}
-
-			if(gB_OnGround[client] && !onGround)// 起跳 starts jump
-			{
-				if(++gI_Jumps[client] >= 2)
-				{
-					float fScale = 260.0 / fSpeedXY;
-
-					if(fScale < 1.0)
-					{
-						fSpeed[0] *= fScale;
-						fSpeed[1] *= fScale;
-						DumbSetVelocity(client, fSpeed);
-					}
-				}
-			}
-
-			else if(gB_OnGround[client] && onGround)// 不跳 not jumping
-			{
-				gI_Jumps[client] = 0;
-			}
-		}
-	}
-
-	gI_GroundEntity[client] = (iGroundEntity != -1) ? EntIndexToEntRef(iGroundEntity) : -1;
-	gB_OnGround[client] = onGround;
-	gB_InStart[client] = bInStart;
-	gB_InStage[client] = bInStage;
 
 	return Plugin_Continue;
 }
@@ -1779,30 +1669,6 @@ public Action OnSetTransmit(int entity, int client)
 	}
 
 	return Plugin_Continue;
-}
-
-public void TF2_OnPreThink(int client)
-{
-	if(IsPlayerAlive(client))
-	{
-		float maxspeed;
-		
-		if (GetEntityFlags(client) & FL_ONGROUND)
-		{
-			maxspeed = Shavit_GetStyleSettingFloat(gI_Style[client], "runspeed");
-		}
-		else
-		{
-			// This is used to stop CTFGameMovement::PreventBunnyJumping from destroying
-			// player velocity when doing uncrouch stuff. Kind of poopy.
-			float fSpeed[3];
-			GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
-			maxspeed = GetVectorLength(fSpeed);
-		}
-
-		// not the best method, but only one i found for tf2
-		SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", maxspeed);
-	}
 }
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)

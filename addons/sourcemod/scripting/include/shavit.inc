@@ -2232,6 +2232,25 @@ native bool Shavit_ZoneExists(int type, int track);
 native bool Shavit_InsideZone(int client, int type, int track);
 
 /**
+ * Get player's inside zone id.
+ *
+ * @param client					Client index.
+ * @param type						Mapzone type.
+ * @param track						Mapzone track, -1 to ignore track.
+ * @return							Zone id, -1 if not exist.
+ */
+native int Shavit_InsideZoneGetID(int client, int type, int track);
+
+/**
+ * Get player's inside zone type.
+ *
+ * @param client					Client index.
+ * @param track						Mapzone track, -1 to ignore track.
+ * @return							Zone type, -1 if not exist.
+ */
+native int Shavit_InsideZoneGetType(int client, int track);
+
+/**
  * Gets the specified zone's data.
  *
  * @param zoneid					ID of the zone we query the data of.
@@ -2246,17 +2265,6 @@ native int Shavit_GetZoneData(int zoneid);
  * @return							Zone flags. 0 if none is specified.
  */
 native int Shavit_GetZoneFlags(int zoneid);
-
-/**
- * Checks if a player is inside a mapzone.
- *
- * @param client					Client index.
- * @param type						Mapzone type.
- * @param track						Mapzone track, -1 to ignore track.
- * @param zoneid					Reference to variable that will hold the zone's ID.
- * @return							Boolean value.
- */
-native bool Shavit_InsideZoneGetID(int client, int type, int track, int &zoneid);
 
 /**
  * Checks if the map is linear.
@@ -3428,6 +3436,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_HijackAngles");
 	MarkNativeAsOptional("Shavit_InsideZone");
 	MarkNativeAsOptional("Shavit_InsideZoneGetID");
+	MarkNativeAsOptional("Shavit_InsideZoneGetType");
 	MarkNativeAsOptional("Shavit_IsLinearMap");
 	MarkNativeAsOptional("Shavit_IsClientCreatingZone");
 	MarkNativeAsOptional("Shavit_IsClientStageTimer");

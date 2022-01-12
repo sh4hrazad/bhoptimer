@@ -64,6 +64,7 @@ enum struct zone_cache_t
 	int iZoneData;
 	int iHookedHammerID;
 	char sZoneHookname[128];
+	float fLimitSpeed;
 }
 
 enum struct zone_settings_t
@@ -98,7 +99,8 @@ bool gB_CursorTracing[MAXPLAYERS+1];
 int gI_ZoneFlags[MAXPLAYERS+1];
 int gI_ZoneData[MAXPLAYERS+1][ZONETYPES_SIZE];
 int gI_ZoneMaxData[TRACKS_SIZE];
-bool gB_WaitingForChatInput[MAXPLAYERS+1];
+bool gB_WaitingForDataInput[MAXPLAYERS+1];
+bool gB_WaitingForLimitSpeedInput[MAXPLAYERS+1];
 bool gB_HookZoneConfirm[MAXPLAYERS+1];
 bool gB_StageTimer[MAXPLAYERS+1];
 bool gB_ShowTriggers[MAXPLAYERS+1];
@@ -120,6 +122,7 @@ int gI_HookZoneHammerID[MAXPLAYERS+1];
 int gI_HookZoneIndex[MAXPLAYERS+1];
 int gI_LastStartZoneIndex[MAXPLAYERS+1][TRACKS_SIZE];
 char gS_ZoneHookname[MAXPLAYERS+1][128];
+float gF_ZoneLimitSpeed[MAXPLAYERS+1];
 
 // zone cache
 zone_settings_t gA_ZoneSettings[ZONETYPES_SIZE][TRACKS_SIZE];
@@ -157,6 +160,8 @@ Convar gCV_TeleportToEnd = null;
 Convar gCV_UseCustomSprite = null;
 Convar gCV_Offset = null;
 Convar gCV_EnforceTracks = null;
+Convar gCV_PreSpeed = null;
+Convar gCV_EntrySpeedLimit = null;
 
 // handles
 Handle gH_DrawEverything = null;
@@ -183,6 +188,12 @@ int gI_LastStage[MAXPLAYERS+1];
 int gI_LastCheckpoint[MAXPLAYERS+1];
 bool gB_LinearMap;
 
+// prespeed limit
+int gI_Jumps[MAXPLAYERS+1];
+bool gB_OnGround[MAXPLAYERS+1];
+bool gB_InStart[MAXPLAYERS+1];
+bool gB_InStage[MAXPLAYERS+1];
+
 public Plugin myinfo =
 {
 	name = "[shavit] Map Zones",
@@ -207,6 +218,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetMapCheckpoints", Native_GetMapCheckpoints);
 	CreateNative("Shavit_InsideZone", Native_InsideZone);
 	CreateNative("Shavit_InsideZoneGetID", Native_InsideZoneGetID);
+	CreateNative("Shavit_InsideZoneGetType", Native_InsideZoneGetType);
 	CreateNative("Shavit_IsLinearMap", Native_IsLinearMap);
 	CreateNative("Shavit_IsClientCreatingZone", Native_IsClientCreatingZone);
 	CreateNative("Shavit_IsClientStageTimer", Native_IsClientStageTimer);
@@ -298,6 +310,8 @@ public void OnPluginStart()
 	gCV_UseCustomSprite = new Convar("shavit_zones_usecustomsprite", "1", "Use custom sprite for zone drawing?\nSee `configs/shavit-zones.cfg`.\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_Offset = new Convar("shavit_zones_offset", "0", "When calculating a zone's *VISUAL* box, by how many units, should we scale it to the center?\n0.0 - no downscaling. Values above 0 will scale it inward and negative numbers will scale it outwards.\nAdjust this value if the zones clip into walls.");
 	gCV_EnforceTracks = new Convar("shavit_zones_enforcetracks", "1", "Enforce zone tracks upon entry?\n0 - allow every zone to affect users on every zone.\n1 - require the user's track to match the zone's track.", 0, true, 0.0, true, 1.0);
+	gCV_PreSpeed = new Convar("shavit_zones_prespeed", "1", "Stop prespeeding in the start zone?\n0 - Disabled, fully allow prespeeding.\n1 - SurfHeaven Limitspeed", 0, true, 0.0, true, 1.0);
+	gCV_EntrySpeedLimit = new Convar("shavit_zones_entryzonespeedlimit", "500.0", "Maximum speed at which entry into the start/stage zone will not be slowed down.\n(***Make sure shavit_misc_prespeed set to 1***)", 0, true, 260.0);
 
 	gCV_Interval.AddChangeHook(OnConVarChanged);
 	gCV_UseCustomSprite.AddChangeHook(OnConVarChanged);
@@ -504,23 +518,12 @@ public int Native_InsideZone(Handle handler, int numParams)
 
 public int Native_InsideZoneGetID(Handle handler, int numParams)
 {
-	int client = GetNativeCell(1);
-	int iType = GetNativeCell(2);
-	int iTrack = GetNativeCell(3);
+	return InsideZoneGetID(GetNativeCell(1), GetNativeCell(2), GetNativeCell(3));
+}
 
-	for(int i = 0; i < MAX_ZONES; i++)
-	{
-		if(gB_InsideZoneID[client][i] &&
-			gA_ZoneCache[i].iZoneType == iType &&
-			(gA_ZoneCache[i].iZoneTrack == iTrack || iTrack == -1))
-		{
-			SetNativeCellRef(4, i);
-
-			return true;
-		}
-	}
-
-	return false;
+public int Native_InsideZoneGetType(Handle handler, int numParams)
+{
+	return InsideZoneGetType(GetNativeCell(1), GetNativeCell(2));
 }
 
 public int Native_IsLinearMap(Handle handler, int numParams)
@@ -572,6 +575,47 @@ bool InsideZone(int client, int type, int track)
 	}
 
 	return false;
+}
+
+int InsideZoneGetID(int client, int type, int track)
+{
+	for(int i = 0; i < MAX_ZONES; i++)
+	{
+		if(gB_InsideZoneID[client][i] &&
+			gA_ZoneCache[i].iZoneType == type &&
+			(gA_ZoneCache[i].iZoneTrack == track || track == -1))
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+int InsideZoneGetType(int client, int track)
+{
+	for(int i = 0; i < ZONETYPES_SIZE; i++)
+	{
+		if(track != -1)
+		{
+			if(gB_InsideZone[client][i][track])
+			{
+				return i;
+			}
+		}
+		else
+		{
+			for(int j = 0; i < TRACKS_SIZE; j++)
+			{
+				if(gB_InsideZone[client][i][j])
+				{
+					return i;
+				}
+			}
+		}
+	}
+
+	return -1;
 }
 
 public int Native_IsClientCreatingZone(Handle handler, int numParams)
@@ -973,6 +1017,7 @@ void ClearZone(int index)
 	gA_ZoneCache[index].iZoneData = 0;
 	gA_ZoneCache[index].iHookedHammerID = -1;
 	strcopy(gA_ZoneCache[index].sZoneHookname, sizeof(zone_cache_t::sZoneHookname), "NONE");
+	gA_ZoneCache[index].fLimitSpeed = gCV_EntrySpeedLimit.FloatValue;
 }
 
 void UnhookEntity(int entity)
@@ -1049,7 +1094,7 @@ void RefreshZones()
 {
 	char sQuery[512];
 	FormatEx(sQuery, 512,
-		"SELECT type, corner1_x, corner1_y, corner1_z, corner2_x, corner2_y, corner2_z, destination_x, destination_y, destination_z, track, id, flags, data, hammerid, hookname FROM `%smapzones` WHERE map = '%s';",
+		"SELECT type, corner1_x, corner1_y, corner1_z, corner2_x, corner2_y, corner2_z, destination_x, destination_y, destination_z, track, id, flags, data, hammerid, hookname, limitspeed FROM `%smapzones` WHERE map = '%s';",
 		gS_MySQLPrefix, gS_Map);
 
 	gH_SQL.Query(SQL_RefreshZones_Callback, sQuery, 0, DBPrio_High);
@@ -1105,6 +1150,7 @@ public void SQL_RefreshZones_Callback(Database db, DBResultSet results, const ch
 		gI_ZoneMaxData[type] = results.FetchInt(13);
 		gA_ZoneCache[gI_MapZones].iHookedHammerID = results.FetchInt(14);
 		results.FetchString(15, gA_ZoneCache[gI_MapZones].sZoneHookname, 128);
+		gA_ZoneCache[gI_MapZones].fLimitSpeed = results.FetchFloat(16);
 
 		gA_ZoneCache[gI_MapZones].iEntityID = -1;
 
@@ -2005,6 +2051,7 @@ public int MenuHandler_SelectHookZone_Type(Menu menu, MenuAction action, int par
 		menu.GetItem(param2, info, 8);
 
 		gI_ZoneType[param1] = StringToInt(info);
+		gI_ZoneData[param1][gI_ZoneType[param1]] = FindNumbersInString(gS_ZoneHookname[param1]);
 
 		HookZoneConfirmMenu(param1);
 	}
@@ -2059,7 +2106,6 @@ public int HookZoneConfirm_Handler(Menu menu, MenuAction action, int param1, int
 
 		else if(StrEqual(sInfo, "datafromchat"))
 		{
-			gB_WaitingForChatInput[param1] = true;
 			gB_HookZoneConfirm[param1] = true;
 
 			Shavit_PrintToChat(param1, "%T", "ZoneEnterDataChat", param1);
@@ -2341,6 +2387,7 @@ public int MenuHandler_ZoneEdit(Menu menu, MenuAction action, int param1, int pa
 				gI_ZoneData[param1][gI_ZoneType[param1]] = gA_ZoneCache[id].iZoneData;
 				strcopy(gS_ZoneHookname[param1], 128, gA_ZoneCache[id].sZoneHookname);
 				gI_HookZoneHammerID[param1] = gA_ZoneCache[id].iHookedHammerID;
+				gF_ZoneLimitSpeed[param1] = gA_ZoneCache[id].fLimitSpeed;
 
 				// draw the zone edit
 				CreateTimer(0.1, Timer_Draw, GetClientSerial(param1), TIMER_REPEAT);
@@ -2589,18 +2636,23 @@ void Reset(int client)
 	gI_GridSnap[client] = 16;
 	gB_SnapToWall[client] = false;
 	gB_CursorTracing[client] = true;
+
+	gB_WaitingForDataInput[client] = false;
+	gB_WaitingForLimitSpeedInput[client] = false;
+	gB_HookZoneConfirm[client] = false;
+	gB_EditMaxData[client] = false;
+
 	gI_ZoneFlags[client] = 0;
 	gI_ZoneDatabaseID[client] = -1;
-	gB_WaitingForChatInput[client] = false;
-	gB_HookZoneConfirm[client] = false;
 	strcopy(gS_ZoneHookname[client], 128, "NONE");
 	gI_HookZoneHammerID[client] = -1;
+	gF_ZoneLimitSpeed[client] = gCV_EntrySpeedLimit.FloatValue;
 	gI_ZoneID[client] = -1;
+
 	gI_ClientCurrentStage[client] = 0;
 	gI_LastStage[client] = 0;
 	gI_LastCheckpoint[client] = 0;
 	gB_ShowTriggers[client] = false;
-	gB_EditMaxData[client] = false;
 	gH_DrawZonesToClient[client] = null;
 
 	for(int i = 0; i < 3; i++)
@@ -2818,6 +2870,16 @@ public bool TraceFilter_World(int entity, int contentsMask)
 	return (entity == 0);
 }
 
+// This is used instead of `TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed)`.
+// Why: TeleportEntity somehow triggers the zone EndTouch which fucks with `Shavit_InsideZone`.
+void DumbSetVelocity(int client, float fSpeed[3])
+{
+	// Someone please let me know if any of these are unnecessary.
+	SetEntPropVector(client, Prop_Data, "m_vecBaseVelocity", NULL_VECTOR);
+	SetEntPropVector(client, Prop_Data, "m_vecVelocity", fSpeed);
+	SetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed); // m_vecBaseVelocity+m_vecVelocity
+}
+
 public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float vel[3], float angles[3], TimerStatus status, int track, int style)
 {
 	if(gI_MapStep[client] > EditStep_None && gI_MapStep[client] != EditStep_Final)
@@ -2874,6 +2936,77 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 		}
 	}
 
+	// prespeed
+	bool onGround = view_as<bool>(GetEntityFlags(client) & FL_ONGROUND);
+	bool bInStart = InsideZone(client, Zone_Start, track);
+	bool bInStage = InsideZone(client, Zone_Stage, track);
+
+	if(GetEntityMoveType(client) != MOVETYPE_NOCLIP && Shavit_GetStyleSettingInt(style, "prespeed") == 0 && (bInStart || bInStage))
+	{
+		if(gCV_PreSpeed.IntValue >= 1)
+		{
+			// surfheaven prespeed
+			// limit speed since 2 jumps
+			// int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
+			// iGroundEntity == 0 ---> onGround
+			// iGroundEntity == -1 ---> onAir
+
+			if(bInStage && !Shavit_GetMapLimitspeed()) // do not limit all stages' speed
+			{
+				return Plugin_Continue;
+			}
+
+			float fSpeed[3];
+			GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
+			float fSpeedXY = SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0));
+
+			if((bInStart && !gB_InStart[client]) || (bInStage && !gB_InStage[client]))
+			{
+				int zone = InsideZoneGetID(client, InsideZoneGetType(client, track), track);
+				if(gA_ZoneCache[zone].fLimitSpeed <= 0.0)
+				{
+					return Plugin_Continue;
+				}
+
+				if(fSpeedXY > gA_ZoneCache[zone].fLimitSpeed)
+				{
+					fSpeed[0] *= 0.1;
+					fSpeed[1] *= 0.1;
+					DumbSetVelocity(client, fSpeed);
+				}
+			}
+
+			if(GetEntityFlags(client) & FL_BASEVELOCITY) // they are on booster, dont limit them
+			{
+				return Plugin_Continue;
+			}
+
+			if(gB_OnGround[client] && !onGround) // 起跳 starts jump
+			{
+				if(++gI_Jumps[client] >= 2)
+				{
+					float fScale = 260.0 / fSpeedXY;
+
+					if(fScale < 1.0)
+					{
+						fSpeed[0] *= fScale;
+						fSpeed[1] *= fScale;
+						DumbSetVelocity(client, fSpeed);
+					}
+				}
+			}
+
+			else if(gB_OnGround[client] && onGround) // 不跳 not jumping
+			{
+				gI_Jumps[client] = 0;
+			}
+		}
+	}
+
+	gB_OnGround[client] = onGround;
+	gB_InStart[client] = bInStart;
+	gB_InStage[client] = bInStage;
+
 	return Plugin_Continue;
 }
 
@@ -2912,7 +3045,7 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 
 		else if(StrEqual(sInfo, "datafromchat"))
 		{
-			gB_WaitingForChatInput[param1] = true;
+			gB_WaitingForDataInput[param1] = true;
 
 			Shavit_PrintToChat(param1, "%T", "ZoneEnterDataChat", param1);
 
@@ -2945,6 +3078,15 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 			gI_ZoneFlags[param1] ^= ZF_ForceRender;
 		}
 
+		else if(StrEqual(sInfo, "limitspeed"))
+		{
+			gB_WaitingForLimitSpeedInput[param1] = true;
+
+			Shavit_PrintToChat(param1, "%T", "ZoneEnterDataChat", param1);
+
+			return 0;
+		}
+
 		CreateEditMenu(param1);
 	}
 
@@ -2958,18 +3100,25 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
 {
-	if((gB_WaitingForChatInput[client] && gI_MapStep[client] == EditStep_Final) || gB_HookZoneConfirm[client])
+	if(gB_HookZoneConfirm[client])
 	{
-		if(gB_WaitingForChatInput[client])
-		{
-			gI_ZoneData[client][gI_ZoneType[client]] = StringToInt(sArgs);
-		}
+		gI_ZoneData[client][gI_ZoneType[client]] = StringToInt(sArgs);
 
-		if(gB_HookZoneConfirm[client])
-		{
-			HookZoneConfirmMenu(client);
-			return Plugin_Handled;
-		}
+		HookZoneConfirmMenu(client);
+
+		return Plugin_Handled;
+	}
+	else if(gB_WaitingForDataInput[client])
+	{
+		gI_ZoneData[client][gI_ZoneType[client]] = StringToInt(sArgs);
+
+		CreateEditMenu(client);
+
+		return Plugin_Handled;
+	}
+	else if(gB_WaitingForLimitSpeedInput[client])
+	{
+		gF_ZoneLimitSpeed[client] = StringToFloat(sArgs);
 
 		CreateEditMenu(client);
 
@@ -3038,6 +3187,9 @@ void CreateEditMenu(int client)
 
 	FormatEx(sMenuItem, 64, "hammerid: %d", gI_HookZoneHammerID[client]);
 	menu.AddItem("null", sMenuItem, ITEMDRAW_DISABLED);
+
+	FormatEx(sMenuItem, 64, "limitspeed: %.2f", gF_ZoneLimitSpeed[client]);
+	menu.AddItem("limitspeed", sMenuItem);
 
 	menu.ExitButton = false;
 	menu.Display(client, -1);
@@ -3142,8 +3294,8 @@ void InsertZone(int client)
 		Shavit_LogMessage("%L - added %s to map `%s`.", client, sZoneName, gS_Map);
 
 		FormatEx(sQuery, 512,
-			"INSERT INTO %smapzones (map, type, corner1_x, corner1_y, corner1_z, corner2_x, corner2_y, corner2_z, destination_x, destination_y, destination_z, track, flags, data, hammerid, hookname) VALUES ('%s', %d, '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', %d, %d, %d, %d, '%s');",
-			gS_MySQLPrefix, gS_Map, iType, gV_Point1[client][0], gV_Point1[client][1], gV_Point1[client][2], gV_Point2[client][0], gV_Point2[client][1], gV_Point2[client][2], gV_Teleport[client][0], gV_Teleport[client][1], gV_Teleport[client][2], gI_ZoneTrack[client], gI_ZoneFlags[client], gI_ZoneData[client][iType], gI_HookZoneHammerID[client], gS_ZoneHookname[client]);
+			"INSERT INTO %smapzones (map, type, corner1_x, corner1_y, corner1_z, corner2_x, corner2_y, corner2_z, destination_x, destination_y, destination_z, track, flags, data, hammerid, hookname, limitspeed) VALUES ('%s', %d, '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', '%.03f', %d, %d, %d, %d, '%s', '%.2f');",
+			gS_MySQLPrefix, gS_Map, iType, gV_Point1[client][0], gV_Point1[client][1], gV_Point1[client][2], gV_Point2[client][0], gV_Point2[client][1], gV_Point2[client][2], gV_Teleport[client][0], gV_Teleport[client][1], gV_Teleport[client][2], gI_ZoneTrack[client], gI_ZoneFlags[client], gI_ZoneData[client][iType], gI_HookZoneHammerID[client], gS_ZoneHookname[client], gF_ZoneLimitSpeed[client]);
 	}
 
 	else // update
@@ -3162,8 +3314,8 @@ void InsertZone(int client)
 		}
 
 		FormatEx(sQuery, 512,
-			"UPDATE %smapzones SET corner1_x = '%.03f', corner1_y = '%.03f', corner1_z = '%.03f', corner2_x = '%.03f', corner2_y = '%.03f', corner2_z = '%.03f', destination_x = '%.03f', destination_y = '%.03f', destination_z = '%.03f', track = %d, flags = %d, data = %d, hammerid = %d WHERE id = %d;",
-			gS_MySQLPrefix, gV_Point1[client][0], gV_Point1[client][1], gV_Point1[client][2], gV_Point2[client][0], gV_Point2[client][1], gV_Point2[client][2], gV_Teleport[client][0], gV_Teleport[client][1], gV_Teleport[client][2], gI_ZoneTrack[client], gI_ZoneFlags[client], gI_ZoneData[client][iType], gI_HookZoneHammerID[client], gI_ZoneDatabaseID[client]);
+			"UPDATE %smapzones SET corner1_x = '%.03f', corner1_y = '%.03f', corner1_z = '%.03f', corner2_x = '%.03f', corner2_y = '%.03f', corner2_z = '%.03f', destination_x = '%.03f', destination_y = '%.03f', destination_z = '%.03f', track = %d, flags = %d, data = %d, limitspeed = '%.2f' WHERE id = %d;",
+			gS_MySQLPrefix, gV_Point1[client][0], gV_Point1[client][1], gV_Point1[client][2], gV_Point2[client][0], gV_Point2[client][1], gV_Point2[client][2], gV_Teleport[client][0], gV_Teleport[client][1], gV_Teleport[client][2], gI_ZoneTrack[client], gI_ZoneFlags[client], gI_ZoneData[client][iType], gF_ZoneLimitSpeed[client], gI_ZoneDatabaseID[client]);
 	}
 
 	gH_SQL.Query(SQL_InsertZone_Callback, sQuery, GetClientSerial(client));
@@ -3396,8 +3548,8 @@ void SQL_DBConnect()
 
 	char sQuery[1024];
 	FormatEx(sQuery, 1024,
-		"CREATE TABLE IF NOT EXISTS `%smapzones` (`id` INT AUTO_INCREMENT, `map` VARCHAR(128), `type` INT, `corner1_x` FLOAT, `corner1_y` FLOAT, `corner1_z` FLOAT, `corner2_x` FLOAT, `corner2_y` FLOAT, `corner2_z` FLOAT, `destination_x` FLOAT NOT NULL DEFAULT 0, `destination_y` FLOAT NOT NULL DEFAULT 0, `destination_z` FLOAT NOT NULL DEFAULT 0, `track` INT NOT NULL DEFAULT 0, `flags` INT NOT NULL DEFAULT 0, `data` INT NOT NULL DEFAULT 0, `hammerid` INT NOT NULL DEFAULT -1, `hookname` VARCHAR(128) NOT NULL DEFAULT 'NONE', PRIMARY KEY (`id`)) ENGINE=INNODB;",
-		gS_MySQLPrefix);
+		"CREATE TABLE IF NOT EXISTS `%smapzones` (`id` INT AUTO_INCREMENT, `map` VARCHAR(128), `type` INT, `corner1_x` FLOAT, `corner1_y` FLOAT, `corner1_z` FLOAT, `corner2_x` FLOAT, `corner2_y` FLOAT, `corner2_z` FLOAT, `destination_x` FLOAT NOT NULL DEFAULT 0, `destination_y` FLOAT NOT NULL DEFAULT 0, `destination_z` FLOAT NOT NULL DEFAULT 0, `track` INT NOT NULL DEFAULT 0, `flags` INT NOT NULL DEFAULT 0, `data` INT NOT NULL DEFAULT 0, `hammerid` INT NOT NULL DEFAULT -1, `hookname` VARCHAR(128) NOT NULL DEFAULT 'NONE', `limitspeed` FLOAT NOT NULL DEFAULT %f, PRIMARY KEY (`id`)) ENGINE=INNODB;",
+		gS_MySQLPrefix, gCV_EntrySpeedLimit.FloatValue);
 
 	gH_SQL.Query(SQL_CreateTable_Callback, sQuery);
 }
@@ -4205,4 +4357,23 @@ void DoTeleport(int client, int zone)
 	{
 		TeleportEntity(client, gV_ZoneCenter[zone], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
 	}
+}
+
+int FindNumbersInString(const char[] str)
+{
+	Regex sRegex = new Regex("[0-9]{1,}");
+
+	if(sRegex.Match(str) > 0)
+	{
+		char sNum[4];
+		sRegex.GetSubString(0, sNum, 4);
+
+		delete sRegex;
+
+		return StringToInt(sNum);
+	}
+
+	delete sRegex;
+
+	return 0;
 }

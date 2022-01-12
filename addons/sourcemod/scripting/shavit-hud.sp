@@ -565,7 +565,7 @@ public void Shavit_OnEnterStageZone_Bot(int bot, int stage)
 	}
 
 	int style = Shavit_GetReplayBotStyle(bot);
-	if(style == -1 || Shavit_GetClientStage(bot) == stage) // invalid style or get into the same stage(dont print twice)
+	if(style == -1 || Shavit_GetReplayBotTrack(bot) != Track_Main || Shavit_GetClientStage(bot) == stage) // invalid style or track or get into the same stage(dont print twice)
 	{
 		return;
 	}
@@ -589,16 +589,31 @@ public void Shavit_OnEnterStageZone_Bot(int bot, int stage)
 
 public void Shavit_OnLeaveStartZone_Bot(int bot, int track, float speed)
 {
+	if(Shavit_GetReplayBotTrack(bot) != track)
+	{
+		return;
+	}
+
 	SendMessageToSpectator(bot, "%t", "BotPrestrafe", RoundToFloor(speed), true);
 }
 
 public void Shavit_OnLeaveStageZone_Bot(int bot, int stage, float speed)
 {
+	if(Shavit_GetReplayBotTrack(bot) != Track_Main)
+	{
+		return;
+	}
+
 	SendMessageToSpectator(bot, "%t", "BotPrestrafe", RoundToFloor(speed), true);
 }
 
 public void Shavit_OnLeaveCheckpointZone_Bot(int bot, int cp, float speed)
 {
+	if(Shavit_GetReplayBotTrack(bot) != Track_Main)
+	{
+		return;
+	}
+
 	SendMessageToSpectator(bot, "%t", "BotPrestrafe", RoundToFloor(speed), true);
 }
 
