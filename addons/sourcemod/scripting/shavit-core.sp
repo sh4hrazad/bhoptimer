@@ -3330,6 +3330,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	}
 
 	bool bInWater = (GetEntProp(client, Prop_Send, "m_nWaterLevel") >= 2);
+	bool bOnGround = (!bInWater && mtMoveType == MOVETYPE_WALK && iGroundEntity != -1);
 
 	// css old auto jump code 
 	/*if (GetStyleSettingBool(gA_Timers[client].bsStyle, "autobhop") && gB_Auto[client] && (buttons & IN_JUMP) > 0 && mtMoveType == MOVETYPE_WALK && !bInWater)
@@ -3337,9 +3338,6 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		int iOldButtons = GetEntProp(client, Prop_Data, "m_nOldButtons");
 		SetEntProp(client, Prop_Data, "m_nOldButtons", (iOldButtons & ~IN_JUMP));
 	}*/
-
-	// perf jump measuring
-	bool bOnGround = (!bInWater && mtMoveType == MOVETYPE_WALK && iGroundEntity != -1);
 
 	// no jump zone implementation
 	/*if (buttons & IN_JUMP) > 0)
