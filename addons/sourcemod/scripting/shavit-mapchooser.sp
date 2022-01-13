@@ -1703,8 +1703,8 @@ public int MapsMenuHandler(Menu menu, MenuAction action, int param1, int param2)
 		char map[PLATFORM_MAX_PATH];
 		menu.GetItem(param2, map, sizeof(map));
 
-		ShowActivity2(param2, g_cPrefix, "%t", "Changing map", map);
-		LogAction(param2, -1, "\"%L\" changed map to \"%s\"", param2, map);
+		ShowActivity2(param1, g_cPrefix, "%t", "Changing map", map);
+		LogAction(param1, -1, "\"%L\" changed map to \"%s\"", param1, map);
 
 		DataPack dp = new DataPack();
 		CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, dp);
