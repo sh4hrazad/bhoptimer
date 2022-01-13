@@ -1318,27 +1318,7 @@ public int Native_Replay_DeleteMap(Handle handler, int numParams)
 	GetNativeString(1, sMap, sizeof(sMap));
 	LowercaseString(sMap);
 
-	for(int i = 0; i < gI_Styles; i++)
-	{
-		if(!ReplayEnabled(i))
-		{
-			continue;
-		}
-
-		for(int j = 0; j < TRACKS_SIZE; j++)
-		{
-			char sTrack[4];
-			FormatEx(sTrack, 4, "_%d", j);
-
-			char sPath[PLATFORM_MAX_PATH];
-			FormatEx(sPath, PLATFORM_MAX_PATH, "%s/%d/%s%s.replay", gS_ReplayFolder, i, sMap, (j > 0)? sTrack:"");
-
-			if(FileExists(sPath))
-			{
-				DeleteFile(sPath);
-			}
-		}
-	}
+	DeleteAllReplays(sMap);
 
 	if(StrEqual(gS_Map, sMap, false))
 	{
@@ -2239,7 +2219,7 @@ bool DeleteReplay(int style, int track, int accountid, const char[] mapname)
 			return false;
 		}
 	}
-	
+
 	if(!DeleteFile(sPath))
 	{
 		return false;
@@ -2251,6 +2231,31 @@ bool DeleteReplay(int style, int track, int accountid, const char[] mapname)
 	}
 
 	return true;
+}
+
+void DeleteAllReplays(const char[] map)
+{
+	for(int i = 0; i < gI_Styles; i++)
+	{
+		if(!ReplayEnabled(i))
+		{
+			continue;
+		}
+
+		for(int j = 0; j < TRACKS_SIZE; j++)
+		{
+			char sTrack[4];
+			FormatEx(sTrack, 4, "_%d", j);
+
+			char sPath[PLATFORM_MAX_PATH];
+			FormatEx(sPath, PLATFORM_MAX_PATH, "%s/%d/%s%s.replay", gS_ReplayFolder, i, map, (j > 0)? sTrack:"");
+
+			if(FileExists(sPath))
+			{
+				DeleteFile(sPath);
+			}
+		}
+	}
 }
 
 bool LoadStageReplay(frame_cache_t cache, int style, int stage)
@@ -2430,6 +2435,12 @@ public void SQL_GetStageUserName_Callback(Database db, DBResultSet results, cons
 	{
 		results.FetchString(0, gA_FrameCache_Stage[style][stage].sReplayName, MAX_NAME_LENGTH);
 	}
+}
+
+public void Shavit_OnDeleteMapData(int client, const char[] map)
+{
+	DeleteAllReplays(map);
+	Shavit_PrintToChat(client, "Deleted all replay data for %s.", map);
 }
 
 public void OnClientPutInServer(int client)
@@ -3050,7 +3061,7 @@ void DoReplaySaverCallbacks(int iSteamID, int client, int style, float time, int
 	ClearFrames(client);
 }
 
-public void Shavit_OnFinish(int client, int style, float time, int jumps, int strafes, float sync, int track, float oldtime, float perfs, float avgvel, float maxvel, int timestamp)
+public void Shavit_OnFinish(int client, int style, float time, int jumps, int strafes, float sync, int track, float& oldtime, float perfs, float avgvel, float maxvel, int timestamp)
 {
 	if(Shavit_IsPracticeMode(client) || !gCV_Enabled.BoolValue || gI_PlayerFrames[client] == 0)
 	{

@@ -1704,9 +1704,7 @@ public int Native_Rankings_DeleteMap(Handle handler, int numParams)
 	GetNativeString(1, sMap, sizeof(sMap));
 	LowercaseString(sMap);
 
-	char sQuery[512];
-	FormatEx(sQuery, sizeof(sQuery), "DELETE FROM %smaptiers WHERE map = '%s';", gS_MySQLPrefix, sMap);
-	gH_SQL.Query(SQL_DeleteMap_Callback, sQuery, StrEqual(gS_Map, sMap, false), DBPrio_High);
+	DeleteMapAllRankings(sMap);
 }
 
 public int Native_GuessPointsForTime(Handle plugin, int numParams)
@@ -1755,6 +1753,19 @@ float Sourcepawn_GetRecordPoints(int rtrack, float rtime, float pointspertier, f
 	return ppoints;
 }
 
+public void Shavit_OnDeleteMapData(int client, const char[] map)
+{
+	DeleteMapAllRankings(map);
+	Shavit_PrintToChat(client, "Deleted all rankings for %s.", map);
+}
+
+void DeleteMapAllRankings(const char[] map)
+{
+	char sQuery[512];
+	FormatEx(sQuery, sizeof(sQuery), "DELETE FROM %smaptiers WHERE map = '%s';", gS_MySQLPrefix, map);
+	gH_SQL.Query(SQL_DeleteMap_Callback, sQuery, StrEqual(gS_Map, map, false), DBPrio_High);
+}
+
 public void SQL_DeleteMap_Callback(Database db, DBResultSet results, const char[] error, any data)
 {
 	if(results == null)
@@ -1767,7 +1778,7 @@ public void SQL_DeleteMap_Callback(Database db, DBResultSet results, const char[
 	if(view_as<bool>(data))
 	{
 		gI_Tier = gCV_DefaultTier.IntValue;
-		
+
 		UpdateAllPoints(true);
 		UpdateRankedPlayers();
 	}

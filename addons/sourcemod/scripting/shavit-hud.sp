@@ -197,9 +197,8 @@ public void OnPluginStart()
 		..."HUD_SYNC					256\n"
 		..."HUD_TIMELEFT				512\n"
 		..."HUD_2DVEL				1024\n"
-		..."HUD_NOSOUNDS				2048\n"
-		..."HUD_NOPRACALERT			4096\n");
-		
+		..."HUD_NOSOUNDS				2048\n");
+
 	IntToString(HUD_DEFAULT2, defaultHUD, 8);
 	gCV_DefaultHUD2 = new Convar("shavit_hud2_default", defaultHUD, "Default HUD2 settings as a bitflag of what to remove\n"
 		..."HUD2_TIME				1\n"
@@ -718,7 +717,6 @@ void ToggleHUD(int client, int hud, bool chat)
 			case HUD_TIMELEFT: FormatEx(sHUDSetting, 64, "%T", "HudTimeLeft", client);
 			case HUD_2DVEL: FormatEx(sHUDSetting, 64, "%T", "Hud2dVel", client);
 			case HUD_NOSOUNDS: FormatEx(sHUDSetting, 64, "%T", "HudNoRecordSounds", client);
-			case HUD_NOPRACALERT: FormatEx(sHUDSetting, 64, "%T", "HudPracticeModeAlert", client);
 		}
 
 		if((gI_HUDSettings[client] & hud) > 0)
@@ -826,10 +824,6 @@ Action ShowHUDMenu(int client, int item)
 		FormatEx(sHudItem, 64, "%T", "HudNoRecordSounds", client);
 		menu.AddItem(sInfo, sHudItem);
 	}
-
-	FormatEx(sInfo, 16, "!%d", HUD_NOPRACALERT);
-	FormatEx(sHudItem, 64, "%T", "HudPracticeModeAlert", client);
-	menu.AddItem(sInfo, sHudItem);
 
 	// HUD2 - disables selected elements
 	FormatEx(sInfo, 16, "@%d", HUD2_TIME);

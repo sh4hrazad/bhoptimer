@@ -33,8 +33,6 @@
 #pragma newdecls required
 #pragma semicolon 1
 
-#define DEBUG 0
-
 #define EFL_CHECK_UNTOUCH (1<<24)
 
 // game type (CS:GO)
@@ -74,6 +72,10 @@ Handle gH_Forwards_OnTimescaleChanged = null;
 Handle gH_Forwards_OnTimeOffsetCalculated = null;
 Handle gH_Forwards_OnProcessMovement = null;
 Handle gH_Forwards_OnProcessMovementPost = null;
+Handle gH_Forwards_OnDeleteMapData = null;
+Handle gH_Forwards_OnCommandStyle = null;
+Handle gH_Forwards_OnUserDeleteData = null;
+Handle gH_Forwards_OnDeleteRestOfUserSuccess = null;
 
 StringMap gSM_StyleCommands = null;
 
@@ -98,18 +100,10 @@ Handle gH_AutoBhopCookie = null;
 // late load
 bool gB_Late = false;
 
-// modules
-bool gB_Zones = false;
-bool gB_WR = false;
-bool gB_Replay = false;
-bool gB_Rankings = false;
-bool gB_HUD = false;
-
 // cvars
 Convar gCV_Restart = null;
 Convar gCV_Pause = null;
 Convar gCV_PauseMovement = null;
-Convar gCV_AllowTimerWithoutZone = null;
 Convar gCV_BlockPreJump = null;
 Convar gCV_NoZAxisSpeed = null;
 Convar gCV_VelocityTeleport = null;
@@ -118,7 +112,6 @@ Convar gCV_NoChatSound = null;
 Convar gCV_SimplerLadders = null;
 Convar gCV_UseOffsets = null;
 Convar gCV_TimeInMessages;
-Convar gCV_DebugOffsets = null;
 
 // cached cvars
 int gI_DefaultStyle = 0;
@@ -237,8 +230,8 @@ public void OnPluginStart()
 	gH_Forwards_StartPre = CreateGlobalForward("Shavit_OnStartPre", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_Stop = CreateGlobalForward("Shavit_OnStop", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_StopPre = CreateGlobalForward("Shavit_OnStopPre", ET_Event, Param_Cell, Param_Cell);
-	gH_Forwards_FinishPre = CreateGlobalForward("Shavit_OnFinishPre", ET_Event, Param_Cell, Param_Array);
-	gH_Forwards_Finish = CreateGlobalForward("Shavit_OnFinish", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
+	gH_Forwards_FinishPre = CreateGlobalForward("Shavit_OnFinishPre", ET_Hook, Param_Cell, Param_Array);
+	gH_Forwards_Finish = CreateGlobalForward("Shavit_OnFinish", ET_Event, Param_Cell, Param_Cell, Param_Float, Param_Cell, Param_Cell, Param_Float, Param_Cell, Param_FloatByRef, Param_Float, Param_Float, Param_Float, Param_Cell);
 	gH_Forwards_OnRestartPre = CreateGlobalForward("Shavit_OnRestartPre", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_OnRestart = CreateGlobalForward("Shavit_OnRestart", ET_Ignore, Param_Cell, Param_Cell);
 	gH_Forwards_OnEnd = CreateGlobalForward("Shavit_OnEnd", ET_Event, Param_Cell, Param_Cell);
@@ -256,6 +249,11 @@ public void OnPluginStart()
 	gH_Forwards_OnTimeOffsetCalculated = CreateGlobalForward("Shavit_OnTimeOffsetCalculated", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
 	gH_Forwards_OnProcessMovement = CreateGlobalForward("Shavit_OnProcessMovement", ET_Event, Param_Cell);
 	gH_Forwards_OnProcessMovementPost = CreateGlobalForward("Shavit_OnProcessMovementPost", ET_Event, Param_Cell);
+	gH_Forwards_OnDeleteMapData = CreateGlobalForward("Shavit_OnDeleteMapData", ET_Event, Param_Cell, Param_String);
+	gH_Forwards_OnCommandStyle = CreateGlobalForward("Shavit_OnCommandStyle", ET_Event, Param_Cell, Param_Cell, Param_FloatByRef);
+	gH_Forwards_OnUserDeleteData = CreateGlobalForward("Shavit_OnUserDeleteData", ET_Event, Param_Cell, Param_Cell);
+	gH_Forwards_OnDeleteRestOfUserSuccess = CreateGlobalForward("Shavit_OnDeleteRestOfUserSuccess", ET_Event, Param_Cell, Param_Cell);
+
 	LoadTranslations("shavit-core.phrases");
 	LoadTranslations("shavit-common.phrases");
 
@@ -319,11 +317,6 @@ public void OnPluginStart()
 	// style commands
 	gSM_StyleCommands = new StringMap();
 
-	#if DEBUG
-	RegConsoleCmd("sm_finishtest", Command_FinishTest);
-	RegConsoleCmd("sm_fling", Command_Fling);
-	#endif
-
 	// admin
 	RegAdminCmd("sm_deletemap", Command_DeleteMap, ADMFLAG_ROOT, "Deletes all map data. Usage: sm_deletemap <map>");
 	RegAdminCmd("sm_wipeplayer", Command_WipePlayer, ADMFLAG_BAN, "Wipes all bhoptimer data for specified player. Usage: sm_wipeplayer <steamid3>");
@@ -337,7 +330,6 @@ public void OnPluginStart()
 
 	gCV_Restart = new Convar("shavit_core_restart", "1", "Allow commands that restart the timer?", 0, true, 0.0, true, 1.0);
 	gCV_Pause = new Convar("shavit_core_pause", "1", "Allow pausing?", 0, true, 0.0, true, 1.0);
-	gCV_AllowTimerWithoutZone = new Convar("shavit_core_timernozone", "0", "Allow the timer to start if there's no start zone?", 0, true, 0.0, true, 1.0);
 	gCV_PauseMovement = new Convar("shavit_core_pause_movement", "1", "Allow movement/noclip while paused?", 0, true, 0.0, true, 1.0);
 	gCV_BlockPreJump = new Convar("shavit_core_blockprejump", "0", "Prevents jumping in the start zone.", 0, true, 0.0, true, 1.0);
 	gCV_NoZAxisSpeed = new Convar("shavit_core_nozaxisspeed", "0", "Don't start timer if vertical speed exists (btimes style).", 0, true, 0.0, true, 1.0);
@@ -347,7 +339,6 @@ public void OnPluginStart()
 	gCV_SimplerLadders = new Convar("shavit_core_simplerladders", "1", "Allows using all keys on limited styles (such as sideways) after touching ladders\nTouching the ground enables the restriction again.", 0, true, 0.0, true, 1.0);
 	gCV_UseOffsets = new Convar("shavit_core_useoffsets", "1", "Calculates more accurate times by subtracting/adding tick offsets from the time the server uses to register that a player has left or entered a trigger", 0, true, 0.0, true, 1.0);
 	gCV_TimeInMessages = new Convar("shavit_core_timeinmessages", "0", "Whether to prefix SayText2 messages with the time.", 0, true, 0.0, true, 1.0);
-	gCV_DebugOffsets = new Convar("shavit_core_debugoffsets", "0", "Print offset upon leaving or entering a zone?", 0, true, 0.0, true, 1.0);
 	gCV_DefaultStyle.AddChangeHook(OnConVarChanged);
 
 	Convar.AutoExecConfig();
@@ -358,12 +349,6 @@ public void OnPluginStart()
 	{
 		sv_enablebunnyhopping.Flags &= ~(FCVAR_NOTIFY | FCVAR_REPLICATED);
 	}
-
-	gB_Zones = LibraryExists("shavit-zones");
-	gB_WR = LibraryExists("shavit-wr");
-	gB_Replay = LibraryExists("shavit-replay");
-	gB_Rankings = LibraryExists("shavit-rankings");
-	gB_HUD = LibraryExists("shavit-hud");
 
 	// database connections
 	SQL_DBConnect();
@@ -383,11 +368,12 @@ public void OnPluginStart()
 
 void LoadDHooks()
 {
-	Handle gamedataConf = LoadGameConfigFile("shavit.games");
+	GameData gamedataConf = new GameData("shavit.games");
 
 	if(gamedataConf == null)
 	{
 		SetFailState("Failed to load shavit gamedata");
+		delete gamedataConf;
 	}
 
 	StartPrepSDKCall(SDKCall_Static);
@@ -411,6 +397,7 @@ void LoadDHooks()
 	if(!GameConfGetKeyValue(gamedataConf, "IGameMovement", interfaceName, sizeof(interfaceName)))
 	{
 		SetFailState("Failed to get IGameMovement interface name");
+		delete gamedataConf;
 	}
 
 	Address IGameMovement = SDKCall(CreateInterface, interfaceName, 0);
@@ -465,62 +452,6 @@ public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] n
 	gI_DefaultStyle = StringToInt(newValue[1]);
 }
 
-public void OnLibraryAdded(const char[] name)
-{
-	if(StrEqual(name, "shavit-zones"))
-	{
-		gB_Zones = true;
-	}
-
-	else if(StrEqual(name, "shavit-wr"))
-	{
-		gB_WR = true;
-	}
-
-	else if(StrEqual(name, "shavit-replay"))
-	{
-		gB_Replay = true;
-	}
-
-	else if(StrEqual(name, "shavit-rankings"))
-	{
-		gB_Rankings = true;
-	}
-
-	else if(StrEqual(name, "shavit-hud"))
-	{
-		gB_HUD = true;
-	}
-}
-
-public void OnLibraryRemoved(const char[] name)
-{
-	if(StrEqual(name, "shavit-zones"))
-	{
-		gB_Zones = false;
-	}
-
-	else if(StrEqual(name, "shavit-wr"))
-	{
-		gB_WR = false;
-	}
-
-	else if(StrEqual(name, "shavit-replay"))
-	{
-		gB_Replay = false;
-	}
-
-	else if(StrEqual(name, "shavit-rankings"))
-	{
-		gB_Rankings = false;
-	}
-
-	else if(StrEqual(name, "shavit-hud"))
-	{
-		gB_HUD = false;
-	}
-}
-
 public void OnMapStart()
 {
 	// styles
@@ -567,11 +498,7 @@ public Action Command_StartTimer(int client, int args)
 		}
 		else if (args < 1)
 		{
-			track = Shavit_GetClientTrack(client);
-			if(track == Track_Main)
-			{
-				return OpenBonusMenu(client);
-			}
+			track = Track_Bonus;
 		}
 		else
 		{
@@ -588,97 +515,25 @@ public Action Command_StartTimer(int client, int args)
 	else if(StrContains(sCommand, "sm_r", false) == 0)
 	{
 		track = Track_Main;
-
-		Action result = Plugin_Continue;
-		Call_StartForward(gH_Forwards_OnRestartPre);
-		Call_PushCell(client);
-		Call_PushCell(track);
-		Call_Finish(result);
-
-		if (result > Plugin_Continue)
-		{
-			return Plugin_Handled;
-		}
 	}
 
-	if(gCV_AllowTimerWithoutZone.BoolValue || (gB_Zones && Shavit_ZoneExists(Zone_Start, track)))
+	Action result = Plugin_Continue;
+	Call_StartForward(gH_Forwards_OnRestartPre);
+	Call_PushCell(client);
+	Call_PushCell(track);
+	Call_Finish(result);
+
+	if(result > Plugin_Continue)
 	{
-		if(!Shavit_StopTimer(client, false))
-		{
-			return Plugin_Handled;
-		}
-
-		Call_StartForward(gH_Forwards_OnRestart);
-		Call_PushCell(client);
-		Call_PushCell(track);
-		Call_Finish();
-
-		if(gCV_AllowTimerWithoutZone.BoolValue || !gB_Zones)
-		{
-			StartTimer(client, track);
-		}
+		return Plugin_Handled;
 	}
-	else
-	{
-		char sTrack[32];
-		GetTrackName(client, track, sTrack, 32);
 
-		Shavit_PrintToChat(client, "%T", "StartZoneUndefined", client, sTrack);
-	}
+	Call_StartForward(gH_Forwards_OnRestart);
+	Call_PushCell(client);
+	Call_PushCell(track);
+	Call_Finish();
 
 	return Plugin_Handled;
-}
-
-Action OpenBonusMenu(int client)
-{
-	Menu menu = new Menu(OpenBonusMenu_Handler);
-	menu.SetTitle("Select a bonus\n ");
-
-	int lastbonus = Track_Bonus;
-
-	for(int i = Track_Bonus; i <= Track_Bonus_Last; i++)
-	{
-		if(gB_Zones && Shavit_ZoneExists(Zone_Start, i))
-		{
-			char sItem[4];
-			IntToString(i, sItem, 4);
-
-			char sDisplay[16];
-			FormatEx(sDisplay, 16, "Bonus %d", i);
-			menu.AddItem(sItem, sDisplay);
-
-			lastbonus = i;
-		}
-	}
-
-	if(menu.ItemCount <= 1)
-	{
-		delete menu;
-		FakeClientCommand(client, "sm_b%d", lastbonus);
-	}
-	else
-	{
-		menu.Display(client, -1);
-	}
-
-	return Plugin_Handled;
-}
-
-public int OpenBonusMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
-{
-	if(action == MenuAction_Select)
-	{
-		char sInfo[4];
-		menu.GetItem(param2, sInfo, 4);
-
-		FakeClientCommand(param1, "sm_b%d", StringToInt(sInfo));
-	}
-	else if(action == MenuAction_End)
-	{
-		delete menu;
-	}
-
-	return 0;
 }
 
 public Action Command_TeleportEnd(int client, int args)
@@ -712,21 +567,10 @@ public Action Command_TeleportEnd(int client, int args)
 		}
 	}
 
-	if(gB_Zones && Shavit_ZoneExists(Zone_End, track))
-	{
-		if(Shavit_StopTimer(client, false))
-		{
-			Call_StartForward(gH_Forwards_OnEnd);
-			Call_PushCell(client);
-			Call_PushCell(track);
-			Call_Finish();
-		}
-	}
-
-	else
-	{
-		Shavit_PrintToChat(client, "%T", "EndZoneUndefined", client);
-	}
+	Call_StartForward(gH_Forwards_OnEnd);
+	Call_PushCell(client);
+	Call_PushCell(track);
+	Call_Finish();
 
 	return Plugin_Handled;
 }
@@ -831,24 +675,6 @@ public Action Command_TogglePause(int client, int args)
 	return Plugin_Handled;
 }
 
-#if DEBUG
-public Action Command_FinishTest(int client, int args)
-{
-	Shavit_FinishMap(client, gA_Timers[client].iTimerTrack);
-
-	return Plugin_Handled;
-}
-
-public Action Command_Fling(int client, int args)
-{
-	float up[3];
-	up[2] = 1000.0;
-	SetEntPropVector(client, Prop_Data, "m_vecBaseVelocity", up);
-
-	return Plugin_Handled;
-}
-#endif
-
 public Action Command_DeleteMap(int client, int args)
 {
 	if(args == 0)
@@ -864,29 +690,10 @@ public Action Command_DeleteMap(int client, int args)
 
 	if(StrEqual(sArgs, "confirm") && strlen(gS_DeleteMap[client]) > 0)
 	{
-		if(gB_WR)
-		{
-			Shavit_WR_DeleteMap(gS_DeleteMap[client]);
-			ReplyToCommand(client, "Deleted all records for %s.", gS_DeleteMap[client]);
-		}
-
-		if(gB_Zones)
-		{
-			Shavit_Zones_DeleteMap(gS_DeleteMap[client]);
-			ReplyToCommand(client, "Deleted all zones for %s.", gS_DeleteMap[client]);
-		}
-
-		if(gB_Replay)
-		{
-			Shavit_Replay_DeleteMap(gS_DeleteMap[client]);
-			ReplyToCommand(client, "Deleted all replay data for %s.", gS_DeleteMap[client]);
-		}
-
-		if(gB_Rankings)
-		{
-			Shavit_Rankings_DeleteMap(gS_DeleteMap[client]);
-			ReplyToCommand(client, "Deleted all rankings for %s.", gS_DeleteMap[client]);
-		}
+		Call_StartForward(gH_Forwards_OnDeleteMapData);
+		Call_PushCell(client);
+		Call_PushString(gS_DeleteMap[client]);
+		Call_Finish();
 
 		ReplyToCommand(client, "Finished deleting data for %s.", gS_DeleteMap[client]);
 		gS_DeleteMap[client] = "";
@@ -1000,10 +807,10 @@ public void Trans_DeleteRestOfUserSuccess(Database db, DataPack hPack, int numQu
 	int iSteamID = hPack.ReadCell();
 	delete hPack;
 
-	if(gB_WR)
-	{
-		Shavit_ReloadLeaderboards();
-	}
+	Call_StartForward(gH_Forwards_OnDeleteRestOfUserSuccess);
+	Call_PushCell(client);
+	Call_PushCell(iSteamID);
+	Call_Finish();
 
 	Shavit_LogMessage("%L - wiped user data for [U:1:%d].", client, iSteamID);
 	Shavit_PrintToChat(client, "Finished wiping timer data for user %s[U:1:%d]%s.", gS_ChatStrings.sVariable, iSteamID, gS_ChatStrings.sText);
@@ -1033,49 +840,14 @@ void DeleteRestOfUser(int iSteamID, DataPack hPack)
 
 void DeleteUserData(int client, const int iSteamID)
 {
+	Call_StartForward(gH_Forwards_OnUserDeleteData);
+	Call_PushCell(client);
+	Call_PushCell(iSteamID);
+	Call_Finish();
+
 	DataPack hPack = new DataPack();
 	hPack.WriteCell(client);
 	hPack.WriteCell(iSteamID);
-	char sQuery[512];
-
-	if(gB_WR)
-	{
-		FormatEx(sQuery, sizeof(sQuery),
-			"SELECT id, style, track, map FROM %swrs WHERE auth = %d;",
-			gS_MySQLPrefix, iSteamID);
-
-		gH_SQL.Query(SQL_DeleteUserData_GetRecords_Callback, sQuery, hPack, DBPrio_High);
-	}
-	else
-	{
-		DeleteRestOfUser(iSteamID, hPack);
-	}
-}
-
-public void SQL_DeleteUserData_GetRecords_Callback(Database db, DBResultSet results, const char[] error, DataPack hPack)
-{
-	hPack.Reset();
-	hPack.ReadCell(); /*int client = */
-	int iSteamID = hPack.ReadCell();
-
-	if(results == null)
-	{
-		LogError("Timer error! Failed to wipe user data (wipe | get player records). Reason: %s", error);
-		delete hPack;
-		return;
-	}
-
-	char map[PLATFORM_MAX_PATH];
-
-	while(results.FetchRow())
-	{
-		int id = results.FetchInt(0);
-		int style = results.FetchInt(1);
-		int track = results.FetchInt(2);
-		results.FetchString(3, map, sizeof(map));
-
-		Shavit_DeleteWR(style, track, map, iSteamID, id, false, false);
-	}
 
 	DeleteRestOfUser(iSteamID, hPack);
 }
@@ -1124,7 +896,7 @@ public Action Command_Style(int client, int args)
 		// this logic will prevent the style from showing in !style menu if it's specifically inaccessible
 		// or just completely disabled
 		if((GetStyleSettingBool(iStyle, "inaccessible") && GetStyleSettingInt(iStyle, "enabled") == 1) ||
-		GetStyleSettingInt(iStyle, "enabled") == -1)
+			GetStyleSettingInt(iStyle, "enabled") == -1)
 		{
 			continue;
 		}
@@ -1145,10 +917,11 @@ public Action Command_Style(int client, int args)
 		{
 			float time = 0.0;
 
-			if(gB_WR)
-			{
-				time = Shavit_GetWorldRecord(iStyle, gA_Timers[client].iTimerTrack);
-			}
+			Call_StartForward(gH_Forwards_OnCommandStyle);
+			Call_PushCell(client);
+			Call_PushCell(iStyle);
+			Call_PushFloatRef(time);
+			Call_Finish();
 
 			if(time > 0.0)
 			{
@@ -1309,15 +1082,12 @@ void ChangeClientStyle(int client, int style, bool manual)
 	}
 
 	CallOnStyleChanged(client, gA_Timers[client].bsStyle, style, manual);
+	Shavit_StopTimer(client, true);
 
-	if(gCV_AllowTimerWithoutZone.BoolValue || (gB_Zones && (Shavit_ZoneExists(Zone_Start, gA_Timers[client].iTimerTrack))))
-	{
-		Shavit_StopTimer(client, true);
-		Call_StartForward(gH_Forwards_OnRestart);
-		Call_PushCell(client);
-		Call_PushCell(gA_Timers[client].iTimerTrack);
-		Call_Finish();
-	}
+	Call_StartForward(gH_Forwards_OnRestart);
+	Call_PushCell(client);
+	Call_PushCell(gA_Timers[client].iTimerTrack);
+	Call_Finish();
 
 	char sStyle[4];
 	IntToString(style, sStyle, 4);
@@ -1438,7 +1208,7 @@ public void Player_Death(Event event, const char[] name, bool dontBroadcast)
 	int client = GetClientOfUserId(event.GetInt("userid"));
 
 	ResumeTimer(client);
-	StopTimer(client);
+	Shavit_StopTimer(client);
 }
 
 public int Native_GetOrderedStyles(Handle handler, int numParams)
@@ -1599,15 +1369,6 @@ public int Native_FinishMap(Handle handler, int numParams)
 	if(gCV_UseOffsets.BoolValue)
 	{
 		CalculateTickIntervalOffset(client, Zone_End);
-
-		if(gCV_DebugOffsets.BoolValue)
-		{
-			char sOffsetMessage[100];
-			char sOffsetDistance[8];
-			FormatEx(sOffsetDistance, 8, "%.1f", gA_Timers[client].fDistanceOffset[Zone_End]);
-			FormatEx(sOffsetMessage, sizeof(sOffsetMessage), "[END] %T %d", "DebugOffsets", client, gA_Timers[client].fZoneOffset[Zone_End], sOffsetDistance, gA_Timers[client].iZoneIncrement);
-			Shavit_PrintToChat(client, "%s", sOffsetMessage);
-		}
 	}
 
 	gA_Timers[client].fCurrentTime = (gA_Timers[client].fTimescaledTicks + gA_Timers[client].fZoneOffset[Zone_Start] + gA_Timers[client].fZoneOffset[Zone_End]) * GetTickInterval();
@@ -1626,66 +1387,54 @@ public int Native_FinishMap(Handle handler, int numParams)
 		return;
 	}
 
-#if DEBUG
-	float offset = (gA_Timers[client].fZoneOffset[Zone_Start] + gA_Timers[client].fZoneOffset[Zone_End]) * GetTickInterval();
-	PrintToServer("0x%X %f -- ticks*interval -- offsettime=%f ticks=%.0f", snapshot.fCurrentTime, snapshot.fCurrentTime, offset, snapshot.fTimescaledTicks);
-#endif
-
 	Call_StartForward(gH_Forwards_Finish);
 	Call_PushCell(client);
 
-	int style = 0;
-	int track = Track_Main;
 	float perfs = 100.0;
 
 	if(result == Plugin_Continue)
 	{
-		Call_PushCell(style = gA_Timers[client].bsStyle);
-		Call_PushCell(gA_Timers[client].fCurrentTime);
+		Call_PushCell(gA_Timers[client].bsStyle);
+		Call_PushFloat(gA_Timers[client].fCurrentTime);
 		Call_PushCell(gA_Timers[client].iJumps);
 		Call_PushCell(gA_Timers[client].iStrafes);
 		//gross
-		Call_PushCell((GetStyleSettingBool(gA_Timers[client].bsStyle, "sync"))? (gA_Timers[client].iGoodGains == 0)? 0.0:(gA_Timers[client].iGoodGains / float(gA_Timers[client].iTotalMeasures) * 100.0):-1.0);
-		Call_PushCell(track = gA_Timers[client].iTimerTrack);
+		Call_PushFloat((GetStyleSettingBool(gA_Timers[client].bsStyle, "sync"))? (gA_Timers[client].iGoodGains == 0)? 0.0:(gA_Timers[client].iGoodGains / float(gA_Timers[client].iTotalMeasures) * 100.0):-1.0);
+		Call_PushCell(gA_Timers[client].iTimerTrack);
 		perfs = (gA_Timers[client].iMeasuredJumps == 0)? 100.0:(gA_Timers[client].iPerfectJumps / float(gA_Timers[client].iMeasuredJumps) * 100.0);
 	}
 	else
 	{
-		Call_PushCell(style = snapshot.bsStyle);
-		Call_PushCell(snapshot.fCurrentTime);
+		Call_PushCell(snapshot.bsStyle);
+		Call_PushFloat(snapshot.fCurrentTime);
 		Call_PushCell(snapshot.iJumps);
 		Call_PushCell(snapshot.iStrafes);
 		// gross
-		Call_PushCell((GetStyleSettingBool(snapshot.bsStyle, "sync"))? (snapshot.iGoodGains == 0)? 0.0:(snapshot.iGoodGains / float(snapshot.iTotalMeasures) * 100.0):-1.0);
-		Call_PushCell(track = snapshot.iTimerTrack);
+		Call_PushFloat((GetStyleSettingBool(snapshot.bsStyle, "sync"))? (snapshot.iGoodGains == 0)? 0.0:(snapshot.iGoodGains / float(snapshot.iTotalMeasures) * 100.0):-1.0);
+		Call_PushCell(snapshot.iTimerTrack);
 		perfs = (snapshot.iMeasuredJumps == 0)? 100.0:(snapshot.iPerfectJumps / float(snapshot.iMeasuredJumps) * 100.0);
 	}
 
 	float oldtime = 0.0;
 
-	if(gB_WR)
-	{
-		oldtime = Shavit_GetClientPB(client, style, track);
-	}
-
-	Call_PushCell(oldtime);
-	Call_PushCell(perfs);
+	Call_PushFloatRef(oldtime);
+	Call_PushFloat(perfs);
 
 	if(result == Plugin_Continue)
 	{
-		Call_PushCell(gA_Timers[client].fAvgVelocity);
-		Call_PushCell(gA_Timers[client].fMaxVelocity);
+		Call_PushFloat(gA_Timers[client].fAvgVelocity);
+		Call_PushFloat(gA_Timers[client].fMaxVelocity);
 	}
 	else
 	{
-		Call_PushCell(snapshot.fAvgVelocity);
-		Call_PushCell(snapshot.fMaxVelocity);
+		Call_PushFloat(snapshot.fAvgVelocity);
+		Call_PushFloat(snapshot.fMaxVelocity);
 	}
 
 	Call_PushCell(timestamp);
 	Call_Finish();
 
-	StopTimer(client);
+	Shavit_StopTimer(client);
 }
 
 public int Native_PauseTimer(Handle handler, int numParams)
@@ -1847,11 +1596,6 @@ public int Native_RestartTimer(Handle handler, int numParams)
 	Call_PushCell(client);
 	Call_PushCell(track);
 	Call_Finish();
-
-	if(gCV_AllowTimerWithoutZone.BoolValue || !gB_Zones)
-	{
-		StartTimer(client, track);
-	}
 }
 
 public int Native_GetPerfectJumps(Handle handler, int numParams)
@@ -1985,16 +1729,7 @@ public int Native_GetChatStringsStruct(Handle plugin, int numParams)
 
 public int Native_SetPracticeMode(Handle handler, int numParams)
 {
-	int client = GetNativeCell(1);
-	bool practice = view_as<bool>(GetNativeCell(2));
-	bool alert = view_as<bool>(GetNativeCell(3));
-
-	if(alert && practice && !gA_Timers[client].bPracticeMode && (!gB_HUD || (Shavit_GetHUDSettings(client) & HUD_NOPRACALERT) == 0))
-	{
-		//Shavit_PrintToChat(client, "%T", "PracticeModeAlert", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
-	}
-
-	gA_Timers[client].bPracticeMode = practice;
+	gA_Timers[GetNativeCell(1)].bPracticeMode = view_as<bool>(GetNativeCell(2));
 }
 
 public int Native_IsPaused(Handle handler, int numParams)
@@ -2363,11 +2098,6 @@ void StopTimer(int client)
 	if(!IsValidClient(client) || IsFakeClient(client))
 	{
 		return;
-	}
-
-	if (gA_Timers[client].bClientPaused)
-	{
-		//SetEntityMoveType(client, MOVETYPE_WALK);
 	}
 
 	gA_Timers[client].bTimerEnabled = false;
@@ -3336,15 +3066,6 @@ public void PostThinkPost(int client)
 		{
 			CalculateTickIntervalOffset(client, Zone_Start);
 		}
-
-		if(gCV_DebugOffsets.BoolValue)
-		{
-			char sOffsetMessage[100];
-			char sOffsetDistance[8];
-			FormatEx(sOffsetDistance, 8, "%.1f", gA_Timers[client].fDistanceOffset[Zone_Start]);
-			FormatEx(sOffsetMessage, sizeof(sOffsetMessage), "[START] %T", "DebugOffsets", client, gA_Timers[client].fZoneOffset[Zone_Start], sOffsetDistance);
-			Shavit_PrintToChat(client, "%s", sOffsetMessage);
-		}
 	}
 }
 
@@ -3381,11 +3102,6 @@ public MRESReturn DHook_AcceptInput_player_speedmod(int pThis, DHookReturn hRetu
 
 	speed *= gA_Timers[activator].fTimescale * GetStyleSettingFloat(style, "speed");
 	SetEntPropFloat(activator, Prop_Data, "m_flLaggedMovementValue", speed);
-
-	#if DEBUG
-	int caller = hParams.Get(3);
-	PrintToServer("ModifySpeed activator = %d(%N), caller = %d, old_speed = %s, new_speed = %f", activator, activator, caller, buf, speed);
-	#endif
 
 	hReturn.Value = true;
 	return MRES_Supercede;
@@ -3577,21 +3293,6 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 	if (gA_Timers[client].bTimerEnabled && !gA_Timers[client].bClientPaused)
 	{
-		// +left/right block
-		if(!gB_Zones || (!bInStart && ((GetStyleSettingInt(gA_Timers[client].bsStyle, "block_pleft") > 0 &&
-			(buttons & IN_LEFT) > 0) || (GetStyleSettingInt(gA_Timers[client].bsStyle, "block_pright") > 0 && (buttons & IN_RIGHT) > 0))))
-		{
-			vel[0] = 0.0;
-			vel[1] = 0.0;
-
-			if(GetStyleSettingInt(gA_Timers[client].bsStyle, "block_pright") >= 2)
-			{
-				char sCheatDetected[64];
-				FormatEx(sCheatDetected, 64, "%T", "LeftRightCheat", client);
-				StopTimer_Cheat(client, sCheatDetected);
-			}
-		}
-
 		// +strafe block
 		if (GetStyleSettingInt(gA_Timers[client].bsStyle, "block_pstrafe") > 0 &&
 			((vel[0] > 0.0 && (buttons & IN_FORWARD) == 0) || (vel[0] < 0.0 && (buttons & IN_BACK) == 0) ||
@@ -3838,19 +3539,14 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 	if (GetTimerStatus(client) == Timer_Running && gA_Timers[client].fCurrentTime != 0.0)
 	{
-#if 0
-		float frameCount = gB_Replay
-			? float(Shavit_GetClientFrameCount(client) - Shavit_GetPlayerPreFrames(client)) + 1
-			: (gA_Timers[client].fCurrentTime / GetTickInterval());
-#else
-		float frameCount = float(gA_Timers[client].iZoneIncrement);
-#endif
 		float fAbsVelocity[3];
 		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fAbsVelocity);
 		float curVel = SquareRoot(Pow(fAbsVelocity[0], 2.0) + Pow(fAbsVelocity[1], 2.0));
+
 		float maxVel = gA_Timers[client].fMaxVelocity;
 		gA_Timers[client].fMaxVelocity = (curVel > maxVel) ? curVel : maxVel;
 		// STOLEN from Epic/Disrevoid. Thx :)
+		float frameCount = float(gA_Timers[client].iZoneIncrement);
 		gA_Timers[client].fAvgVelocity += (curVel - gA_Timers[client].fAvgVelocity) / frameCount;
 	}
 

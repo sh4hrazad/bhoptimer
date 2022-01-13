@@ -44,7 +44,6 @@
 #define HUD_TIMELEFT			(1 << 9) // shows time left at right tside of the screen (css only)
 #define HUD_2DVEL				(1 << 10) // shows 2d velocity
 #define HUD_NOSOUNDS			(1 << 11) // disables sounds on personal best, world record etc
-#define HUD_NOPRACALERT			(1 << 12) // hides practice mode chat alert
 
 #define SHAVIT_LOG_QUERIES 0
 
@@ -1080,7 +1079,7 @@ forward Action Shavit_OnFinishPre(int client, timer_snapshot_t snapshot);
  * @param timestamp					System time of when player finished.
  * @noreturn
  */
-forward void Shavit_OnFinish(int client, int style, float time, int jumps, int strafes, float sync, int track, float oldtime, float perfs, float avgvel, float maxvel, int timestamp);
+forward void Shavit_OnFinish(int client, int style, float time, int jumps, int strafes, float sync, int track, float& oldtime, float perfs, float avgvel, float maxvel, int timestamp);
 
 /**
  * Like Shavit_OnFinish, but after the insertion query was called.
@@ -1633,6 +1632,43 @@ forward void Shavit_OnProcessMovement(int client);
  * @noreturn
  */
 forward void Shavit_OnProcessMovementPost(int client);
+
+/**
+ * Called when client use !deletemap.
+ *
+ * @param client					Client Index.
+ * @param map						Map name. This map's data will be deleted
+ * @noreturn
+ */
+forward void Shavit_OnDeleteMapData(int client, const char[] map);
+
+/**
+ * Called when client use !style(s).
+ *
+ * @param client					Client Index.
+ * @param style						Style index shown.
+ * @param wrtime					Current style's wr, handled by shavit-wr.
+ * @noreturn
+ */
+forward void Shavit_OnCommandStyle(int client, int style, float& wrtime);
+
+/**
+ * Called when client use !wipeplayer.
+ *
+ * @param client					Client Index.
+ * @param steamid					steamid.
+ * @noreturn
+ */
+forward void Shavit_OnUserDeleteData(int client, int steamid);
+
+/**
+ * Called after client use !wipeplayer successfully.
+ *
+ * @param client					Client Index.
+ * @param steamid					steamid.
+ * @noreturn
+ */
+forward void Shavit_OnDeleteRestOfUserSuccess(int client, int steamid);
 
 /**
  * Called After the server deleted WRCP.

@@ -540,9 +540,14 @@ public int Native_Zones_DeleteMap(Handle handler, int numParams)
 	char sMap[160];
 	GetNativeString(1, sMap, 160);
 
+	DeleteMapAllZones(sMap);
+}
+
+void DeleteMapAllZones(const char[] map)
+{
 	char sQuery[256];
-	FormatEx(sQuery, 256, "DELETE FROM %smapzones WHERE map = '%s';", gS_MySQLPrefix, sMap);
-	gH_SQL.Query(SQL_DeleteMap_Callback, sQuery, StrEqual(gS_Map, sMap, false), DBPrio_High);
+	FormatEx(sQuery, 256, "DELETE FROM %smapzones WHERE map = '%s';", gS_MySQLPrefix, map);
+	gH_SQL.Query(SQL_DeleteMap_Callback, sQuery, StrEqual(gS_Map, map, false), DBPrio_High);
 }
 
 public void SQL_DeleteMap_Callback(Database db, DBResultSet results, const char[] error, any data)
@@ -556,7 +561,9 @@ public void SQL_DeleteMap_Callback(Database db, DBResultSet results, const char[
 
 	if(view_as<bool>(data))
 	{
-		OnMapStart();
+		UnloadZones(0);
+
+		Shavit_PrintToChatAll("%T", "ZoneDeleteAllSuccessful", LANG_SERVER);
 	}
 }
 
@@ -1611,6 +1618,7 @@ public Action Command_ZonePreBuild(int client, int args)
 	if(gB_ZonesCreated)
 	{
 		Shavit_PrintToChat(client, "已经有区域了, 不能预设.");
+		return Plugin_Handled;
 	}
 
 	PreBuildZones();
@@ -2687,37 +2695,13 @@ public int MenuHandler_DeleteAllZones(Menu menu, MenuAction action, int param1, 
 
 		Shavit_LogMessage("%L - deleted all zones from map `%s`.", param1, gS_Map);
 
-		char sQuery[256];
-		FormatEx(sQuery, 256, "DELETE FROM %smapzones WHERE map = '%s';", gS_MySQLPrefix, gS_Map);
-
-		gH_SQL.Query(SQL_DeleteAllZones_Callback, sQuery, GetClientSerial(param1));
+		DeleteMapAllZones(gS_Map);
 	}
 
 	else if(action == MenuAction_End)
 	{
 		delete menu;
 	}
-}
-
-public void SQL_DeleteAllZones_Callback(Database db, DBResultSet results, const char[] error, any data)
-{
-	if(results == null)
-	{
-		LogError("Timer (single zone delete) SQL query failed. Reason: %s", error);
-
-		return;
-	}
-
-	UnloadZones(0);
-
-	int client = GetClientFromSerial(data);
-
-	if(client == 0)
-	{
-		return;
-	}
-
-	Shavit_PrintToChat(client, "%T", "ZoneDeleteAllSuccessful", client);
 }
 
 void Reset(int client)
@@ -3662,32 +3646,121 @@ public void SQL_CreateTable_Callback(Database db, DBResultSet results, const cha
 
 public void Shavit_OnRestart(int client, int track)
 {
-	int iIndex = -1;
+	if(track == Track_Bonus)
+	{
+		OpenBonusMenu(client);
+		return;
+	}
+
+	DoRestart(client, track);
+}
+
+void DoRestart(int client, int track)
+{
+	int iIndex = GetZoneIndex(Zone_Start, track);
 
 	// standard zoning
-	if((iIndex = GetZoneIndex(Zone_Start, track)) != -1)
+	if(iIndex != -1)
 	{
-		iIndex = gI_LastStartZoneIndex[client][track] != -1? gI_LastStartZoneIndex[client][track] : GetZoneIndex(Zone_Start, track);
+		if(!Shavit_StopTimer(client, false))
+		{
+			return;
+		}
+
+		Shavit_StartTimer(client, track);
+
+		if(gI_LastStartZoneIndex[client][track] != -1)
+		{
+			iIndex = gI_LastStartZoneIndex[client][track];
+		}
 
 		DoTeleport(client, iIndex);
 	}
+	else
+	{
+		char sTrack[32];
+		GetTrackName(client, track, sTrack, 32);
 
-	Shavit_StartTimer(client, track);
+		Shavit_PrintToChat(client, "%T", "StartZoneUndefined", client, sTrack);
+	}
+}
+
+void OpenBonusMenu(int client)
+{
+	Menu menu = new Menu(OpenBonusMenu_Handler);
+	menu.SetTitle("Select a bonus\n ");
+
+	int lastbonus = Track_Bonus;
+
+	for(int i = Track_Bonus; i <= Track_Bonus_Last; i++)
+	{
+		if(GetZoneIndex(Zone_Start, i) != -1)
+		{
+			char sItem[4];
+			IntToString(i, sItem, 4);
+
+			char sDisplay[16];
+			FormatEx(sDisplay, 16, "Bonus %d", i);
+			menu.AddItem(sItem, sDisplay);
+
+			lastbonus = i;
+		}
+	}
+
+	if(menu.ItemCount <= 1)
+	{
+		delete menu;
+		DoRestart(client, lastbonus);
+	}
+	else
+	{
+		menu.Display(client, -1);
+	}
+}
+
+public int OpenBonusMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		char sInfo[4];
+		menu.GetItem(param2, sInfo, 4);
+
+		DoRestart(param1, StringToInt(sInfo));
+	}
+	else if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
 }
 
 public void Shavit_OnEnd(int client, int track)
 {
-	if(gCV_TeleportToEnd.BoolValue)
+	int iIndex = GetZoneIndex(Zone_End, track);
+
+	if(iIndex != -1)
 	{
-		int iIndex = -1;
-
-		if((iIndex = GetZoneIndex(Zone_End, track)) != -1)
+		if(!Shavit_StopTimer(client, false))
 		{
-			iIndex = GetZoneIndex(Zone_End, track);
+			return;
+		}
 
+		if(gCV_TeleportToEnd.BoolValue)
+		{
 			DoTeleport(client, iIndex);
 		}
 	}
+	else
+	{
+		Shavit_PrintToChat(client, "%T", "EndZoneUndefined", client);
+	}
+}
+
+public void Shavit_OnDeleteMapData(int client, const char[] map)
+{
+	DeleteMapAllZones(map);
+	Shavit_PrintToChat(client, "Deleted all zones for %s.", map);
 }
 
 bool EmptyVector(float vec[3])
