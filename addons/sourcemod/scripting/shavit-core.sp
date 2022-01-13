@@ -129,7 +129,6 @@ chatstrings_t gS_ChatStrings;
 
 // misc cache
 bool gB_StopChatSound = false;
-bool gB_HookedJump = false;
 char gS_LogPath[PLATFORM_MAX_PATH];
 char gS_DeleteMap[MAXPLAYERS+1][PLATFORM_MAX_PATH];
 int gI_WipePlayerID[MAXPLAYERS+1];
@@ -255,7 +254,7 @@ public void OnPluginStart()
 	LoadDHooks();
 
 	// hooks
-	gB_HookedJump = HookEventEx("player_jump", Player_Jump);
+	HookEvent("player_jump", Player_Jump);
 	HookEvent("player_death", Player_Death);
 	HookEvent("player_team", Player_Death);
 	HookEvent("player_spawn", Player_Death);
@@ -1045,17 +1044,6 @@ void ChangeClientStyle(int client, int style, bool manual)
 	SetClientCookie(client, gH_StyleCookie, sStyle);
 }
 
-// used as an alternative for games where player_jump isn't a thing, such as TF2
-public void Bunnyhop_OnLeaveGround(int client, bool jumped, bool ladder)
-{
-	if(gB_HookedJump || !jumped || ladder)
-	{
-		return;
-	}
-
-	DoJump(client);
-}
-
 public void Player_Jump(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
@@ -1155,7 +1143,7 @@ public void Player_Death(Event event, const char[] name, bool dontBroadcast)
 	int client = GetClientOfUserId(event.GetInt("userid"));
 
 	ResumeTimer(client);
-	Shavit_StopTimer(client);
+	StopTimer(client);
 }
 
 public int Native_GetOrderedStyles(Handle handler, int numParams)
@@ -1381,7 +1369,7 @@ public int Native_FinishMap(Handle handler, int numParams)
 	Call_PushCell(timestamp);
 	Call_Finish();
 
-	Shavit_StopTimer(client);
+	StopTimer(client);
 }
 
 public int Native_PauseTimer(Handle handler, int numParams)
@@ -2972,7 +2960,10 @@ public void PostThinkPost(int client)
 		float fVel[3];
 		GetEntPropVector(client, Prop_Data, "m_vecVelocity", fVel);
 
-		CalculateTickIntervalOffset(client, Zone_Start);
+		if(fVel[2] == 0.0)
+		{
+			CalculateTickIntervalOffset(client, Zone_Start);
+		}
 	}
 }
 
