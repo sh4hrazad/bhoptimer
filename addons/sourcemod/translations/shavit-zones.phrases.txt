@@ -373,4 +373,16 @@
 		"en"		"{darkred}Your timer has been stopped for entering a {orchid}glitch zone{darkred}."
 		"chi"		"{darkred}您的计时器因进入{orchid}故障区域{darkred}而停止."
 	}
+	// ---------- Restart ----------- //
+	"StartZoneUndefined"
+	{
+		"#format"	"{1:s}"
+		"en"		"Your timer {darkred}will not{default} start because the {orchid}{1}{default} start zone is not set."
+		"chi"		"您的计时器{darkred}将不会{default}启动，因为地图未设置{orchid}{1}{default}起点区域."
+	}
+	"EndZoneUndefined"
+	{
+		"en"		"You {darkred}can't{default} teleport as an end zone for the map is not defined."
+		"chi"		"您{darkred}无法{default}传送，因为地图未设置结束区域"
+	}
 }

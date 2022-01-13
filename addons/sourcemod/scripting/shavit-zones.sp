@@ -3017,7 +3017,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 	bool bInStart = InsideZone(client, Zone_Start, track);
 	bool bInStage = InsideZone(client, Zone_Stage, track);
 
-	if(GetEntityMoveType(client) != MOVETYPE_NOCLIP && Shavit_GetStyleSettingInt(style, "prespeed") == 0 && (bInStart || bInStage))
+	if(GetEntityMoveType(client) != MOVETYPE_NOCLIP && (bInStart || bInStage))
 	{
 		if(gCV_PreSpeed.IntValue >= 1)
 		{

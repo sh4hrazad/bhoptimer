@@ -81,7 +81,6 @@ StringMap gSM_StyleCommands = null;
 
 // player timer variables
 timer_snapshot_t gA_Timers[MAXPLAYERS+1];
-bool gB_Auto[MAXPLAYERS+1];
 
 // these are here until the compiler bug is fixed
 float gF_PauseOrigin[MAXPLAYERS+1][3];
@@ -95,7 +94,6 @@ float gF_Fraction[MAXPLAYERS + 1];
 
 // cookies
 Handle gH_StyleCookie = null;
-Handle gH_AutoBhopCookie = null;
 
 // late load
 bool gB_Late = false;
@@ -105,7 +103,6 @@ Convar gCV_Restart = null;
 Convar gCV_Pause = null;
 Convar gCV_PauseMovement = null;
 Convar gCV_BlockPreJump = null;
-Convar gCV_NoZAxisSpeed = null;
 Convar gCV_VelocityTeleport = null;
 Convar gCV_DefaultStyle = null;
 Convar gCV_NoChatSound = null;
@@ -119,10 +116,6 @@ bool gB_StyleCookies = true;
 
 // table prefix
 char gS_MySQLPrefix[32];
-
-// server side
-ConVar sv_autobunnyhopping = null;
-ConVar sv_enablebunnyhopping = null;
 
 // timer settings
 bool gB_Registered = false;
@@ -259,9 +252,6 @@ public void OnPluginStart()
 
 	gB_Protobuf = (GetUserMessageType() == UM_Protobuf);
 
-	sv_autobunnyhopping = FindConVar("sv_autobunnyhopping");
-	sv_autobunnyhopping.BoolValue = false;
-
 	LoadDHooks();
 
 	// hooks
@@ -309,11 +299,6 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_unpause", Command_TogglePause, "Toggle pause.");
 	RegConsoleCmd("sm_resume", Command_TogglePause, "Toggle pause");
 
-	// autobhop toggle
-	RegConsoleCmd("sm_auto", Command_AutoBhop, "Toggle autobhop.");
-	RegConsoleCmd("sm_autobhop", Command_AutoBhop, "Toggle autobhop.");
-	gH_AutoBhopCookie = RegClientCookie("shavit_autobhop", "Autobhop cookie", CookieAccess_Protected);
-
 	// style commands
 	gSM_StyleCommands = new StringMap();
 
@@ -332,7 +317,6 @@ public void OnPluginStart()
 	gCV_Pause = new Convar("shavit_core_pause", "1", "Allow pausing?", 0, true, 0.0, true, 1.0);
 	gCV_PauseMovement = new Convar("shavit_core_pause_movement", "1", "Allow movement/noclip while paused?", 0, true, 0.0, true, 1.0);
 	gCV_BlockPreJump = new Convar("shavit_core_blockprejump", "0", "Prevents jumping in the start zone.", 0, true, 0.0, true, 1.0);
-	gCV_NoZAxisSpeed = new Convar("shavit_core_nozaxisspeed", "0", "Don't start timer if vertical speed exists (btimes style).", 0, true, 0.0, true, 1.0);
 	gCV_VelocityTeleport = new Convar("shavit_core_velocityteleport", "0", "Teleport the client when changing its velocity? (for special styles)", 0, true, 0.0, true, 1.0);
 	gCV_DefaultStyle = new Convar("shavit_core_defaultstyle", "0", "Default style ID.\nAdd the '!' prefix to disable style cookies - i.e. \"!3\" to *force* scroll to be the default style.", 0, true, 0.0);
 	gCV_NoChatSound = new Convar("shavit_core_nochatsound", "0", "Disables click sound for chat messages.", 0, true, 0.0, true, 1.0);
@@ -342,13 +326,6 @@ public void OnPluginStart()
 	gCV_DefaultStyle.AddChangeHook(OnConVarChanged);
 
 	Convar.AutoExecConfig();
-
-	sv_enablebunnyhopping = FindConVar("sv_enablebunnyhopping");
-
-	if(sv_enablebunnyhopping != null)
-	{
-		sv_enablebunnyhopping.Flags &= ~(FCVAR_NOTIFY | FCVAR_REPLICATED);
-	}
 
 	// database connections
 	SQL_DBConnect();
@@ -852,33 +829,6 @@ void DeleteUserData(int client, const int iSteamID)
 	DeleteRestOfUser(iSteamID, hPack);
 }
 
-public Action Command_AutoBhop(int client, int args)
-{
-	if(!IsValidClient(client))
-	{
-		return Plugin_Handled;
-	}
-
-	gB_Auto[client] = !gB_Auto[client];
-
-	if (gB_Auto[client])
-	{
-		Shavit_PrintToChat(client, "%T", "AutobhopEnabled", client);
-	}
-	else
-	{
-		Shavit_PrintToChat(client, "%T", "AutobhopDisabled", client);
-	}
-
-	char sAutoBhop[4];
-	IntToString(view_as<int>(gB_Auto[client]), sAutoBhop, 4);
-	SetClientCookie(client, gH_AutoBhopCookie, sAutoBhop);
-
-	UpdateStyleSettings(client);
-
-	return Plugin_Handled;
-}
-
 public Action Command_Style(int client, int args)
 {
 	if(!IsValidClient(client))
@@ -1121,10 +1071,7 @@ void DoJump(int client)
 		gA_Timers[client].bJumped = true;
 	}
 
-	if(GetStyleSettingBool(gA_Timers[client].bsStyle, "easybhop"))
-	{
-		SetEntPropFloat(client, Prop_Send, "m_flStamina", 0.0);
-	}
+	SetEntPropFloat(client, Prop_Send, "m_flStamina", 0.0);
 
 	RequestFrame(VelocityChanges, GetClientSerial(client));
 }
@@ -2030,66 +1977,55 @@ void StartTimer(int client, int track)
 	GetEntPropVector(client, Prop_Data, "m_vecVelocity", fSpeed);
 	float curVel = SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0));
 
-	if (!gCV_NoZAxisSpeed.BoolValue ||
-		GetStyleSettingInt(gA_Timers[client].bsStyle, "prespeed") == 1 ||
-		(fSpeed[2] == 0.0 && (GetStyleSettingInt(gA_Timers[client].bsStyle, "prespeed") == 2 || curVel <= 290.0)))
+	Action result = Plugin_Continue;
+	Call_StartForward(gH_Forwards_StartPre);
+	Call_PushCell(client);
+	Call_PushCell(track);
+	Call_Finish(result);
+
+	if(result == Plugin_Continue)
 	{
-		Action result = Plugin_Continue;
-		Call_StartForward(gH_Forwards_StartPre);
+		Call_StartForward(gH_Forwards_Start);
 		Call_PushCell(client);
 		Call_PushCell(track);
 		Call_Finish(result);
 
-		if(result == Plugin_Continue)
+		if (gA_Timers[client].bClientPaused)
 		{
-			Call_StartForward(gH_Forwards_Start);
-			Call_PushCell(client);
-			Call_PushCell(track);
-			Call_Finish(result);
-
-			if (gA_Timers[client].bClientPaused)
-			{
-				//SetEntityMoveType(client, MOVETYPE_WALK);
-			}
-
-			gA_Timers[client].iZoneIncrement = 0;
-			gA_Timers[client].fTimescaledTicks = 0.0;
-			gA_Timers[client].bClientPaused = false;
-			gA_Timers[client].iStrafes = 0;
-			gA_Timers[client].iJumps = 0;
-			gA_Timers[client].iTotalMeasures = 0;
-			gA_Timers[client].iGoodGains = 0;
-
-			if (gA_Timers[client].iTimerTrack != track)
-			{
-				CallOnTrackChanged(client, gA_Timers[client].iTimerTrack, track);
-			}
-
-			gA_Timers[client].iTimerTrack = track;
-			gA_Timers[client].bTimerEnabled = true;
-			gA_Timers[client].iSHSWCombination = -1;
-			gA_Timers[client].fCurrentTime = 0.0;
-			gA_Timers[client].bPracticeMode = false;
-			gA_Timers[client].iMeasuredJumps = 0;
-			gA_Timers[client].iPerfectJumps = 0;
-			gA_Timers[client].bCanUseAllKeys = false;
-			gA_Timers[client].fZoneOffset[Zone_Start] = 0.0;
-			gA_Timers[client].fZoneOffset[Zone_End] = 0.0;
-			gA_Timers[client].fDistanceOffset[Zone_Start] = 0.0;
-			gA_Timers[client].fDistanceOffset[Zone_End] = 0.0;
-			gA_Timers[client].fAvgVelocity = curVel;
-			gA_Timers[client].fMaxVelocity = curVel;
-
-			float mod = gA_Timers[client].fTimescale * GetStyleSettingFloat(gA_Timers[client].bsStyle, "speed");
-			SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", mod);
-			SetEntityGravity(client, GetStyleSettingFloat(gA_Timers[client].bsStyle, "gravity"));
+			//SetEntityMoveType(client, MOVETYPE_WALK);
 		}
-#if 0
-		else if(result == Plugin_Handled || result == Plugin_Stop)
+
+		gA_Timers[client].iZoneIncrement = 0;
+		gA_Timers[client].fTimescaledTicks = 0.0;
+		gA_Timers[client].bClientPaused = false;
+		gA_Timers[client].iStrafes = 0;
+		gA_Timers[client].iJumps = 0;
+		gA_Timers[client].iTotalMeasures = 0;
+		gA_Timers[client].iGoodGains = 0;
+
+		if (gA_Timers[client].iTimerTrack != track)
 		{
-			gA_Timers[client].bTimerEnabled = false;
+			CallOnTrackChanged(client, gA_Timers[client].iTimerTrack, track);
 		}
-#endif
+
+		gA_Timers[client].iTimerTrack = track;
+		gA_Timers[client].bTimerEnabled = true;
+		gA_Timers[client].iSHSWCombination = -1;
+		gA_Timers[client].fCurrentTime = 0.0;
+		gA_Timers[client].bPracticeMode = false;
+		gA_Timers[client].iMeasuredJumps = 0;
+		gA_Timers[client].iPerfectJumps = 0;
+		gA_Timers[client].bCanUseAllKeys = false;
+		gA_Timers[client].fZoneOffset[Zone_Start] = 0.0;
+		gA_Timers[client].fZoneOffset[Zone_End] = 0.0;
+		gA_Timers[client].fDistanceOffset[Zone_Start] = 0.0;
+		gA_Timers[client].fDistanceOffset[Zone_End] = 0.0;
+		gA_Timers[client].fAvgVelocity = curVel;
+		gA_Timers[client].fMaxVelocity = curVel;
+
+		float mod = gA_Timers[client].fTimescale * GetStyleSettingFloat(gA_Timers[client].bsStyle, "speed");
+		SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", mod);
+		SetEntityGravity(client, GetStyleSettingFloat(gA_Timers[client].bsStyle, "gravity"));
 	}
 }
 
@@ -2153,19 +2089,11 @@ public void OnClientCookiesCached(int client)
 		return;
 	}
 
-	char sCookie[4];
-
-	if(gH_AutoBhopCookie != null)
-	{
-		GetClientCookie(client, gH_AutoBhopCookie, sCookie, 4);
-	}
-
-	gB_Auto[client] = (strlen(sCookie) > 0)? view_as<bool>(StringToInt(sCookie)):true;
-
 	int style = gI_DefaultStyle;
 
 	if(gB_StyleCookies && gH_StyleCookie != null)
 	{
+		char sCookie[4];
 		GetClientCookie(client, gH_StyleCookie, sCookie, 4);
 		int newstyle = StringToInt(sCookie);
 
@@ -2192,7 +2120,6 @@ public void OnClientPutInServer(int client)
 		return;
 	}
 
-	gB_Auto[client] = true;
 	gA_Timers[client].fStrafeWarning = 0.0;
 	gA_Timers[client].bPracticeMode = false;
 	gA_Timers[client].iSHSWCombination = -1;
@@ -2350,11 +2277,6 @@ public SMCResult OnStyleEnterSection(SMCParser smc, const char[] name, bool opt_
 	gSM_StyleKeys[gI_CurrentParserIndex].SetString("specialstring", "");
 	gSM_StyleKeys[gI_CurrentParserIndex].SetString("permission", "");
 
-	gSM_StyleKeys[gI_CurrentParserIndex].SetString("autobhop", "1");
-	gSM_StyleKeys[gI_CurrentParserIndex].SetString("easybhop", "1");
-	gSM_StyleKeys[gI_CurrentParserIndex].SetString("prespeed", "0");
-	gSM_StyleKeys[gI_CurrentParserIndex].SetString("velocity_limit", "0.0");
-	gSM_StyleKeys[gI_CurrentParserIndex].SetString("bunnyhopping", "1");
 	gSM_StyleKeys[gI_CurrentParserIndex].SetString("runspeed", "260.00");
 	gSM_StyleKeys[gI_CurrentParserIndex].SetString("gravity", "1.0");
 	gSM_StyleKeys[gI_CurrentParserIndex].SetString("speed", "1.0");
@@ -3027,11 +2949,6 @@ public void PreThinkPost(int client)
 {
 	if(IsPlayerAlive(client))
 	{
-		if(sv_enablebunnyhopping != null)
-		{
-			sv_enablebunnyhopping.BoolValue = GetStyleSettingBool(gA_Timers[client].bsStyle, "bunnyhopping");
-		}
-
 		MoveType mtMoveType = GetEntityMoveType(client);
 
 		if (GetStyleSettingFloat(gA_Timers[client].bsStyle, "gravity") != 1.0 &&
@@ -3055,17 +2972,7 @@ public void PostThinkPost(int client)
 		float fVel[3];
 		GetEntPropVector(client, Prop_Data, "m_vecVelocity", fVel);
 
-		if(!gCV_NoZAxisSpeed.BoolValue)
-		{
-			if(fVel[2] == 0.0)
-			{
-				CalculateTickIntervalOffset(client, Zone_Start);
-			}
-		}
-		else
-		{
-			CalculateTickIntervalOffset(client, Zone_Start);
-		}
+		CalculateTickIntervalOffset(client, Zone_Start);
 	}
 }
 
@@ -3474,11 +3381,12 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 	bool bInWater = (GetEntProp(client, Prop_Send, "m_nWaterLevel") >= 2);
 
-	if (GetStyleSettingBool(gA_Timers[client].bsStyle, "autobhop") && gB_Auto[client] && (buttons & IN_JUMP) > 0 && mtMoveType == MOVETYPE_WALK && !bInWater)
+	// css old auto jump code 
+	/*if (GetStyleSettingBool(gA_Timers[client].bsStyle, "autobhop") && gB_Auto[client] && (buttons & IN_JUMP) > 0 && mtMoveType == MOVETYPE_WALK && !bInWater)
 	{
 		int iOldButtons = GetEntProp(client, Prop_Data, "m_nOldButtons");
 		SetEntProp(client, Prop_Data, "m_nOldButtons", (iOldButtons & ~IN_JUMP));
-	}
+	}*/
 
 	// perf jump measuring
 	bool bOnGround = (!bInWater && mtMoveType == MOVETYPE_WALK && iGroundEntity != -1);
@@ -3487,10 +3395,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	{
 		gA_Timers[client].iLandingTick = tickcount;
 
-		if(GetStyleSettingBool(gA_Timers[client].bsStyle, "easybhop"))
-		{
-			SetEntPropFloat(client, Prop_Send, "m_flStamina", 0.0);
-		}
+		SetEntPropFloat(client, Prop_Send, "m_flStamina", 0.0);
 	}
 
 	else if (!bOnGround && gA_Timers[client].bOnGround && gA_Timers[client].bJumped && !gA_Timers[client].bClientPaused)
@@ -3508,7 +3413,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		}
 	}
 
-	if (bInStart && gCV_BlockPreJump.BoolValue && GetStyleSettingInt(gA_Timers[client].bsStyle, "prespeed") == 0 && (vel[2] > 0 || (buttons & IN_JUMP) > 0))
+	if (bInStart && gCV_BlockPreJump.BoolValue && (vel[2] > 0 || (buttons & IN_JUMP) > 0))
 	{
 		vel[2] = 0.0;
 		buttons &= ~IN_JUMP;
@@ -3607,15 +3512,5 @@ void StopTimer_Cheat(int client, const char[] message)
 
 void UpdateStyleSettings(int client)
 {
-	if(sv_autobunnyhopping != null)
-	{
-		sv_autobunnyhopping.ReplicateToClient(client, (GetStyleSettingBool(gA_Timers[client].bsStyle, "autobhop") && gB_Auto[client])? "1":"0");
-	}
-
-	if(sv_enablebunnyhopping != null)
-	{
-		sv_enablebunnyhopping.ReplicateToClient(client, (GetStyleSettingBool(gA_Timers[client].bsStyle, "bunnyhopping"))? "1":"0");
-	}
-
 	SetEntityGravity(client, GetStyleSettingFloat(gA_Timers[client].bsStyle, "gravity"));
 }

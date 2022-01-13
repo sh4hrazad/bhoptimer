@@ -1372,8 +1372,6 @@ void UpdateKeyOverlay(int client, Panel panel, bool &draw)
 	}
 
 	char sPanelLine[128];
-	char autobhop[4];
-	Shavit_GetStyleSetting(style, "autobhop", autobhop, 4);
 
 	Format(sPanelLine, 128, "%s［%s］　［%s］\n%s  %s  %s\n%s　 %s 　%s\n　%s　　%s", sPanelLine,
 		(buttons & IN_JUMP) > 0? "Ｊ":"ｰ", (buttons & IN_DUCK) > 0? "Ｃ":"ｰ",

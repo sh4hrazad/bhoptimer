@@ -2183,17 +2183,14 @@ public void SQL_SubMenu_Callback(Database db, DBResultSet results, const char[] 
 
 		int iStyle = results.FetchInt(3);
 		int iJumps = results.FetchInt(2);
-		float fPerfs = results.FetchFloat(9);
+		//float fPerfs = results.FetchFloat(9); // useless, removed
 
-		if(Shavit_GetStyleSettingInt(iStyle, "autobhop"))
-		{
-			FormatEx(sDisplay, 128, "%T: %d", "WRJumps", client, iJumps);
-		}
+		FormatEx(sDisplay, 128, "%T: %d", "WRJumps", client, iJumps);
 
-		else
+		/*else
 		{
 			FormatEx(sDisplay, 128, "%T: %d (%.2f%%)", "WRJumps", client, iJumps, fPerfs);
-		}
+		}*/
 
 		hMenu.AddItem("-1", sDisplay);
 

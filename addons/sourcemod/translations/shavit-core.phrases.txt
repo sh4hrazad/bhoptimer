@@ -131,22 +131,6 @@
 		"chi"		"您{darkred}不允许{default}在蹲下时暂停."
 	}
 	// ---------- Zones ---------- //
-	"StartZoneUndefined"
-	{
-		"#format"	"{1:s}"
-		"en"		"Your timer {darkred}will not{default} start because the {orchid}{1}{default} start zone is not set."
-		"chi"		"您的计时器{darkred}将不会{default}启动，因为地图未设置{orchid}{1}{default}起点区域."
-	}
-	"EndZoneUndefined"
-	{
-		"en"		"You {darkred}can't{default} teleport as an end zone for the map is not defined."
-		"chi"		"您{darkred}无法{default}传送，因为地图未设置结束区域"
-	}
-	"DebugOffsets"
-	{
-		"#format"	"{1:f},{2:s}"
-		"en"		"Your zone offset was {1}. The distance was {2} units."
-	}
 	"TrackChangeFromMain"
 	{
 		"en"		"Use {orchid}!m{default}/{orchid}!main{default} go to back to the main track."
