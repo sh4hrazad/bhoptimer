@@ -116,7 +116,6 @@ enum struct finished_run_info
 	float sync;
 	int track;
 	float oldtime;
-	float perfs;
 	float avgvel;
 	float maxvel;
 	int timestamp;
@@ -381,8 +380,8 @@ public void OnPluginStart()
 	gH_OnReplayStart = CreateGlobalForward("Shavit_OnReplayStart", ET_Event, Param_Cell, Param_Cell, Param_Cell);
 	gH_OnReplayEnd = CreateGlobalForward("Shavit_OnReplayEnd", ET_Event, Param_Cell, Param_Cell, Param_Cell);
 	gH_OnReplaysLoaded = CreateGlobalForward("Shavit_OnReplaysLoaded", ET_Event);
-	gH_ShouldSaveReplayCopy = CreateGlobalForward("Shavit_ShouldSaveReplayCopy", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
-	gH_OnReplaySaved = CreateGlobalForward("Shavit_OnReplaySaved", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_String);
+	gH_ShouldSaveReplayCopy = CreateGlobalForward("Shavit_ShouldSaveReplayCopy", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
+	gH_OnReplaySaved = CreateGlobalForward("Shavit_OnReplaySaved", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_String);
 
 	// game specific
 	gF_Tickrate = (1.0 / GetTickInterval());
@@ -2970,10 +2969,10 @@ void FinishGrabbingPostFrames(int client, finished_run_info info)
 	gB_GrabbingPostFrames[client] = false;
 	delete gH_PostFramesTimer[client];
 
-	DoReplaySaverCallbacks(info.iSteamID, client, info.style, info.time, info.jumps, info.strafes, info.sync, info.track, info.oldtime, info.perfs, info.avgvel, info.maxvel, info.timestamp, info.fZoneOffset);
+	DoReplaySaverCallbacks(info.iSteamID, client, info.style, info.time, info.jumps, info.strafes, info.sync, info.track, info.oldtime, info.avgvel, info.maxvel, info.timestamp, info.fZoneOffset);
 }
 
-void DoReplaySaverCallbacks(int iSteamID, int client, int style, float time, int jumps, int strafes, float sync, int track, float oldtime, float perfs, float avgvel, float maxvel, int timestamp, float fZoneOffset[2])
+void DoReplaySaverCallbacks(int iSteamID, int client, int style, float time, int jumps, int strafes, float sync, int track, float oldtime, float avgvel, float maxvel, int timestamp, float fZoneOffset[2])
 {
 	bool isTooLong = (gCV_TimeLimit.FloatValue > 0.0 && time > gCV_TimeLimit.FloatValue);
 
@@ -2990,7 +2989,6 @@ void DoReplaySaverCallbacks(int iSteamID, int client, int style, float time, int
 	Call_PushCell(sync);
 	Call_PushCell(track);
 	Call_PushCell(oldtime);
-	Call_PushCell(perfs);
 	Call_PushCell(avgvel);
 	Call_PushCell(maxvel);
 	Call_PushCell(timestamp);
@@ -3024,7 +3022,6 @@ void DoReplaySaverCallbacks(int iSteamID, int client, int style, float time, int
 	Call_PushCell(sync);
 	Call_PushCell(track);
 	Call_PushCell(oldtime);
-	Call_PushCell(perfs);
 	Call_PushCell(avgvel);
 	Call_PushCell(maxvel);
 	Call_PushCell(timestamp);
@@ -3061,7 +3058,7 @@ void DoReplaySaverCallbacks(int iSteamID, int client, int style, float time, int
 	ClearFrames(client);
 }
 
-public void Shavit_OnFinish(int client, int style, float time, int jumps, int strafes, float sync, int track, float& oldtime, float perfs, float avgvel, float maxvel, int timestamp)
+public void Shavit_OnFinish(int client, int style, float time, int jumps, int strafes, float sync, int track, float& oldtime, float avgvel, float maxvel, int timestamp)
 {
 	if(Shavit_IsPracticeMode(client) || !gCV_Enabled.BoolValue || gI_PlayerFrames[client] == 0)
 	{
@@ -3085,7 +3082,6 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 		info.sync = sync;
 		info.track = track;
 		info.oldtime = oldtime;
-		info.perfs = perfs;
 		info.avgvel = avgvel;
 		info.maxvel = maxvel;
 		info.timestamp = timestamp;
@@ -3098,7 +3094,7 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 	}
 	else
 	{
-		DoReplaySaverCallbacks(GetSteamAccountID(client), client, style, time, jumps, strafes, sync, track, oldtime, perfs, avgvel, maxvel, timestamp, fZoneOffset);
+		DoReplaySaverCallbacks(GetSteamAccountID(client), client, style, time, jumps, strafes, sync, track, oldtime, avgvel, maxvel, timestamp, fZoneOffset);
 	}
 }
 

@@ -208,7 +208,7 @@ public void OnMapStart()
 	delete fFile;
 }
 
-public void Shavit_OnFinish(int client, int style, float time, int jumps, int strafes, float sync, int track, float& oldtime, float perfs)
+public void Shavit_OnFinish(int client, int style, float time, int jumps, int strafes, float sync, int track, float& oldtime)
 {
 	if(!gCV_Enabled.BoolValue)
 	{

@@ -1208,7 +1208,7 @@ public void SQL_ReloadWRCPs_Callback(Database db, DBResultSet results, const cha
 	}
 }
 
-public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, int strafes, float sync, int rank, int overwrite, int track, float oldtime, float perfs, float avgvel, float maxvel, int timestamp)
+public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, int strafes, float sync, int rank, int overwrite, int track, float oldtime, float avgvel, float maxvel, int timestamp)
 {
 	if(track != Track_Main)
 	{

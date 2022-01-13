@@ -206,8 +206,6 @@ enum struct timer_snapshot_t
 	float fServerTime;
 	int iSHSWCombination;
 	int iTimerTrack;
-	int iMeasuredJumps;
-	int iPerfectJumps;
 	float fZoneOffset[2];
 	float fDistanceOffset[2];
 	float fAvgVelocity;
@@ -1073,13 +1071,12 @@ forward Action Shavit_OnFinishPre(int client, timer_snapshot_t snapshot);
  * @param sync						Sync percentage (0.0 to 100.0) or -1.0 when not measured.
  * @param track						Timer track.
  * @param oldtime					The player's best time on the map before this finish.
- * @param perfs						Perfect jump percentage (0.0 to 100.0) or 100.0 when not measured.
  * @param avgvel					Player's average velocity throughout the run.
  * @param maxvel					Player's highest reached velocity.
  * @param timestamp					System time of when player finished.
  * @noreturn
  */
-forward void Shavit_OnFinish(int client, int style, float time, int jumps, int strafes, float sync, int track, float& oldtime, float perfs, float avgvel, float maxvel, int timestamp);
+forward void Shavit_OnFinish(int client, int style, float time, int jumps, int strafes, float sync, int track, float& oldtime, float avgvel, float maxvel, int timestamp);
 
 /**
  * Like Shavit_OnFinish, but after the insertion query was called.
@@ -1095,13 +1092,12 @@ forward void Shavit_OnFinish(int client, int style, float time, int jumps, int s
  * @param overwrite					1 - brand new record. 2 - update.
  * @param track						Timer track.
  * @param oldtime					The player's best time on the map before this finish.
- * @param perfs						Perfect jump percentage (0.0 to 100.0) or 100.0 when not measured.
  * @param avgvel					Player's average velocity throughout the run.
  * @param maxvel					Player's highest reached velocity.
  * @param timestamp					System time of when player finished.
  * @noreturn
  */
-forward void Shavit_OnFinish_Post(int client, int style, float time, int jumps, int strafes, float sync, int rank, int overwrite, int track, float oldtime, float perfs, float avgvel, float maxvel, int timestamp);
+forward void Shavit_OnFinish_Post(int client, int style, float time, int jumps, int strafes, float sync, int rank, int overwrite, int track, float oldtime, float avgvel, float maxvel, int timestamp);
 
 /**
  * Called when there's a new WR on the map.
@@ -1115,13 +1111,12 @@ forward void Shavit_OnFinish_Post(int client, int style, float time, int jumps, 
  * @param track						Timer track.
  * @param oldwr						Time of the old WR. 0.0 if there's none.
  * @param oldtime					The player's best time on the map before this finish.
- * @param perfs						Perfect jump percentage (0.0 to 100.0) or 100.0 when not measured.
  * @param avgvel					Player's average velocity throughout the run.
  * @param maxvel					Player's highest reached velocity.
  * @param timestamp					System time of when player finished.
  * @noreturn
  */
-forward void Shavit_OnWorldRecord(int client, int style, float time, int jumps, int strafes, float sync, int track, float oldwr, float oldtime, float perfs, float avgvel, float maxvel, int timestamp);
+forward void Shavit_OnWorldRecord(int client, int style, float time, int jumps, int strafes, float sync, int track, float oldwr, float oldtime, float avgvel, float maxvel, int timestamp);
 
 /**
  * Called when an admin deletes a WR.
@@ -1410,13 +1405,12 @@ forward void Shavit_OnTeleportBackStagePost(int client, int stage, int style, bo
  * @param sync						Sync percentage (0.0 to 100.0) or -1.0 when not measured.
  * @param track						Timer track.
  * @param oldtime					The player's best time on the map before this finish.
- * @param perfs						Perfect jump percentage (0.0 to 100.0) or 100.0 when not measured.
  * @param avgvel					Player's average velocity throughout the run.
  * @param maxvel					Player's highest reached velocity.
  * @param timestamp					System time of when player finished.
  * @noreturn
  */
-forward void Shavit_OnWorstRecord(int client, int style, float time, int jumps, int strafes, float sync, int track, float oldtime, float perfs, float avgvel, float maxvel, int timestamp);
+forward void Shavit_OnWorstRecord(int client, int style, float time, int jumps, int strafes, float sync, int track, float oldtime, float avgvel, float maxvel, int timestamp);
 
 /**
  * Gets called when a map's tier is assigned.
@@ -1481,7 +1475,6 @@ forward void Shavit_OnReplaysLoaded();
  * @param sync						Sync percentage (0.0 to 100.0) or -1.0 when not measured.
  * @param track						Timer track.
  * @param oldtime					The player's best time on the map before this finish.
- * @param perfs						Perfect jump percentage (0.0 to 100.0) or 100.0 when not measured.
  * @param avgvel					Player's average velocity throughout the run.
  * @param maxvel					Player's highest reached velocity.
  * @param timestamp					System time of when player finished.
@@ -1489,7 +1482,7 @@ forward void Shavit_OnReplaysLoaded();
  * @param istoolong					If the time is too long to save a replay if the time is a WR. Note: replays WON'T be full length if this is true.
  * @return							Return Plugin_Changed (or higher) to cause a copy of the replay to be saved. Return Plugin_Continue otherwise.
  */
-forward Action Shavit_ShouldSaveReplayCopy(int client, int style, float time, int jumps, int strafes, float sync, int track, float oldtime, float perfs, float avgvel, float maxvel, int timestamp, bool isbestreplay, bool istoolong);
+forward Action Shavit_ShouldSaveReplayCopy(int client, int style, float time, int jumps, int strafes, float sync, int track, float oldtime, float avgvel, float maxvel, int timestamp, bool isbestreplay, bool istoolong);
 
 /**
  * Called when either a WR replay or a copy of a replay has been saved.
@@ -1502,7 +1495,6 @@ forward Action Shavit_ShouldSaveReplayCopy(int client, int style, float time, in
  * @param sync						Sync percentage (0.0 to 100.0) or -1.0 when not measured.
  * @param track						Timer track.
  * @param oldtime					The player's best time on the map before this finish.
- * @param perfs						Perfect jump percentage (0.0 to 100.0) or 100.0 when not measured.
  * @param avgvel					Player's average velocity throughout the run.
  * @param maxvel					Player's highest reached velocity.
  * @param timestamp					System time of when player finished.
@@ -1512,7 +1504,7 @@ forward Action Shavit_ShouldSaveReplayCopy(int client, int style, float time, in
  * @param replaypath				Path to the saved replay.
  * @noreturn
  */
-forward void Shavit_OnReplaySaved(int client, int style, float time, int jumps, int strafes, float sync, int track, float oldtime, float perfs, float avgvel, float maxvel, int timestamp, bool isbestreplay, bool istoolong, bool iscopy, const char[] replaypath);
+forward void Shavit_OnReplaySaved(int client, int style, float time, int jumps, int strafes, float sync, int track, float oldtime, float avgvel, float maxvel, int timestamp, bool isbestreplay, bool istoolong, bool iscopy, const char[] replaypath);
 
 /**
  * Called when top left HUD updates.
@@ -1992,15 +1984,6 @@ native int Shavit_GetMapCheckpoints();
  * @return                          Amount of strafes since timer start.
  */
 native int Shavit_GetStrafeCount(int client);
-
-/**
- * Retrieve the perfect jumps percentage for the player.
- * Will return 100.0 if no jumps were measured.
- *
- * @param client					Client index.
- * @return                          Perfect jump percentage.
- */
-native float Shavit_GetPerfectJumps(int client);
 
 /**
  * Retrieve strafe sync since timer start.
@@ -3421,7 +3404,6 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetMapLimitnoclip");
 	MarkNativeAsOptional("Shavit_GetMapMaxvelocity");
 	MarkNativeAsOptional("Shavit_GetOrderedStyles");
-	MarkNativeAsOptional("Shavit_GetPerfectJumps");
 	MarkNativeAsOptional("Shavit_GetPoints");
 	MarkNativeAsOptional("Shavit_GetRank");
 	MarkNativeAsOptional("Shavit_GetRankedPlayers");

@@ -102,7 +102,6 @@ bool gB_Late = false;
 Convar gCV_Restart = null;
 Convar gCV_Pause = null;
 Convar gCV_PauseMovement = null;
-Convar gCV_BlockPreJump = null;
 Convar gCV_VelocityTeleport = null;
 Convar gCV_DefaultStyle = null;
 Convar gCV_NoChatSound = null;
@@ -161,7 +160,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetClientTrack", Native_GetClientTrack);
 	CreateNative("Shavit_GetDatabase", Native_GetDatabase);
 	CreateNative("Shavit_GetOrderedStyles", Native_GetOrderedStyles);
-	CreateNative("Shavit_GetPerfectJumps", Native_GetPerfectJumps);
 	CreateNative("Shavit_GetStrafeCount", Native_GetStrafeCount);
 	CreateNative("Shavit_GetStyleCount", Native_GetStyleCount);
 	CreateNative("Shavit_GetStyleSetting", Native_GetStyleSetting);
@@ -223,7 +221,7 @@ public void OnPluginStart()
 	gH_Forwards_Stop = CreateGlobalForward("Shavit_OnStop", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_StopPre = CreateGlobalForward("Shavit_OnStopPre", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_FinishPre = CreateGlobalForward("Shavit_OnFinishPre", ET_Hook, Param_Cell, Param_Array);
-	gH_Forwards_Finish = CreateGlobalForward("Shavit_OnFinish", ET_Event, Param_Cell, Param_Cell, Param_Float, Param_Cell, Param_Cell, Param_Float, Param_Cell, Param_FloatByRef, Param_Float, Param_Float, Param_Float, Param_Cell);
+	gH_Forwards_Finish = CreateGlobalForward("Shavit_OnFinish", ET_Event, Param_Cell, Param_Cell, Param_Float, Param_Cell, Param_Cell, Param_Float, Param_Cell, Param_FloatByRef, Param_Float, Param_Float, Param_Cell);
 	gH_Forwards_OnRestartPre = CreateGlobalForward("Shavit_OnRestartPre", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_OnRestart = CreateGlobalForward("Shavit_OnRestart", ET_Ignore, Param_Cell, Param_Cell);
 	gH_Forwards_OnEnd = CreateGlobalForward("Shavit_OnEnd", ET_Event, Param_Cell, Param_Cell);
@@ -315,7 +313,6 @@ public void OnPluginStart()
 	gCV_Restart = new Convar("shavit_core_restart", "1", "Allow commands that restart the timer?", 0, true, 0.0, true, 1.0);
 	gCV_Pause = new Convar("shavit_core_pause", "1", "Allow pausing?", 0, true, 0.0, true, 1.0);
 	gCV_PauseMovement = new Convar("shavit_core_pause_movement", "1", "Allow movement/noclip while paused?", 0, true, 0.0, true, 1.0);
-	gCV_BlockPreJump = new Convar("shavit_core_blockprejump", "0", "Prevents jumping in the start zone.", 0, true, 0.0, true, 1.0);
 	gCV_VelocityTeleport = new Convar("shavit_core_velocityteleport", "0", "Teleport the client when changing its velocity? (for special styles)", 0, true, 0.0, true, 1.0);
 	gCV_DefaultStyle = new Convar("shavit_core_defaultstyle", "0", "Default style ID.\nAdd the '!' prefix to disable style cookies - i.e. \"!3\" to *force* scroll to be the default style.", 0, true, 0.0);
 	gCV_NoChatSound = new Convar("shavit_core_nochatsound", "0", "Disables click sound for chat messages.", 0, true, 0.0, true, 1.0);
@@ -1325,8 +1322,6 @@ public int Native_FinishMap(Handle handler, int numParams)
 	Call_StartForward(gH_Forwards_Finish);
 	Call_PushCell(client);
 
-	float perfs = 100.0;
-
 	if(result == Plugin_Continue)
 	{
 		Call_PushCell(gA_Timers[client].bsStyle);
@@ -1336,7 +1331,6 @@ public int Native_FinishMap(Handle handler, int numParams)
 		//gross
 		Call_PushFloat((GetStyleSettingBool(gA_Timers[client].bsStyle, "sync"))? (gA_Timers[client].iGoodGains == 0)? 0.0:(gA_Timers[client].iGoodGains / float(gA_Timers[client].iTotalMeasures) * 100.0):-1.0);
 		Call_PushCell(gA_Timers[client].iTimerTrack);
-		perfs = (gA_Timers[client].iMeasuredJumps == 0)? 100.0:(gA_Timers[client].iPerfectJumps / float(gA_Timers[client].iMeasuredJumps) * 100.0);
 	}
 	else
 	{
@@ -1347,13 +1341,11 @@ public int Native_FinishMap(Handle handler, int numParams)
 		// gross
 		Call_PushFloat((GetStyleSettingBool(snapshot.bsStyle, "sync"))? (snapshot.iGoodGains == 0)? 0.0:(snapshot.iGoodGains / float(snapshot.iTotalMeasures) * 100.0):-1.0);
 		Call_PushCell(snapshot.iTimerTrack);
-		perfs = (snapshot.iMeasuredJumps == 0)? 100.0:(snapshot.iPerfectJumps / float(snapshot.iMeasuredJumps) * 100.0);
 	}
 
 	float oldtime = 0.0;
 
 	Call_PushFloatRef(oldtime);
-	Call_PushFloat(perfs);
 
 	if(result == Plugin_Continue)
 	{
@@ -1531,13 +1523,6 @@ public int Native_RestartTimer(Handle handler, int numParams)
 	Call_PushCell(client);
 	Call_PushCell(track);
 	Call_Finish();
-}
-
-public int Native_GetPerfectJumps(Handle handler, int numParams)
-{
-	int client = GetNativeCell(1);
-
-	return view_as<int>((gA_Timers[client].iMeasuredJumps == 0)? 100.0:(gA_Timers[client].iPerfectJumps / float(gA_Timers[client].iMeasuredJumps) * 100.0));
 }
 
 public int Native_GetStrafeCount(Handle handler, int numParams)
@@ -2001,8 +1986,6 @@ void StartTimer(int client, int track)
 		gA_Timers[client].iSHSWCombination = -1;
 		gA_Timers[client].fCurrentTime = 0.0;
 		gA_Timers[client].bPracticeMode = false;
-		gA_Timers[client].iMeasuredJumps = 0;
-		gA_Timers[client].iPerfectJumps = 0;
 		gA_Timers[client].bCanUseAllKeys = false;
 		gA_Timers[client].fZoneOffset[Zone_Start] = 0.0;
 		gA_Timers[client].fZoneOffset[Zone_End] = 0.0;
@@ -3148,7 +3131,6 @@ void BuildSnapshot(int client, timer_snapshot_t snapshot)
 	snapshot = gA_Timers[client];
 	snapshot.fServerTime = GetEngineTime();
 	snapshot.fTimescale = (gA_Timers[client].fTimescale > 0.0) ? gA_Timers[client].fTimescale : 1.0;
-	//snapshot.iLandingTick = ?????; // TODO: Think about handling segmented scroll? /shrug
 }
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
@@ -3382,33 +3364,12 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	// perf jump measuring
 	bool bOnGround = (!bInWater && mtMoveType == MOVETYPE_WALK && iGroundEntity != -1);
 
-	if(bOnGround && !gA_Timers[client].bOnGround)
-	{
-		gA_Timers[client].iLandingTick = tickcount;
-
-		SetEntPropFloat(client, Prop_Send, "m_flStamina", 0.0);
-	}
-
-	else if (!bOnGround && gA_Timers[client].bOnGround && gA_Timers[client].bJumped && !gA_Timers[client].bClientPaused)
-	{
-		int iDifference = (tickcount - gA_Timers[client].iLandingTick);
-
-		if(iDifference < 10)
-		{
-			gA_Timers[client].iMeasuredJumps++;
-
-			if(iDifference == 1)
-			{
-				gA_Timers[client].iPerfectJumps++;
-			}
-		}
-	}
-
-	if (bInStart && gCV_BlockPreJump.BoolValue && (vel[2] > 0 || (buttons & IN_JUMP) > 0))
+	// no jump zone implementation
+	/*if (buttons & IN_JUMP) > 0)
 	{
 		vel[2] = 0.0;
 		buttons &= ~IN_JUMP;
-	}
+	}*/
 
 	float fAngle = GetAngleDiff(angles[1], gA_Timers[client].fLastAngle);
 
