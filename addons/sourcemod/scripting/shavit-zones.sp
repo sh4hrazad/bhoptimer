@@ -1582,7 +1582,7 @@ public Action Command_Modifier(int client, int args)
 
 	gF_Modifier[client] = fArg1;
 
-	Shavit_PrintToChat(client, "%T %s%.01f%s.", "ModifierSet", client, fArg1);
+	Shavit_PrintToChat(client, "%T %.01f.", "ModifierSet", client, fArg1);
 
 	return Plugin_Handled;
 }
