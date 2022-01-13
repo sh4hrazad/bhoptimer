@@ -2611,7 +2611,7 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 	FormatHUDSeconds(fDifference, sDifference, sizeof(sDifference));
 
 	char sSync[32]; // 32 because colors
-	FormatEx(sSync, 32, (sync != -1.0)? " @ %s%.02f%%":"", gS_ChatStrings.sVariable, sync);
+	FormatEx(sSync, 32, (sync != -1.0)? " @ {gold}%.02f%%":"", sync);
 
 	if(iOverwrite > 0)
 	{

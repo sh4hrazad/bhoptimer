@@ -3124,12 +3124,12 @@ public Action Command_Specs(int client, int args)
 
 			if(iCount == 1)
 			{
-				FormatEx(sSpecs, 192, "%s%N", gS_ChatStrings.sVariable2, i);
+				FormatEx(sSpecs, 192, "{orchid}%N", i);
 			}
 
 			else
 			{
-				Format(sSpecs, 192, "%s%s, %s%N", sSpecs, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, i);
+				Format(sSpecs, 192, "%s{default}, {orchid}%N", sSpecs, i);
 			}
 		}
 	}

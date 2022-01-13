@@ -755,14 +755,13 @@ public Action Command_WipePlayer(int client, int args)
 			gS_Verification[client][i] = sAlphabet[GetRandomInt(0, sizeof(sAlphabet) - 1)];
 		}
 
-		Shavit_PrintToChat(client, "Preparing to delete all user data for SteamID %s[U:1:%d]%s. To confirm, enter %s!wipeplayer %s",
-			gS_ChatStrings.sVariable, gI_WipePlayerID[client], gS_ChatStrings.sText, gS_ChatStrings.sVariable2, gS_Verification[client]);
+		Shavit_PrintToChat(client, "Preparing to delete all user data for SteamID {gold}[U:1:%d]{default}. To confirm, enter {orchid}!wipeplayer %s",
+			gI_WipePlayerID[client], gS_Verification[client]);
 	}
 
 	else
 	{
-		Shavit_PrintToChat(client, "Deleting data for SteamID %s[U:1:%d]%s...",
-			gS_ChatStrings.sVariable, gI_WipePlayerID[client], gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "Deleting data for SteamID {gold}[U:1:%d]{default}...", gI_WipePlayerID[client]);
 
 		DeleteUserData(client, gI_WipePlayerID[client]);
 
@@ -786,7 +785,7 @@ public void Trans_DeleteRestOfUserSuccess(Database db, DataPack hPack, int numQu
 	Call_Finish();
 
 	Shavit_LogMessage("%L - wiped user data for [U:1:%d].", client, iSteamID);
-	Shavit_PrintToChat(client, "Finished wiping timer data for user %s[U:1:%d]%s.", gS_ChatStrings.sVariable, iSteamID, gS_ChatStrings.sText);
+	Shavit_PrintToChat(client, "Finished wiping timer data for user {gold}[U:1:%d]{default}.", iSteamID);
 }
 
 public void Trans_DeleteRestOfUserFailed(Database db, DataPack hPack, int numQueries, const char[] error, int failIndex, any[] queryData)
@@ -1619,17 +1618,6 @@ public int Native_GetChatStrings(Handle handler, int numParams)
 		case sMessagePrefix: return SetNativeString(2, gS_ChatStrings.sPrefix, size);
 		case sMessageText: return SetNativeString(2, gS_ChatStrings.sText, size);
 		case sMessageWarning: return SetNativeString(2, gS_ChatStrings.sWarning, size);
-		case sMessageVariable: return SetNativeString(2, gS_ChatStrings.sVariable, size);
-		case sMessageVariable2: return SetNativeString(2, gS_ChatStrings.sVariable2, size);
-		case sMessageVariable3: return SetNativeString(2, gS_ChatStrings.sVariable3, size);
-		case sMessageVariable4: return SetNativeString(2, gS_ChatStrings.sVariable4, size);
-		case sMessageVariable5: return SetNativeString(2, gS_ChatStrings.sVariable5, size);
-		case sMessageVariable6: return SetNativeString(2, gS_ChatStrings.sVariable6, size);
-		case sMessageVariable7: return SetNativeString(2, gS_ChatStrings.sVariable7, size);
-		case sMessageVariable8: return SetNativeString(2, gS_ChatStrings.sVariable8, size);
-		case sMessageVariable9: return SetNativeString(2, gS_ChatStrings.sVariable9, size);
-		case sMessageVariable10: return SetNativeString(2, gS_ChatStrings.sVariable10, size);
-		case sMessageVariable11: return SetNativeString(2, gS_ChatStrings.sVariable11, size);
 		case sMessageTeam: return SetNativeString(2, gS_ChatStrings.sTeam, size);
 		case sMessageStyle: return SetNativeString(2, gS_ChatStrings.sStyle, size);
 	}
@@ -2469,17 +2457,6 @@ bool LoadMessages()
 	kv.GetString("prefix", gS_ChatStrings.sPrefix, sizeof(chatstrings_t::sPrefix), "\x075e70d0[Timer]");
 	kv.GetString("text", gS_ChatStrings.sText, sizeof(chatstrings_t::sText), "\x07ffffff");
 	kv.GetString("warning", gS_ChatStrings.sWarning, sizeof(chatstrings_t::sWarning), "\x07af2a22");
-	kv.GetString("variable", gS_ChatStrings.sVariable, sizeof(chatstrings_t::sVariable), "\x077fd772");
-	kv.GetString("variable2", gS_ChatStrings.sVariable2, sizeof(chatstrings_t::sVariable2), "\x07276f5c");
-	kv.GetString("variable3", gS_ChatStrings.sVariable3, sizeof(chatstrings_t::sVariable3), "\x07276f5c");
-	kv.GetString("variable4", gS_ChatStrings.sVariable4, sizeof(chatstrings_t::sVariable4), "\x07276f5c");
-	kv.GetString("variable5", gS_ChatStrings.sVariable5, sizeof(chatstrings_t::sVariable5), "\x07276f5c");
-	kv.GetString("variable6", gS_ChatStrings.sVariable6, sizeof(chatstrings_t::sVariable6), "\x07276f5c");
-	kv.GetString("variable7", gS_ChatStrings.sVariable7, sizeof(chatstrings_t::sVariable7), "\x07276f5c");
-	kv.GetString("variable8", gS_ChatStrings.sVariable8, sizeof(chatstrings_t::sVariable8), "\x07276f5c");
-	kv.GetString("variable9", gS_ChatStrings.sVariable9, sizeof(chatstrings_t::sVariable9), "\x07276f5c");
-	kv.GetString("variable10", gS_ChatStrings.sVariable10, sizeof(chatstrings_t::sVariable10), "\x07276f5c");
-	kv.GetString("variable11", gS_ChatStrings.sVariable11, sizeof(chatstrings_t::sVariable11), "\x07276f5c");
 	kv.GetString("team", gS_ChatStrings.sTeam, sizeof(chatstrings_t::sTeam), "\x07276f5c");
 	kv.GetString("style", gS_ChatStrings.sStyle, sizeof(chatstrings_t::sStyle), "\x07db88c2");
 

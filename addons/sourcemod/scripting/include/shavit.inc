@@ -147,17 +147,6 @@ enum
 	sMessagePrefix,
 	sMessageText,
 	sMessageWarning,
-	sMessageVariable,
-	sMessageVariable2,
-	sMessageVariable3,
-	sMessageVariable4,
-	sMessageVariable5,
-	sMessageVariable6,
-	sMessageVariable7,
-	sMessageVariable8,
-	sMessageVariable9,
-	sMessageVariable10,
-	sMessageVariable11,
 	sMessageTeam,
 	sMessageStyle
 };
@@ -178,17 +167,6 @@ enum struct chatstrings_t
 	char sPrefix[64];
 	char sText[16];
 	char sWarning[16];
-	char sVariable[16];
-	char sVariable2[16];
-	char sVariable3[16];
-	char sVariable4[16];
-	char sVariable5[16];
-	char sVariable6[16];
-	char sVariable7[16];
-	char sVariable8[16];
-	char sVariable9[16];
-	char sVariable10[16];
-	char sVariable11[16];
 	char sTeam[16];
 	char sStyle[16];
 }
