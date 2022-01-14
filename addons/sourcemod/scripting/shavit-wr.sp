@@ -2633,7 +2633,7 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 			}
 
 			FormatEx(sQuery, sizeof(sQuery),
-				"INSERT INTO %splayertimes (auth, map, time, jumps, date, style, strafes, sync, points, track, exact_time_int) VALUES (%d, '%s', %f, %d, %d, %d, %d, %.2f, %f, %d, %.2f, %d);",
+				"INSERT INTO %splayertimes (auth, map, time, jumps, date, style, strafes, sync, points, track, exact_time_int) VALUES (%d, '%s', %f, %d, %d, %d, %d, %.2f, %f, %d, %d);",
 				gS_MySQLPrefix, iSteamID, gS_Map, time, jumps, timestamp, style, strafes, sync, fPoints, track, view_as<int>(time));
 		}
 		else // update

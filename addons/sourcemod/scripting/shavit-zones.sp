@@ -1951,7 +1951,12 @@ public int HookZoneMenuHandler_SelectMethod(Menu a, MenuAction action, int param
 				for(int i = 0; i < gA_Triggers.Length; i++)
 				{
 					int iEnt = gA_Triggers.Get(i);
-					
+
+					if(!IsValidEntity(iEnt))
+					{
+						continue;
+					}
+
 					char sTriggerName[128];
 					GetEntPropString(iEnt, Prop_Send, "m_iName", sTriggerName, 128, 0);
 					menu.AddItem(sTriggerName, sTriggerName);
@@ -1963,6 +1968,11 @@ public int HookZoneMenuHandler_SelectMethod(Menu a, MenuAction action, int param
 				for(int i = 0; i < gA_Triggers.Length; i++)
 				{
 					int iEnt = gA_Triggers.Get(i);
+
+					if(!IsValidEntity(iEnt))
+					{
+						continue;
+					}
 
 					float origin[3];
 					GetEntPropVector(iEnt, Prop_Send, "m_vecOrigin", origin);
