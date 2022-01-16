@@ -236,7 +236,7 @@ bool LoadChatConfig()
 	BuildPath(Path_SM, sPath, PLATFORM_MAX_PATH, "configs/shavit-chat.cfg");
 
 	KeyValues kv = new KeyValues("shavit-chat");
-	
+
 	if(!kv.ImportFromFile(sPath) || !kv.GotoFirstSubKey())
 	{
 		delete kv;
@@ -313,10 +313,10 @@ bool LoadChatConfig()
 				continue;
 			}
 		}
-		
+
 		chat_title.bFree = view_as<bool>(kv.GetNum("free", false));
 		chat_title.bEasterEgg = view_as<bool>(kv.GetNum("easteregg", false));
-		
+
 		kv.GetString("name", chat_title.sName, MAXLENGTH_NAME, "{name}");
 		kv.GetString("message", chat_title.sMessage, MAXLENGTH_MESSAGE, "");
 		kv.GetString("display", chat_title.sDisplay, MAXLENGTH_DISPLAY, "");
@@ -340,7 +340,7 @@ bool LoadChatSettings()
 	BuildPath(Path_SM, sPath, PLATFORM_MAX_PATH, "configs/shavit-chatsettings.cfg");
 
 	KeyValues kv = new KeyValues("shavit-chat");
-	
+
 	if(!kv.ImportFromFile(sPath))
 	{
 		delete kv;
@@ -462,7 +462,7 @@ public Action Hook_SayText2(UserMsg msg_id, any msg, const int[] players, int pl
 
 	char sName[MAXLENGTH_NAME];
 	char sCMessage[MAXLENGTH_CMESSAGE];
-	
+
 	if(HasCustomChat(client) && gI_ChatSelection[client] == -1)
 	{
 		if(gB_NameEnabled[client])
@@ -559,7 +559,7 @@ void Frame_SendText(DataPack pack)
 	{
 		return;
 	}
-	
+
 	Handle hSayText2 = StartMessage("SayText2", clients, count, USERMSG_RELIABLE|USERMSG_BLOCKHOOKS);
 
 	if(hSayText2 == null)
@@ -576,7 +576,7 @@ void Frame_SendText(DataPack pack)
 		pbmsg.SetInt("ent_idx", client);
 		pbmsg.SetBool("chat", true);
 		pbmsg.SetString("msg_name", sText);
-		
+
 		// needed to not crash
 		for(int i = 1; i <= 4; i++)
 		{
@@ -908,7 +908,7 @@ Action ShowRanksMenu(int client, int item)
 		else if(iSize == 1)
 		{
 			AdminFlag afFlag = view_as<AdminFlag>(0);
-			
+
 			if(FindFlagByChar(sFlag[0], afFlag))
 			{
 				bFlagAccess = GetAdminFlag(GetUserAdmin(client), afFlag);
@@ -1044,7 +1044,7 @@ void PreviewChat(int client, int rank)
 			pbmsg.SetInt("ent_idx", client);
 			pbmsg.SetBool("chat", true);
 			pbmsg.SetString("msg_name", sTextFormatting);
-			
+
 			for(int i = 1; i <= 4; i++)
 			{
 				pbmsg.AddString("params", "");
@@ -1098,7 +1098,7 @@ bool HasRankAccess(int client, int rank)
 	else if(iSize == 1)
 	{
 		AdminFlag afFlag = view_as<AdminFlag>(0);
-		
+
 		if(FindFlagByChar(sFlag[0], afFlag))
 		{
 			bFlagAccess = GetAdminFlag(GetUserAdmin(client), afFlag);
@@ -1175,7 +1175,7 @@ bool HasRankAccess(int client, int rank)
 		}
 
 		float fPercentile = (fVal / fTotal) * 100.0;
-		
+
 		if(cache.fFrom <= fPercentile <= cache.fTo)
 		{
 			return true;
@@ -1188,7 +1188,7 @@ bool HasRankAccess(int client, int rank)
 void GetPlayerChatSettings(int client, char[] name, char[] message)
 {
 	int iRank = gI_ChatSelection[client];
-	
+
 	if(!HasRankAccess(client, iRank))
 	{
 		iRank = -2;
@@ -1389,7 +1389,7 @@ void FormatChat(int client, char[] buffer, int size)
 
 		FormatEx(temp, 32, "%0.f", Shavit_GetPoints(client));
 		ReplaceString(buffer, size, "{pts}", temp);
-		
+
 		FormatEx(temp, 32, "%d", Shavit_GetWRHolderRank(client));
 		ReplaceString(buffer, size, "{wrrank}", temp);
 
@@ -1420,7 +1420,7 @@ void SQL_DBConnect()
 			"CREATE TABLE IF NOT EXISTS `%schat` (`auth` INT NOT NULL, `name` INT NOT NULL DEFAULT 0, `ccname` VARCHAR(128), `message` INT NOT NULL DEFAULT 0, `ccmessage` VARCHAR(16), `ccaccess` INT NOT NULL DEFAULT 0, PRIMARY KEY (`auth`), CONSTRAINT `%sch_auth` FOREIGN KEY (`auth`) REFERENCES `%susers` (`auth`) ON UPDATE CASCADE ON DELETE CASCADE);",
 			gS_MySQLPrefix, gS_MySQLPrefix, gS_MySQLPrefix);
 	}
-	
+
 	gH_SQL.Query(SQL_CreateTable_Callback, sQuery);
 }
 
@@ -1541,7 +1541,7 @@ void RemoveFromString(char[] buf, char[] thing, int extra)
 {
 	int index, len = strlen(buf);
 	extra += strlen(thing);
-	
+
 	while ((index = StrContains(buf, thing, true)) != -1)
 	{
 		// Search sequence is in the end of the string, so just cut it and exit
@@ -1550,7 +1550,7 @@ void RemoveFromString(char[] buf, char[] thing, int extra)
 			buf[index] = '\0';
 			break;
 		}
-		
+
 		while (buf[index] != 0)
 		{
 			buf[index] = buf[index+extra];
@@ -1642,7 +1642,7 @@ public int Native_GetPlainChatrank(Handle handler, int numParams)
 
 		FormatEx(sRank, 16, "%.02f", fPercentile);
 		ReplaceString(buf, sizeof(buf), "{rank2}", sRank);
-	
+
 		FormatEx(sRank, 16, "%.03f", fPercentile);
 		ReplaceString(buf, sizeof(buf), "{rank3}", sRank);
 

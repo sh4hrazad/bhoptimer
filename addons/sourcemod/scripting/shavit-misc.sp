@@ -626,7 +626,7 @@ void LoadMapFixes()
 	BuildPath(Path_SM, sPath, PLATFORM_MAX_PATH, "configs/shavit-mapfixes.cfg");
 
 	KeyValues kv = new KeyValues("shavit-mapfixes");
-	
+
 	if (kv.ImportFromFile(sPath) && kv.JumpToKey(gS_Map) && kv.GotoFirstSubKey(false))
 	{
 		do {
@@ -1583,7 +1583,7 @@ void DeleteCheckpointCacheList(ArrayList cps)
 			cps.GetArray(i, cache);
 			DeleteCheckpointCache(cache);
 		}
-		
+
 		cps.Clear();
 	}
 }

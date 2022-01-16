@@ -926,7 +926,7 @@ void Cron()
 		{
 			continue;
 		}
-		
+
 		TriggerHUDUpdate(i);
 
 		float fSpeed[3];
@@ -1134,7 +1134,7 @@ int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 		if((gI_HUD2Settings[client] & HUD2_WRPB) == 0)
 		{
 			char sTargetSR[64];
-		
+
 			if(data.iFinishNum == 0)
 			{
 				FormatEx(sTargetSR, 64, "None");

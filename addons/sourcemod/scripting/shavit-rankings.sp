@@ -744,7 +744,7 @@ public Action Command_SetTier(int client, int args)
 {
 	char sArg[8];
 	GetCmdArg(1, sArg, 8);
-	
+
 	int tier = StringToInt(sArg);
 
 	if(args == 0 || tier < 1 || tier > 10)

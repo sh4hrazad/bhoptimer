@@ -1810,7 +1810,7 @@ public int MenuHandler_SelectStage(Menu menu, MenuAction action, int param1, int
 		char sInfo[8];
 		menu.GetItem(param2, sInfo, 8);
 		int index = StringToInt(sInfo);
-		
+
 		Shavit_StopTimer(param1);
 		gB_StageTimer[param1] = true;
 
@@ -2860,7 +2860,7 @@ public int ZoneCreation_Handler(Menu menu, MenuAction action, int param1, int pa
 				}
 			}
 		}
-		
+
 		ShowPanel(param1, gI_MapStep[param1]);
 	}
 

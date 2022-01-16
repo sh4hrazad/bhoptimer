@@ -681,7 +681,7 @@ public void OnAdminMenuReady(Handle topmenu)
 				OnAdminMenuCreated(topmenu);
 			}
 		}
-		
+
 		gH_AdminMenu.AddItem("sm_deletereplay", AdminMenu_DeleteReplay, gH_TimerCommands, "sm_deletereplay", ADMFLAG_RCON);
 	}
 }
@@ -3659,7 +3659,7 @@ public int DeleteReplay_Callback(Menu menu, MenuAction action, int param1, int p
 
 		char sExploded[2][4];
 		ExplodeString(sInfo, ";", sExploded, 2, 4);
-		
+
 		int style = StringToInt(sExploded[0]);
 
 		if(style == -1)
@@ -4447,7 +4447,7 @@ float GetClosestReplayTime(int client)
 	{
 		int iStartFrame = iPlayerFrames - iSearch;
 		iEndFrame = iPlayerFrames + iSearch;
-		
+
 		if(iSearch == 0)
 		{
 			iStartFrame = 0;

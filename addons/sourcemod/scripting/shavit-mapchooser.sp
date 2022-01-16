@@ -329,7 +329,7 @@ public void OnConfigsExecuted()
 	// reload maplist array
 	// cache the nominate menu so that it isn't being built every time player opens it
 	LoadMapList();
-	
+
 	// reset the maplist for tiers distinguishing server
 	ResetMaplistByTiers();
 }

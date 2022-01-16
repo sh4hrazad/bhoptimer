@@ -388,7 +388,7 @@ void OpenStageMenu(int client, bool wrcp)
 {
 	char sQuery[128];
 	FormatEx(sQuery, 128, "SELECT data FROM `%smapzones` WHERE map = '%s' AND type = '%d' AND track = '%d' ORDER BY data DESC;", gS_MySQLPrefix, gS_MapChoice[client], Zone_Stage, Track_Main);
-	
+
 	DataPack dp = new DataPack();
 	dp.WriteCell(GetClientSerial(client));
 	dp.WriteCell(wrcp?1:0);
@@ -622,7 +622,7 @@ public Action Command_DeleteMaptop(int client, int args)
 
 			return Plugin_Handled;
 		}
-		
+
 		OpenMaptopMenu(client, gS_Map);
 	}
 
