@@ -681,7 +681,6 @@ public void OnAdminMenuReady(Handle topmenu)
 				OnAdminMenuCreated(topmenu);
 			}
 		}
-		
 		gH_AdminMenu.AddItem("sm_deletereplay", AdminMenu_DeleteReplay, gH_TimerCommands, "sm_deletereplay", ADMFLAG_RCON);
 	}
 }
@@ -1426,7 +1425,6 @@ bool LoadStyling()
 	BuildPath(Path_SM, sPath, PLATFORM_MAX_PATH, "configs/shavit-replay.cfg");
 
 	KeyValues kv = new KeyValues("shavit-replay");
-	
 	if(!kv.ImportFromFile(sPath))
 	{
 		delete kv;
@@ -1447,7 +1445,6 @@ bool LoadStyling()
 		ReplaceString(sFolder, PLATFORM_MAX_PATH, "{SM}/", "");
 		BuildPath(Path_SM, sFolder, PLATFORM_MAX_PATH, "%s", sFolder);
 	}
-	
 	strcopy(gS_ReplayFolder, PLATFORM_MAX_PATH, sFolder);
 
 	delete kv;
@@ -1643,7 +1640,6 @@ int InternalCreateReplayBot()
 
 	// Do all this mp_randomspawn stuff on CSGO since it's easier than updating the signature for CCSGameRules::TeamFull.
 	int mp_randomspawn_orig;
-	
 	if (mp_randomspawn != null)
 	{
 		mp_randomspawn_orig = mp_randomspawn.IntValue;
@@ -2002,7 +1998,6 @@ File ReadReplayHeader(const char[] path, replay_header_t header, int style, int 
 			file.ReadString(header.sMap, PLATFORM_MAX_PATH);
 			file.ReadUint8(header.iStyle);
 			file.ReadUint8(header.iTrack);
-			
 			file.ReadInt32(header.iPreFrames);
 
 			// In case the replay was from when there could still be negative preframes
@@ -3659,7 +3654,6 @@ public int DeleteReplay_Callback(Menu menu, MenuAction action, int param1, int p
 
 		char sExploded[2][4];
 		ExplodeString(sInfo, ";", sExploded, 2, 4);
-		
 		int style = StringToInt(sExploded[0]);
 
 		if(style == -1)
@@ -3929,7 +3923,6 @@ public int MenuHandler_ReplayTrack(Menu menu, MenuAction action, int param1, int
 			case 1:
 			{
 				submenu.SetTitle("%T\n ", "CentralReplayTrack", param1);
-				
 				for(int i = 1; i < TRACKS_SIZE; i++)
 				{
 					for(int j = 0; j < gI_Styles; j++)
@@ -3973,7 +3966,6 @@ public int MenuHandler_ReplayTrack(Menu menu, MenuAction action, int param1, int
 
 						char sStage[32];
 						FormatEx(sStage, 32, "Stage %d", i);
-						
 						submenu.AddItem(sInfo, sStage);
 					}
 				}
@@ -4033,7 +4025,6 @@ public int MenuHandler_ReplayTrack2(Menu menu, MenuAction action, int param1, in
 	{
 		delete menu;
 	}
-	
 	return 0;
 }
 
@@ -4447,7 +4438,6 @@ float GetClosestReplayTime(int client)
 	{
 		int iStartFrame = iPlayerFrames - iSearch;
 		iEndFrame = iPlayerFrames + iSearch;
-		
 		if(iSearch == 0)
 		{
 			iStartFrame = 0;
@@ -4460,7 +4450,6 @@ float GetClosestReplayTime(int client)
 			{
 				iStartFrame = 0;
 			}
-			
 			// check if the search ahead flag is off
 			if(gCV_DynamicTimeCheap.IntValue & 1 == 0)
 			{

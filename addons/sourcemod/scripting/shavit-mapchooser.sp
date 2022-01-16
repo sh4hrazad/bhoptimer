@@ -329,7 +329,6 @@ public void OnConfigsExecuted()
 	// reload maplist array
 	// cache the nominate menu so that it isn't being built every time player opens it
 	LoadMapList();
-	
 	// reset the maplist for tiers distinguishing server
 	ResetMaplistByTiers();
 }
@@ -991,7 +990,6 @@ public int Handler_MapVoteMenu(Menu menu, MenuAction action, int param1, int par
 			{
 				char map[PLATFORM_MAX_PATH], buffer[255];
 				menu.GetItem(param2, map, sizeof(map));
-	
 				if (strcmp(map, "extend", false) == 0)
 				{
 					FormatEx(buffer, sizeof(buffer), "%T", "Extend Map", param1);

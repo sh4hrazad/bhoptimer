@@ -102,7 +102,6 @@ public void OnPluginStart()
 	mp_ignore_round_win_conditions = FindConVar("mp_ignore_round_win_conditions");
 	mp_timelimit = FindConVar("mp_timelimit");
 	mp_roundtime = FindConVar("mp_roundtime");
-	
 	if(mp_roundtime != null)
 	{
 		mp_roundtime.SetBounds(ConVarBound_Upper, false);
@@ -201,7 +200,6 @@ public void OnConfigsExecuted()
 	{
 		StartCalculating();
 	}
-	
 	else
 	{
 		SetLimit(RoundToNearest(gCV_DefaultLimit.FloatValue));
@@ -421,7 +419,6 @@ public Action CS_OnTerminateRound(float &fDelay, CSRoundEndReason &iReason)
 	{
 		return Plugin_Handled;
 	}
-	
 	return Plugin_Continue;
 }
 

@@ -1015,7 +1015,6 @@ void ShowMaps(int client)
 	}
 
 	gB_CanOpenMenu[client] = false;
-	
 	gH_SQL.Query(ShowMapsCallback, sQuery, GetClientSerial(client), DBPrio_High);
 }
 
@@ -1140,7 +1139,6 @@ public int MenuHandler_ShowMaps(Menu menu, MenuAction action, int param1, int pa
 
 			return 0;
 		}
-		
 		char sQuery[512];
 		FormatEx(sQuery, 512, "SELECT u.name, p.time, p.jumps, p.style, u.auth, p.date, p.map, p.strafes, p.sync, p.points FROM %splayertimes p JOIN %susers u ON p.auth = u.auth WHERE p.id = '%s' LIMIT 1;", gS_MySQLPrefix, gS_MySQLPrefix, sInfo);
 
