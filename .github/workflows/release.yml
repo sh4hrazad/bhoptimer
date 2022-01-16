@@ -59,6 +59,7 @@ jobs:
           echo -e "\nCompiling shavit plugins..."
 
           spcomp64 -O2 -i $INCLUDE_PATH shavit-chat.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-checkpoints.sp
           spcomp64 -O2 -i $INCLUDE_PATH shavit-core.sp
           spcomp64 -O2 -i $INCLUDE_PATH shavit-hud.sp
           spcomp64 -O2 -i $INCLUDE_PATH shavit-mapchooser.sp
