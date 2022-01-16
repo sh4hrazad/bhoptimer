@@ -940,7 +940,7 @@ public void OnMapStart()
 void LoadBonusZones()
 {
 	char sQuery[256];
-	FormatEx(sQuery, 256, "SELECT track FROM mapzones WHERE map = '%s' ORDER BY track DESC", gS_Map);
+	FormatEx(sQuery, 256, "SELECT track FROM mapzones WHERE map = '%s' ORDER BY track DESC LIMIT 1;", gS_Map);
 	gH_SQL.Query(SQL_GetBonusZone_Callback, sQuery, 0, DBPrio_High);
 }
 
@@ -961,7 +961,7 @@ public void SQL_GetBonusZone_Callback(Database db, DBResultSet results, const ch
 void LoadStageZones()
 {
 	char sQuery[256];
-	FormatEx(sQuery, 256, "SELECT id, data FROM mapzones WHERE type = %i and map = '%s'", Zone_Stage, gS_Map);
+	FormatEx(sQuery, 256, "SELECT data FROM mapzones WHERE type = %i and map = '%s' ORDER BY data DESC LIMIT 1;", Zone_Stage, gS_Map);
 	gH_SQL.Query(SQL_GetStageZone_Callback, sQuery, 0, DBPrio_High);
 }
 
@@ -975,7 +975,7 @@ public void SQL_GetStageZone_Callback(Database db, DBResultSet results, const ch
 
 	while(results.FetchRow())
 	{
-		gI_Stages = results.RowCount + 1;
+		gI_Stages = results.FetchInt(0);
 	}
 
 	gB_LinearMap = (gI_Stages == 1);
@@ -984,7 +984,7 @@ public void SQL_GetStageZone_Callback(Database db, DBResultSet results, const ch
 void LoadCheckpointZones()
 {
 	char sQuery[256];
-	FormatEx(sQuery, 256, "SELECT id, data FROM mapzones WHERE type = %i AND map = '%s' ORDER BY data DESC", Zone_Checkpoint, gS_Map);
+	FormatEx(sQuery, 256, "SELECT data FROM mapzones WHERE type = %i AND map = '%s' ORDER BY data DESC LIMIT 1;", Zone_Checkpoint, gS_Map);
 	gH_SQL.Query(SQL_GetCheckpointZone_Callback, sQuery, 0, DBPrio_High);
 }
 
@@ -998,7 +998,7 @@ public void SQL_GetCheckpointZone_Callback(Database db, DBResultSet results, con
 
 	if(results.FetchRow())
 	{
-		gI_Checkpoints = results.FetchInt(1);
+		gI_Checkpoints = results.FetchInt(0);
 	}
 }
 
@@ -4073,7 +4073,7 @@ public void StartTouchPost(int entity, int other)
 				}
 
 				gI_LastCheckpoint[other] = (gB_LinearMap) ? gI_Checkpoints + 1 : gI_Stages + 1;
-				
+
 				if(status != Timer_Stopped && !Shavit_IsPaused(other) && !gB_StageTimer[other] && Shavit_GetClientTrack(other) == track)
 				{
 					Shavit_FinishMap(other, track);
