@@ -388,6 +388,7 @@ void OpenStageMenu(int client, bool wrcp)
 {
 	char sQuery[128];
 	FormatEx(sQuery, 128, "SELECT data FROM `%smapzones` WHERE map = '%s' AND type = '%d' AND track = '%d' ORDER BY data DESC;", gS_MySQLPrefix, gS_MapChoice[client], Zone_Stage, Track_Main);
+	
 	DataPack dp = new DataPack();
 	dp.WriteCell(GetClientSerial(client));
 	dp.WriteCell(wrcp?1:0);
@@ -621,6 +622,7 @@ public Action Command_DeleteMaptop(int client, int args)
 
 			return Plugin_Handled;
 		}
+		
 		OpenMaptopMenu(client, gS_Map);
 	}
 
@@ -790,6 +792,7 @@ public int Maptop_FinalMenu_Handler(Menu menu, MenuAction action, int param1, in
 			char sQuery[256];
 			FormatEx(sQuery, 256, "DELETE FROM `%sstagetimes` WHERE (stage = '%d' AND style = '%d') AND (auth = '%d' AND map = '%s');", 
 					gS_MySQLPrefix, stage, style, steamid, gS_MapChoice[param1]);
+			
 			DataPack dp = new DataPack();
 			dp.WriteCell(GetClientSerial(param1));
 			dp.WriteCell(param2 + 1);
@@ -1012,6 +1015,7 @@ public int CPRMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
 	{
 
 	}
+	
 	else if(action == MenuAction_End)
 	{
 		delete menu;

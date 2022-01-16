@@ -685,6 +685,7 @@ bool LoadZonesConfig()
 	BuildPath(Path_SM, sPath, PLATFORM_MAX_PATH, "configs/shavit-zones.cfg");
 
 	KeyValues kv = new KeyValues("shavit-zones");
+	
 	if(!kv.ImportFromFile(sPath))
 	{
 		delete kv;
@@ -939,7 +940,7 @@ public void OnMapStart()
 void LoadBonusZones()
 {
 	char sQuery[256];
-	FormatEx(sQuery, 256, "SELECT track FROM mapzones WHERE map = '%s' ORDER BY track DESC LIMIT 1", gS_Map);
+	FormatEx(sQuery, 256, "SELECT track FROM mapzones WHERE map = '%s' ORDER BY track DESC", gS_Map);
 	gH_SQL.Query(SQL_GetBonusZone_Callback, sQuery, 0, DBPrio_High);
 }
 
@@ -960,7 +961,7 @@ public void SQL_GetBonusZone_Callback(Database db, DBResultSet results, const ch
 void LoadStageZones()
 {
 	char sQuery[256];
-	FormatEx(sQuery, 256, "SELECT data FROM mapzones WHERE type = %i and map = '%s' ORDER BY data DESC LIMIT 1", Zone_Stage, gS_Map);
+	FormatEx(sQuery, 256, "SELECT id, data FROM mapzones WHERE type = %i and map = '%s'", Zone_Stage, gS_Map);
 	gH_SQL.Query(SQL_GetStageZone_Callback, sQuery, 0, DBPrio_High);
 }
 
@@ -972,9 +973,9 @@ public void SQL_GetStageZone_Callback(Database db, DBResultSet results, const ch
 		return;
 	}
 
-	if(results.FetchRow())
+	while(results.FetchRow())
 	{
-		gI_Stages = results.FetchInt(0);
+		gI_Stages = results.RowCount + 1;
 	}
 
 	gB_LinearMap = (gI_Stages == 1);
@@ -983,7 +984,7 @@ public void SQL_GetStageZone_Callback(Database db, DBResultSet results, const ch
 void LoadCheckpointZones()
 {
 	char sQuery[256];
-	FormatEx(sQuery, 256, "SELECT data FROM mapzones WHERE type = %i AND map = '%s' ORDER BY data DESC LIMIT 1", Zone_Checkpoint, gS_Map);
+	FormatEx(sQuery, 256, "SELECT id, data FROM mapzones WHERE type = %i AND map = '%s' ORDER BY data DESC", Zone_Checkpoint, gS_Map);
 	gH_SQL.Query(SQL_GetCheckpointZone_Callback, sQuery, 0, DBPrio_High);
 }
 
@@ -997,7 +998,7 @@ public void SQL_GetCheckpointZone_Callback(Database db, DBResultSet results, con
 
 	if(results.FetchRow())
 	{
-		gI_Checkpoints = results.FetchInt(0);
+		gI_Checkpoints = results.FetchInt(1);
 	}
 }
 
@@ -1040,6 +1041,7 @@ void UnhookEntity(int entity)
 void KillZoneEntity(int index)
 {
 	int entity = gA_ZoneCache[index].iEntityID;
+	
 	if(entity > MaxClients && IsValidEntity(entity))
 	{
 		for(int i = 1; i <= MaxClients; i++)
@@ -1778,15 +1780,19 @@ public Action Command_Stages(int client, int args)
 		menu.SetTitle("%T", "ZoneMenuStage", client);
 
 		char sDisplay[64];
+	
 		for(int i = 0; i < gI_MapZones; i++)
 		{
 			if(gA_ZoneCache[i].bZoneInitialized && gA_ZoneCache[i].iZoneType == Zone_Stage)
 			{
 				char sTrack[32];
 				GetTrackName(client, gA_ZoneCache[i].iZoneTrack, sTrack, 32);
+	
 				FormatEx(sDisplay, 64, "#%d - (%s)", (i + 1), gA_ZoneCache[i].iZoneData, sTrack);
+	
 				char sInfo[8];
 				IntToString(i, sInfo, 8);
+	
 				menu.AddItem(sInfo, sDisplay);
 			}
 		}
@@ -1804,6 +1810,7 @@ public int MenuHandler_SelectStage(Menu menu, MenuAction action, int param1, int
 		char sInfo[8];
 		menu.GetItem(param2, sInfo, 8);
 		int index = StringToInt(sInfo);
+		
 		Shavit_StopTimer(param1);
 		gB_StageTimer[param1] = true;
 
@@ -1814,6 +1821,7 @@ public int MenuHandler_SelectStage(Menu menu, MenuAction action, int param1, int
 	{
 		delete menu;
 	}
+	
 	return 0;
 }
 
@@ -2141,6 +2149,7 @@ public int MenuHandler_SelectHookZone_Track(Menu menu, MenuAction action, int pa
 	{
 		delete menu;
 	}
+	
 	return 0;
 }
 
@@ -2374,6 +2383,7 @@ public int MenuHandler_SelectZoneTrack(Menu menu, MenuAction action, int param1,
 	{
 		delete menu;
 	}
+	
 	return 0;
 }
 
@@ -2538,6 +2548,7 @@ Action OpenDeleteMenu(int client)
 
 			char sInfo[8];
 			IntToString(i, sInfo, 8);
+			
 			if(gB_InsideZoneID[client][i])
 			{
 				Format(sDisplay, 64, "%s %T", sDisplay, "ZoneInside", client);
@@ -2567,6 +2578,7 @@ public int MenuHandler_DeleteZone(Menu menu, MenuAction action, int param1, int 
 		menu.GetItem(param2, info, 8);
 
 		int id = StringToInt(info);
+	
 		switch(id)
 		{
 			case -2:
@@ -2585,6 +2597,7 @@ public int MenuHandler_DeleteZone(Menu menu, MenuAction action, int param1, int 
 				GetZoneName(param1, gA_ZoneCache[id].iZoneType, sZoneName, 32);
 
 				Shavit_LogMessage("%L - deleted %s (id %d) from map `%s`.", param1, sZoneName, gA_ZoneCache[id].iDatabaseID, gS_Map);
+				
 				char sQuery[256];
 				FormatEx(sQuery, 256, "DELETE FROM %smapzones WHERE %s = %d;", gS_MySQLPrefix, (gB_MySQL)? "id":"rowid", gA_ZoneCache[id].iDatabaseID);
 
@@ -2847,6 +2860,7 @@ public int ZoneCreation_Handler(Menu menu, MenuAction action, int param1, int pa
 				}
 			}
 		}
+		
 		ShowPanel(param1, gI_MapStep[param1]);
 	}
 
@@ -2865,6 +2879,7 @@ float[] SnapToGrid(float pos[3], int grid, bool third)
 
 	origin[0] = float(RoundToNearest(pos[0] / grid) * grid);
 	origin[1] = float(RoundToNearest(pos[1] / grid) * grid);
+	
 	if(third)
 	{
 		origin[2] = float(RoundToNearest(pos[2] / grid) * grid);
@@ -3881,6 +3896,7 @@ bool CreateNormalZone(int zone)
 
 	DispatchKeyValue(entity, "wait", "0");
 	DispatchKeyValue(entity, "spawnflags", "4097");
+	
 	if(!DispatchSpawn(entity))
 	{
 		LogError("\"trigger_multiple\" spawning failed, map %s.", gS_Map);
@@ -4057,6 +4073,7 @@ public void StartTouchPost(int entity, int other)
 				}
 
 				gI_LastCheckpoint[other] = (gB_LinearMap) ? gI_Checkpoints + 1 : gI_Stages + 1;
+				
 				if(status != Timer_Stopped && !Shavit_IsPaused(other) && !gB_StageTimer[other] && Shavit_GetClientTrack(other) == track)
 				{
 					Shavit_FinishMap(other, track);

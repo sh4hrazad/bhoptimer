@@ -926,6 +926,7 @@ void Cron()
 		{
 			continue;
 		}
+		
 		TriggerHUDUpdate(i);
 
 		float fSpeed[3];
@@ -1004,6 +1005,7 @@ int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 
 			FormatEx(sLine, 128, "%T ", "ReplayText", client);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
+			
 			FormatEx(sLine, 128, "[<span color='#00FF00'>%s - %s</span>]", sTrack, gS_StyleStrings[data.iStyle].sStyleName);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
@@ -1132,6 +1134,7 @@ int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 		if((gI_HUD2Settings[client] & HUD2_WRPB) == 0)
 		{
 			char sTargetSR[64];
+		
 			if(data.iFinishNum == 0)
 			{
 				FormatEx(sTargetSR, 64, "None");
@@ -1311,6 +1314,7 @@ void UpdateMainHUD(int client)
 	}
 
 	char sBuffer[512];
+	
 	StrCat(sBuffer, 512, "<pre>");
 	int iLines = AddHUDToBuffer(client, huddata, sBuffer, 512);
 	StrCat(sBuffer, 512, "</pre>");

@@ -744,6 +744,7 @@ public Action Command_SetTier(int client, int args)
 {
 	char sArg[8];
 	GetCmdArg(1, sArg, 8);
+	
 	int tier = StringToInt(sArg);
 
 	if(args == 0 || tier < 1 || tier > 10)
@@ -804,6 +805,7 @@ void SetMapSettings(int client)
 
 	FormatEx(sItem, 32, "Tier: %d", gI_MenuTier[client]);
 	menu.AddItem("", sItem);
+	
 	FormatEx(sItem, 32, "LimitSpeed: %s", (gB_MenuMaplimitspeed[client]) ? "Yes" : "No");
 	menu.AddItem("", sItem);
 
@@ -1250,6 +1252,7 @@ void UpdateAllPoints(bool recalcall = false)
 			sLastLogin, (sLastLogin[0] != 0) ? "AND" : "",
 			gS_MySQLPrefix);
 	}
+	
 	gH_SQL.Query(SQL_UpdateAllPoints_Callback, sQuery);
 }
 

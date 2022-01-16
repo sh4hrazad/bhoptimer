@@ -1746,6 +1746,7 @@ public int Native_GetStyleSetting(Handle handler, int numParams)
 	GetNativeString(2, sKey, 256);
 
 	int maxlength = GetNativeCell(4);
+	
 	char sValue[256];
 	bool ret = gSM_StyleKeys[style].GetString(sKey, sValue, maxlength);
 
@@ -2312,6 +2313,7 @@ public SMCResult OnStyleLeaveSection(SMCParser smc)
 		{
 			gSM_StyleKeys[gI_CurrentParserIndex].SetString("force_timescale", "0");
 		}
+		
 		else
 		{
 			gSM_StyleKeys[gI_CurrentParserIndex].SetString("force_timescale", "1");

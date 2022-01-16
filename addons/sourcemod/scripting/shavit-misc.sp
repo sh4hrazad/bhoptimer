@@ -626,6 +626,7 @@ void LoadMapFixes()
 	BuildPath(Path_SM, sPath, PLATFORM_MAX_PATH, "configs/shavit-mapfixes.cfg");
 
 	KeyValues kv = new KeyValues("shavit-mapfixes");
+	
 	if (kv.ImportFromFile(sPath) && kv.JumpToKey(gS_Map) && kv.GotoFirstSubKey(false))
 	{
 		do {
@@ -766,6 +767,7 @@ bool LoadAdvertisementsConfig()
 	BuildPath(Path_SM, sPath, PLATFORM_MAX_PATH, "configs/shavit-advertisements.cfg");
 
 	KeyValues kv = new KeyValues("shavit-advertisements");
+	
 	if(!kv.ImportFromFile(sPath) || !kv.GotoFirstSubKey(false))
 	{
 		delete kv;
@@ -1292,6 +1294,7 @@ void UpdateClanTag(int client)
 	Call_PushStringEx(sCustomTag, 32, SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	Call_PushCell(32);
 	Call_Finish(result);
+	
 	if(result != Plugin_Continue && result != Plugin_Changed)
 	{
 		return;
@@ -1580,6 +1583,7 @@ void DeleteCheckpointCacheList(ArrayList cps)
 			cps.GetArray(i, cache);
 			DeleteCheckpointCache(cache);
 		}
+		
 		cps.Clear();
 	}
 }
@@ -2320,11 +2324,13 @@ void UseOtherCheckpoints(int client)
 		{
 			char sName[MAX_NAME_LENGTH];
 			GetClientName(i, sName, sizeof(sName));
+			
 			char sItem[16];
 			IntToString(i, sItem, 16);
 			menu.AddItem(sItem, sName);
 		}
 	}
+	
 	menu.Display(client, -1);
 }
 
@@ -2560,6 +2566,7 @@ bool SaveCheckpoint(int client)
 		if(Shavit_InsideZone(client, Zone_Start, -1))
 		{
 			Shavit_PrintToChat(client, "%T", "CommandAliveSpectate", client);
+			
 			return false;
 		}
 	}
@@ -2572,6 +2579,7 @@ bool SaveCheckpoint(int client)
 		if(style < 0 || track < 0)
 		{
 			Shavit_PrintToChat(client, "%T", "CommandAliveSpectate", client);
+			
 			return false;
 		}
 	}
@@ -2586,6 +2594,7 @@ bool SaveCheckpoint(int client)
 	Call_PushCell(index);
 	Call_PushCell(overflow);
 	Call_Finish(result);
+	
 	if(result != Plugin_Continue)
 	{
 		return false;
@@ -2736,6 +2745,7 @@ void TeleportToCheckpoint(int client, int index, bool suppressMessage)
 	Call_PushCell(client);
 	Call_PushCell(index);
 	Call_Finish(result);
+	
 	if(result != Plugin_Continue)
 	{
 		return;
@@ -3473,6 +3483,7 @@ public Action NormalSound(int clients[MAXPLAYERS], int &numClients, char sample[
 					{
 						clients[j] = clients[j+1];
 					}
+					
 					numClients--;
 					i--;
 				}
@@ -3481,6 +3492,7 @@ public Action NormalSound(int clients[MAXPLAYERS], int &numClients, char sample[
 
 		return Plugin_Changed;
 	}
+	
 	return Plugin_Continue;
 }
 
@@ -3600,6 +3612,7 @@ public any Native_SetCheckpoint(Handle plugin, int numParams)
 
 	DeleteCheckpoint(client, position, true);
 	gA_Checkpoints[client].SetArray(position-1, cpcache);
+	
 	return true;
 }
 
@@ -3638,6 +3651,7 @@ public any Native_SetCurrentCheckpoint(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	int index = GetNativeCell(2);
+	
 	gI_CurrentCheckpoint[client] = index;
 	return 0;
 }
