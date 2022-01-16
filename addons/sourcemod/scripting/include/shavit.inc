@@ -3227,6 +3227,15 @@ native void Shavit_SetCurrentCheckpoint(int client, int index);
 native int Shavit_GetTimesTeleported(int client);
 
 /**
+ * Checks whether the client has savestate data.
+ *
+ * @param client                    Client index
+ *
+ * @return                          Whether a savestate or rejoin-savestate data exists for the client.
+ */
+native bool Shavit_HasSavestate(int client);
+
+/**
  * returns the number of preframes in the players current run.
  *
  * @param client					Client index
@@ -3476,6 +3485,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetCurrentCheckpoint");
 	MarkNativeAsOptional("Shavit_SetCurrentCheckpoint");
 	MarkNativeAsOptional("Shavit_GetTimesTeleported");
+	MarkNativeAsOptional("Shavit_HasSavestate");
 	MarkNativeAsOptional("Shavit_GetPlayerPreFrames");
 	MarkNativeAsOptional("Shavit_SetPlayerPreFrames");
 	MarkNativeAsOptional("Shavit_GetClosestReplayTime");
