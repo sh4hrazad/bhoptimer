@@ -250,7 +250,9 @@ public void OnPluginStart()
 		SetFailState("Could not find CBaseEntity:m_fEffects");
 	}
 
-	RegConsoleCmd("sm_showzones", Command_Showzones, "Command to dynamically toggle shavit's zones trigger visibility");
+	RegConsoleCmd("sm_showtrigger", Command_ShowTriggers, "Command to dynamically toggle trigger visibility");
+	RegConsoleCmd("sm_showtriggers", Command_ShowTriggers, "Command to dynamically toggle trigger visibility");
+	RegConsoleCmd("sm_showzones", Command_ShowTriggers, "Command to dynamically toggle shavit's zones trigger visibility");
 	RegConsoleCmd("sm_findtele", Command_FindTeleDestination, "Show teleport_destination entities menu");
 	RegConsoleCmd("sm_findteles", Command_FindTeleDestination, "Show teleport_destination entities menu. Alias of sm_findtele");
 	RegConsoleCmd("sm_telefinder", Command_FindTeleDestination, "Show teleport_destination entities menu. Alias of sm_findtele");
@@ -961,7 +963,7 @@ public void SQL_GetBonusZone_Callback(Database db, DBResultSet results, const ch
 void LoadStageZones()
 {
 	char sQuery[256];
-	FormatEx(sQuery, 256, "SELECT data FROM mapzones WHERE type = %i and map = '%s' ORDER BY data DESC LIMIT 1;", Zone_Stage, gS_Map);
+	FormatEx(sQuery, 256, "SELECT data FROM mapzones WHERE type = %d and map = '%s' ORDER BY data DESC LIMIT 1;", Zone_Stage, gS_Map);
 	gH_SQL.Query(SQL_GetStageZone_Callback, sQuery, 0, DBPrio_High);
 }
 
@@ -984,7 +986,7 @@ public void SQL_GetStageZone_Callback(Database db, DBResultSet results, const ch
 void LoadCheckpointZones()
 {
 	char sQuery[256];
-	FormatEx(sQuery, 256, "SELECT data FROM mapzones WHERE type = %i AND map = '%s' ORDER BY data DESC LIMIT 1;", Zone_Checkpoint, gS_Map);
+	FormatEx(sQuery, 256, "SELECT data FROM mapzones WHERE type = %d AND map = '%s' ORDER BY data DESC LIMIT 1;", Zone_Checkpoint, gS_Map);
 	gH_SQL.Query(SQL_GetCheckpointZone_Callback, sQuery, 0, DBPrio_High);
 }
 
@@ -1825,7 +1827,7 @@ public int MenuHandler_SelectStage(Menu menu, MenuAction action, int param1, int
 	return 0;
 }
 
-public Action Command_Showzones(int client, int args)
+public Action Command_ShowTriggers(int client, int args)
 {
 	if(!IsValidClient(client))
 	{
@@ -1843,7 +1845,17 @@ public Action Command_Showzones(int client, int args)
 		Shavit_PrintToChat(client, "[显示区域] {darkred}已关闭{default}.");
 	}
 
-	TransmitTriggers(client, gB_ShowTriggers[client]);
+	char sArgs[32];
+	GetCmdArg(0, sArgs, sizeof(sArgs));
+
+	if(StrContains(sArgs, "trigger", false) != -1)
+	{
+		TransmitTriggers(client, gB_ShowTriggers[client], true);
+	}
+	else
+	{
+		TransmitTriggers(client, gB_ShowTriggers[client], false);
+	}
 
 	return Plugin_Handled;
 }
@@ -3656,12 +3668,16 @@ public void SQL_CreateTable_Callback(Database db, DBResultSet results, const cha
 
 public void Shavit_OnRestart(int client, int track)
 {
-	if(track == Track_Bonus)
+	char sArg[16];
+	GetCmdArg(0, sArg, sizeof(sArg));
+
+	if((StrEqual(sArg, "sm_b", false) || StrEqual(sArg, "sm_bonus", false)) && GetCmdArgs() == 0)
 	{
 		OpenBonusMenu(client);
 		return;
 	}
 
+	gB_StageTimer[client] = false;
 	DoRestart(client, track);
 }
 
@@ -4010,8 +4026,7 @@ public Action Timer_DelayPreBuildZones(Handle timer)
 
 public void StartTouchPost(int entity, int other)
 {
-	if(other < 1 || other > MaxClients || gI_EntityZone[entity] == -1 || !gA_ZoneCache[gI_EntityZone[entity]].bZoneInitialized ||
-		(gCV_EnforceTracks.BoolValue && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack != Shavit_GetClientTrack(other)))
+	if(other < 1 || other > MaxClients || gI_EntityZone[entity] == -1 || !gA_ZoneCache[gI_EntityZone[entity]].bZoneInitialized)
 	{
 		return;
 	}
@@ -4023,6 +4038,11 @@ public void StartTouchPost(int entity, int other)
 
 	if(!IsFakeClient(other))
 	{
+		if(gCV_EnforceTracks.BoolValue && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack != Shavit_GetClientTrack(other))
+		{
+			return;
+		}
+
 		TimerStatus status = Shavit_GetTimerStatus(other);
 
 		if(status == Timer_Paused)
@@ -4074,13 +4094,13 @@ public void StartTouchPost(int entity, int other)
 
 				gI_LastCheckpoint[other] = (gB_LinearMap) ? gI_Checkpoints + 1 : gI_Stages + 1;
 
-				if(status != Timer_Stopped && !Shavit_IsPaused(other) && !gB_StageTimer[other] && Shavit_GetClientTrack(other) == track)
-				{
-					Shavit_FinishMap(other, track);
-				}
-				else if(gB_StageTimer[other])
+				if(gB_StageTimer[other])
 				{
 					Shavit_StopTimer(other);
+				}
+				else if(status != Timer_Stopped && !Shavit_IsPaused(other) && Shavit_GetClientTrack(other) == track)
+				{
+					Shavit_FinishMap(other, track);
 				}
 			}
 
@@ -4298,16 +4318,10 @@ public void TouchPost(int entity, int other)
 		{
 			// start timer instantly for main track, but require bonuses to have the current timer stopped
 			// so you don't accidentally step on those while running
-			if(Shavit_GetTimerStatus(other) == Timer_Stopped || Shavit_GetClientTrack(other) != Track_Main)
+			if(gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack == Shavit_GetClientTrack(other))
 			{
 				gB_StageTimer[other] = false;
 				Shavit_StartTimer(other, gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack);
-			}
-
-			else if(gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack == Track_Main)
-			{
-				gB_StageTimer[other] = false;
-				Shavit_StartTimer(other, Track_Main);
 			}
 		}
 
@@ -4376,16 +4390,18 @@ bool PointInBox(float point[3], float bmin[3], float bmax[3])
 	       (bmin[2] <= point[2] <= bmax[2]);
 }
 
-void TransmitTriggers(int client, bool btransmit)
+void TransmitTriggers(int client, bool btransmit, bool all = false)
 {
 	if(!IsValidClient(client))
 	{
 		return;
 	}
 
-	for(int i = 0; i < gA_HookTriggers.Length; i++)
+	ArrayList trigger = view_as<ArrayList>(CloneHandle(all ? gA_Triggers : gA_HookTriggers));
+
+	for(int i = 0; i < trigger.Length; i++)
 	{
-		int entity = gA_HookTriggers.Get(i);
+		int entity = trigger.Get(i);
 		int effectFlags = GetEntData(entity, gI_Offset_m_fEffects);
 		int edictFlags = GetEdictFlags(entity);
 
@@ -4415,6 +4431,8 @@ void TransmitTriggers(int client, bool btransmit)
 			SDKUnhook(entity, SDKHook_SetTransmit, Hook_SetTransmit);
 		}
 	}
+
+	delete trigger;
 
 	if(btransmit)
 	{

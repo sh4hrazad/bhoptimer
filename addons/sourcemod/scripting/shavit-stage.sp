@@ -253,6 +253,9 @@ public void OnAllPluginsLoaded()
 	{
 		SetFailState("shavit-wr is required for the plugin to work.");
 	}
+
+	// try to fix that stupid cp/stage being mixed bug wtf.
+	SQL_DBConnect(true);
 }
 
 public void Shavit_OnStyleConfigLoaded(int styles)
@@ -272,7 +275,6 @@ public void Shavit_OnStyleConfigLoaded(int styles)
 			}
 
 			gA_StageLeaderboard[i][j] = new ArrayList(sizeof(stage_t));
-			gA_StageLeaderboard[i][j].Clear();
 		}
 	}
 
@@ -1314,9 +1316,7 @@ void OnFinishStage(int client, int stage, int style, float time)
 			FormatEx(sRank, 32, "%d/%d", GetStageRankForTime(style, time, stage), GetStageRecordAmount(style, stage));
 		}
 
-		char sMessage[255];
-		FormatEx(sMessage, 255, "%T", "OnWRCP", client, sName, stage, gS_StyleStrings[style].sStyleName, sTime, sDiffTime, sRank);
-		Shavit_PrintToChatAll("%s", sMessage);
+		Shavit_PrintToChatAll("%t", "OnWRCP", sName, stage, gS_StyleStrings[style].sStyleName, sTime, sDiffTime, sRank);
 
 
 		Call_StartForward(gH_Forwards_OnWRCP);
@@ -1340,7 +1340,7 @@ void OnFinishStage(int client, int stage, int style, float time)
 	dp.WriteCell(style);
 	dp.WriteFloat(time);
 
-	gH_SQL.Query(SQL_WRCP_PR_Check_Callback, sQuery, dp);
+	gH_SQL.Query(SQL_WRCP_PR_Check_Callback, sQuery, dp, DBPrio_High);
 }
 
 public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const char[] error, DataPack dp)
@@ -1394,7 +1394,7 @@ public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const c
 
 	dp.WriteCell(iOverwrite);
 
-	gH_SQL.Query(SQL_PrCheck_Callback, sQuery, dp);
+	gH_SQL.Query(SQL_PrCheck_Callback, sQuery, dp, DBPrio_High);
 }
 
 public void SQL_PrCheck_Callback(Database db, DBResultSet results, const char[] error, DataPack dp)
@@ -1525,7 +1525,7 @@ void ReloadWRStages()
 			"SELECT p1.style, p1.stage, p1.auth, p1.time, p1.postspeed, p2.name FROM `%sstagewrs` p1 " ...
 			"JOIN `%susers` p2 " ...
 			"ON p1.auth = p2.auth " ...
-			"WHERE map = '%s'", 
+			"WHERE map = '%s';", 
 			gS_MySQLPrefix, gS_MySQLPrefix, gS_Map);
 
 	gH_SQL.Query(SQL_ReloadWRCP_Callback, sQuery);
@@ -1791,43 +1791,44 @@ public int Native_GetClientStageStayTime(Handle handler, int numParams)
 	return 0;
 }
 
-void SQL_DBConnect()
+// bypass: do bypassing getting another database handle.
+void SQL_DBConnect(bool bypass = false)
 {
-	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
-	gH_SQL = GetTimerDatabaseHandle2(false);
-	bool bMysql = IsMySQLDatabase(gH_SQL);
+	if(!bypass)
+	{
+		GetTimerSQLPrefix(gS_MySQLPrefix, 32);
+		gH_SQL = GetTimerDatabaseHandle2(false);
+	}
 
 	Transaction2 hTransaction = new Transaction2();
 
 	char sQuery[1024];
 
 	FormatEx(sQuery, 1024, 
-			"CREATE TABLE IF NOT EXISTS `%sstagetimes` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `style` TINYINT, `stage` INT, `postspeed` FLOAT, `date` INT, `completions` INT, PRIMARY KEY (`id`))%s;",
-			gS_MySQLPrefix, (bMysql) ? " ENGINE=INNODB" : "");
+			"CREATE TABLE IF NOT EXISTS `%sstagetimes` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `style` TINYINT, `stage` INT, `postspeed` FLOAT, `date` INT, `completions` INT, PRIMARY KEY (`id`)) ENGINE=INNODB;",
+			gS_MySQLPrefix);
 	hTransaction.AddQuery(sQuery);
 
 	FormatEx(sQuery, 1024, 
-			"CREATE TABLE IF NOT EXISTS `%scptimes` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `marktime` FLOAT, `style` TINYINT, `cp` INT, `attemps` INT, `prespeed` FLOAT, `postspeed` FLOAT, `date` INT, PRIMARY KEY (`id`))%s;",
-			gS_MySQLPrefix, (bMysql) ? " ENGINE=INNODB" : "");
+			"CREATE TABLE IF NOT EXISTS `%scptimes` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `marktime` FLOAT, `style` TINYINT, `cp` INT, `attemps` INT, `prespeed` FLOAT, `postspeed` FLOAT, `date` INT, PRIMARY KEY (`id`)) ENGINE=INNODB;",
+			gS_MySQLPrefix);
 	hTransaction.AddQuery(sQuery);
 
 	FormatEx(sQuery, 1024, 
-		"%s `%sstagewrs` "...
+		"CREATE OR REPLACE VIEW `%sstagewrs` "...
 		"AS SELECT MIN(id) id, map, style, stage, MIN(time) time, MIN(postspeed) postspeed, MIN(auth) auth, MIN(date) date "...
 		"FROM `%sstagetimes` "...
 		"GROUP BY map, stage, style;",
-		(bMysql) ? "CREATE OR REPLACE VIEW" : "CREATE VIEW IF NOT EXISTS",
 		gS_MySQLPrefix, gS_MySQLPrefix);
 	hTransaction.AddQuery(sQuery);
 
 	FormatEx(sQuery, 1024, 
-		"%s `%scpwrs` "...
+		"CREATE OR REPLACE VIEW `%scpwrs` "...
 		"AS SELECT p.map, p.style, p.cp, p.attemps, p.time, p.marktime, p.prespeed, p.postspeed, p.auth, p.date "...
 		"FROM `%scptimes` p "...
 		"JOIN `%swrs` u "...
 		"ON p.map = u.map AND p.auth = u.auth "...
 		"WHERE u.track = 0;", 
-		(bMysql) ? "CREATE OR REPLACE VIEW" : "CREATE VIEW IF NOT EXISTS", 
 		gS_MySQLPrefix, gS_MySQLPrefix, gS_MySQLPrefix);
 	hTransaction.AddQuery(sQuery);
 

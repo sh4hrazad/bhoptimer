@@ -1,5 +1,5 @@
 /*
- * shavit's Timer - Miscellaneous
+ * shavit's Timer - Checkpoints
  * by: shavit
  *
  * This file is part of shavit's Timer.
@@ -30,7 +30,7 @@
 #pragma semicolon 1
 #pragma dynamic 524288
 
-#define CP_ANGLES				(1 << 0)
+#define CP_ANGLES   			(1 << 0)
 #define CP_VELOCITY				(1 << 1)
 
 #define CP_DEFAULT				(CP_ANGLES|CP_VELOCITY)

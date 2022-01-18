@@ -1,115 +1,108 @@
-#pragma semicolon 1
-#pragma newdecls required
-
 #include <sourcemod>
-#include <sdktools_sound>
 #include <convar_class>
 
 #undef REQUIRE_PLUGIN
 #include <shavit>
-// for MapChange type
-#include <mapchooser>
+#include <mapchooser> // for MapChange type
 
 #undef REQUIRE_EXTENSIONS
 #include <cstrike>
 
-Database2 g_hDatabase;
-char g_cSQLPrefix[32];
+#pragma semicolon 1
+#pragma newdecls required
 
-bool g_bDebug;
+bool gB_Late = false;
 
-/* ConVars */
-Convar g_cvRTVRequiredPercentage;
-Convar g_cvRTVAllowSpectators;
-Convar g_cvRTVSpectatorCooldown;
-Convar g_cvRTVMinimumPoints;
-Convar g_cvRTVDelayTime;
-Convar g_cvNominateDelayTime;
+char gS_SQLPrefix[32];
+Database2 gH_SQL = null;
 
-Convar g_cvHideRTVChat;
+float gF_LastRtvTime[MAXPLAYERS+1];
+float gF_LastNominateTime[MAXPLAYERS+1];
 
-Convar g_cvMapListType;
-Convar g_cvMatchFuzzyMap;
-Convar g_cvHijackMap;
+int gI_ExcludePrefixesCount;
+char gS_ExcludePrefixesBuffers[128][12];
 
-int g_iExcludePrefixesCount;
-char g_cExcludePrefixesBuffers[128][12];
-Convar g_cvExcludePrefixes;
-int g_iAutocompletePrefixesCount;
-char g_cAutocompletePrefixesBuffers[128][12];
-Convar g_cvAutocompletePrefixes;
+int gI_AutocompletePrefixesCount;
+char gS_AutocompletePrefixesBuffers[128][12];
 
-Convar g_cvMapVoteStartTime;
-Convar g_cvMapVoteDuration;
-Convar g_cvMapVoteBlockMapInterval;
-Convar g_cvMapVoteExtendLimit;
-Convar g_cvMapVoteEnableNoVote;
-Convar g_cvMapVoteExtendTime;
-Convar g_cvMapVoteShowTier;
-Convar g_cvMapVoteRunOff;
-Convar g_cvMapVoteRunOffPerc;
-Convar g_cvMapVoteRevoteTime;
-Convar g_cvDisplayTimeRemaining;
+// Map arrays
+ArrayList gA_MapList;
+ArrayList gA_NominateList;
+ArrayList gA_AllMapsList;
+ArrayList gA_OldMaps;
 
-Convar g_cvNominateMatches;
-Convar g_cvEnhancedMenu;
+StringMap gSM_MapList;
 
-Convar g_cvMapChangeSound;
-
-ConVar g_cvMinTier;
-ConVar g_cvMaxTier;
-
-Convar g_cvAntiSpam;
-float g_fLastRtvTime[MAXPLAYERS+1];
-float g_fLastNominateTime[MAXPLAYERS+1];
-
-Convar g_cvPrefix;
-char g_cPrefix[32];
-
-/* Map arrays */
-ArrayList g_aMapList;
-ArrayList g_aNominateList;
-ArrayList g_aAllMapsList;
-ArrayList g_aOldMaps;
-
-/* Map Data */
-char g_cMapName[PLATFORM_MAX_PATH];
+// Map Data
+char gS_MapName[PLATFORM_MAX_PATH];
 
 MapChange g_ChangeTime;
 
-bool g_bMapVoteStarted;
-bool g_bMapVoteFinished;
-float g_fMapStartTime;
-float g_fLastMapvoteTime = 0.0;
+bool gB_MapVoteStarted;
+bool gB_MapVoteFinished;
+float gF_MapStartTime;
+float gF_LastMapvoteTime = 0.0;
 
-int g_iExtendCount;
-int g_mapFileSerial = -1;
+int gI_ExtendCount;
+int gI_MapFileSerial = -1;
 
-Menu g_hNominateMenu;
-Menu g_hEnhancedMenu;
+Menu gH_NominateMenu;
+Menu gH_EnhancedMenu;
 
-Menu g_aTierMenus[10+1];
-bool g_bWaitingForTiers = false;
-bool g_bTiersAssigned = false;
+Menu gH_TierMenus[10+1];
+bool gB_WaitingForTiers = false;
+bool gB_TiersAssigned = false;
 
-Menu g_hVoteMenu;
+Menu gH_VoteMenu;
 
-/* Player Data */
-bool g_bRockTheVote[MAXPLAYERS + 1];
-char g_cNominatedMap[MAXPLAYERS + 1][PLATFORM_MAX_PATH];
-float g_fSpecTimerStart[MAXPLAYERS+1];
+// Player Data
+bool gB_RockTheVote[MAXPLAYERS + 1];
+char gS_NominatedMap[MAXPLAYERS + 1][PLATFORM_MAX_PATH];
+float gF_SpecTimerStart[MAXPLAYERS+1];
 
-float g_fVoteDelayTime = 1.75;
-bool g_bVoteDelayed[MAXPLAYERS+1];
+float gF_VoteDelayTime = 1.75;
+bool gB_VoteDelayed[MAXPLAYERS+1];
 
-Handle g_hRetryTimer = null;
-Handle g_hForward_OnRTV = null;
-Handle g_hForward_OnUnRTV = null;
-Handle g_hForward_OnSuccesfulRTV = null;
+// ConVars
+Convar gCV_RTVRequiredPercentage;
+Convar gCV_RTVAllowSpectators;
+Convar gCV_RTVSpectatorCooldown;
+Convar gCV_RTVMinimumPoints;
+Convar gCV_RTVDelayTime;
+Convar gCV_NominateDelayTime;
+Convar gCV_HideRTVChat;
+Convar gCV_MapListType;
+Convar gCV_MatchFuzzyMap;
+Convar gCV_HijackMap;
+Convar gCV_ExcludePrefixes;
+Convar gCV_AutocompletePrefixes;
+Convar gCV_MapVoteStartTime;
+Convar gCV_MapVoteDuration;
+Convar gCV_MapVoteBlockMapInterval;
+Convar gCV_MapVoteExtendLimit;
+Convar gCV_MapVoteEnableNoVote;
+Convar gCV_MapVoteExtendTime;
+Convar gCV_MapVoteShowTier;
+Convar gCV_MapVoteRunOff;
+Convar gCV_MapVoteRunOffPerc;
+Convar gCV_MapVoteRevoteTime;
+Convar gCV_DoNominateMatches;
+Convar gCV_EnhancedMenu;
+Convar gCV_AntiSpam;
 
-StringMap g_mMapList;
-bool gB_Late = false;
+// custom cvars
+ConVar gCV_MinTier;
+ConVar gCV_MaxTier;
 
+// Timer
+Handle gH_RetryTimer = null;
+
+// Forwards
+Handle gH_Forward_OnRTV = null;
+Handle gH_Forward_OnUnRTV = null;
+Handle gH_Forward_OnSuccesfulRTV = null;
+
+// Modules
 bool gB_Rankings = false;
 
 enum
@@ -132,9 +125,9 @@ public Plugin myinfo =
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	g_hForward_OnRTV = CreateGlobalForward("SMC_OnRTV", ET_Event, Param_Cell);
-	g_hForward_OnUnRTV = CreateGlobalForward("SMC_OnUnRTV", ET_Event, Param_Cell);
-	g_hForward_OnSuccesfulRTV = CreateGlobalForward("SMC_OnSuccesfulRTV", ET_Event);
+	gH_Forward_OnRTV = CreateGlobalForward("Shavit_OnRTV", ET_Event, Param_Cell);
+	gH_Forward_OnUnRTV = CreateGlobalForward("Shavit_OnUnRTV", ET_Event, Param_Cell);
+	gH_Forward_OnSuccesfulRTV = CreateGlobalForward("Shavit_OnSuccesfulRTV", ET_Event);
 
 	gB_Late = late;
 
@@ -149,60 +142,51 @@ public void OnPluginStart()
 		return;
 	}
 
-	LoadTranslations("mapchooser.phrases");
-	LoadTranslations("common.phrases");
-	LoadTranslations("rockthevote.phrases");
-	LoadTranslations("nominations.phrases");
-	LoadTranslations("plugin.basecommands");
+	LoadTranslations("shavit-mapchooser.phrases");
 
-	g_aMapList = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
-	g_aAllMapsList = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
-	g_aNominateList = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
-	g_aOldMaps = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
+	gA_MapList = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
+	gA_AllMapsList = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
+	gA_NominateList = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
+	gA_OldMaps = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
 
-	g_mMapList = new StringMap();
+	gSM_MapList = new StringMap();
 
-	g_cvMapListType = new Convar("smc_maplist_type", "2", "Where the plugin should get the map list from.\n0 - zoned maps from database\n1 - from maplist file (mapcycle.txt)\n2 - from maps folder\n3 - from zoned maps and confirmed by maplist file\n4 - from zoned maps and confirmed by maps folder", _, true, 0.0, true, 4.0);
-	g_cvMatchFuzzyMap = new Convar("smc_match_fuzzy", "1", "If set to 1, the plugin will accept partial map matches from the database. Useful for workshop maps, bad for duplicate map names", _, true, 0.0, true, 1.0);
-	g_cvHijackMap = new Convar("smc_hijack_sm_map_so_its_faster", "1", "Hijacks sourcemod's built-in sm_map command so it's faster.", 0, true, 0.0, true, 1.0);
-	g_cvExcludePrefixes = new Convar("smc_exclude_prefixes", "de_,cs_,as_,ar_,dz_,gd_,lobby_,training1,mg_,gg_,jb_,coop_,aim_,awp_,cp_,ctf_,fy_,dm_,hg_,rp_,ze_,zm_,arena_,pl_,plr_,mvm_,db_,trade_,ba_,mge_,ttt_,ph_,hns_,", "Exclude maps based on these prefixes.\nA good reference: https://developer.valvesoftware.com/wiki/Map_prefixes");
-	g_cvAutocompletePrefixes = new Convar("smc_autocomplete_prefixes", "bhop_,surf_,kz_,kz_bhop_,bhop_kz_,xc_,trikz_,jump_,rj_", "Some prefixes that are attempted when using !map");
+	gCV_MapListType = new Convar("shavit_mapchooser_maplist_type", "2", "Where the plugin should get the map list from.\n0 - zoned maps from database\n1 - from maplist file (mapcycle.txt)\n2 - from maps folder\n3 - from zoned maps and confirmed by maplist file\n4 - from zoned maps and confirmed by maps folder", _, true, 0.0, true, 4.0);
+	gCV_MatchFuzzyMap = new Convar("shavit_mapchooser_match_fuzzy", "1", "If set to 1, the plugin will accept partial map matches from the database. Useful for workshop maps, bad for duplicate map names", _, true, 0.0, true, 1.0);
+	gCV_HijackMap = new Convar("shavit_mapchooser_hijack_sm_map_so_its_faster", "1", "Hijacks sourcemod's built-in sm_map command so it's faster.", 0, true, 0.0, true, 1.0);
+	gCV_ExcludePrefixes = new Convar("shavit_mapchooser_exclude_prefixes", "de_,cs_,as_,ar_,dz_,gd_,lobby_,training1,mg_,gg_,jb_,coop_,aim_,awp_,cp_,ctf_,fy_,dm_,hg_,rp_,ze_,zm_,arena_,pl_,plr_,mvm_,db_,trade_,ba_,mge_,ttt_,ph_,hns_,", "Exclude maps based on these prefixes.\nA good reference: https://developer.valvesoftware.com/wiki/Map_prefixes");
+	gCV_AutocompletePrefixes = new Convar("shavit_mapchooser_autocomplete_prefixes", "bhop_,surf_,kz_,kz_bhop_,bhop_kz_,xc_,trikz_,jump_,rj_", "Some prefixes that are attempted when using !map");
 
-	g_cvMapVoteBlockMapInterval = new Convar("smc_mapvote_blockmap_interval", "1", "How many maps should be played before a map can be nominated again", _, true, 0.0, false);
-	g_cvMapVoteEnableNoVote = new Convar("smc_mapvote_enable_novote", "1", "Whether players are able to choose 'No Vote' in map vote", _, true, 0.0, true, 1.0);
-	g_cvMapVoteExtendLimit = new Convar("smc_mapvote_extend_limit", "3", "How many times players can choose to extend a single map (0 = block extending, -1 = infinite extending)", _, true, -1.0, false);
-	g_cvMapVoteExtendTime = new Convar("smc_mapvote_extend_time", "10", "How many minutes should the map be extended by if the map is extended through a mapvote", _, true, 1.0, false);
-	g_cvMapVoteShowTier = new Convar("smc_mapvote_show_tier", "1", "Whether the map tier should be displayed in the map vote", _, true, 0.0, true, 1.0);
-	g_cvMapVoteDuration = new Convar("smc_mapvote_duration", "1", "Duration of time in minutes that map vote menu should be displayed for", _, true, 0.1, false);
-	g_cvMapVoteStartTime = new Convar("smc_mapvote_start_time", "5", "Time in minutes before map end that map vote starts", _, true, 1.0, false);
+	gCV_MapVoteBlockMapInterval = new Convar("shavit_mapchooser_mapvote_blockmap_interval", "1", "How many maps should be played before a map can be nominated again", _, true, 0.0, false);
+	gCV_MapVoteEnableNoVote = new Convar("shavit_mapchooser_mapvote_enable_novote", "1", "Whether players are able to choose 'No Vote' in map vote", _, true, 0.0, true, 1.0);
+	gCV_MapVoteExtendLimit = new Convar("shavit_mapchooser_mapvote_extend_limit", "3", "How many times players can choose to extend a single map (0 = block extending, -1 = infinite extending)", _, true, -1.0, false);
+	gCV_MapVoteExtendTime = new Convar("shavit_mapchooser_mapvote_extend_time", "10", "How many minutes should the map be extended by if the map is extended through a mapvote", _, true, 1.0, false);
+	gCV_MapVoteShowTier = new Convar("shavit_mapchooser_mapvote_show_tier", "1", "Whether the map tier should be displayed in the map vote", _, true, 0.0, true, 1.0);
+	gCV_MapVoteDuration = new Convar("shavit_mapchooser_mapvote_duration", "1", "Duration of time in minutes that map vote menu should be displayed for", _, true, 0.1, false);
+	gCV_MapVoteStartTime = new Convar("shavit_mapchooser_mapvote_start_time", "5", "Time in minutes before map end that map vote starts", _, true, 1.0, false);
 
-	g_cvRTVAllowSpectators = new Convar("smc_rtv_allow_spectators", "1", "Whether spectators should be allowed to RTV", _, true, 0.0, true, 1.0);
-	g_cvRTVSpectatorCooldown = new Convar("smc_rtv_spectator_cooldown", "60", "When `smc_rtv_allow_spectators` is `0`, wait this many seconds before removing a spectator's RTV", 0, true, 0.0);
-	g_cvRTVMinimumPoints = new Convar("smc_rtv_minimum_points", "-1", "Minimum number of points a player must have before being able to RTV, or -1 to allow everyone", _, true, -1.0, false);
-	g_cvRTVDelayTime = new Convar("smc_rtv_delay", "5", "Time in minutes after map start before players should be allowed to RTV", _, true, 0.0, false);
-	g_cvNominateDelayTime = new Convar("smc_nominate_delay", "0", "Time in minutes after map start before players should be allowed to nominate", _, true, 0.0, false);
-	g_cvRTVRequiredPercentage = new Convar("smc_rtv_required_percentage", "50", "Percentage of players who have RTVed before a map vote is initiated", _, true, 1.0, true, 100.0);
-	g_cvHideRTVChat = new Convar("smc_hide_rtv_chat", "1", "Whether to hide 'rtv', 'rockthevote', 'unrtv', 'nextmap', and 'nominate' from chat.");
+	gCV_RTVAllowSpectators = new Convar("shavit_mapchooser_rtv_allow_spectators", "1", "Whether spectators should be allowed to RTV", _, true, 0.0, true, 1.0);
+	gCV_RTVSpectatorCooldown = new Convar("shavit_mapchooser_rtv_spectator_cooldown", "60", "When `shavit_mapchooser_rtv_allow_spectators` is `0`, wait this many seconds before removing a spectator's RTV", 0, true, 0.0);
+	gCV_RTVMinimumPoints = new Convar("shavit_mapchooser_rtv_minimum_points", "-1", "Minimum number of points a player must have before being able to RTV, or -1 to allow everyone", _, true, -1.0, false);
+	gCV_RTVDelayTime = new Convar("shavit_mapchooser_rtv_delay", "5", "Time in minutes after map start before players should be allowed to RTV", _, true, 0.0, false);
+	gCV_NominateDelayTime = new Convar("shavit_mapchooser_nominate_delay", "0", "Time in minutes after map start before players should be allowed to nominate", _, true, 0.0, false);
+	gCV_RTVRequiredPercentage = new Convar("shavit_mapchooser_rtv_required_percentage", "50", "Percentage of players who have RTVed before a map vote is initiated", _, true, 1.0, true, 100.0);
+	gCV_HideRTVChat = new Convar("shavit_mapchooser_hide_rtv_chat", "1", "Whether to hide 'rtv', 'rockthevote', 'unrtv', 'nextmap', and 'nominate' from chat.");
 
-	g_cvMapVoteRunOff = new Convar("smc_mapvote_runoff", "1", "Hold run of votes if winning choice is less than a certain margin", _, true, 0.0, true, 1.0);
-	g_cvMapVoteRunOffPerc = new Convar("smc_mapvote_runoffpercent", "50", "If winning choice has less than this percent of votes, hold a runoff", _, true, 0.0, true, 100.0);
-	g_cvMapVoteRevoteTime = new Convar("smc_mapvote_revotetime", "0", "How many minutes after a failed mapvote before rtv is enabled again", _, true, 0.0);
-	//g_cvDisplayTimeRemaining = new Convar("smc_display_timeleft", "1", "Display remaining messages in chat", _, true, 0.0, true, 1.0);
+	gCV_MapVoteRunOff = new Convar("shavit_mapchooser_mapvote_runoff", "1", "Hold run of votes if winning choice is less than a certain margin", _, true, 0.0, true, 1.0);
+	gCV_MapVoteRunOffPerc = new Convar("shavit_mapchooser_mapvote_runoffpercent", "50", "If winning choice has less than this percent of votes, hold a runoff", _, true, 0.0, true, 100.0);
+	gCV_MapVoteRevoteTime = new Convar("shavit_mapchooser_mapvote_revotetime", "0", "How many minutes after a failed mapvote before rtv is enabled again", _, true, 0.0);
 
-	g_cvNominateMatches = new Convar("smc_nominate_matches", "1", "Prompts a menu which shows all maps which match argument",  _, true, 0.0, true, 1.0);
-	g_cvEnhancedMenu = new Convar("smc_enhanced_menu", "1", "Nominate menu can show maps by alphabetic order and tiers",  _, true, 0.0, true, 1.0);
+	gCV_DoNominateMatches = new Convar("shavit_mapchooser_nominate_matches", "1", "Prompts a menu which shows all maps which match argument",  _, true, 0.0, true, 1.0);
+	gCV_EnhancedMenu = new Convar("shavit_mapchooser_enhanced_menu", "1", "Nominate menu can show maps by alphabetic order and tiers",  _, true, 0.0, true, 1.0);
 
-	g_cvMapChangeSound = new Convar("smc_mapchange_sound", "0", "Play the Dr. Kleiner `3,2,1 Intializing` sound");
-
-	g_cvMinTier = CreateConVar("smc_min_tier", "0", "The minimum tier to show on the enhanced menu",  _, true, 0.0, true, 10.0);
-	g_cvMaxTier = CreateConVar("smc_max_tier", "10", "The maximum tier to show on the enhanced menu",  _, true, 0.0, true, 10.0);
-
-	g_cvAntiSpam = new Convar("smc_anti_spam", "15.0", "The number of seconds a player needs to wait before rtv/unrtv/nominate/unnominate.", 0, true, 0.0, true, 300.0);
-
-	g_cvPrefix = new Convar("smc_prefix", "[SM] ", "The prefix SMC messages have");
-	g_cvPrefix.AddChangeHook(OnConVarChanged);
+	gCV_AntiSpam = new Convar("shavit_mapchooser_anti_spam", "15.0", "The number of seconds a player needs to wait before rtv/unrtv/nominate/unnominate.", 0, true, 0.0, true, 300.0);
 
 	Convar.AutoExecConfig();
+
+	gCV_MinTier = CreateConVar("shavit_mapchooser_min_tier", "0", "The minimum tier to show on the enhanced menu",  _, true, 0.0, true, 10.0);
+	gCV_MaxTier = CreateConVar("shavit_mapchooser_max_tier", "10", "The maximum tier to show on the enhanced menu",  _, true, 0.0, true, 10.0);
+
 
 	RegAdminCmd("sm_extend", Command_Extend, ADMFLAG_CHANGEMAP, "Admin command for extending map");
 	RegAdminCmd("sm_extendmap", Command_Extend, ADMFLAG_CHANGEMAP, "Admin command for extending map");
@@ -219,19 +203,17 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_unrtv", Command_UnRockTheVote, "Lets players un-Rock The Vote");
 	RegConsoleCmd("sm_nomlist", Command_NomList, "Shows currently nominated maps");
 
-	RegAdminCmd("sm_smcdebug", Command_Debug, ADMFLAG_RCON);
-
 	AddCommandListener(Command_MapButFaster, "sm_map");
 
 	gB_Rankings = LibraryExists("shavit-rankings");
 
+	SQL_DBConnect();
+
 	if (gB_Late)
 	{
-		Shavit_OnDatabaseLoaded();
-
 		if (gB_Rankings)
 		{
-			g_bTiersAssigned = true;
+			gB_TiersAssigned = true;
 		}
 	}
 }
@@ -254,24 +236,24 @@ public void OnLibraryRemoved(const char[] name)
 
 public void OnMapStart()
 {
-	GetCurrentMap(g_cMapName, sizeof(g_cMapName));
+	GetCurrentMap(gS_MapName, sizeof(gS_MapName));
 
-	SetNextMap(g_cMapName);
+	SetNextMap(gS_MapName);
 
 	// disable rtv if delay time is > 0
-	g_fMapStartTime = GetEngineTime();
-	g_fLastMapvoteTime = 0.0;
+	gF_MapStartTime = GetEngineTime();
+	gF_LastMapvoteTime = 0.0;
 
-	g_iExtendCount = 0;
+	gI_ExtendCount = 0;
 
-	g_bMapVoteFinished = false;
-	g_bMapVoteStarted = false;
+	gB_MapVoteFinished = false;
+	gB_MapVoteStarted = false;
 
-	g_aNominateList.Clear();
+	gA_NominateList.Clear();
 
 	for(int i = 1; i <= MaxClients; ++i)
 	{
-		g_cNominatedMap[i][0] = '\0';
+		gS_NominatedMap[i][0] = '\0';
 	}
 
 	ClearRTV();
@@ -284,24 +266,24 @@ void ResetMaplistByTiers()
 {
 	if(gB_Rankings)
 	{
-		int min = g_cvMinTier.IntValue;
-		int max = g_cvMaxTier.IntValue;
+		int min = gCV_MinTier.IntValue;
+		int max = gCV_MaxTier.IntValue;
 
 		if (max < min)
 		{
 			int temp = max;
 			max = min;
 			min = temp;
-			g_cvMinTier.IntValue = min;
-			g_cvMaxTier.IntValue = max;
+			gCV_MinTier.IntValue = min;
+			gCV_MaxTier.IntValue = max;
 		}
 
 		StringMap tiersMap = Shavit_GetMapTiers();
 
-		for(int i = 0; i < g_aMapList.Length; i++)
+		for(int i = 0; i < gA_MapList.Length; i++)
 		{
 			char mapname[PLATFORM_MAX_PATH];
-			g_aMapList.GetString(i, mapname, sizeof(mapname));
+			gA_MapList.GetString(i, mapname, sizeof(mapname));
 
 			int tier = 0;
 			tiersMap.GetValue(mapname, tier);
@@ -313,7 +295,7 @@ void ResetMaplistByTiers()
 
 			else if(tier < min || tier > max)
 			{
-				g_aMapList.Erase(i);
+				gA_MapList.Erase(i);
 				i--;
 			}
 		}
@@ -324,8 +306,6 @@ void ResetMaplistByTiers()
 
 public void OnConfigsExecuted()
 {
-	g_cvPrefix.GetString(g_cPrefix, sizeof(g_cPrefix));
-
 	// reload maplist array
 	// cache the nominate menu so that it isn't being built every time player opens it
 	LoadMapList();
@@ -342,26 +322,26 @@ public void OnAllPluginsLoaded()
 
 public void OnMapEnd()
 {
-	if(g_cvMapVoteBlockMapInterval.IntValue > 0)
+	if(gCV_MapVoteBlockMapInterval.IntValue > 0)
 	{
-		g_aOldMaps.PushString(g_cMapName);
-		if(g_aOldMaps.Length > g_cvMapVoteBlockMapInterval.IntValue)
+		gA_OldMaps.PushString(gS_MapName);
+		if(gA_OldMaps.Length > gCV_MapVoteBlockMapInterval.IntValue)
 		{
-			g_aOldMaps.Erase(0);
+			gA_OldMaps.Erase(0);
 		}
 	}
 
-	g_iExtendCount = 0;
-	g_bWaitingForTiers = false;
-	g_bTiersAssigned = false;
+	gI_ExtendCount = 0;
+	gB_WaitingForTiers = false;
+	gB_TiersAssigned = false;
 
-	g_bMapVoteFinished = false;
-	g_bMapVoteStarted = false;
+	gB_MapVoteFinished = false;
+	gB_MapVoteStarted = false;
 
-	g_aNominateList.Clear();
+	gA_NominateList.Clear();
 	for(int i = 1; i <= MaxClients; i++)
 	{
-		g_cNominatedMap[i][0] = '\0';
+		gS_NominatedMap[i][0] = '\0';
 	}
 
 	ClearRTV();
@@ -369,37 +349,13 @@ public void OnMapEnd()
 
 public void Shavit_OnTierAssigned(const char[] map, int tier)
 {
-	g_bTiersAssigned = true;
+	gB_TiersAssigned = true;
 
-	if (g_bWaitingForTiers)
+	if (gB_WaitingForTiers)
 	{
-		g_bWaitingForTiers = false;
+		gB_WaitingForTiers = false;
 		RequestFrame(CreateNominateMenu);
 	}
-}
-
-public Action Timer_MapChangeSound(Handle timer, any data)
-{
-	MapChangeDelay();
-	return Plugin_Stop;
-}
-
-float MapChangeDelay()
-{
-	if (g_cvMapChangeSound.BoolValue)
-	{
-		for (int i = 1; i <= MaxClients; i++)
-		{
-			if (IsValidClient(i))
-			{
-				ClientCommand(i, "play vo/k_lab/kl_initializing02");
-			}
-		}
-
-		return 4.3;
-	}
-
-	return 1.0;
 }
 
 int ExplodeCvar(ConVar cvar, char[][] buffers, int maxStrings, int maxStringLength)
@@ -425,45 +381,37 @@ int ExplodeCvar(ConVar cvar, char[][] buffers, int maxStrings, int maxStringLeng
 	return count;
 }
 
-public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
-{
-	if (convar == g_cvPrefix)
-	{
-		strcopy(g_cPrefix, sizeof(g_cPrefix), newValue);
-	}
-}
-
 public Action Timer_SpecCooldown(Handle timer)
 {
-	if (g_cvRTVAllowSpectators.BoolValue)
+	if (gCV_RTVAllowSpectators.BoolValue)
 	{
 		return Plugin_Continue;
 	}
 
-	float cooldown = g_cvRTVSpectatorCooldown.FloatValue;
+	float cooldown = gCV_RTVSpectatorCooldown.FloatValue;
 	float now = GetEngineTime();
 
 	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (!IsClientConnected(i) || !IsClientInGame(i) || GetClientTeam(i) > CS_TEAM_SPECTATOR)
 		{
-			g_fSpecTimerStart[i] = 0.0;
+			gF_SpecTimerStart[i] = 0.0;
 			continue;
 		}
 
-		if (!g_fSpecTimerStart[i])
+		if (!gF_SpecTimerStart[i])
 		{
-			g_fSpecTimerStart[i] = now;
+			gF_SpecTimerStart[i] = now;
 		}
 
-		if (g_bRockTheVote[i] && (now - g_fSpecTimerStart[i]) >= cooldown)
+		if (gB_RockTheVote[i] && (now - gF_SpecTimerStart[i]) >= cooldown)
 		{
 			UnRTVClient(i);
 			int needed = CheckRTV();
 
 			if(needed > 0)
 			{
-				PrintToChatAll("%s%N no longer wants to rock the vote! (%i more votes needed)", g_cPrefix, i, needed);
+				Shavit_PrintToChatAll("%t", "UnRTVNeeds", i, needed);
 			}
 		}
 	}
@@ -473,65 +421,33 @@ public Action Timer_SpecCooldown(Handle timer)
 
 public Action Timer_OnMapTimeLeftChanged(Handle Timer)
 {
-	DebugPrint("%sOnMapTimeLeftChanged: maplist_length=%i mapvote_started=%s mapvotefinished=%s", g_cPrefix, g_aMapList.Length, g_bMapVoteStarted ? "true" : "false", g_bMapVoteFinished ? "true" : "false");
-
 	int timeleft;
 	if(GetMapTimeLeft(timeleft))
 	{
-		if(!g_bMapVoteStarted && !g_bMapVoteFinished)
+		if(!gB_MapVoteStarted && !gB_MapVoteFinished)
 		{
-			int mapvoteTime = timeleft - RoundFloat(g_cvMapVoteStartTime.FloatValue * 60.0) + 3;
+			int mapvoteTime = timeleft - RoundFloat(gCV_MapVoteStartTime.FloatValue * 60.0) + 3;
 			switch(mapvoteTime)
 			{
 				case (10 * 60), (5 * 60):
 				{
-					PrintToChatAll("%s%d minutes until map vote", g_cPrefix, mapvoteTime/60);
+					Shavit_PrintToChatAll("%t", "Minutes Until Map Vote", mapvoteTime/60);
 				}
-			}
-			switch(mapvoteTime)
-			{
 				case (10 * 60) - 3:
 				{
-					PrintToChatAll("%s10 minutes until map vote", g_cPrefix);
+					Shavit_PrintToChatAll("%t", "Minutes Until Map Vote", 10);
 				}
 				case 60, 30, 5:
 				{
-					PrintToChatAll("%s%d seconds until map vote", g_cPrefix, mapvoteTime);
-				}
-			}
-		}
-		else if(g_bMapVoteFinished && g_cvDisplayTimeRemaining && g_cvDisplayTimeRemaining.BoolValue)
-		{
-			timeleft += 3;
-			switch(timeleft)
-			{
-				case (30 * 60), (20 * 60), (10 * 60), (5 * 60):
-				{
-					PrintToChatAll("%s%d minutes remaining", g_cPrefix, timeleft/60);
-				}
-				case 60, 10, 5, 3, 2:
-				{
-					PrintToChatAll("%s%d seconds remaining", g_cPrefix, timeleft);
-				}
-				case 1:
-				{
-					PrintToChatAll("%s1 second remaining", g_cPrefix);
+					Shavit_PrintToChatAll("%t", "Seconds Until Map Vote", mapvoteTime);
 				}
 			}
 		}
 	}
 
-	if(g_aMapList.Length && !g_bMapVoteStarted && !g_bMapVoteFinished)
+	if(gA_MapList.Length && !gB_MapVoteStarted && !gB_MapVoteFinished)
 	{
 		CheckTimeLeft();
-	}
-}
-
-public void Shavit_OnCountdownStart()
-{
-	if (g_cvMapChangeSound.BoolValue)
-	{
-		CreateTimer(0.6, Timer_MapChangeSound, 0, TIMER_FLAG_NO_MAPCHANGE);
 	}
 }
 
@@ -540,41 +456,35 @@ void CheckTimeLeft()
 	int timeleft;
 	if(GetMapTimeLeft(timeleft) && timeleft > 0)
 	{
-		int startTime = RoundFloat(g_cvMapVoteStartTime.FloatValue * 60.0);
-		DebugPrint("%sCheckTimeLeft: timeleft=%i startTime=%i", g_cPrefix, timeleft, startTime);
+		int startTime = RoundFloat(gCV_MapVoteStartTime.FloatValue * 60.0);
 
 		if(timeleft - startTime <= 0)
 		{
-			DebugPrint("%sCheckTimeLeft: Initiating map vote ...", g_cPrefix, timeleft, startTime);
 			InitiateMapVote(MapChange_MapEnd);
 		}
-	}
-	else
-	{
-		DebugPrint("%sCheckTimeLeft: GetMapTimeLeft=%s timeleft=%i", g_cPrefix, GetMapTimeLeft(timeleft) ? "true" : "false", timeleft);
 	}
 }
 
 public void OnClientConnected(int client)
 {
-	g_fLastRtvTime[client] = 0.0;
-	g_fLastNominateTime[client] = 0.0;
-	g_fSpecTimerStart[client] = 0.0;
-	g_bVoteDelayed[client] = false;
+	gF_LastRtvTime[client] = 0.0;
+	gF_LastNominateTime[client] = 0.0;
+	gF_SpecTimerStart[client] = 0.0;
+	gB_VoteDelayed[client] = false;
 }
 
 public void OnClientDisconnect(int client)
 {
 	// clear player data
-	g_bRockTheVote[client] = false;
-	g_cNominatedMap[client][0] = '\0';
+	gB_RockTheVote[client] = false;
+	gS_NominatedMap[client][0] = '\0';
 
 	CheckRTV();
 }
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
 {
-	if (!g_cvHideRTVChat.BoolValue)
+	if (!gCV_HideRTVChat.BoolValue)
 	{
 		return Plugin_Continue;
 	}
@@ -637,7 +547,7 @@ public void OnClientSayCommand_Post(int client, const char[] command, const char
 void InitiateMapVote(MapChange when)
 {
 	g_ChangeTime = when;
-	g_bMapVoteStarted = true;
+	gB_MapVoteStarted = true;
 
 	if (IsVoteInProgress())
 	{
@@ -645,7 +555,7 @@ void InitiateMapVote(MapChange when)
 		//g_RetryTimer = CreateTimer(5.0, Timer_StartMapVote, _, TIMER_FLAG_NO_MAPCHANGE);
 
 		DataPack data;
-		g_hRetryTimer = CreateDataTimer(5.0, Timer_StartMapVote, data, TIMER_FLAG_NO_MAPCHANGE);
+		gH_RetryTimer = CreateDataTimer(5.0, Timer_StartMapVote, data, TIMER_FLAG_NO_MAPCHANGE);
 		data.WriteCell(when);
 		data.Reset();
 		return;
@@ -661,14 +571,14 @@ void InitiateMapVote(MapChange when)
 	int mapsToAdd = maxPageItems;
 	int mapsAdded = 0;
 
-	bool add_extend = (g_cvMapVoteExtendLimit.IntValue == -1) || (g_cvMapVoteExtendLimit.IntValue > 0 && g_iExtendCount < g_cvMapVoteExtendLimit.IntValue);
+	bool add_extend = (gCV_MapVoteExtendLimit.IntValue == -1) || (gCV_MapVoteExtendLimit.IntValue > 0 && gI_ExtendCount < gCV_MapVoteExtendLimit.IntValue);
 
 	if (add_extend)
 	{
 		mapsToAdd--;
 	}
 
-	if(g_cvMapVoteEnableNoVote.BoolValue)
+	if(gCV_MapVoteEnableNoVote.BoolValue)
 	{
 		mapsToAdd--;
 		maxPageItems--;
@@ -679,13 +589,13 @@ void InitiateMapVote(MapChange when)
 
 	StringMap tiersMap = gB_Rankings ? Shavit_GetMapTiers() : new StringMap();
 
-	int nominateMapsToAdd = (mapsToAdd > g_aNominateList.Length) ? g_aNominateList.Length : mapsToAdd;
+	int nominateMapsToAdd = (mapsToAdd > gA_NominateList.Length) ? gA_NominateList.Length : mapsToAdd;
 	for(int i = 0; i < nominateMapsToAdd; i++)
 	{
-		g_aNominateList.GetString(i, map, sizeof(map));
+		gA_NominateList.GetString(i, map, sizeof(map));
 		GetMapDisplayName(map, mapdisplay, sizeof(mapdisplay));
 
-		if(g_cvMapVoteShowTier.BoolValue)
+		if(gCV_MapVoteShowTier.BoolValue)
 		{
 			int tier = 0;
 			tiersMap.GetValue(mapdisplay, tier);
@@ -701,9 +611,9 @@ void InitiateMapVote(MapChange when)
 		mapsToAdd--;
 	}
 
-	if (g_aMapList.Length < mapsToAdd)
+	if (gA_MapList.Length < mapsToAdd)
 	{
-		mapsToAdd = g_aMapList.Length;
+		mapsToAdd = gA_MapList.Length;
 	}
 
 	ArrayList used_indices = new ArrayList();
@@ -715,7 +625,7 @@ void InitiateMapVote(MapChange when)
 
 		for (int x = 0; x < 10; x++) // let's not infinite loop
 		{
-			rand = GetRandomInt(0, g_aMapList.Length - 1);
+			rand = GetRandomInt(0, gA_MapList.Length - 1);
 
 			if (used_indices.FindValue(rand) == -1)
 			{
@@ -731,17 +641,17 @@ void InitiateMapVote(MapChange when)
 
 		used_indices.Push(rand);
 
-		g_aMapList.GetString(rand, map, sizeof(map));
+		gA_MapList.GetString(rand, map, sizeof(map));
 		LessStupidGetMapDisplayName(map, mapdisplay, sizeof(mapdisplay));
 
-		if (StrEqual(map, g_cMapName) || g_aOldMaps.FindString(map) != -1)
+		if (StrEqual(map, gS_MapName) || gA_OldMaps.FindString(map) != -1)
 		{
 			// don't add current map or recently played
 			i--;
 			continue;
 		}
 
-		if(g_cvMapVoteShowTier.BoolValue)
+		if(gCV_MapVoteShowTier.BoolValue)
 		{
 			int tier = 0;
 			tiersMap.GetValue(mapdisplay, tier);
@@ -773,32 +683,32 @@ void InitiateMapVote(MapChange when)
 		menu.AddItem("dontchange", "Don't Change");
 	}
 
-	PrintToChatAll("%s%t", g_cPrefix, "Nextmap Voting Started");
+	Shavit_PrintToChatAll("%t", "Nextmap Voting Started");
 
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		g_bVoteDelayed[i] = (IsClientInGame(i) && !IsFakeClient(i) && GetClientMenu(i) != MenuSource_None);
+		gB_VoteDelayed[i] = (IsClientInGame(i) && !IsFakeClient(i) && GetClientMenu(i) != MenuSource_None);
 
-		if (g_bVoteDelayed[i])
+		if (gB_VoteDelayed[i])
 		{
-			PrintToChat(i, "%sYou had a menu open. Waiting %.2fs before accepting input", g_cPrefix, g_fVoteDelayTime);
+			Shavit_PrintToChat(i, "%T", "VoteDelay", i, gF_VoteDelayTime);
 		}
 	}
 
-	CreateTimer(g_fVoteDelayTime+0.1, Timer_VoteDelay, 0, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(gF_VoteDelayTime+0.1, Timer_VoteDelay, 0, TIMER_FLAG_NO_MAPCHANGE);
 
-	menu.NoVoteButton = g_cvMapVoteEnableNoVote.BoolValue;
+	menu.NoVoteButton = gCV_MapVoteEnableNoVote.BoolValue;
 	menu.ExitButton = false;
-	menu.DisplayVoteToAll(RoundFloat(g_cvMapVoteDuration.FloatValue * 60.0));
+	menu.DisplayVoteToAll(RoundFloat(gCV_MapVoteDuration.FloatValue * 60.0));
 }
 
 public Action Timer_VoteDelay(Handle timer, any data)
 {
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if (g_bVoteDelayed[i])
+		if (gB_VoteDelayed[i])
 		{
-			g_bVoteDelayed[i] = false;
+			gB_VoteDelayed[i] = false;
 
 			if (IsClientInGame(i))
 			{
@@ -812,36 +722,36 @@ public Action Timer_VoteDelay(Handle timer, any data)
 
 public void Handler_MapVoteFinished(Menu menu, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
 {
-	if (g_cvMapVoteRunOff.BoolValue && num_items > 1)
+	if (gCV_MapVoteRunOff.BoolValue && num_items > 1)
 	{
 		float winningvotes = float(item_info[0][VOTEINFO_ITEM_VOTES]);
-		float required = num_votes * (g_cvMapVoteRunOffPerc.FloatValue / 100.0);
+		float required = num_votes * (gCV_MapVoteRunOffPerc.FloatValue / 100.0);
 
 		if (winningvotes < required)
 		{
 			/* Insufficient Winning margin - Lets do a runoff */
-			g_hVoteMenu = new Menu(Handler_MapVoteMenu, MENU_ACTIONS_ALL);
-			g_hVoteMenu.SetTitle("Runoff Vote Nextmap");
-			g_hVoteMenu.VoteResultCallback = Handler_VoteFinishedGeneric;
+			gH_VoteMenu = new Menu(Handler_MapVoteMenu, MENU_ACTIONS_ALL);
+			gH_VoteMenu.SetTitle("Runoff Vote Nextmap");
+			gH_VoteMenu.VoteResultCallback = Handler_VoteFinishedGeneric;
 
 			char map[PLATFORM_MAX_PATH];
 			char info1[PLATFORM_MAX_PATH];
 			char info2[PLATFORM_MAX_PATH];
 
 			menu.GetItem(item_info[0][VOTEINFO_ITEM_INDEX], map, sizeof(map), _, info1, sizeof(info1));
-			g_hVoteMenu.AddItem(map, info1);
+			gH_VoteMenu.AddItem(map, info1);
 			menu.GetItem(item_info[1][VOTEINFO_ITEM_INDEX], map, sizeof(map), _, info2, sizeof(info2));
-			g_hVoteMenu.AddItem(map, info2);
+			gH_VoteMenu.AddItem(map, info2);
 
-			g_hVoteMenu.ExitButton = true;
-			g_hVoteMenu.DisplayVoteToAll(RoundFloat(g_cvMapVoteDuration.FloatValue * 60.0));
+			gH_VoteMenu.ExitButton = true;
+			gH_VoteMenu.DisplayVoteToAll(RoundFloat(gCV_MapVoteDuration.FloatValue * 60.0));
 
 			/* Notify */
 			float map1percent = float(item_info[0][VOTEINFO_ITEM_VOTES])/ float(num_votes) * 100;
 			float map2percent = float(item_info[1][VOTEINFO_ITEM_VOTES])/ float(num_votes) * 100;
 
 
-			PrintToChatAll("%s%t", g_cPrefix, "Starting Runoff", g_cvMapVoteRunOffPerc.FloatValue, info1, map1percent, info2, map2percent);
+			Shavit_PrintToChatAll("%t", "Starting Runoff", gCV_MapVoteRunOffPerc.FloatValue, info1, map1percent, info2, map2percent);
 			LogMessage("Voting for next map was indecisive, beginning runoff vote");
 
 			return;
@@ -853,12 +763,12 @@ public void Handler_MapVoteFinished(Menu menu, int num_votes, int num_clients, c
 
 public Action Timer_StartMapVote(Handle timer, DataPack data)
 {
-	if (timer == g_hRetryTimer)
+	if (timer == gH_RetryTimer)
 	{
-		g_hRetryTimer = null;
+		gH_RetryTimer = null;
 	}
 
-	if (!g_aMapList.Length || g_bMapVoteFinished || g_bMapVoteStarted)
+	if (!gA_MapList.Length || gB_MapVoteFinished || gB_MapVoteStarted)
 	{
 		return Plugin_Stop;
 	}
@@ -877,38 +787,36 @@ public void Handler_VoteFinishedGeneric(Menu menu, int num_votes, int num_client
 
 	menu.GetItem(item_info[0][VOTEINFO_ITEM_INDEX], map, sizeof(map), _, displayName, sizeof(displayName));
 
-	//PrintToChatAll("#1 vote was %s (%s)", map, (g_ChangeTime == MapChange_Instant) ? "instant" : "map end");
-
 	if(StrEqual(map, "extend"))
 	{
-		g_iExtendCount++;
+		gI_ExtendCount++;
 
 		int time;
 		if(GetMapTimeLimit(time))
 		{
 			if(time > 0)
 			{
-				ExtendMapTimeLimit(g_cvMapVoteExtendTime.IntValue * 60);
+				ExtendMapTimeLimit(gCV_MapVoteExtendTime.IntValue * 60);
 			}
 		}
 
-		PrintToChatAll("%s%t", g_cPrefix, "Current Map Extended", RoundToFloor(float(item_info[0][VOTEINFO_ITEM_VOTES])/float(num_votes)*100), num_votes);
+		Shavit_PrintToChatAll("%t", "Current Map Extended", RoundToFloor(float(item_info[0][VOTEINFO_ITEM_VOTES])/float(num_votes)*100), num_votes);
 		LogAction(-1, -1, "Voting for next map has finished. The current map has been extended.");
 
 		// We extended, so we'll have to vote again.
-		g_bMapVoteStarted = false;
-		g_fLastMapvoteTime = GetEngineTime();
+		gB_MapVoteStarted = false;
+		gF_LastMapvoteTime = GetEngineTime();
 
 		ClearRTV();
 	}
 	else if(StrEqual(map, "dontchange"))
 	{
-		PrintToChatAll("%s%t", g_cPrefix, "Current Map Stays", RoundToFloor(float(item_info[0][VOTEINFO_ITEM_VOTES])/float(num_votes)*100), num_votes);
+		Shavit_PrintToChatAll("%t", "Current Map Stays", RoundToFloor(float(item_info[0][VOTEINFO_ITEM_VOTES])/float(num_votes)*100), num_votes);
 		LogAction(-1, -1, "Voting for next map has finished. 'No Change' was the winner");
 
-		g_bMapVoteFinished = false;
-		g_bMapVoteStarted = false;
-		g_fLastMapvoteTime = GetEngineTime();
+		gB_MapVoteFinished = false;
+		gB_MapVoteStarted = false;
+		gF_LastMapvoteTime = GetEngineTime();
 
 		ClearRTV();
 	}
@@ -925,21 +833,21 @@ public void Handler_VoteFinishedGeneric(Menu menu, int num_votes, int num_client
 
 			if(needed <= 0)
 			{
-				Call_StartForward(g_hForward_OnSuccesfulRTV);
+				Call_StartForward(gH_Forward_OnSuccesfulRTV);
 				Call_Finish();
 			}
 
 			DataPack data = new DataPack();
-			CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, data);
+			CreateDataTimer(1.0, Timer_ChangeMap, data);
 			data.WriteString(map);
 			data.WriteString("RTV Mapvote");
 			ClearRTV();
 		}
 
-		g_bMapVoteStarted = false;
-		g_bMapVoteFinished = true;
+		gB_MapVoteStarted = false;
+		gB_MapVoteFinished = true;
 
-		PrintToChatAll("%s%t", g_cPrefix, "Nextmap Voting Finished", displayName, RoundToFloor(float(item_info[0][VOTEINFO_ITEM_VOTES])/float(num_votes)*100), num_votes);
+		Shavit_PrintToChatAll("%t", "Nextmap Voting Finished", displayName, RoundToFloor(float(item_info[0][VOTEINFO_ITEM_VOTES])/float(num_votes)*100), num_votes);
 		LogAction(-1, -1, "Voting for next map has finished. Nextmap: %s.", map);
 	}
 }
@@ -950,7 +858,7 @@ public int Handler_MapVoteMenu(Menu menu, MenuAction action, int param1, int par
 	{
 		case MenuAction_DrawItem:
 		{
-			if (g_bVoteDelayed[param1])
+			if (gB_VoteDelayed[param1])
 			{
 				return ITEMDRAW_DISABLED;
 			}
@@ -966,9 +874,9 @@ public int Handler_MapVoteMenu(Menu menu, MenuAction action, int param1, int par
 
 		case MenuAction_Cancel: // comes up for novote
 		{
-			if (g_bVoteDelayed[param1])
+			if (gB_VoteDelayed[param1])
 			{
-				g_bVoteDelayed[param1] = false;
+				gB_VoteDelayed[param1] = false;
 				RedrawClientVoteMenu(param1);
 				return 0;
 			}
@@ -1034,9 +942,9 @@ public int Handler_MapVoteMenu(Menu menu, MenuAction action, int param1, int par
 					while(strcmp(map, "extend", false) == 0 || strcmp(map, "dontchange", false) == 0);
 
 					SetNextMap(map);
-					PrintToChatAll("%s%t", g_cPrefix, "Nextmap Voting Finished", map, 0, 0);
+					Shavit_PrintToChatAll("%t", "Nextmap Voting Finished", map, 0, 0);
 					LogAction(-1, -1, "Voting for next map has finished. Nextmap: %s.", map);
-					g_bMapVoteFinished = true;
+					gB_MapVoteFinished = true;
 					ClearRTV();
 				}
 			}
@@ -1045,7 +953,7 @@ public int Handler_MapVoteMenu(Menu menu, MenuAction action, int param1, int par
 				// We were actually cancelled. I guess we do nothing.
 			}
 
-			g_bMapVoteStarted = false;
+			gB_MapVoteStarted = false;
 		}
 	}
 
@@ -1057,20 +965,17 @@ void ExtendMap(int client, int time)
 {
 	if(time == 0)
 	{
-		time = RoundFloat(g_cvMapVoteExtendTime.FloatValue * 60);
+		time = RoundFloat(gCV_MapVoteExtendTime.FloatValue * 60);
 	}
 
 	ExtendMapTimeLimit(time);
-	PrintToChatAll("%s%N extended the map by %d minutes", g_cPrefix, client, time / 60);
-
-	//g_bMapVoteStarted = false;
-	//g_bMapVoteFinished = false;
+	Shavit_PrintToChatAll("%t", "AdminExtendMap", client, time / 60);
 }
 
-public void Shavit_OnDatabaseLoaded()
+void SQL_DBConnect()
 {
-	GetTimerSQLPrefix(g_cSQLPrefix, sizeof(g_cSQLPrefix));
-	g_hDatabase = view_as<Database2>(Shavit_GetDatabase());
+	GetTimerSQLPrefix(gS_SQLPrefix, sizeof(gS_SQLPrefix));
+	gH_SQL = GetTimerDatabaseHandle2(false);
 }
 
 void RemoveExcludesFromArrayList(ArrayList list, bool lowercase, char[][] exclude_prefixes, int exclude_count)
@@ -1097,59 +1002,59 @@ void RemoveExcludesFromArrayList(ArrayList list, bool lowercase, char[][] exclud
 
 void LoadMapList()
 {
-	g_aMapList.Clear();
-	g_aAllMapsList.Clear();
-	g_mMapList.Clear();
+	gA_MapList.Clear();
+	gA_AllMapsList.Clear();
+	gSM_MapList.Clear();
 
-	g_iExcludePrefixesCount = ExplodeCvar(g_cvExcludePrefixes, g_cExcludePrefixesBuffers, sizeof(g_cExcludePrefixesBuffers), sizeof(g_cExcludePrefixesBuffers[]));
+	gI_ExcludePrefixesCount = ExplodeCvar(gCV_ExcludePrefixes, gS_ExcludePrefixesBuffers, sizeof(gS_ExcludePrefixesBuffers), sizeof(gS_ExcludePrefixesBuffers[]));
 
-	GetTimerSQLPrefix(g_cSQLPrefix, sizeof(g_cSQLPrefix));
+	GetTimerSQLPrefix(gS_SQLPrefix, sizeof(gS_SQLPrefix));
 
-	switch(g_cvMapListType.IntValue)
+	switch(gCV_MapListType.IntValue)
 	{
 		case MapListZoned:
 		{
-			if (g_hDatabase == null)
+			if (gH_SQL == null)
 			{
-				g_hDatabase = GetTimerDatabaseHandle2();
+				gH_SQL = GetTimerDatabaseHandle2();
 			}
 
 			char buffer[512];
 
-			FormatEx(buffer, sizeof(buffer), "SELECT `map` FROM `%smapzones` WHERE `type` = 1 AND `track` = 0 ORDER BY `map`", g_cSQLPrefix);
-			g_hDatabase.Query(LoadZonedMapsCallback, buffer, _, DBPrio_High);
+			FormatEx(buffer, sizeof(buffer), "SELECT `map` FROM `%smapzones` WHERE `type` = 1 AND `track` = 0 ORDER BY `map`", gS_SQLPrefix);
+			gH_SQL.Query(LoadZonedMapsCallback, buffer, _, DBPrio_High);
 		}
 		case MapListFolder:
 		{
-			ReadMapsFolderArrayList(g_aMapList, true, false, true, true, g_cExcludePrefixesBuffers, g_iExcludePrefixesCount);
+			ReadMapsFolderArrayList(gA_MapList, true, false, true, true, gS_ExcludePrefixesBuffers, gI_ExcludePrefixesCount);
 			CreateNominateMenu();
 		}
 		case MapListFile:
 		{
-			ReadMapList(g_aMapList, g_mapFileSerial, "default", MAPLIST_FLAG_CLEARARRAY);
-			RemoveExcludesFromArrayList(g_aMapList, false, g_cExcludePrefixesBuffers, g_iExcludePrefixesCount);
+			ReadMapList(gA_MapList, gI_MapFileSerial, "default", MAPLIST_FLAG_CLEARARRAY);
+			RemoveExcludesFromArrayList(gA_MapList, false, gS_ExcludePrefixesBuffers, gI_ExcludePrefixesCount);
 			CreateNominateMenu();
 		}
 		case MapListMixed, MapListZonedMixedWithFolder:
 		{
-			if (g_hDatabase == null)
+			if (gH_SQL == null)
 			{
-				g_hDatabase = GetTimerDatabaseHandle2();
+				gH_SQL = GetTimerDatabaseHandle2();
 			}
 
-			if (g_cvMapListType.IntValue == MapListMixed)
+			if (gCV_MapListType.IntValue == MapListMixed)
 			{
-				ReadMapList(g_aAllMapsList, g_mapFileSerial, "default", MAPLIST_FLAG_CLEARARRAY);
-				RemoveExcludesFromArrayList(g_aAllMapsList, false, g_cExcludePrefixesBuffers, g_iExcludePrefixesCount);
+				ReadMapList(gA_AllMapsList, gI_MapFileSerial, "default", MAPLIST_FLAG_CLEARARRAY);
+				RemoveExcludesFromArrayList(gA_AllMapsList, false, gS_ExcludePrefixesBuffers, gI_ExcludePrefixesCount);
 			}
 			else
 			{
-				ReadMapsFolderArrayList(g_aAllMapsList, true, false, true, true, g_cExcludePrefixesBuffers, g_iExcludePrefixesCount);
+				ReadMapsFolderArrayList(gA_AllMapsList, true, false, true, true, gS_ExcludePrefixesBuffers, gI_ExcludePrefixesCount);
 			}
 
 			char buffer[512];
-			FormatEx(buffer, sizeof(buffer), "SELECT `map` FROM `%smapzones` WHERE `type` = 1 AND `track` = 0 ORDER BY `map`", g_cSQLPrefix);
-			g_hDatabase.Query(LoadZonedMapsCallbackMixed, buffer, _, DBPrio_High);
+			FormatEx(buffer, sizeof(buffer), "SELECT `map` FROM `%smapzones` WHERE `type` = 1 AND `track` = 0 ORDER BY `map`", gS_SQLPrefix);
+			gH_SQL.Query(LoadZonedMapsCallbackMixed, buffer, _, DBPrio_High);
 		}
 	}
 }
@@ -1169,9 +1074,9 @@ public void LoadZonedMapsCallback(Database db, DBResultSet results, const char[]
 		results.FetchString(0, map, sizeof(map));
 		FindMapResult res = FindMap(map, map2, sizeof(map2));
 
-		if (res == FindMap_Found || (g_cvMatchFuzzyMap.BoolValue && res == FindMap_FuzzyMatch))
+		if (res == FindMap_Found || (gCV_MatchFuzzyMap.BoolValue && res == FindMap_FuzzyMatch))
 		{
-			g_aMapList.PushString(map2);
+			gA_MapList.PushString(map2);
 		}
 	}
 
@@ -1188,11 +1093,11 @@ public void LoadZonedMapsCallbackMixed(Database db, DBResultSet results, const c
 
 	char map[PLATFORM_MAX_PATH];
 
-	for (int i = 0; i < g_aAllMapsList.Length; ++i)
+	for (int i = 0; i < gA_AllMapsList.Length; ++i)
 	{
-		g_aAllMapsList.GetString(i, map, sizeof(map));
+		gA_AllMapsList.GetString(i, map, sizeof(map));
 		LessStupidGetMapDisplayName(map, map, sizeof(map));
-		g_mMapList.SetValue(map, i, true);
+		gSM_MapList.SetValue(map, i, true);
 	}
 
 	int resultlength, mapsadded;
@@ -1203,25 +1108,25 @@ public void LoadZonedMapsCallbackMixed(Database db, DBResultSet results, const c
 		LowercaseString(map);
 
 		int index;
-		if (g_mMapList.GetValue(map, index))
+		if (gSM_MapList.GetValue(map, index))
 		{
-			g_aMapList.PushString(map);
+			gA_MapList.PushString(map);
 			mapsadded++;
 		}
 	}
 
-	PrintToServer("Shavit-Mapchooser Query callback. Number of returned results: %i, Maps added to g_aMapList:%i, g_aAllMapsList.Length:%i, g_mMapList:%i", resultlength, mapsadded, g_aAllMapsList.Length, g_mMapList.Size);
+	PrintToServer("Shavit-Mapchooser Query callback. Number of returned results: %i, Maps added to gA_MapList:%i, gA_AllMapsList.Length:%i, gSM_MapList:%i", resultlength, mapsadded, gA_AllMapsList.Length, gSM_MapList.Size);
 
 	CreateNominateMenu();
 }
 
-bool SMC_FindMap(const char[] mapname, char[] output, int maxlen)
+bool DoFindMap(const char[] mapname, char[] output, int maxlen)
 {
-	int length = g_aMapList.Length;
+	int length = gA_MapList.Length;
 	for(int i = 0; i < length; i++)
 	{
 		char entry[PLATFORM_MAX_PATH];
-		g_aMapList.GetString(i, entry, sizeof(entry));
+		gA_MapList.GetString(i, entry, sizeof(entry));
 
 		if(StrContains(entry, mapname) != -1)
 		{
@@ -1233,7 +1138,7 @@ bool SMC_FindMap(const char[] mapname, char[] output, int maxlen)
 	return false;
 }
 
-void SMC_NominateMatches(int client, const char[] mapname)
+void DoNominateMatches(int client, const char[] mapname)
 {
 	Menu subNominateMenu = new Menu(NominateMenuHandler);
 	subNominateMenu.SetTitle("Nominate\nMaps matching \"%s\"\n ", mapname);
@@ -1243,21 +1148,21 @@ void SMC_NominateMatches(int client, const char[] mapname)
 	char oldMapName[PLATFORM_MAX_PATH];
 	StringMap tiersMap = gB_Rankings ? Shavit_GetMapTiers() : new StringMap();
 
-	int length = g_aMapList.Length;
+	int length = gA_MapList.Length;
 	for(int i = 0; i < length; i++)
 	{
 		char entry[PLATFORM_MAX_PATH];
-		g_aMapList.GetString(i, entry, sizeof(entry));
+		gA_MapList.GetString(i, entry, sizeof(entry));
 
 		if(StrContains(entry, mapname) != -1)
 		{
-			if(StrEqual(entry, g_cMapName))
+			if(StrEqual(entry, gS_MapName))
 			{
 				isCurrentMap = true;
 				continue;
 			}
 
-			int idx = g_aOldMaps.FindString(entry);
+			int idx = gA_OldMaps.FindString(entry);
 			if(idx != -1)
 			{
 				isOldMap = true;
@@ -1287,15 +1192,15 @@ void SMC_NominateMatches(int client, const char[] mapname)
 		{
 			if (isCurrentMap)
 			{
-				ReplyToCommand(client, "%s%t", g_cPrefix, "Can't Nominate Current Map");
+				Shavit_PrintToChat(client, "%T", "Can't Nominate Current Map", client);
 			}
 			else if (isOldMap)
 			{
-				ReplyToCommand(client, "%s%s %t", g_cPrefix, oldMapName, "Recently Played");
+				Shavit_PrintToChat(client, "%s %T", oldMapName, "Recently Played", client);
 			}
 			else
 			{
-				ReplyToCommand(client, "%s%t", g_cPrefix, "Map was not found", mapname);
+				Shavit_PrintToChat(client, "%T", "Map was not found", client, mapname);
 			}
 
 			if (subNominateMenu != INVALID_HANDLE)
@@ -1323,14 +1228,14 @@ bool IsRTVEnabled()
 {
 	float time = GetEngineTime();
 
-	if(g_fLastMapvoteTime != 0.0)
+	if(gF_LastMapvoteTime != 0.0)
 	{
-		if(time - g_fLastMapvoteTime > g_cvMapVoteRevoteTime.FloatValue * 60)
+		if(time - gF_LastMapvoteTime > gCV_MapVoteRevoteTime.FloatValue * 60)
 		{
 			return true;
 		}
 	}
-	else if(time - g_fMapStartTime > g_cvRTVDelayTime.FloatValue * 60)
+	else if(time - gF_MapStartTime > gCV_RTVDelayTime.FloatValue * 60)
 	{
 		return true;
 	}
@@ -1341,7 +1246,7 @@ void ClearRTV()
 {
 	for(int i = 1; i <= MaxClients; i++)
 	{
-		g_bRockTheVote[i] = false;
+		gB_RockTheVote[i] = false;
 	}
 }
 
@@ -1370,7 +1275,7 @@ public Action Command_Extend(int client, int args)
 	}
 	else
 	{
-		extendtime = RoundFloat(g_cvMapVoteExtendTime.FloatValue * 60.0);
+		extendtime = RoundFloat(gCV_MapVoteExtendTime.FloatValue * 60.0);
 	}
 
 	ExtendMap(client, extendtime);
@@ -1380,9 +1285,9 @@ public Action Command_Extend(int client, int args)
 
 public Action Command_ForceMapVote(int client, int args)
 {
-	if(g_bMapVoteStarted || g_bMapVoteFinished)
+	if(gB_MapVoteStarted || gB_MapVoteFinished)
 	{
-		ReplyToCommand(client, "%sMap vote already %s", g_cPrefix, (g_bMapVoteStarted) ? "initiated" : "finished");
+		Shavit_PrintToChat(client, "%T", (gB_MapVoteStarted) ? "MapVote-Initiated" : "MapVote-Finished", client);
 	}
 	else
 	{
@@ -1401,15 +1306,15 @@ public Action Command_ReloadMaplist(int client, int args)
 
 public Action Command_Nominate(int client, int args)
 {
-	if (g_bMapVoteStarted || g_bMapVoteFinished)
+	if (gB_MapVoteStarted || gB_MapVoteFinished)
 	{
-		ReplyToCommand(client, "%sMap vote already %s", g_cPrefix, (g_bMapVoteStarted) ? "initiated" : "finished");
+		Shavit_PrintToChat(client, "%T", (gB_MapVoteStarted) ? "MapVote-Initiated" : "MapVote-Finished", client);
 		return Plugin_Handled;
 	}
 
 	if(args < 1)
 	{
-		if (g_cvEnhancedMenu.BoolValue)
+		if (gCV_EnhancedMenu.BoolValue)
 		{
 			OpenEnhancedMenu(client);
 		}
@@ -1427,32 +1332,32 @@ public Action Command_Nominate(int client, int args)
 
 public Action Command_Nominate_Internal(int client, char mapname[PLATFORM_MAX_PATH])
 {
-	if (g_bMapVoteStarted || g_bMapVoteFinished)
+	if (gB_MapVoteStarted || gB_MapVoteFinished)
 	{
-		ReplyToCommand(client, "%sMap vote already %s", g_cPrefix, (g_bMapVoteStarted) ? "initiated" : "finished");
+		Shavit_PrintToChat(client, "%T", (gB_MapVoteStarted) ? "MapVote-Initiated" : "MapVote-Finished", client);
 		return Plugin_Handled;
 	}
 
 	LowercaseString(mapname);
 
-	if (g_cvNominateMatches.BoolValue)
+	if (gCV_DoNominateMatches.BoolValue)
 	{
-		SMC_NominateMatches(client, mapname);
+		DoNominateMatches(client, mapname);
 	}
 	else
 	{
-		if(SMC_FindMap(mapname, mapname, sizeof(mapname)))
+		if(DoFindMap(mapname, mapname, sizeof(mapname)))
 		{
-			if(StrEqual(mapname, g_cMapName))
+			if(StrEqual(mapname, gS_MapName))
 			{
-				ReplyToCommand(client, "%s%t", "Can't Nominate Current Map");
+				Shavit_PrintToChat(client, "%T", "Can't Nominate Current Map", client);
 				return Plugin_Handled;
 			}
 
-			int idx = g_aOldMaps.FindString(mapname);
+			int idx = gA_OldMaps.FindString(mapname);
 			if(idx != -1)
 			{
-				ReplyToCommand(client, "%s%s %t", g_cPrefix, mapname, "Recently Played");
+				Shavit_PrintToChat(client, "%s %T", mapname, "Recently Played", client);
 				return Plugin_Handled;
 			}
 
@@ -1462,7 +1367,7 @@ public Action Command_Nominate_Internal(int client, char mapname[PLATFORM_MAX_PA
 		}
 		else
 		{
-			ReplyToCommand(client, "%s%t", g_cPrefix, "Map was not found", mapname);
+			Shavit_PrintToChat(client, "%T", "Map was not found", client, mapname);
 		}
 	}
 
@@ -1471,35 +1376,35 @@ public Action Command_Nominate_Internal(int client, char mapname[PLATFORM_MAX_PA
 
 public Action Command_UnNominate(int client, int args)
 {
-	if (g_bMapVoteStarted || g_bMapVoteFinished)
+	if (gB_MapVoteStarted || gB_MapVoteFinished)
 	{
-		ReplyToCommand(client, "%sMap vote already %s", g_cPrefix, (g_bMapVoteStarted) ? "initiated" : "finished");
+		Shavit_PrintToChat(client, "%T", (gB_MapVoteStarted) ? "MapVote-Initiated" : "MapVote-Finished", client);
 		return Plugin_Handled;
 	}
 
-	if (g_fLastNominateTime[client] && (GetEngineTime() - g_fLastNominateTime[client]) < g_cvAntiSpam.FloatValue)
+	if (gF_LastNominateTime[client] && (GetEngineTime() - gF_LastNominateTime[client]) < gCV_AntiSpam.FloatValue)
 	{
-		ReplyToCommand(client, "%sStop spamming", g_cPrefix);
+		Shavit_PrintToChat(client, "%T", "Stop Spamming", client);
 		return Plugin_Handled;
 	}
 
 	if (!CheckCommandAccess(client, "sm_map", ADMFLAG_CHANGEMAP))
 	{
-		g_fLastNominateTime[client] = GetEngineTime();
+		gF_LastNominateTime[client] = GetEngineTime();
 	}
 
-	if(g_cNominatedMap[client][0] == '\0')
+	if(gS_NominatedMap[client][0] == '\0')
 	{
-		ReplyToCommand(client, "%sYou haven't nominated a map", g_cPrefix);
+		Shavit_PrintToChat(client, "%T", "Haven't Nominated", client);
 		return Plugin_Handled;
 	}
 
-	int idx = g_aNominateList.FindString(g_cNominatedMap[client]);
+	int idx = gA_NominateList.FindString(gS_NominatedMap[client]);
 	if(idx != -1)
 	{
-		ReplyToCommand(client, "%sSuccessfully removed nomination for '%s'", g_cPrefix, g_cNominatedMap[client]);
-		g_aNominateList.Erase(idx);
-		g_cNominatedMap[client][0] = '\0';
+		Shavit_PrintToChat(client, "%T", "Removed Nomination", client, gS_NominatedMap[client]);
+		gA_NominateList.Erase(idx);
+		gS_NominatedMap[client][0] = '\0';
 	}
 
 	return Plugin_Handled;
@@ -1516,45 +1421,45 @@ public int SlowSortThatSkipsFolders(int index1, int index2, Handle array, Handle
 
 void CreateNominateMenu()
 {
-	if (gB_Rankings && !g_bTiersAssigned)
+	if (gB_Rankings && !gB_TiersAssigned)
 	{
-		g_bWaitingForTiers = true;
+		gB_WaitingForTiers = true;
 		return;
 	}
 
-	int min = GetConVarInt(g_cvMinTier);
-	int max = GetConVarInt(g_cvMaxTier);
+	int min = GetConVarInt(gCV_MinTier);
+	int max = GetConVarInt(gCV_MaxTier);
 
 	if (max < min)
 	{
 		int temp = max;
 		max = min;
 		min = temp;
-		SetConVarInt(g_cvMinTier, min);
-		SetConVarInt(g_cvMaxTier, max);
+		SetConVarInt(gCV_MinTier, min);
+		SetConVarInt(gCV_MaxTier, max);
 	}
 
-	delete g_hNominateMenu;
-	g_hNominateMenu = new Menu(NominateMenuHandler);
+	delete gH_NominateMenu;
+	gH_NominateMenu = new Menu(NominateMenuHandler);
 
-	g_hNominateMenu.SetTitle("Nominate");
+	gH_NominateMenu.SetTitle("Nominate");
 	StringMap tiersMap = gB_Rankings ? Shavit_GetMapTiers() : new StringMap();
 
-	g_aMapList.SortCustom(SlowSortThatSkipsFolders);
+	gA_MapList.SortCustom(SlowSortThatSkipsFolders);
 
-	int length = g_aMapList.Length;
+	int length = gA_MapList.Length;
 	for(int i = 0; i < length; ++i)
 	{
 		int style = ITEMDRAW_DEFAULT;
 		char mapname[PLATFORM_MAX_PATH];
-		g_aMapList.GetString(i, mapname, sizeof(mapname));
+		gA_MapList.GetString(i, mapname, sizeof(mapname));
 
-		if(StrEqual(mapname, g_cMapName))
+		if(StrEqual(mapname, gS_MapName))
 		{
 			style = ITEMDRAW_DISABLED;
 		}
 
-		int idx = g_aOldMaps.FindString(mapname);
+		int idx = gA_OldMaps.FindString(mapname);
 		if(idx != -1)
 		{
 			style = ITEMDRAW_DISABLED;
@@ -1572,18 +1477,18 @@ void CreateNominateMenu()
 			{
 				char mapdisplay2[PLATFORM_MAX_PATH];
 				FormatEx(mapdisplay2, sizeof(mapdisplay2), "%s | T%i", mapdisplay, tier);
-				g_hNominateMenu.AddItem(mapname, mapdisplay2, style);
+				gH_NominateMenu.AddItem(mapname, mapdisplay2, style);
 			}
 		}
 		else
 		{
-			g_hNominateMenu.AddItem(mapname, mapdisplay, style);
+			gH_NominateMenu.AddItem(mapname, mapdisplay, style);
 		}
 	}
 
 	delete tiersMap;
 
-	if (g_cvEnhancedMenu.BoolValue)
+	if (gCV_EnhancedMenu.BoolValue)
 	{
 		CreateTierMenus();
 	}
@@ -1591,17 +1496,17 @@ void CreateNominateMenu()
 
 void CreateEnhancedMenu()
 {
-	delete g_hEnhancedMenu;
+	delete gH_EnhancedMenu;
 
-	g_hEnhancedMenu = new Menu(EnhancedMenuHandler);
-	g_hEnhancedMenu.ExitButton = true;
+	gH_EnhancedMenu = new Menu(EnhancedMenuHandler);
+	gH_EnhancedMenu.ExitButton = true;
 
-	g_hEnhancedMenu.SetTitle("Nominate");
-	g_hEnhancedMenu.AddItem("Alphabetic", "Alphabetic");
+	gH_EnhancedMenu.SetTitle("Nominate");
+	gH_EnhancedMenu.AddItem("Alphabetic", "Alphabetic");
 
-	for(int i = GetConVarInt(g_cvMinTier); i <= GetConVarInt(g_cvMaxTier); ++i)
+	for(int i = GetConVarInt(gCV_MinTier); i <= GetConVarInt(gCV_MaxTier); ++i)
 	{
-		int count = GetMenuItemCount(g_aTierMenus[i]);
+		int count = GetMenuItemCount(gH_TierMenus[i]);
 
 		if (count > 0)
 		{
@@ -1610,25 +1515,25 @@ void CreateEnhancedMenu()
 
 			char tierString[16];
 			IntToString(i, tierString, sizeof(tierString));
-			g_hEnhancedMenu.AddItem(tierString, tierDisplay);
+			gH_EnhancedMenu.AddItem(tierString, tierDisplay);
 		}
 	}
 }
 
 void CreateTierMenus()
 {
-	int min = GetConVarInt(g_cvMinTier);
-	int max = GetConVarInt(g_cvMaxTier);
+	int min = GetConVarInt(gCV_MinTier);
+	int max = GetConVarInt(gCV_MaxTier);
 
 	InitTierMenus(min,max);
 	StringMap tiersMap = gB_Rankings ? Shavit_GetMapTiers() : new StringMap();
 
-	int length = g_aMapList.Length;
+	int length = gA_MapList.Length;
 	for(int i = 0; i < length; ++i)
 	{
 		int style = ITEMDRAW_DEFAULT;
 		char mapname[PLATFORM_MAX_PATH];
-		g_aMapList.GetString(i, mapname, sizeof(mapname));
+		gA_MapList.GetString(i, mapname, sizeof(mapname));
 
 		char mapdisplay[PLATFORM_MAX_PATH];
 		LessStupidGetMapDisplayName(mapname, mapdisplay, sizeof(mapdisplay));
@@ -1636,12 +1541,12 @@ void CreateTierMenus()
 		int mapTier = 0;
 		tiersMap.GetValue(mapdisplay, mapTier);
 
-		if(StrEqual(mapname, g_cMapName))
+		if(StrEqual(mapname, gS_MapName))
 		{
 			style = ITEMDRAW_DISABLED;
 		}
 
-		int idx = g_aOldMaps.FindString(mapname);
+		int idx = gA_OldMaps.FindString(mapname);
 		if(idx != -1)
 		{
 			style = ITEMDRAW_DISABLED;
@@ -1652,7 +1557,7 @@ void CreateTierMenus()
 
 		if (min <= mapTier <= max)
 		{
-			AddMenuItem(g_aTierMenus[mapTier], mapname, mapdisplay2, style);
+			AddMenuItem(gH_TierMenus[mapTier], mapname, mapdisplay2, style);
 		}
 	}
 
@@ -1663,9 +1568,9 @@ void CreateTierMenus()
 
 void InitTierMenus(int min, int max)
 {
-	for (int i = 0; i < sizeof(g_aTierMenus); i++)
+	for (int i = 0; i < sizeof(gH_TierMenus); i++)
 	{
-		delete g_aTierMenus[i];
+		delete gH_TierMenus[i];
 	}
 
 	for(int i = min; i <= max; i++)
@@ -1673,27 +1578,27 @@ void InitTierMenus(int min, int max)
 		Menu TierMenu = new Menu(NominateMenuHandler);
 		TierMenu.SetTitle("Nominate\nTier \"%i\" Maps\n ", i);
 		TierMenu.ExitBackButton = true;
-		g_aTierMenus[i] = TierMenu;
+		gH_TierMenus[i] = TierMenu;
 	}
 }
 
 void OpenNominateMenu(int client)
 {
-	if (g_cvEnhancedMenu.BoolValue)
+	if (gCV_EnhancedMenu.BoolValue)
 	{
-		g_hNominateMenu.ExitBackButton = true;
+		gH_NominateMenu.ExitBackButton = true;
 	}
-	g_hNominateMenu.Display(client, MENU_TIME_FOREVER);
+	gH_NominateMenu.Display(client, MENU_TIME_FOREVER);
 }
 
 void OpenEnhancedMenu(int client)
 {
-	g_hEnhancedMenu.Display(client, MENU_TIME_FOREVER);
+	gH_EnhancedMenu.Display(client, MENU_TIME_FOREVER);
 }
 
 void OpenNominateMenuTier(int client, int tier)
 {
-	DisplayMenu(g_aTierMenus[tier], client, MENU_TIME_FOREVER);
+	DisplayMenu(gH_TierMenus[tier], client, MENU_TIME_FOREVER);
 }
 
 public int MapsMenuHandler(Menu menu, MenuAction action, int param1, int param2)
@@ -1703,11 +1608,11 @@ public int MapsMenuHandler(Menu menu, MenuAction action, int param1, int param2)
 		char map[PLATFORM_MAX_PATH];
 		menu.GetItem(param2, map, sizeof(map));
 
-		ShowActivity2(param1, g_cPrefix, "%t", "Changing map", map);
+		Shavit_PrintToChatAll("%N %t", param1, "Changing map", map);
 		LogAction(param1, -1, "\"%L\" changed map to \"%s\"", param1, map);
 
 		DataPack dp = new DataPack();
-		CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, dp);
+		CreateDataTimer(1.0, Timer_ChangeMap, dp);
 		dp.WriteString(map);
 		dp.WriteString("sm_map");
 	}
@@ -1728,17 +1633,17 @@ public int NominateMenuHandler(Menu menu, MenuAction action, int param1, int par
 
 		Nominate(param1, mapname);
 	}
-	else if (action == MenuAction_Cancel && param2 == MenuCancel_ExitBack && GetConVarBool(g_cvEnhancedMenu))
+	else if (action == MenuAction_Cancel && param2 == MenuCancel_ExitBack && GetConVarBool(gCV_EnhancedMenu))
 	{
 		OpenEnhancedMenu(param1);
 	}
 	else if (action == MenuAction_End)
 	{
-		if (menu != g_hNominateMenu && menu != INVALID_HANDLE)
+		if (menu != gH_NominateMenu && menu != INVALID_HANDLE)
 		{
-			for (int i = 0; i < sizeof(g_aTierMenus); i++)
+			for (int i = 0; i < sizeof(gH_TierMenus); i++)
 			{
-				if (g_aTierMenus[i] == menu)
+				if (gH_TierMenus[i] == menu)
 				{
 					return 0;
 				}
@@ -1775,78 +1680,78 @@ public int EnhancedMenuHandler(Menu menu, MenuAction action, int client, int par
 
 void Nominate(int client, const char mapname[PLATFORM_MAX_PATH])
 {
-	if (GetEngineTime() - g_fMapStartTime < g_cvNominateDelayTime.FloatValue * 60)
+	if (GetEngineTime() - gF_MapStartTime < gCV_NominateDelayTime.FloatValue * 60)
 	{
-		ReplyToCommand(client, "%sNominate has not been enabled yet", g_cPrefix);
+		Shavit_PrintToChat(client, "%T", "NominateDisabled", client);
 		return;
 	}
 
-	if (g_fLastNominateTime[client] && (GetEngineTime() - g_fLastNominateTime[client]) < g_cvAntiSpam.FloatValue)
+	if (gF_LastNominateTime[client] && (GetEngineTime() - gF_LastNominateTime[client]) < gCV_AntiSpam.FloatValue)
 	{
-		ReplyToCommand(client, "%sStop spamming", g_cPrefix);
+		Shavit_PrintToChat(client, "%T", "Stop Spamming", client);
 		return;
 	}
 
 	if (!CheckCommandAccess(client, "sm_map", ADMFLAG_CHANGEMAP))
 	{
-		g_fLastNominateTime[client] = GetEngineTime();
+		gF_LastNominateTime[client] = GetEngineTime();
 	}
 
-	int idx = g_aNominateList.FindString(mapname);
+	int idx = gA_NominateList.FindString(mapname);
 	if(idx != -1)
 	{
-		ReplyToCommand(client, "%s%t", g_cPrefix, "Map Already Nominated");
+		Shavit_PrintToChat(client, "%T", "Map Already Nominated", client);
 		return;
 	}
 
-	if(g_cNominatedMap[client][0] != '\0')
+	if(gS_NominatedMap[client][0] != '\0')
 	{
-		RemoveString(g_aNominateList, g_cNominatedMap[client]);
+		RemoveString(gA_NominateList, gS_NominatedMap[client]);
 	}
 
-	g_aNominateList.PushString(mapname);
-	g_cNominatedMap[client] = mapname;
+	gA_NominateList.PushString(mapname);
+	gS_NominatedMap[client] = mapname;
 	char name[MAX_NAME_LENGTH];
 	GetClientName(client, name, sizeof(name));
 
-	PrintToChatAll("%s%t", g_cPrefix, "Map Nominated", name, mapname);
+	Shavit_PrintToChatAll("%t", "Map Nominated", name, mapname);
 }
 
 public Action Command_RockTheVote(int client, int args)
 {
 	if(!IsRTVEnabled())
 	{
-		ReplyToCommand(client, "%s%t", g_cPrefix, "RTV Not Allowed");
+		Shavit_PrintToChat(client, "%T", "RTV Not Allowed", client);
 	}
-	else if(g_bMapVoteStarted)
+	else if(gB_MapVoteStarted)
 	{
-		ReplyToCommand(client, "%s%t", g_cPrefix, "RTV Started");
+		Shavit_PrintToChat(client, "%T", "RTV Started", client);
 	}
-	else if(g_bRockTheVote[client])
+	else if(gB_RockTheVote[client])
 	{
 		int needed, rtvcount, total;
 		GetRTVStuff(total, needed, rtvcount);
-		ReplyToCommand(client, "%sYou have already RTVed, if you want to un-RTV use the command sm_unrtv (%i more %s needed)", g_cPrefix, needed, (needed == 1) ? "vote" : "votes");
+		Shavit_PrintToChat(client, "%T", "UnRTV", client, rtvcount);
 	}
-	else if(g_cvRTVMinimumPoints.IntValue != -1 && Shavit_GetPoints(client) <= g_cvRTVMinimumPoints.FloatValue)
+	else if(gCV_RTVMinimumPoints.IntValue != -1 && Shavit_GetPoints(client) <= gCV_RTVMinimumPoints.FloatValue)
 	{
-		ReplyToCommand(client, "%sYou must be a higher rank to RTV!", g_cPrefix);
+		Shavit_PrintToChat(client, "%T", "RankedRTV", client, gCV_RTVMinimumPoints.FloatValue, Shavit_GetPoints(client));
 	}
-	else if(GetClientTeam(client) == CS_TEAM_SPECTATOR && !g_cvRTVAllowSpectators.BoolValue)
+	else if(GetClientTeam(client) == CS_TEAM_SPECTATOR && !gCV_RTVAllowSpectators.BoolValue)
 	{
-		ReplyToCommand(client, "%sSpectators have been blocked from RTVing", g_cPrefix);
+		Shavit_PrintToChat(client, "%T", "BlockSpectatorRTV", client);
 	}
 	else
 	{
-		if (g_fLastRtvTime[client] && (GetEngineTime() - g_fLastRtvTime[client]) < g_cvAntiSpam.FloatValue)
+		if (gF_LastRtvTime[client] && (GetEngineTime() - gF_LastRtvTime[client]) < gCV_AntiSpam.FloatValue)
 		{
-			ReplyToCommand(client, "%sStop spamming", g_cPrefix);
+			Shavit_PrintToChat(client, "%T", "Stop Spamming", client);
 			return Plugin_Handled;
 		}
 
 		if (!CheckCommandAccess(client, "sm_map", ADMFLAG_CHANGEMAP))
 		{
-			g_fLastRtvTime[client] = GetEngineTime();
+			gF_LastRtvTime[client] = GetEngineTime();
 		}
 
 		RTVClient(client);
@@ -1870,28 +1775,28 @@ int CheckRTV(int client = 0)
 	{
 		if(client != 0)
 		{
-			PrintToChatAll("%s%t", g_cPrefix, "RTV Requested", name, rtvcount, total);
+			Shavit_PrintToChatAll("%t", "RTV Requested", name, rtvcount, total);
 		}
 	}
 	else
 	{
-		if(g_bMapVoteFinished)
+		if(gB_MapVoteFinished)
 		{
 			char map[PLATFORM_MAX_PATH];
 			GetNextMap(map, sizeof(map));
 
 			if(client != 0)
 			{
-				PrintToChatAll("%s%N wants to rock the vote! Map will now change to %s ...", g_cPrefix, client, map);
+				Shavit_PrintToChatAll("%t", "RTVFinished-MapChange", client, map);
 			}
 			else
 			{
-				PrintToChatAll("%sRTV vote now majority, map changing to %s ...", g_cPrefix, map);
+				Shavit_PrintToChatAll("%t", "RTVFinishedMajorily-MapChange", map);
 			}
 
 			SetNextMap(map);
 			DataPack data = new DataPack();
-			CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, data);
+			CreateDataTimer(1.0, Timer_ChangeMap, data);
 			data.WriteString(map);
 			data.WriteString("no reason");
 		}
@@ -1899,11 +1804,11 @@ int CheckRTV(int client = 0)
 		{
 			if(client != 0)
 			{
-				PrintToChatAll("%s%N wants to rock the vote! Map vote will now start ...", g_cPrefix, client);
+				Shavit_PrintToChatAll("%t", "RTVFinished-MapVote", client);
 			}
 			else
 			{
-				PrintToChatAll("%sRTV vote now majority, map vote starting ...", g_cPrefix);
+				Shavit_PrintToChatAll("%t", "RTVFinishedMajorily-MapVote");
 			}
 
 			InitiateMapVote(MapChange_Instant);
@@ -1917,23 +1822,23 @@ public Action Command_UnRockTheVote(int client, int args)
 {
 	if(!IsRTVEnabled())
 	{
-		ReplyToCommand(client, "%sRTV has not been enabled yet", g_cPrefix);
+		Shavit_PrintToChat(client, "%T", "RTVDisabled", client);
 	}
-	else if(g_bMapVoteStarted || g_bMapVoteFinished)
+	else if(gB_MapVoteStarted || gB_MapVoteFinished)
 	{
-		ReplyToCommand(client, "%sMap vote already %s", g_cPrefix, (g_bMapVoteStarted) ? "initiated" : "finished");
+		Shavit_PrintToChat(client, "%T", (gB_MapVoteStarted) ? "MapVote-Initiated" : "MapVote-Finished", client);
 	}
-	else if(g_bRockTheVote[client])
+	else if(gB_RockTheVote[client])
 	{
-		if (g_fLastRtvTime[client] && (GetEngineTime() - g_fLastRtvTime[client]) < g_cvAntiSpam.FloatValue)
+		if (gF_LastRtvTime[client] && (GetEngineTime() - gF_LastRtvTime[client]) < gCV_AntiSpam.FloatValue)
 		{
-			ReplyToCommand(client, "%sStop spamming", g_cPrefix);
+			Shavit_PrintToChat(client, "%T", "Stop Spamming", client);
 			return Plugin_Handled;
 		}
 
 		if (!CheckCommandAccess(client, "sm_map", ADMFLAG_CHANGEMAP))
 		{
-			g_fLastRtvTime[client] = GetEngineTime();
+			gF_LastRtvTime[client] = GetEngineTime();
 		}
 
 		UnRTVClient(client);
@@ -1943,7 +1848,7 @@ public Action Command_UnRockTheVote(int client, int args)
 
 		if(needed > 0)
 		{
-			PrintToChatAll("%s%N no longer wants to rock the vote! (%i more votes needed)", g_cPrefix, client, needed);
+			Shavit_PrintToChatAll("%t", "UnRTVNeeds", client, needed);
 		}
 	}
 
@@ -1952,18 +1857,18 @@ public Action Command_UnRockTheVote(int client, int args)
 
 public Action Command_NomList(int client, int args)
 {
-	if(g_aNominateList.Length < 1)
+	if(gA_NominateList.Length < 1)
 	{
-		ReplyToCommand(client, "%sNo Maps Nominated", g_cPrefix);
+		Shavit_PrintToChat(client, "%T", "No Maps Nominated", client);
 		return Plugin_Handled;
 	}
 
 	Menu nomList = new Menu(Null_Callback);
 	nomList.SetTitle("Nominated Maps");
-	for(int i = 0; i < g_aNominateList.Length; ++i)
+	for(int i = 0; i < gA_NominateList.Length; ++i)
 	{
 		char buffer[PLATFORM_MAX_PATH];
-		g_aNominateList.GetString(i, buffer, sizeof(buffer));
+		gA_NominateList.GetString(i, buffer, sizeof(buffer));
 
 		nomList.AddItem(buffer, buffer, ITEMDRAW_DISABLED);
 	}
@@ -1991,9 +1896,9 @@ public void FindUnzonedMapCallback(Database db, DBResultSet results, const char[
 
 	StringMap mapList = new StringMap();
 
-	g_iExcludePrefixesCount = ExplodeCvar(g_cvExcludePrefixes, g_cExcludePrefixesBuffers, sizeof(g_cExcludePrefixesBuffers), sizeof(g_cExcludePrefixesBuffers[]));
+	gI_ExcludePrefixesCount = ExplodeCvar(gCV_ExcludePrefixes, gS_ExcludePrefixesBuffers, sizeof(gS_ExcludePrefixesBuffers), sizeof(gS_ExcludePrefixesBuffers[]));
 
-	ReadMapsFolderStringMap(mapList, true, true, true, true, g_cExcludePrefixesBuffers, g_iExcludePrefixesCount);
+	ReadMapsFolderStringMap(mapList, true, true, true, true, gS_ExcludePrefixesBuffers, gI_ExcludePrefixesCount);
 
 	char buffer[PLATFORM_MAX_PATH];
 
@@ -2015,7 +1920,7 @@ public void FindUnzonedMapCallback(Database db, DBResultSet results, const char[
 		bool hasZones = false;
 		mapList.GetValue(buffer, hasZones);
 
-		if (!hasZones && !StrEqual(g_cMapName, buffer, false))
+		if (!hasZones && !StrEqual(gS_MapName, buffer, false))
 		{
 			foundMap = true;
 			break;
@@ -2027,7 +1932,7 @@ public void FindUnzonedMapCallback(Database db, DBResultSet results, const char[
 
 	if (foundMap)
 	{
-		Shavit_PrintToChatAll("Loading unzoned map %s", buffer);
+		Shavit_PrintToChatAll("%t", "Loading Unzoned Map", buffer);
 
 		DataPack dp = new DataPack();
 		CreateDataTimer(1.0, Timer_ChangeMap, dp);
@@ -2039,17 +1944,18 @@ public void FindUnzonedMapCallback(Database db, DBResultSet results, const char[
 public Action Command_LoadUnzonedMap(int client, int args)
 {
 	char sQuery[256];
-	FormatEx(sQuery, sizeof(sQuery), "SELECT DISTINCT map FROM %smapzones;", g_cSQLPrefix);
-	g_hDatabase.Query(FindUnzonedMapCallback, sQuery, 0, DBPrio_Normal);
+	FormatEx(sQuery, sizeof(sQuery), "SELECT DISTINCT map FROM %smapzones;", gS_SQLPrefix);
+	gH_SQL.Query(FindUnzonedMapCallback, sQuery, 0, DBPrio_Normal);
 	return Plugin_Handled;
 }
 
 public Action Command_ReloadMap(int client, int args)
 {
-	PrintToChatAll("%sReloading current map..", g_cPrefix);
+	Shavit_PrintToChatAll("%t", "Reloading Current Map");
+
 	DataPack dp = new DataPack();
-	CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, dp);
-	dp.WriteString(g_cMapName);
+	CreateDataTimer(1.0, Timer_ChangeMap, dp);
+	dp.WriteString(gS_MapName);
 	dp.WriteString("sm_reloadmap");
 
 	return Plugin_Handled;
@@ -2105,17 +2011,18 @@ public Action BaseCommands_Command_Map_Menu(int client, int args)
 	{
 		case 0:
 		{
-			ReplyToCommand(client, "%s%t", g_cPrefix, "Map was not found", map);
+			Shavit_PrintToChat(client, "%T", "Map was not found", client, map);
 			delete menu;
 		}
 		case 1:
 		{
 			menu.GetItem(0, map, sizeof(map));
-			ShowActivity2(client, g_cPrefix, "%t", "Changing map", map);
+
+			Shavit_PrintToChatAll("%N %t", client, "Changing map", map);
 			LogAction(client, -1, "\"%L\" changed map to \"%s\"", client, map);
 
 			DataPack dp = new DataPack();
-			CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, dp);
+			CreateDataTimer(1.0, Timer_ChangeMap, dp);
 			dp.WriteString(map);
 			dp.WriteString("sm_map");
 			delete menu;
@@ -2137,7 +2044,7 @@ public Action BaseCommands_Command_Map(int client, int args)
 	LowercaseString(map);
 	ReplaceString(map, sizeof(map), "\\", "/", true);
 
-	g_iAutocompletePrefixesCount = ExplodeCvar(g_cvAutocompletePrefixes, g_cAutocompletePrefixesBuffers, sizeof(g_cAutocompletePrefixesBuffers), sizeof(g_cAutocompletePrefixesBuffers[]));
+	gI_AutocompletePrefixesCount = ExplodeCvar(gCV_AutocompletePrefixes, gS_AutocompletePrefixesBuffers, sizeof(gS_AutocompletePrefixesBuffers), sizeof(gS_AutocompletePrefixesBuffers[]));
 
 	StringMap maps = new StringMap();
 	ReadMapsFolderStringMap(maps);
@@ -2146,13 +2053,13 @@ public Action BaseCommands_Command_Map(int client, int args)
 	bool foundMap;
 	char buffer[PLATFORM_MAX_PATH];
 
-	for (int i = -1; i < g_iAutocompletePrefixesCount; i++)
+	for (int i = -1; i < gI_AutocompletePrefixesCount; i++)
 	{
 		char prefix[12];
 
 		if (i > -1)
 		{
-			prefix = g_cAutocompletePrefixesBuffers[i];
+			prefix = gS_AutocompletePrefixesBuffers[i];
 		}
 
 		FormatEx(buffer, sizeof(buffer), "%s%s", prefix, map);
@@ -2190,17 +2097,17 @@ public Action BaseCommands_Command_Map(int client, int args)
 
 	if (!foundMap)
 	{
-		ReplyToCommand(client, "%s%t", g_cPrefix, "Map was not found", map);
+		Shavit_PrintToChat(client, "%T", "Map was not found", client, map);
 		return Plugin_Handled;
 	}
 
 	LessStupidGetMapDisplayName(map, displayName, sizeof(displayName));
 
-	ShowActivity2(client, g_cPrefix, "%t", "Changing map", displayName);
+	Shavit_PrintToChatAll("%N %t", client, "Changing map", displayName);
 	LogAction(client, -1, "\"%L\" changed map to \"%s\"", client, map);
 
 	DataPack dp = new DataPack();
-	CreateDataTimer(MapChangeDelay(), Timer_ChangeMap, dp);
+	CreateDataTimer(1.0, Timer_ChangeMap, dp);
 	dp.WriteString(map);
 	dp.WriteString("sm_map");
 
@@ -2209,7 +2116,7 @@ public Action BaseCommands_Command_Map(int client, int args)
 
 public Action Command_MapButFaster(int client, const char[] command, int args)
 {
-	if (!g_cvHijackMap.BoolValue || !CheckCommandAccess(client, "sm_map", ADMFLAG_CHANGEMAP))
+	if (!gCV_HijackMap.BoolValue || !CheckCommandAccess(client, "sm_map", ADMFLAG_CHANGEMAP))
 	{
 		return Plugin_Continue;
 	}
@@ -2218,7 +2125,7 @@ public Action Command_MapButFaster(int client, const char[] command, int args)
 	{
 		if (args < 1)
 		{
-			ReplyToCommand(client, "[SM] Usage: sm_map <map>");
+			Shavit_PrintToChat(client, "%T", "Usage-sm_map", client);
 			return Plugin_Stop;
 		}
 
@@ -2232,25 +2139,18 @@ public Action Command_MapButFaster(int client, const char[] command, int args)
 	return Plugin_Stop;
 }
 
-public Action Command_Debug(int client, int args)
-{
-	g_bDebug = !g_bDebug;
-	ReplyToCommand(client, "%sDebug mode: %s", g_cPrefix, g_bDebug ? "ENABLED" : "DISABLED");
-	return Plugin_Handled;
-}
-
 void RTVClient(int client)
 {
-	g_bRockTheVote[client] = true;
-	Call_StartForward(g_hForward_OnRTV);
+	gB_RockTheVote[client] = true;
+	Call_StartForward(gH_Forward_OnRTV);
 	Call_PushCell(client);
 	Call_Finish();
 }
 
 void UnRTVClient(int client)
 {
-	g_bRockTheVote[client] = false;
-	Call_StartForward(g_hForward_OnUnRTV);
+	gB_RockTheVote[client] = false;
+	Call_StartForward(gH_Forward_OnUnRTV);
 	Call_PushCell(client);
 	Call_Finish();
 }
@@ -2274,26 +2174,26 @@ void GetRTVStuff(int& total_needed, int& remaining_needed, int& rtvcount)
 		if(IsClientInGame(i) && !IsFakeClient(i))
 		{
 			// dont count players that can't vote
-			if(!g_cvRTVAllowSpectators.BoolValue && IsClientObserver(i) && (now - g_fSpecTimerStart[i]) >= g_cvRTVSpectatorCooldown.FloatValue)
+			if(!gCV_RTVAllowSpectators.BoolValue && IsClientObserver(i) && (now - gF_SpecTimerStart[i]) >= gCV_RTVSpectatorCooldown.FloatValue)
 			{
 				continue;
 			}
 
-			if(g_cvRTVMinimumPoints.IntValue != -1 && Shavit_GetPoints(i) <= g_cvRTVMinimumPoints.FloatValue)
+			if(gCV_RTVMinimumPoints.IntValue != -1 && Shavit_GetPoints(i) <= gCV_RTVMinimumPoints.FloatValue)
 			{
 				continue;
 			}
 
 			total_needed++;
 
-			if(g_bRockTheVote[i])
+			if(gB_RockTheVote[i])
 			{
 				rtvcount++;
 			}
 		}
 	}
 
-	total_needed = RoundToCeil(total_needed * (g_cvRTVRequiredPercentage.FloatValue / 100));
+	total_needed = RoundToCeil(total_needed * (gCV_RTVRequiredPercentage.FloatValue / 100));
 
 	// always clamp to 1, so if rtvcount is 0 it never initiates RTV
 	if (total_needed < 1)
@@ -2302,23 +2202,4 @@ void GetRTVStuff(int& total_needed, int& remaining_needed, int& rtvcount)
 	}
 
 	remaining_needed = total_needed - rtvcount;
-}
-
-void DebugPrint(const char[] message, any ...)
-{
-	if (!g_bDebug)
-	{
-		return;
-	}
-
-	char buffer[256];
-	VFormat(buffer, sizeof(buffer), message, 2);
-
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if (IsClientConnected(i) && CheckCommandAccess(i, "sm_smcdebug", ADMFLAG_RCON))
-		{
-			PrintToChat(i, buffer);
-		}
-	}
 }

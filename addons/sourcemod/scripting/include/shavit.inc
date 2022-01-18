@@ -1709,7 +1709,7 @@ forward void Shavit_OnWorldRecordsCached();
  * @param client					Client index.
  * @noreturn
  */
-forward void SMC_OnRTV(int client);
+forward void Shavit_OnRTV(int client);
 
 /**
  * Called when a player UNRTV's.
@@ -1718,7 +1718,7 @@ forward void SMC_OnRTV(int client);
  * @param client					Client index.
  * @noreturn
  */
-forward void SMC_OnUnRTV(int client);
+forward void Shavit_OnUnRTV(int client);
 
 /**
  * Called when the map changes from an RTV.
@@ -1726,7 +1726,7 @@ forward void SMC_OnUnRTV(int client);
  *
  * @noreturn
  */
-forward void SMC_OnSuccesfulRTV();
+forward void Shavit_OnSuccesfulRTV();
 
 /**
  * Called from shavit-timelimit when the 5 second map change countdown starts.

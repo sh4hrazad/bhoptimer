@@ -2623,13 +2623,11 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 		{
 			if(style == 0)
 			{
-				FormatEx(sMessage, 255, "%T", "FirstCompletion-Normal", client, 
-					client, sTrack, sTime, iRank, iRecords + 1);
+				FormatEx(sMessage, 255, "%t", "FirstCompletion-Normal", client, sTrack, sTime, iRank, iRecords + 1);
 			}
 			else
 			{
-				FormatEx(sMessage, 255, "%T", "FirstCompletion-Other", client, 
-					client, sTrack, sTime, gS_StyleStrings[style].sStyleName, iRank, iRecords + 1);
+				FormatEx(sMessage, 255, "%t", "FirstCompletion-Other", client, sTrack, sTime, gS_StyleStrings[style].sStyleName, iRank, iRecords + 1);
 			}
 
 			FormatEx(sQuery, sizeof(sQuery),
@@ -2640,13 +2638,11 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 		{
 			if(style == 0)
 			{
-				FormatEx(sMessage, 255, "%T", "NotFirstCompletion-Normal", client, 
-					client, sTrack, sTime, iRank, iRecords, sDifference);
+				FormatEx(sMessage, 255, "%t", "NotFirstCompletion-Normal", client, sTrack, sTime, iRank, iRecords, sDifference);
 			}
 			else
 			{
-				FormatEx(sMessage, 255, "%T", "NotFirstCompletion-Other", client, 
-					client, sTrack, sTime, gS_StyleStrings[style].sStyleName, iRank, iRecords, sDifference);
+				FormatEx(sMessage, 255, "%t", "NotFirstCompletion-Other", client, sTrack, sTime, gS_StyleStrings[style].sStyleName, iRank, iRecords, sDifference);
 			}
 
 			FormatEx(sQuery, sizeof(sQuery),
@@ -2691,13 +2687,11 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 		{
 			if(style == 0)
 			{
-				FormatEx(sMessage, 255, "%T", "WorseTime-Normal", client, 
-					client, sTrack, sTime, sDifference);
+				FormatEx(sMessage, 255, "%t", "WorseTime-Normal", client, sTrack, sTime, sDifference);
 			}
 			else
 			{
-				FormatEx(sMessage, 255, "%T", "WorseTime-Other", client, 
-					client, sTrack, sTime, gS_StyleStrings[style].sStyleName, sDifference);
+				FormatEx(sMessage, 255, "%t", "WorseTime-Other", client, sTrack, sTime, gS_StyleStrings[style].sStyleName, sDifference);
 			}
 		}
 	}
@@ -2705,13 +2699,11 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 	{
 		if(style == 0)
 		{
-			FormatEx(sMessage, 255, "%T", "UnrankedTime-Normal", client, 
-				client, sTrack, sTime, Shavit_IsPracticeMode(client) ? "[练习模式]" : "[未排名模式]");
+			FormatEx(sMessage, 255, "%t", "UnrankedTime-Normal", client, sTrack, sTime, Shavit_IsPracticeMode(client) ? "[练习模式]" : "[未排名模式]");
 		}
 		else
 		{
-			FormatEx(sMessage, 255, "%T", "UnrankedTime-Other", client, 
-				client, sTrack, sTime, gS_StyleStrings[style].sStyleName, Shavit_IsPracticeMode(client) ? "[练习模式]" : "[未排名模式]");
+			FormatEx(sMessage, 255, "%t", "UnrankedTime-Other", client, sTrack, sTime, gS_StyleStrings[style].sStyleName, Shavit_IsPracticeMode(client) ? "[练习模式]" : "[未排名模式]");
 		}
 	}
 
@@ -2739,6 +2731,7 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 		}
 		else
 		{
+			SetGlobalTransTarget(client);
 			Shavit_PrintToChat(client, "%s", sMessage);
 
 			for(int i = 1; i <= MaxClients; i++)
