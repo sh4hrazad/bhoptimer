@@ -1164,6 +1164,7 @@ public void SQL_RefreshZones_Callback(Database db, DBResultSet results, const ch
 		gA_ZoneCache[gI_MapZones].iHookedHammerID = results.FetchInt(14);
 		results.FetchString(15, gA_ZoneCache[gI_MapZones].sZoneHookname, 128);
 		gA_ZoneCache[gI_MapZones].fLimitSpeed = results.FetchFloat(16);
+		gA_ZoneCache[gI_MapZones].bHooked = !StrEqual(gA_ZoneCache[gI_MapZones].sZoneHookname, "NONE");
 
 		gA_ZoneCache[gI_MapZones].iEntityID = -1;
 
@@ -3856,12 +3857,12 @@ void CreateZoneEntities()
 			gA_ZoneCache[i].iEntityID = -1;
 		}
 
-		if(!gA_ZoneCache[i].bZoneInitialized)
+		if(!gA_ZoneCache[i].bZoneInitialized || gA_ZoneCache[i].iZoneType == Zone_Mark)
 		{
 			continue;
 		}
 
-		if(StrEqual(gA_ZoneCache[i].sZoneHookname, "NONE"))
+		if(!gA_ZoneCache[i].bHooked)
 		{
 			if(!CreateNormalZone(i))
 			{
@@ -3970,18 +3971,15 @@ bool CreateHookZone(int zone)
 
 		if(gA_ZoneCache[zone].iHookedHammerID == GetEntProp(entity, Prop_Data, "m_iHammerID"))
 		{
-			if(gA_ZoneCache[zone].iZoneType != Zone_Mark)
+			for(int j = 0; j < 8; j++)
 			{
-				for(int j = 0; j < 8; j++)
+				for(int k = 0; k < 3; k++)
 				{
-					for(int k = 0; k < 3; k++)
-					{
-						gV_MapZones_Visual[zone][j][k] = 0.0; // do not set their visual point, use trigger material instead
-					}
+					gV_MapZones_Visual[zone][j][k] = 0.0; // do not set their visual point, use trigger material instead
 				}
-
-				gA_HookTriggers.Push(entity); // do not push markzone index to arraylist
 			}
+
+			gA_HookTriggers.Push(entity);
 
 			SDKHook(entity, SDKHook_StartTouchPost, StartTouchPost);
 			SDKHook(entity, SDKHook_EndTouchPost, EndTouchPost);
@@ -3989,7 +3987,6 @@ bool CreateHookZone(int zone)
 
 			gI_EntityZone[entity] = zone;
 			gA_ZoneCache[zone].iEntityID = entity;
-			gA_ZoneCache[zone].bHooked = true;
 
 			return true;
 		}
@@ -4014,7 +4011,7 @@ void SetCenterByDestination(int zone)
 			gV_ZoneCenter[zone][0] = origin[0];
 			gV_ZoneCenter[zone][1] = origin[1];
 			gV_ZoneCenter[zone][2] = origin[2];
-			break;
+			break; // maybe we should make a 'stuck' check
 		}
 	}
 }
@@ -4157,11 +4154,6 @@ public void StartTouchPost(int entity, int other)
 				{
 					TeleportEntity(other, gV_Destinations[entityzone], NULL_VECTOR, NULL_VECTOR);
 				}
-			}
-
-			case Zone_Mark:
-			{
-				return; // cant do anything in mark zone, insidezone is not permitted.
 			}
 		}
 
