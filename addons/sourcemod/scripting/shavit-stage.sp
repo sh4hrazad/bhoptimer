@@ -253,9 +253,6 @@ public void OnAllPluginsLoaded()
 	{
 		SetFailState("shavit-wr is required for the plugin to work.");
 	}
-
-	// try to fix that stupid cp/stage being mixed bug wtf.
-	SQL_DBConnect(true);
 }
 
 public void Shavit_OnStyleConfigLoaded(int styles)
@@ -389,7 +386,7 @@ public int WRCPMenu_Handler(Menu menu, MenuAction action, int param1, int param2
 void OpenStageMenu(int client, bool wrcp)
 {
 	char sQuery[128];
-	FormatEx(sQuery, 128, "SELECT data FROM `%smapzones` WHERE map = '%s' AND type = '%d' AND track = '%d' ORDER BY data DESC;", gS_MySQLPrefix, gS_MapChoice[client], Zone_Stage, Track_Main);
+	FormatEx(sQuery, 128, "SELECT data FROM `%smapzones` WHERE map = '%s' AND type = %d AND track = %d ORDER BY data DESC;", gS_MySQLPrefix, gS_MapChoice[client], Zone_Stage, Track_Main);
 
 	DataPack dp = new DataPack();
 	dp.WriteCell(GetClientSerial(client));
@@ -667,7 +664,7 @@ public int Maptop_StageMenu_Handler(Menu menu, MenuAction action, int param1, in
 				"SELECT p1.auth, p1.time, p1.completions, p2.name FROM `%sstagetimes` p1 "...
 				"JOIN `%susers` p2 "...
 				"ON p1.auth = p2.auth "...
-				"WHERE (stage = '%d' AND style = '%d') AND map = '%s' "...
+				"WHERE stage = %d AND style = %d AND map = '%s' "...
 				"ORDER BY p1.time ASC "...
 				"LIMIT 100;", 
 				gS_MySQLPrefix, gS_MySQLPrefix, stage, style, gS_MapChoice[param1]);
@@ -772,7 +769,7 @@ public int Maptop_FinalMenu_Handler(Menu menu, MenuAction action, int param1, in
 			int style = gI_StyleChoice[param1];
 
 			char sQuery[256];
-			FormatEx(sQuery, 256, "DELETE FROM `%sstagetimes` WHERE (stage = '%d' AND style = '%d') AND (auth = '%d' AND map = '%s');", 
+			FormatEx(sQuery, 256, "DELETE FROM `%sstagetimes` WHERE stage = %d AND style = %d AND auth = %d AND map = '%s';", 
 					gS_MySQLPrefix, stage, style, steamid, gS_MapChoice[param1]);
 
 			DataPack dp = new DataPack();
@@ -1311,7 +1308,7 @@ void OnFinishStage(int client, int stage, int style, float time)
 	}
 
 	char sQuery[512];
-	FormatEx(sQuery, 512, "SELECT completions FROM `%sstagetimes` WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
+	FormatEx(sQuery, 512, "SELECT completions FROM `%sstagetimes` WHERE stage = %d AND style = %d AND map = '%s' AND auth = %d;", 
 			gS_MySQLPrefix, stage, style, gS_Map, GetSteamAccountID(client));
 
 	DataPack dp = new DataPack();
@@ -1352,14 +1349,14 @@ public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const c
 		if(time < stagepr.fTime || stagepr.fTime == 0.0)
 		{
 			FormatEx(sQuery, 512,
-			"UPDATE `%sstagetimes` SET time = %f, date = %d, postspeed = %f, completions = completions + 1 WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
+			"UPDATE `%sstagetimes` SET time = %f, date = %d, postspeed = %f, completions = completions + 1 WHERE stage = %d AND style = %d AND map = '%s' AND auth = %d;", 
 			gS_MySQLPrefix, time, GetTime(), postSpeed, stage, style, gS_Map, GetSteamAccountID(client));
 		}
 
 		else
 		{
 			FormatEx(sQuery, 512,
-			"UPDATE `%sstagetimes` SET completions = completions + 1 WHERE (stage = '%d' AND style = '%d') AND (map = '%s' AND auth = '%d');", 
+			"UPDATE `%sstagetimes` SET completions = completions + 1 WHERE stage = %d AND style = %d AND map = '%s' AND auth = %d;", 
 			gS_MySQLPrefix, stage, style, gS_Map, GetSteamAccountID(client));
 
 			iOverwrite = 0;
@@ -1371,6 +1368,8 @@ public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const c
 		"REPLACE INTO `%sstagetimes` (auth, map, time, style, stage, postspeed, date, completions) VALUES (%d, '%s', %f, %d, %d, %f, %d, 1);",
 		gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, time, style, stage, postSpeed, GetTime());
 	}
+
+	Shavit_LogMessage(sQuery);
 
 	dp.WriteCell(iOverwrite);
 
@@ -1771,14 +1770,10 @@ public int Native_GetClientStageStayTime(Handle handler, int numParams)
 	return 0;
 }
 
-// bypass: do bypassing getting another database handle.
-void SQL_DBConnect(bool bypass = false)
+void SQL_DBConnect()
 {
-	if(!bypass)
-	{
-		GetTimerSQLPrefix(gS_MySQLPrefix, 32);
-		gH_SQL = GetTimerDatabaseHandle2(false);
-	}
+	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
+	gH_SQL = GetTimerDatabaseHandle2(false);
 
 	Transaction2 hTransaction = new Transaction2();
 
@@ -1794,18 +1789,28 @@ void SQL_DBConnect(bool bypass = false)
 			gS_MySQLPrefix);
 	hTransaction.AddQuery(sQuery);
 
+
+	// create stage wrs view
 	FormatEx(sQuery, 1024, 
-		"CREATE OR REPLACE VIEW `%sstagewrs` "...
-		"AS SELECT MIN(id) id, map, style, stage, MIN(time) time, MIN(postspeed) postspeed, MIN(auth) auth, MIN(date) date "...
-		"FROM `%sstagetimes` "...
+		"CREATE OR REPLACE VIEW `%sstagewrs_min` "...
+		"AS SELECT MIN(time) time, map, stage, style FROM `%sstagetimes` "...
 		"GROUP BY map, stage, style;",
 		gS_MySQLPrefix, gS_MySQLPrefix);
 	hTransaction.AddQuery(sQuery);
 
 	FormatEx(sQuery, 1024, 
+		"CREATE OR REPLACE VIEW `%sstagewrs` "...
+		"AS SELECT a.* FROM `%sstagetimes` a "...
+		"JOIN `%sstagewrs_min` b "...
+		"ON a.time = b.time AND a.map = b.map AND a.stage = b.stage AND a.style = b.style;", 
+		gS_MySQLPrefix, gS_MySQLPrefix, gS_MySQLPrefix);
+	hTransaction.AddQuery(sQuery);
+
+
+	// create cp wrs view
+	FormatEx(sQuery, 1024, 
 		"CREATE OR REPLACE VIEW `%scpwrs` "...
-		"AS SELECT p.map, p.style, p.cp, p.attemps, p.time, p.marktime, p.prespeed, p.postspeed, p.auth, p.date "...
-		"FROM `%scptimes` p "...
+		"AS SELECT p.* FROM `%scptimes` p "...
 		"JOIN `%swrs` u "...
 		"ON p.map = u.map AND p.auth = u.auth "...
 		"WHERE u.track = 0;", 
