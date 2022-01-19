@@ -1656,7 +1656,7 @@ public int Native_FinishStage(Handle handler, int numParams)
 {
 	int client = GetNativeCell(1);
 	bool bBypass = (numParams < 2 || view_as<bool>(GetNativeCell(2)));
-	int stage = Shavit_GetClientStage(client);
+	int stage = Shavit_GetCurrentStage(client);
 	int style = Shavit_GetBhopStyle(client);
 
 	if(Shavit_IsPracticeMode(client) || Shavit_GetStyleSettingBool(style, "unranked") || Shavit_GetClientTrack(client) != Track_Main)
@@ -1697,7 +1697,7 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 {
 	int client = GetNativeCell(1);
 	bool bBypass = (numParams < 2 || view_as<bool>(GetNativeCell(2)));
-	int cpnum = (Shavit_IsLinearMap()) ? Shavit_GetClientCheckpoint(client) : Shavit_GetClientStage(client);
+	int cpnum = (Shavit_IsLinearMap()) ? Shavit_GetCurrentCP(client) : Shavit_GetCurrentStage(client);
 	int style = Shavit_GetBhopStyle(client);
 	if(Shavit_GetStyleSettingBool(style, "unranked") || Shavit_GetClientTrack(client) != Track_Main)
 	{

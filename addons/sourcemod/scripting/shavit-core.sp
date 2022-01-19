@@ -194,6 +194,14 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_SetAvgVelocity", Native_SetAvgVelocity);
 	CreateNative("Shavit_SetMaxVelocity", Native_SetMaxVelocity);
 	CreateNative("Shavit_UpdateLaggedMovement", Native_UpdateLaggedMovement);
+	CreateNative("Shavit_GetCurrentStage", Native_GetCurrentStage);
+	CreateNative("Shavit_GetCurrentCP", Native_GetCurrentCP);
+	CreateNative("Shavit_GetLastStage", Native_GetLastStage);
+	CreateNative("Shavit_GetLastCP", Native_GetLastCP);
+	CreateNative("Shavit_SetCurrentStage", Native_SetCurrentStage);
+	CreateNative("Shavit_SetCurrentCP", Native_SetCurrentCP);
+	CreateNative("Shavit_SetLastStage", Native_SetLastStage);
+	CreateNative("Shavit_SetLastCP", Native_SetLastCP);
 
 	// registers library, check "bool LibraryExists(const char[] name)" in order to use with other plugins
 	RegPluginLibrary("shavit");
@@ -1915,6 +1923,46 @@ public any Native_SetStyleSettingInt(Handle handler, int numParams)
 	return gSM_StyleKeys[style].SetString(sKey, sValue, replace);
 }
 
+public int Native_GetCurrentStage(Handle handler, int numParams)
+{
+	return gA_Timers[GetNativeCell(1)].iCurrentStage;
+}
+
+public int Native_GetCurrentCP(Handle handler, int numParams)
+{
+	return gA_Timers[GetNativeCell(1)].iCurrentCP;
+}
+
+public int Native_GetLastStage(Handle handler, int numParams)
+{
+	return gA_Timers[GetNativeCell(1)].iLastStage;
+}
+
+public int Native_GetLastCP(Handle handler, int numParams)
+{
+	return gA_Timers[GetNativeCell(1)].iLastCP;
+}
+
+public int Native_SetCurrentStage(Handle handler, int numParams)
+{
+	gA_Timers[GetNativeCell(1)].iCurrentStage = GetNativeCell(2);
+}
+
+public int Native_SetCurrentCP(Handle handler, int numParams)
+{
+	gA_Timers[GetNativeCell(1)].iCurrentCP = GetNativeCell(2);
+}
+
+public int Native_SetLastStage(Handle handler, int numParams)
+{
+	gA_Timers[GetNativeCell(1)].iLastStage = GetNativeCell(2);
+}
+
+public int Native_SetLastCP(Handle handler, int numParams)
+{
+	gA_Timers[GetNativeCell(1)].iLastCP = GetNativeCell(2);
+}
+
 public Action Shavit_OnStartPre(int client, int track)
 {
 	if (GetTimerStatus(client) == Timer_Paused && gCV_PauseMovement.BoolValue)
@@ -2038,8 +2086,6 @@ void ResumeTimer(int client)
 	Call_Finish();
 
 	gA_Timers[client].bClientPaused = false;
-	// setting is handled in usercmd
-	//SetEntityMoveType(client, MOVETYPE_WALK);
 }
 
 public void OnClientDisconnect(int client)

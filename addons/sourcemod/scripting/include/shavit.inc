@@ -210,6 +210,11 @@ enum struct timer_snapshot_t
 	float fStrafeWarning;
 
 	float fplayer_speedmod;
+
+	int iCurrentStage;
+	int iCurrentCP;
+	int iLastStage;
+	int iLastCP;
 }
 
 enum struct cp_cache_t
@@ -1898,49 +1903,6 @@ native int Shavit_GetBhopStyle(int client);
 native TimerStatus Shavit_GetTimerStatus(int client);
 
 /**
- * Retrieve the former stage ID for client.
- *
- * @param client					Client index.
- * @return                          former stage ID.
- */
-native int Shavit_GetClientLastStage(int client);
-
-/**
- * Retrieve the current stage ID for client.
- * Note: Dont use this in Shavit_OnEnterZone or Shavit_OnEnterStage, use their data instead.
- *
- * @param client					Client index.
- * @return                          stage ID.
- */
-native int Shavit_GetClientStage(int client);
-
-/**
- * Set the current stage ID for client.
- *
- * @param client					Client index.
- * @param stage						Stage ID.
- * @noreturn
- */
-native void Shavit_SetClientStage(int client, int stage);
-
-/**
- * Retrieve the current checkpoint ID for client.
- *
- * @param client					Client index.
- * @return                          Checkpoint ID.
- */
-native int Shavit_GetClientCheckpoint(int client);
-
-/**
- * Set the current checkpoint ID for client.
- *
- * @param client					Client index.
- * @param cp						Checkpoint ID
- * @noreturn
- */
-native void Shavit_SetClientCheckpoint(int client, int cp);
-
-/**
  * Retrieve the map's bonus numbers.
  *
  * @return                          bonus numbers.
@@ -3089,7 +3051,7 @@ native float Shavit_GetMaxVelocity(int client);
 native void Shavit_SetAvgVelocity(int client, float vel);
 
 /**
- * Gets the max velocity of a player.
+ * Sets the max velocity of a player.
  *
  * @param client					Client index
  * @param vel						Max velocity
@@ -3098,13 +3060,81 @@ native void Shavit_SetAvgVelocity(int client, float vel);
 native void Shavit_SetMaxVelocity(int client, float vel);
 
 /**
+ * Gets the current stage of a player.
+ *
+ * @param client					Client index
+ * @return							Client's current stage
+ */
+native int Shavit_GetCurrentStage(int client);
+
+/**
+ * Gets the current cp of a player.(Note: this is mapzone's checkpoint)
+ *
+ * @param client					Client index
+ * @return							Client's current cp
+ */
+native int Shavit_GetCurrentCP(int client);
+
+/**
+ * Gets the last stage of a player.
+ *
+ * @param client					Client index
+ * @return							Client's last stage
+ */
+native int Shavit_GetLastStage(int client);
+
+/**
+ * Gets the last cp of a player.(Note: this is mapzone's checkpoint)
+ *
+ * @param client					Client index
+ * @return							Client's last cp
+ */
+native int Shavit_GetLastCP(int client);
+
+/**
+ * Sets the current stage of a player.
+ *
+ * @param client					Client index
+ * @param stage						Stage index
+ * @noreturn
+ */
+native void Shavit_SetCurrentStage(int client, int stage);
+
+/**
+ * Sets the current cp of a player.(Note: this is mapzone's checkpoint)
+ *
+ * @param client					Client index
+ * @param cp						Checkpoint index
+ * @noreturn
+ */
+native void Shavit_SetCurrentCP(int client, int cp);
+
+/**
+ * Sets the last stage of a player.
+ *
+ * @param client					Client index
+ * @param stage						Stage index
+ * @noreturn
+ */
+native void Shavit_SetLastStage(int client, int stage);
+
+/**
+ * Sets the last cp of a player.(Note: this is mapzone's checkpoint)
+ *
+ * @param client					Client index
+ * @param cp						Checkpoint index
+ * @noreturn
+ */
+native void Shavit_SetLastCP(int client, int cp);
+
+/**
  * Gets the total number of CPs that a client has saved
  *
  * @param client					Client index
  *
  * @return							Total number of checkpoints
  */
- native int Shavit_GetTotalCheckpoints(int client);
+native int Shavit_GetTotalCheckpoints(int client);
 
 /**
  * Gets CP data for a client at specified index
@@ -3388,11 +3418,6 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetClientPB");
 	MarkNativeAsOptional("Shavit_GetClientTime");
 	MarkNativeAsOptional("Shavit_GetClientTrack");
-	MarkNativeAsOptional("Shavit_GetClientLastStage");
-	MarkNativeAsOptional("Shavit_GetClientStage");
-	MarkNativeAsOptional("Shavit_SetClientStage");
-	MarkNativeAsOptional("Shavit_GetClientCheckpoint");
-	MarkNativeAsOptional("Shavit_SetClientCheckpoint");
 	MarkNativeAsOptional("Shavit_GetDatabase");
 	MarkNativeAsOptional("Shavit_GetHUDSettings");
 	MarkNativeAsOptional("Shavit_GetMapTier");
@@ -3490,7 +3515,19 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_OpenCheckpointMenu");
 	MarkNativeAsOptional("Shavit_GetClientTimescale");
 	MarkNativeAsOptional("Shavit_SetClientTimescale");
+	MarkNativeAsOptional("Shavit_GetAvgVelocity");
+	MarkNativeAsOptional("Shavit_GetMaxVelocity");
+	MarkNativeAsOptional("Shavit_SetAvgVelocity");
+	MarkNativeAsOptional("Shavit_SetMaxVelocity");
 	MarkNativeAsOptional("Shavit_UpdateLaggedMovement");
+	MarkNativeAsOptional("Shavit_GetCurrentStage");
+	MarkNativeAsOptional("Shavit_GetCurrentCP");
+	MarkNativeAsOptional("Shavit_GetLastStage");
+	MarkNativeAsOptional("Shavit_GetLastCP");
+	MarkNativeAsOptional("Shavit_SetCurrentStage");
+	MarkNativeAsOptional("Shavit_SetCurrentCP");
+	MarkNativeAsOptional("Shavit_SetLastStage");
+	MarkNativeAsOptional("Shavit_SetLastCP");
 	MarkNativeAsOptional("Shavit_SaveCheckpoint");
 	MarkNativeAsOptional("Shavit_GetCurrentCheckpoint");
 	MarkNativeAsOptional("Shavit_SetCurrentCheckpoint");

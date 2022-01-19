@@ -136,6 +136,7 @@ stylestrings_t gS_StyleStrings[STYLE_LIMIT];
 char gS_PreStrafeDiff[MAXPLAYERS+1][64];
 char gS_DiffTime[MAXPLAYERS+1][64];
 char gS_Map[160];
+int gI_BotLastStage[MAXPLAYERS+1];
 
 public Plugin myinfo =
 {
@@ -564,10 +565,12 @@ public void Shavit_OnEnterStageZone_Bot(int bot, int stage)
 	}
 
 	int style = Shavit_GetReplayBotStyle(bot);
-	if(style == -1 || Shavit_GetReplayBotTrack(bot) != Track_Main || Shavit_GetClientStage(bot) == stage) // invalid style or track or get into the same stage(dont print twice)
+	if(style == -1 || Shavit_GetReplayBotTrack(bot) != Track_Main || gI_BotLastStage[bot] == stage) // invalid style or track or get into the same stage(dont print twice)
 	{
 		return;
 	}
+
+	gI_BotLastStage[bot] = stage;
 
 	char sTime[32];
 	float realtime = Shavit_GetWRCPRealTime(stage, style);
@@ -1255,7 +1258,7 @@ void UpdateMainHUD(int client)
 	huddata_t huddata;
 	huddata.iStyle = (bReplay) ? Shavit_GetReplayBotStyle(target) : Shavit_GetBhopStyle(target);
 	huddata.iTrack = (bReplay) ? Shavit_GetReplayBotTrack(target) : Shavit_GetClientTrack(target);
-	huddata.iStage = (bReplay) ? Shavit_GetReplayBotStage(target) : Shavit_GetClientStage(target);
+	huddata.iStage = (bReplay) ? Shavit_GetReplayBotStage(target) : Shavit_GetCurrentStage(target);
 
 	if(!bReplay)
 	{
@@ -1310,7 +1313,7 @@ void UpdateMainHUD(int client)
 
 	if(huddata.iZoneHUD != ZoneHUD_End)
 	{
-		huddata.iCheckpoint = (Shavit_IsLinearMap())? Shavit_GetClientCheckpoint(target) : Shavit_GetClientStage(target) - 1;
+		huddata.iCheckpoint = (Shavit_IsLinearMap())? Shavit_GetCurrentCP(target) : Shavit_GetCurrentStage(target) - 1;
 	}
 
 	char sBuffer[512];

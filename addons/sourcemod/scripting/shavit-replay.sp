@@ -2826,7 +2826,7 @@ public Action Shavit_OnStart(int client)
 {
 	gI_HijackFrames[client] = 0;
 
-	if(gB_GrabbingPostFrames_Stage[client] && Shavit_GetClientStage(client) == 1)
+	if(gB_GrabbingPostFrames_Stage[client] && Shavit_GetCurrentStage(client) == 1)
 	{
 		FinishGrabbingPostFrames_Stage(client, gA_WRCPRunInfo[client]);
 	}
@@ -2895,7 +2895,7 @@ static bool CutStageFailureFrames(int client, int stage, int style, bool stageti
 		return false;
 	}
 
-	if(Shavit_GetClientLastStage(client) == stage)
+	if(Shavit_GetLastStage(client) == stage)
 	{
 		gI_PlayerFrames[client] = gI_PlayerLastStageFrame[client];
 	}

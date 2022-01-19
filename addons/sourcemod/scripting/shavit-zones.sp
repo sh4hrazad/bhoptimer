@@ -142,8 +142,6 @@ bool gB_ZonesCreated = false;
 int gI_Bonuses;
 int gI_Stages; // how many stages in a map, default 1.
 int gI_Checkpoints; // how many checkpoint zones in a map, default 0.
-int gI_ClientCurrentStage[MAXPLAYERS+1];
-int gI_ClientCurrentCP[MAXPLAYERS+1];
 
 char gS_BeamSprite[PLATFORM_MAX_PATH];
 char gS_BeamSpriteIgnoreZ[PLATFORM_MAX_PATH];
@@ -185,8 +183,6 @@ Handle gH_Forwards_OnStage = null;
 Handle gH_Forwards_OnEndZone = null;
 Handle gH_Forwards_OnTeleportBackStagePost = null;
 
-int gI_LastStage[MAXPLAYERS+1];
-int gI_LastCheckpoint[MAXPLAYERS+1];
 bool gB_LinearMap;
 
 // prespeed limit
@@ -209,11 +205,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	// zone natives
 	CreateNative("Shavit_GetZoneData", Native_GetZoneData);
 	CreateNative("Shavit_GetZoneFlags", Native_GetZoneFlags);
-	CreateNative("Shavit_GetClientLastStage", Native_GetClientLastStage);
-	CreateNative("Shavit_GetClientStage", Native_GetClientStage);
-	CreateNative("Shavit_SetClientStage", Native_SetClientStage);
-	CreateNative("Shavit_GetClientCheckpoint", Native_GetClientCheckpoint);
-	CreateNative("Shavit_SetClientCheckpoint", Native_SetClientCheckpoint);
 	CreateNative("Shavit_GetMapBonuses", Native_GetMapBonuses);
 	CreateNative("Shavit_GetMapStages", Native_GetMapStages);
 	CreateNative("Shavit_GetMapCheckpoints", Native_GetMapCheckpoints);
@@ -639,31 +630,6 @@ public int Native_IsClientCreatingZone(Handle handler, int numParams)
 public int Native_IsClientStageTimer(Handle handler, int numParams)
 {
 	return gB_StageTimer[GetNativeCell(1)];
-}
-
-public int Native_GetClientLastStage(Handle handler, int numParams)
-{
-	return (gI_LastStage[GetNativeCell(1)]);
-}
-
-public int Native_GetClientStage(Handle handler, int numParams)
-{
-	return (gI_ClientCurrentStage[GetNativeCell(1)]);
-}
-
-public int Native_SetClientStage(Handle handler, int numParams)
-{
-	gI_ClientCurrentStage[GetNativeCell(1)] = GetNativeCell(2);
-}
-
-public int Native_GetClientCheckpoint(Handle handler, int numParams)
-{
-	return (gI_ClientCurrentCP[GetNativeCell(1)]);
-}
-
-public int Native_SetClientCheckpoint(Handle handler, int numParams)
-{
-	gI_ClientCurrentCP[GetNativeCell(1)] = GetNativeCell(2);
 }
 
 public int Native_GetMapBonuses(Handle handler, int numParams)
@@ -1783,19 +1749,19 @@ public Action Command_Stages(int client, int args)
 		menu.SetTitle("%T", "ZoneMenuStage", client);
 
 		char sDisplay[64];
-	
+
 		for(int i = 0; i < gI_MapZones; i++)
 		{
 			if(gA_ZoneCache[i].bZoneInitialized && gA_ZoneCache[i].iZoneType == Zone_Stage)
 			{
 				char sTrack[32];
 				GetTrackName(client, gA_ZoneCache[i].iZoneTrack, sTrack, 32);
-	
+
 				FormatEx(sDisplay, 64, "#%d - (%s)", (i + 1), gA_ZoneCache[i].iZoneData, sTrack);
-	
+
 				char sInfo[8];
 				IntToString(i, sInfo, 8);
-	
+
 				menu.AddItem(sInfo, sDisplay);
 			}
 		}
@@ -2748,9 +2714,11 @@ void Reset(int client)
 	gF_ZoneLimitSpeed[client] = gCV_EntrySpeedLimit.FloatValue;
 	gI_ZoneID[client] = -1;
 
-	gI_ClientCurrentStage[client] = 0;
-	gI_LastStage[client] = 0;
-	gI_LastCheckpoint[client] = 0;
+	Shavit_SetCurrentStage(client, 0);
+	Shavit_SetCurrentCP(client, 0);
+	Shavit_SetLastStage(client, 0);
+	Shavit_SetLastCP(client, 0);
+
 	gB_ShowTriggers[client] = false;
 	gH_DrawZonesToClient[client] = null;
 
@@ -4062,36 +4030,28 @@ public void StartTouchPost(int entity, int other)
 		{
 			case Zone_Start:
 			{
-				gI_ClientCurrentStage[other] = 1;
-				gI_ClientCurrentCP[other] = 0;
-				gI_LastStage[other] = 1;
-				gI_LastCheckpoint[other] = (gB_LinearMap) ? 0 : 1;
+				Shavit_SetCurrentStage(other, 1);
+				Shavit_SetCurrentCP(other, 0);
+				Shavit_SetLastStage(other, 1);
+				Shavit_SetLastCP(other, (gB_LinearMap) ? 0 : 1);
+
 				gI_InsideZoneIndex[other] = entityzone;
 				gI_LastStartZoneIndex[other][track] = entityzone;
 			}
 
 			case Zone_End:
 			{
-				if(gI_Stages > 1) // prevent no stages.
+				if(!gB_LinearMap) // prevent no stages.
 				{
-					gI_ClientCurrentStage[other] = gI_Stages + 1; // a hack that record the last stage's time
-
-					if(gI_ClientCurrentStage[other] > gI_LastStage[other] && !gB_LinearMap)
-					{
-						Shavit_FinishStage(other);
-					}
-
-					gI_LastStage[other] = gI_Stages + 1;
+					Shavit_SetCurrentStage(other, gI_Stages + 1); // a hack that record the last stage's time
+					Shavit_SetLastStage(other, gI_Stages + 1);
+					Shavit_FinishStage(other);
 				}
 
-				gI_ClientCurrentCP[other] = (gB_LinearMap) ? gI_Checkpoints + 1 : gI_Stages + 1;
+				int nextcp = (gB_LinearMap) ? gI_Checkpoints + 1 : gI_Stages + 1;
 
-				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other] && !gB_StageTimer[other])
-				{
-					Shavit_FinishCheckpoint(other);
-				}
-
-				gI_LastCheckpoint[other] = (gB_LinearMap) ? gI_Checkpoints + 1 : gI_Stages + 1;
+				Shavit_SetCurrentCP(other, nextcp);
+				Shavit_SetLastCP(other, nextcp);
 
 				if(gB_StageTimer[other])
 				{
@@ -4099,6 +4059,7 @@ public void StartTouchPost(int entity, int other)
 				}
 				else if(status != Timer_Stopped && !Shavit_IsPaused(other) && Shavit_GetClientTrack(other) == track)
 				{
+					Shavit_FinishCheckpoint(other);
 					Shavit_FinishMap(other, track);
 				}
 			}
@@ -4106,10 +4067,10 @@ public void StartTouchPost(int entity, int other)
 			case Zone_Stage:
 			{
 				gI_InsideZoneIndex[other] = entityzone;
-				gI_ClientCurrentStage[other] = data;
-				gI_ClientCurrentCP[other] = data;
+				Shavit_SetCurrentStage(other, data);
+				Shavit_SetCurrentCP(other, data);
 
-				if(gI_ClientCurrentStage[other] > gI_LastStage[other])
+				if(Shavit_GetCurrentStage(other) > Shavit_GetLastStage(other))
 				{
 					Shavit_FinishStage(other);
 
@@ -4119,20 +4080,20 @@ public void StartTouchPost(int entity, int other)
 					}
 				}
 
-				gI_LastStage[other] = data;
-				gI_LastCheckpoint[other] = data;
+				Shavit_SetLastStage(other, data);
+				Shavit_SetLastCP(other, data);
 			}
 
 			case Zone_Checkpoint:
 			{
-				gI_ClientCurrentCP[other] = data;
+				Shavit_SetCurrentCP(other, data);
 
-				if(gI_ClientCurrentCP[other] > gI_LastCheckpoint[other])
+				if(Shavit_GetCurrentCP(other) > Shavit_GetLastCP(other))
 				{
 					Shavit_FinishCheckpoint(other);
 				}
 
-				gI_LastCheckpoint[other] = data;
+				Shavit_SetLastCP(other, data);
 			}
 
 			case Zone_Stop:
@@ -4165,20 +4126,12 @@ public void StartTouchPost(int entity, int other)
 	{
 		switch(type)
 		{
-			case Zone_Start:
-			{
-				gI_ClientCurrentStage[other] = 1;
-				gI_ClientCurrentCP[other] = 0;
-			}
-
 			case Zone_Stage:
 			{
 				Call_StartForward(gH_Forwards_BotEnterStageZone);
 				Call_PushCell(other);
 				Call_PushCell(data);
 				Call_Finish();
-
-				gI_ClientCurrentStage[other] = data;
 			}
 
 			case Zone_Checkpoint:
@@ -4187,8 +4140,6 @@ public void StartTouchPost(int entity, int other)
 				Call_PushCell(other);
 				Call_PushCell(data);
 				Call_Finish();
-
-				gI_ClientCurrentCP[other] = data;
 			}
 		}
 	}
