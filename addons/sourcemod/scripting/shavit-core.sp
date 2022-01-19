@@ -82,11 +82,6 @@ StringMap gSM_StyleCommands = null;
 // player timer variables
 timer_snapshot_t gA_Timers[MAXPLAYERS+1];
 
-// these are here until the compiler bug is fixed
-float gF_PauseOrigin[MAXPLAYERS+1][3];
-float gF_PauseAngles[MAXPLAYERS+1][3];
-float gF_PauseVelocity[MAXPLAYERS+1][3];
-
 // used for offsets
 float gF_SmallestDist[MAXPLAYERS + 1];
 float gF_Origin[MAXPLAYERS + 1][2][3];
@@ -198,6 +193,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetMaxVelocity", Native_GetMaxVelocity);
 	CreateNative("Shavit_SetAvgVelocity", Native_SetAvgVelocity);
 	CreateNative("Shavit_SetMaxVelocity", Native_SetMaxVelocity);
+	CreateNative("Shavit_UpdateLaggedMovement", Native_UpdateLaggedMovement);
 
 	// registers library, check "bool LibraryExists(const char[] name)" in order to use with other plugins
 	RegPluginLibrary("shavit");
@@ -607,7 +603,8 @@ public Action Command_TogglePause(int client, int args)
 			return Plugin_Handled;
 		}
 
-		TeleportEntity(client, gF_PauseOrigin[client], gF_PauseAngles[client], gF_PauseVelocity[client]);
+		ResumePauseMovement(client);
+
 		ResumeTimer(client);
 
 		Shavit_PrintToChat(client, "%T", "MessageUnpause", client);
@@ -636,9 +633,7 @@ public Action Command_TogglePause(int client, int args)
 			return Plugin_Handled;
 		}
 
-		GetClientAbsOrigin(client, gF_PauseOrigin[client]);
-		GetClientEyeAngles(client, gF_PauseAngles[client]);
-		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", gF_PauseVelocity[client]);
+		GetPauseMovement(client);
 
 		PauseTimer(client);
 
@@ -951,8 +946,31 @@ void CallOnTrackChanged(int client, int oldtrack, int newtrack)
 	}
 }
 
+public any Native_UpdateLaggedMovement(Handle handler, int numParams)
+{
+	int client = GetNativeCell(1);
+	bool user_timescale = GetNativeCell(2) != 0;
+	UpdateLaggedMovement(client, user_timescale);
+	return 1;
+}
+
+void UpdateLaggedMovement(int client, bool user_timescale)
+{
+	float style_laggedmovement =
+		  GetStyleSettingFloat(gA_Timers[client].bsStyle, "timescale")
+		* GetStyleSettingFloat(gA_Timers[client].bsStyle, "speed");
+
+	float laggedmovement =
+		  (user_timescale ? gA_Timers[client].fTimescale : 1.0)
+		* style_laggedmovement;
+
+	SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", laggedmovement * gA_Timers[client].fplayer_speedmod);
+}
+
 void CallOnStyleChanged(int client, int oldstyle, int newstyle, bool manual, bool nofoward=false)
 {
+	gA_Timers[client].bsStyle = newstyle;
+
 	if (!nofoward)
 	{
 		Call_StartForward(gH_Forwards_OnStyleChanged);
@@ -964,8 +982,6 @@ void CallOnStyleChanged(int client, int oldstyle, int newstyle, bool manual, boo
 		Call_Finish();
 	}
 
-	gA_Timers[client].bsStyle = newstyle;
-
 	float fNewTimescale = GetStyleSettingFloat(newstyle, "timescale");
 
 	if (gA_Timers[client].fTimescale != fNewTimescale && fNewTimescale > 0.0)
@@ -974,10 +990,9 @@ void CallOnStyleChanged(int client, int oldstyle, int newstyle, bool manual, boo
 		gA_Timers[client].fTimescale = fNewTimescale;
 	}
 
-	UpdateStyleSettings(client);
+	UpdateLaggedMovement(client, true);
 
-	float newLaggedMovement = fNewTimescale * GetStyleSettingFloat(newstyle, "speed");
-	SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", newLaggedMovement); // might be problematic with the shavit-kz stuff TODO
+	UpdateStyleSettings(client);
 
 	SetEntityGravity(client, GetStyleSettingFloat(newstyle, "gravity"));
 }
@@ -1192,6 +1207,7 @@ public int Native_HasStyleAccess(Handle handler, int numParams)
 public int Native_StartTimer(Handle handler, int numParams)
 {
 	StartTimer(GetNativeCell(1), GetNativeCell(2));
+	return 0;
 }
 
 public int Native_StopTimer(Handle handler, int numParams)
@@ -1264,9 +1280,8 @@ public int Native_CanPause(Handle handler, int numParams)
 	bool bDucking = view_as<bool>(GetEntProp(client, Prop_Send, "m_bDucking"));
 
 	float fDucktime = GetEntPropFloat(client, Prop_Send, "m_flDuckAmount");
-	float fDuckSpeed = GetEntPropFloat(client, Prop_Send, "m_flDuckSpeed");
 
-	if (bDucked || bDucking || fDucktime > 0.0 || fDuckSpeed <= 8.0 || GetClientButtons(client) & IN_DUCK)
+	if (bDucked || bDucking || fDucktime > 0.0 || GetClientButtons(client) & IN_DUCK)
 	{
 		iFlags |= CPR_Duck;
 	}
@@ -1367,10 +1382,7 @@ public int Native_PauseTimer(Handle handler, int numParams)
 {
 	int client = GetNativeCell(1);
 
-	GetClientAbsOrigin(client, gF_PauseOrigin[client]);
-	GetClientEyeAngles(client, gF_PauseAngles[client]);
-	GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", gF_PauseVelocity[client]);
-
+	GetPauseMovement(client);
 	PauseTimer(client);
 }
 
@@ -1408,7 +1420,7 @@ public int Native_ResumeTimer(Handle handler, int numParams)
 
 	if(numParams >= 2 && view_as<bool>(GetNativeCell(2))) // teleport?
 	{
-		TeleportEntity(client, gF_PauseOrigin[client], gF_PauseAngles[client], gF_PauseVelocity[client]);
+		ResumePauseMovement(client);
 	}
 }
 
@@ -1734,7 +1746,7 @@ public int Native_SetClientTimescale(Handle handler, int numParams)
 	if (timescale != gA_Timers[client].fTimescale && timescale > 0.0)
 	{
 		CallOnTimescaleChanged(client, gA_Timers[client].fTimescale, timescale);
-		gA_Timers[client].fTimescale = timescale;
+		UpdateLaggedMovement(client, true);
 	}
 }
 
@@ -1951,11 +1963,6 @@ void StartTimer(int client, int track)
 		Call_PushCell(track);
 		Call_Finish(result);
 
-		if (gA_Timers[client].bClientPaused)
-		{
-			//SetEntityMoveType(client, MOVETYPE_WALK);
-		}
-
 		gA_Timers[client].iZoneIncrement = 0;
 		gA_Timers[client].fTimescaledTicks = 0.0;
 		gA_Timers[client].bClientPaused = false;
@@ -1982,8 +1989,7 @@ void StartTimer(int client, int track)
 		gA_Timers[client].fAvgVelocity = curVel;
 		gA_Timers[client].fMaxVelocity = curVel;
 
-		float mod = gA_Timers[client].fTimescale * GetStyleSettingFloat(gA_Timers[client].bsStyle, "speed");
-		SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", mod);
+		UpdateLaggedMovement(client, true);
 		SetEntityGravity(client, GetStyleSettingFloat(gA_Timers[client].bsStyle, "gravity"));
 	}
 }
@@ -2087,6 +2093,7 @@ public void OnClientPutInServer(int client)
 	gA_Timers[client].fTimescale = 1.0;
 	gA_Timers[client].fTimescaledTicks = 0.0;
 	gA_Timers[client].iZoneIncrement = 0;
+	gA_Timers[client].fplayer_speedmod = 1.0;
 	gS_DeleteMap[client][0] = 0;
 
 	gB_CookiesRetrieved[client] = false;
@@ -2931,12 +2938,12 @@ public void OnEntityCreated(int entity, const char[] classname)
 {
 	if (StrEqual(classname, "player_speedmod"))
 	{
-		gH_AcceptInput.HookEntity(Hook_Pre, entity, DHook_AcceptInput_player_speedmod);
+		gH_AcceptInput.HookEntity(Hook_Post, entity, DHook_AcceptInput_player_speedmod_Post);
 	}
 }
 
 // bool CBaseEntity::AcceptInput(char  const*, CBaseEntity*, CBaseEntity*, variant_t, int)
-public MRESReturn DHook_AcceptInput_player_speedmod(int pThis, DHookReturn hReturn, DHookParam hParams)
+public MRESReturn DHook_AcceptInput_player_speedmod_Post(int pThis, DHookReturn hReturn, DHookParam hParams)
 {
 	char buf[128];
 	hParams.GetString(1, buf, sizeof(buf));
@@ -2956,13 +2963,11 @@ public MRESReturn DHook_AcceptInput_player_speedmod(int pThis, DHookReturn hRetu
 	hParams.GetObjectVarString(4, 0, ObjectValueType_String, buf, sizeof(buf));
 
 	float speed = StringToFloat(buf);
-	int style = gA_Timers[activator].bsStyle;
 
-	speed *= gA_Timers[activator].fTimescale * GetStyleSettingFloat(style, "speed");
-	SetEntPropFloat(activator, Prop_Data, "m_flLaggedMovementValue", speed);
+	gA_Timers[activator].fplayer_speedmod = speed;
+	UpdateLaggedMovement(activator, true);
 
-	hReturn.Value = true;
-	return MRES_Supercede;
+	return MRES_Ignored;
 }
 
 bool GetCheckUntouch(int client)
@@ -2985,6 +2990,12 @@ public MRESReturn DHook_ProcessMovement(Handle hParams)
 	Call_StartForward(gH_Forwards_OnProcessMovement);
 	Call_PushCell(client);
 	Call_Finish();
+
+	if (IsFakeClient(client) || !IsPlayerAlive(client))
+	{
+		SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", 1.0); // otherwise you get slow spec noclip
+		return MRES_Ignored;
+	}
 
 	return MRES_Ignored;
 }
@@ -3074,9 +3085,10 @@ void CalculateTickIntervalOffset(int client, int zonetype)
 	gF_SmallestDist[client] = 0.0;
 }
 
-bool TREnumTrigger(int entity, int client) {
-
-	if (entity <= MaxClients) {
+bool TREnumTrigger(int entity, int client)
+{
+	if(entity <= MaxClients)
+	{
 		return true;
 	}
 
@@ -3100,6 +3112,7 @@ bool TREnumTrigger(int entity, int client) {
 
 		return false;
 	}
+
 	return true;
 }
 
@@ -3171,35 +3184,6 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 			}
 
 			gA_Timers[client].fStrafeWarning = gA_Timers[client].fCurrentTime + 0.3;
-		}
-	}
-
-	int iPButtons = buttons;
-
-	if (!gA_Timers[client].bClientPaused)
-	{
-		if (GetStyleSettingBool(gA_Timers[client].bsStyle, "strafe_count_w") && !GetStyleSettingBool(gA_Timers[client].bsStyle, "block_w") &&
-		(gA_Timers[client].iLastButtons & IN_FORWARD) == 0 && (buttons & IN_FORWARD) > 0)
-		{
-			gA_Timers[client].iStrafes++;
-		}
-
-		if (GetStyleSettingBool(gA_Timers[client].bsStyle, "strafe_count_a") && !GetStyleSettingBool(gA_Timers[client].bsStyle, "block_a") && (gA_Timers[client].iLastButtons & IN_MOVELEFT) == 0 &&
-			(buttons & IN_MOVELEFT) > 0 && (GetStyleSettingInt(gA_Timers[client].bsStyle, "force_hsw") > 0 || ((buttons & IN_FORWARD) == 0 && (buttons & IN_BACK) == 0)))
-		{
-			gA_Timers[client].iStrafes++;
-		}
-
-		if (GetStyleSettingBool(gA_Timers[client].bsStyle, "strafe_count_s") && !GetStyleSettingBool(gA_Timers[client].bsStyle, "block_s") &&
-			(gA_Timers[client].iLastButtons & IN_BACK) == 0 && (buttons & IN_BACK) > 0)
-		{
-			gA_Timers[client].iStrafes++;
-		}
-
-		if (GetStyleSettingBool(gA_Timers[client].bsStyle, "strafe_count_d") && !GetStyleSettingBool(gA_Timers[client].bsStyle, "block_d") && (gA_Timers[client].iLastButtons & IN_MOVERIGHT) == 0 &&
-			(buttons & IN_MOVERIGHT) > 0 && (GetStyleSettingInt(gA_Timers[client].bsStyle, "force_hsw") > 0 || ((buttons & IN_FORWARD) == 0 && (buttons & IN_BACK) == 0)))
-		{
-			gA_Timers[client].iStrafes++;
 		}
 	}
 
@@ -3346,21 +3330,75 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		buttons &= ~IN_JUMP;
 	}*/
 
+	gA_Timers[client].bJumped = false;
+	gA_Timers[client].bOnGround = bOnGround;
+
+	return Plugin_Continue;
+}
+
+public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float vel[3], const float angles[3], int weapon, int subtype, int cmdnum, int tickcount, int seed, const int mouse[2])
+{
+	if (IsFakeClient(client))
+	{
+		return;
+	}
+
+	if (!IsPlayerAlive(client) || GetTimerStatus(client) != Timer_Running)
+	{
+		return;
+	}
+
+	if (GetStyleSettingBool(gA_Timers[client].bsStyle, "strafe_count_w")
+	&& !GetStyleSettingBool(gA_Timers[client].bsStyle, "block_w")
+	&& (gA_Timers[client].fLastInputVel[0] <= 0.0) && (vel[0] > 0.0)
+	&& GetStyleSettingInt(gA_Timers[client].bsStyle, "force_hsw") != 1
+	)
+	{
+		gA_Timers[client].iStrafes++;
+	}
+
+	if (GetStyleSettingBool(gA_Timers[client].bsStyle, "strafe_count_s")
+	&& !GetStyleSettingBool(gA_Timers[client].bsStyle, "block_s")
+	&& (gA_Timers[client].fLastInputVel[0] >= 0.0) && (vel[0] < 0.0)
+	)
+	{
+		gA_Timers[client].iStrafes++;
+	}
+
+	if (GetStyleSettingBool(gA_Timers[client].bsStyle, "strafe_count_a")
+	&& !GetStyleSettingBool(gA_Timers[client].bsStyle, "block_a")
+	&& (gA_Timers[client].fLastInputVel[1] >= 0.0) && (vel[1] < 0.0)
+	&& (GetStyleSettingInt(gA_Timers[client].bsStyle, "force_hsw") > 0 || vel[0] == 0.0)
+	)
+	{
+		gA_Timers[client].iStrafes++;
+	}
+
+	if (GetStyleSettingBool(gA_Timers[client].bsStyle, "strafe_count_d")
+	&& !GetStyleSettingBool(gA_Timers[client].bsStyle, "block_d")
+	&& (gA_Timers[client].fLastInputVel[1] <= 0.0) && (vel[1] > 0.0)
+	&& (GetStyleSettingInt(gA_Timers[client].bsStyle, "force_hsw") > 0 || vel[0] == 0.0)
+	)
+	{
+		gA_Timers[client].iStrafes++;
+	}
+
+	int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
 	float fAngle = GetAngleDiff(angles[1], gA_Timers[client].fLastAngle);
 
-	if (!gA_Timers[client].bClientPaused && iGroundEntity == -1 && (GetEntityFlags(client) & FL_INWATER) == 0 && fAngle != 0.0)
+	if (iGroundEntity == -1 && (GetEntityFlags(client) & FL_INWATER) == 0 && fAngle != 0.0)
 	{
 		float fAbsVelocity[3];
 		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fAbsVelocity);
 
-		if(SquareRoot(Pow(fAbsVelocity[0], 2.0) + Pow(fAbsVelocity[1], 2.0)) > 0.0)
+		if (SquareRoot(Pow(fAbsVelocity[0], 2.0) + Pow(fAbsVelocity[1], 2.0)) > 0.0)
 		{
 			float fTempAngle = angles[1];
 
 			float fAngles[3];
 			GetVectorAngles(fAbsVelocity, fAngles);
 
-			if(fTempAngle < 0.0)
+			if (fTempAngle < 0.0)
 			{
 				fTempAngle += 360.0;
 			}
@@ -3369,28 +3407,25 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		}
 	}
 
-	if (GetTimerStatus(client) == Timer_Running && gA_Timers[client].fCurrentTime != 0.0)
+	if (gA_Timers[client].fCurrentTime != 0.0)
 	{
+		float frameCount = float(gA_Timers[client].iZoneIncrement);
 		float fAbsVelocity[3];
 		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fAbsVelocity);
 		float curVel = SquareRoot(Pow(fAbsVelocity[0], 2.0) + Pow(fAbsVelocity[1], 2.0));
-
 		float maxVel = gA_Timers[client].fMaxVelocity;
 		gA_Timers[client].fMaxVelocity = (curVel > maxVel) ? curVel : maxVel;
 		// STOLEN from Epic/Disrevoid. Thx :)
-		float frameCount = float(gA_Timers[client].iZoneIncrement);
 		gA_Timers[client].fAvgVelocity += (curVel - gA_Timers[client].fAvgVelocity) / frameCount;
 	}
 
-	gA_Timers[client].iLastButtons = iPButtons;
+	gA_Timers[client].iLastButtons = buttons;
 	gA_Timers[client].fLastAngle = angles[1];
-	gA_Timers[client].bJumped = false;
-	gA_Timers[client].bOnGround = bOnGround;
-
-	return Plugin_Continue;
+	gA_Timers[client].fLastInputVel[0] = vel[0];
+	gA_Timers[client].fLastInputVel[1] = vel[1];
 }
 
-void TestAngles(int client, float dirangle, float yawdelta, float vel[3])
+void TestAngles(int client, float dirangle, float yawdelta, const float vel[3])
 {
 	if(dirangle < 0.0)
 	{
@@ -3440,4 +3475,16 @@ void StopTimer_Cheat(int client, const char[] message)
 void UpdateStyleSettings(int client)
 {
 	SetEntityGravity(client, GetStyleSettingFloat(gA_Timers[client].bsStyle, "gravity"));
+}
+
+void GetPauseMovement(int client)
+{
+	GetClientAbsOrigin(client, gA_Timers[client].fPauseOrigin);
+	GetClientEyeAngles(client, gA_Timers[client].fPauseAngles);
+	GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", gA_Timers[client].fPauseVelocity);
+}
+
+void ResumePauseMovement(int client)
+{
+	TeleportEntity(client, gA_Timers[client].fPauseOrigin, gA_Timers[client].fPauseAngles, gA_Timers[client].fPauseVelocity);
 }

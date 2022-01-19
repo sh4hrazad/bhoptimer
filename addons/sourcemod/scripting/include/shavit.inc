@@ -198,11 +198,18 @@ enum struct timer_snapshot_t
 	bool bCanUseAllKeys;
 	bool bOnGround;
 
+	float fPauseOrigin[3];
+	float fPauseAngles[3];
+	float fPauseVelocity[3];
+
 	int iLastButtons;
 	float fLastAngle;
+	float fLastInputVel[2];
 	int iLandingTick;
 	MoveType iLastMoveType;
 	float fStrafeWarning;
+
+	float fplayer_speedmod;
 }
 
 enum struct cp_cache_t
@@ -2993,13 +3000,6 @@ native StringMap Shavit_GetMapTiers();
 native bool Shavit_GetMapLimitspeed();
 
 /**
- * Detect current map if limitting noclip.
- *
- * @return							Boolean. false if no limit.
- */
-native bool Shavit_GetMapLimitnoclip();
-
-/**
  * Get current map's maxvelocity.
  *
  * @return							Current map's maxvelocity.
@@ -3179,6 +3179,16 @@ native void Shavit_SetClientTimescale(int client, float scale);
  * @return							Client's dynamic timescale
  */
 native float Shavit_GetClientTimescale(int client);
+
+/**
+ * Something to be used by the checkpoint plugin to trigger updating laggedmovement.
+ *
+ * @param client                    Client index
+ * @param user_timescale            Whether to use fTimescale as a multiplier for laggedmovement too.
+ *
+ * @noreturn
+ */
+native void Shavit_UpdateLaggedMovement(int client, bool user_timescale=true);
 
 /**
  * Gets the replay status
@@ -3388,7 +3398,6 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetMapTier");
 	MarkNativeAsOptional("Shavit_GetMapTiers");
 	MarkNativeAsOptional("Shavit_GetMapLimitspeed");
-	MarkNativeAsOptional("Shavit_GetMapLimitnoclip");
 	MarkNativeAsOptional("Shavit_GetMapMaxvelocity");
 	MarkNativeAsOptional("Shavit_GetOrderedStyles");
 	MarkNativeAsOptional("Shavit_GetPoints");
@@ -3481,6 +3490,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_OpenCheckpointMenu");
 	MarkNativeAsOptional("Shavit_GetClientTimescale");
 	MarkNativeAsOptional("Shavit_SetClientTimescale");
+	MarkNativeAsOptional("Shavit_UpdateLaggedMovement");
 	MarkNativeAsOptional("Shavit_SaveCheckpoint");
 	MarkNativeAsOptional("Shavit_GetCurrentCheckpoint");
 	MarkNativeAsOptional("Shavit_SetCurrentCheckpoint");

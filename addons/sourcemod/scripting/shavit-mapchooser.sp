@@ -168,7 +168,7 @@ public void OnPluginStart()
 	gCV_RTVAllowSpectators = new Convar("shavit_mapchooser_rtv_allow_spectators", "1", "Whether spectators should be allowed to RTV", _, true, 0.0, true, 1.0);
 	gCV_RTVSpectatorCooldown = new Convar("shavit_mapchooser_rtv_spectator_cooldown", "60", "When `shavit_mapchooser_rtv_allow_spectators` is `0`, wait this many seconds before removing a spectator's RTV", 0, true, 0.0);
 	gCV_RTVMinimumPoints = new Convar("shavit_mapchooser_rtv_minimum_points", "-1", "Minimum number of points a player must have before being able to RTV, or -1 to allow everyone", _, true, -1.0, false);
-	gCV_RTVDelayTime = new Convar("shavit_mapchooser_rtv_delay", "5", "Time in minutes after map start before players should be allowed to RTV", _, true, 0.0, false);
+	gCV_RTVDelayTime = new Convar("shavit_mapchooser_rtv_delay", "0", "Time in minutes after map start before players should be allowed to RTV", _, true, 0.0, false);
 	gCV_NominateDelayTime = new Convar("shavit_mapchooser_nominate_delay", "0", "Time in minutes after map start before players should be allowed to nominate", _, true, 0.0, false);
 	gCV_RTVRequiredPercentage = new Convar("shavit_mapchooser_rtv_required_percentage", "50", "Percentage of players who have RTVed before a map vote is initiated", _, true, 1.0, true, 100.0);
 	gCV_HideRTVChat = new Convar("shavit_mapchooser_hide_rtv_chat", "1", "Whether to hide 'rtv', 'rockthevote', 'unrtv', 'nextmap', and 'nominate' from chat.");
