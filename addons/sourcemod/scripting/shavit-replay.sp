@@ -3337,7 +3337,8 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 			return OnReplayRunCmd(gA_BotInfo[client], buttons, impulse, vel);
 		}
 	}
-	else if (gB_GrabbingPostFrames[client] || (ReplayEnabled(Shavit_GetBhopStyle(client)) && Shavit_GetTimerStatus(client) == Timer_Running))
+	else if (gB_GrabbingPostFrames[client] || gB_GrabbingPostFrames_Stage[client] || 
+		(ReplayEnabled(Shavit_GetBhopStyle(client)) && Shavit_GetTimerStatus(client) == Timer_Running))
 	{
 		if((gI_PlayerFrames[client] / gF_Tickrate) > gCV_TimeLimit.FloatValue)
 		{
