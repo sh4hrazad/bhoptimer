@@ -4534,8 +4534,6 @@ void DrawZoneToSingleClient(int client, float points[8][3], int color[4], float 
 
 void DoTeleport(int client, int zone)
 {
-	DispatchKeyValue(client, "targetname", "");
-
 	if(!EmptyVector(gV_CustomDestinations[client][zone]))
 	{
 		TeleportEntity(client, gV_CustomDestinations[client][zone], gV_CustomDestinationsAngle[client][zone], view_as<float>({0.0, 0.0, 0.0}));
