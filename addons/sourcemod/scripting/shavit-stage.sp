@@ -507,26 +507,12 @@ public int DeleteWRCPMenu_Handler(Menu menu, MenuAction action, int param1, int 
 			int stage = gI_StageChoice[param1];
 			int style = gI_StyleChoice[param1];
 
-			Transaction hTransaction = new Transaction();
 			char sQuery[512];
-
 			FormatEx(sQuery, 512, 
-				"SELECT auth FROM `%sstagetimes` "...
-				"WHERE stage = %d AND style = %d AND map = '%s' "...
-				"ORDER BY time ASC "...
-				"LIMIT 1;", 
-				gS_MySQLPrefix, stage, style, gS_Map);
-			hTransaction.AddQuery(sQuery);
+				"DELETE FROM `%sstagetimes` WHERE stage = %d AND style = %d AND map = '%s' AND auth = %d;", 
+				gS_MySQLPrefix, stage, style, gS_Map, gA_WRStageInfo[style][stage].iSteamid);
 
-			FormatEx(sQuery, 512, 
-				"DELETE FROM `%sstagetimes` WHERE stage = %d AND style = %d AND map = '%s' AND auth IN "...
-    			"(SELECT auth FROM "...
-    			"(SELECT auth FROM `%sstagetimes` WHERE stage = %d AND style = %d AND map = '%s') AS temp);", 
-				gS_MySQLPrefix, stage, style, gS_Map, 
-				gS_MySQLPrefix, stage, style, gS_Map);
-			hTransaction.AddQuery(sQuery);
-
-			gH_SQL.Execute(hTransaction, Trans_DeleteWRCP_Success, Trans_DeleteWRCP_Failed, GetClientSerial(param1));
+			gH_SQL.Query(SQL_DeleteWRStage_Callback, sQuery, GetClientSerial(param1), DBPrio_High);
 		}
 	}
 
@@ -543,20 +529,17 @@ public int DeleteWRCPMenu_Handler(Menu menu, MenuAction action, int param1, int 
 	return 0;
 }
 
-public void Trans_DeleteWRCP_Success(Database db, any data, int numQueries, DBResultSet[] results, any[] queryData)
+public void SQL_DeleteWRStage_Callback(Database db, DBResultSet results, const char[] error, any data)
 {
 	int client = GetClientFromSerial(data);
 	int stage = gI_StageChoice[client];
 	int style = gI_StyleChoice[client];
-	int steamid = -1;
-	if(results[0].FetchRow())
-	{
-		steamid = results[0].FetchInt(0);
-	}
+	int steamid = gA_WRStageInfo[style][stage].iSteamid;
 
-	if(StrEqual(gS_MapChoice[client], gS_Map))
+	if(results == null)
 	{
-		ResetWRStages();
+		SetFailState("SQL_DeleteWRStage_Callback failed! Error: %s", error);
+		return;
 	}
 
 	Call_StartForward(gH_Forwards_OnWRCPDeleted);
@@ -566,14 +549,11 @@ public void Trans_DeleteWRCP_Success(Database db, any data, int numQueries, DBRe
 	Call_PushString(gS_Map);
 	Call_Finish();
 
+	ResetWRStages();
+
 	Shavit_PrintToChat(client, "%T", "WRCPDeleteSuccessful", client, stage, gS_StyleStrings[style].sStyleName, steamid);
 
 	OpenStageMenu(client, true);
-}
-
-public void Trans_DeleteWRCP_Failed(Database db, any data, int numQueries, const char[] error, int failIndex, any[] queryData)
-{
-	LogError("Delete WRCP error! Reason: %s", error);
 }
 
 public Action Command_Maptop(int client, int args)
@@ -794,7 +774,7 @@ public int Maptop_FinalMenu_Handler(Menu menu, MenuAction action, int param1, in
 			char sQuery[256];
 			FormatEx(sQuery, 256, "DELETE FROM `%sstagetimes` WHERE (stage = '%d' AND style = '%d') AND (auth = '%d' AND map = '%s');", 
 					gS_MySQLPrefix, stage, style, steamid, gS_MapChoice[param1]);
-			
+
 			DataPack dp = new DataPack();
 			dp.WriteCell(GetClientSerial(param1));
 			dp.WriteCell(param2 + 1);
@@ -1166,10 +1146,10 @@ public void Shavit_OnWRDeleted(int style, int id, int track, int accountid, cons
 	FormatEx(sQuery, sizeof(sQuery),
 		"DELETE FROM `%scptimes` WHERE auth = %d AND map = '%s' AND style = %d;",
 		gS_MySQLPrefix, accountid, mapname, style);
-	gH_SQL.Query(SQL_DeleteWRCPs_Callback, sQuery);
+	gH_SQL.Query(SQL_DeleteWRCheckPoints_Callback, sQuery);
 }
 
-public void SQL_DeleteWRCPs_Callback(Database db, DBResultSet results, const char[] error, any data)
+public void SQL_DeleteWRCheckPoints_Callback(Database db, DBResultSet results, const char[] error, any data)
 {
 	if(results == null)
 	{
