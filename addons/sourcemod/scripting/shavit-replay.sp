@@ -3898,13 +3898,13 @@ void OpenReplayTrackMenu(int client)
 
 	char sItem[16];
 
-	FormatEx(sItem, 16, "Main Replay");
+	FormatEx(sItem, 16, "主线");
 	menu.AddItem("", sItem);
 
-	FormatEx(sItem, 16, "Bonuses Replay");
+	FormatEx(sItem, 16, "奖励关");
 	menu.AddItem("", sItem);
 
-	FormatEx(sItem, 16, "Stages Replay");
+	FormatEx(sItem, 16, "关卡");
 	menu.AddItem("", sItem);
 
 	menu.ExitBackButton = true;
@@ -3930,7 +3930,7 @@ public int MenuHandler_ReplayTrack(Menu menu, MenuAction action, int param1, int
 			case 1:
 			{
 				submenu.SetTitle("%T\n ", "CentralReplayTrack", param1);
-				
+
 				for(int i = 1; i < TRACKS_SIZE; i++)
 				{
 					for(int j = 0; j < gI_Styles; j++)
@@ -3963,19 +3963,23 @@ public int MenuHandler_ReplayTrack(Menu menu, MenuAction action, int param1, int
 			}
 			case 2:
 			{
-				submenu.SetTitle("Stage Select", param1);
+				submenu.SetTitle("选择关卡", param1);
 
 				for(int i = 1; i <= Shavit_GetMapStages(); i++)
 				{
-					if(gA_FrameCache_Stage[0][i].iFrameCount > 0)
+					for(int j = 0; j < gI_Styles; j++)
 					{
-						char sInfo[8];
-						IntToString(i, sInfo, 8);
+						if(gA_FrameCache_Stage[j][i].iFrameCount > 0)
+						{
+							char sInfo[8];
+							IntToString(i, sInfo, sizeof(sInfo));
 
-						char sStage[32];
-						FormatEx(sStage, 32, "Stage %d", i);
-						
-						submenu.AddItem(sInfo, sStage);
+							char sStage[16];
+							FormatEx(sStage, sizeof(sStage), "关卡 %d", i);
+
+							submenu.AddItem(sInfo, sStage);
+							break;
+						}
 					}
 				}
 
@@ -4044,7 +4048,7 @@ void OpenReplayStyleMenu(int client, int track, int stage = 0)
 	GetTrackName(client, track, sTrack, 32);
 
 	Menu menu = new Menu(MenuHandler_ReplayStyle);
-	menu.SetTitle("%T (%s)\n ", "CentralReplayTitle", client, sTrack);
+	menu.SetTitle("%T (%s)\n ", "CentralReplayTitle", client, stage == 0 ? sTrack : "关卡");
 
 	int[] styles = new int[gI_Styles];
 	Shavit_GetOrderedStyles(styles, gI_Styles);
