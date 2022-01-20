@@ -1,12 +1,6 @@
 "Phrases"
 {
 	/*-------------Chat-------------*/
-	"OnWRCP"
-	{
-		"#format"	"{1:s},{2:d},{3:s},{4:s},{5:s},{6:s}"
-		"en"		"{gold}{1}{default} beat {palered}[Stage {2}]{default} record! Mode: {blue}{3}{default} Time: {orchid}{4}{default} ({green}WR {5}{default}) Rank: {bluegrey}{6}{default}."
-		"chi"		"{gold}{1}{default} 打破了 {palered}[关卡 {2}]{default} 记录! 模式: {blue}{3}{default} 时间: {orchid}{4}{default} ({green}WR {5}{default}) 排名: {bluegrey}{6}{default}."
-	}
 	"Chat-WRCP"
 	{
 		"#format"	"{1:s},{2:d},{3:s},{4:s}"

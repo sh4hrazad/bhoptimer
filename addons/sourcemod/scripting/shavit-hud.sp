@@ -412,46 +412,85 @@ public void Shavit_OnStageTimer_Post(int client, int style, int stage, float spe
 	SendMessageToSpectator(client, sPrestrafe);
 }
 
-public void Shavit_OnFinishStage(int client, int stage, int style, float time, bool improved)
+public void Shavit_OnWRCP(int client, int stage, int style, int steamid, int records, float oldtime, float time, float leavespeed, const char[] mapname)
 {
-	float wrcpTime = Shavit_GetWRStageTime(stage, style);
-	float diff = time - wrcpTime;
-
 	char sTime[32];
-	FormatHUDSeconds(time, sTime, 32);
+	FormatHUDSeconds(time, sTime, sizeof(sTime));
 
-	char sDifftime[32];
-	FormatHUDSeconds(diff, sDifftime, 32);
+	char sDiffTime[32];
+	char sRank[32];
 
-	if(wrcpTime == -1.0)
+	if(oldtime == -1.0)
 	{
-		FormatEx(sDifftime, 32, "N/A");
-	}
-
-	else if(diff > 0)
-	{
-		char sBuffer[32];
-		FormatEx(sBuffer, 32, "+%s", sDifftime);
-		strcopy(sDifftime, 32, sBuffer);
-	}
-
-	char sMessage[255];
-	if(improved)
-	{
-		char sRank[32];
-		FormatEx(sRank, 32, "%d/%d", Shavit_GetStageRankForTime(style, time, stage), Shavit_GetStageRecordAmount(style, stage));
-		FormatEx(sMessage, 255, "%T", "ZoneStageTime-Improved", client, stage, sTime, sDifftime, sRank);
+		FormatEx(sDiffTime, sizeof(sDiffTime), "N/A");
+		FormatEx(sRank, sizeof(sRank), "1/1");
 	}
 	else
 	{
-		FormatEx(sMessage, 255, "%T", "ZoneStageTime-Noimproved", client, stage, sTime, sDifftime);
+		FormatHUDSeconds(time - oldtime, sDiffTime, sizeof(sDiffTime));
+		FormatEx(sRank, sizeof(sRank), "1/%d", records == 0 ? 1 : records);
+	}
+
+	Shavit_PrintToChatAll("%t", "OnWRCP", client, stage, gS_StyleStrings[style].sStyleName, sTime, sDiffTime, sRank);
+}
+
+public void Shavit_OnFinishStage_Post(int client, int stage, int style, float time, float diff, int overwrite, int records, int rank, bool wrcp, float leavespeed)
+{
+	float wrcpTime = Shavit_GetWRStageTime(stage, style);
+	float wrcpDiff = time - wrcpTime;
+
+	char sWRDifftime[32];
+	char sPBDifftime[32];
+
+	if(wrcpTime == -1.0)
+	{
+		FormatEx(sWRDifftime, sizeof(sWRDifftime), "N/A");
+		FormatEx(sPBDifftime, sizeof(sPBDifftime), "N/A");
+	}
+	else
+	{
+		FormatHUDSeconds(wrcpDiff, sWRDifftime, sizeof(sWRDifftime));
+		FormatHUDSeconds(diff, sPBDifftime, sizeof(sPBDifftime));
+
+		if(wrcpDiff > 0)
+		{
+			Format(sWRDifftime, sizeof(sWRDifftime), "+%s", sWRDifftime);
+		}
+		
+		if(diff > 0)
+		{
+			Format(sPBDifftime, sizeof(sPBDifftime), "+%s", sPBDifftime);
+		}
+	}
+
+	char sMessage[255];
+
+	char sTime[32];
+	FormatHUDSeconds(time, sTime, sizeof(sTime));
+
+	switch(overwrite)
+	{
+		case PB_Insert, PB_Update:
+		{
+			char sRank[32];
+			FormatEx(sRank, sizeof(sRank), "%d/%d", rank, records == 0 ? 1 : records);
+			FormatEx(sMessage, sizeof(sMessage), "%T", "ZoneStageTime-Improved", client, stage, sTime, sWRDifftime, sPBDifftime, sRank);
+		}
+		case PB_NoQuery:
+		{
+			FormatEx(sMessage, sizeof(sMessage), "%T", "ZoneStageTime-Noimproved", client, stage, sTime, sWRDifftime, sPBDifftime);
+		}
+		case PB_UnRanked:
+		{
+			FormatEx(sMessage, sizeof(sMessage), "Unranked stage %d time...", stage);
+		}
 	}
 
 	Shavit_PrintToChat(client, sMessage);
 	SendMessageToSpectator(client, sMessage);
 }
 
-public void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float time, float diff, float prespeed)
+public void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float time, float wrdiff, float pbdiff, float prespeed)
 {
 	int cpmax = (Shavit_IsLinearMap()) ? Shavit_GetMapCheckpoints() : Shavit_GetMapStages();
 
@@ -461,27 +500,36 @@ public void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float ti
 	}
 
 	char sTime[32];
-	FormatHUDSeconds(time, sTime, 32);
+	FormatHUDSeconds(time, sTime, sizeof(sTime));
 
-	char sDifftime[32];
-	FormatHUDSeconds(diff, sDifftime, 32);
+	char sWRDifftime[32];
+	char sPBDifftime[32];
 
 	if(Shavit_GetWRCPTime(cpnum, style) == -1.0)
 	{
-		FormatEx(sDifftime, 32, "N/A");
+		FormatEx(sWRDifftime, sizeof(sWRDifftime), "N/A");
+		FormatEx(sPBDifftime, sizeof(sPBDifftime), "N/A");
 	}
-
-	else if(diff > 0)
+	else
 	{
-		char sBuffer[32];
-		FormatEx(sBuffer, 32, "+%s", sDifftime);
-		strcopy(sDifftime, 32, sBuffer);
+		FormatHUDSeconds(wrdiff, sWRDifftime, sizeof(sWRDifftime));
+		FormatHUDSeconds(pbdiff, sPBDifftime, sizeof(sPBDifftime));
+
+		if(wrdiff > 0)
+		{
+			Format(sWRDifftime, sizeof(sWRDifftime), "+%s", sWRDifftime);
+		}
+
+		if(pbdiff > 0)
+		{
+			Format(sPBDifftime, sizeof(sPBDifftime), "+%s", sPBDifftime);
+		}
 	}
 
-	strcopy(gS_DiffTime[client], 32, sDifftime);
+	strcopy(gS_DiffTime[client], sizeof(gS_DiffTime[]), sWRDifftime);
 
 	char sMessage[255];
-	FormatEx(sMessage, 255, "%T", "ZoneCheckpointTime", client, cpnum, sTime, sDifftime);
+	FormatEx(sMessage, sizeof(sMessage), "%T", "ZoneCheckpointTime", client, cpnum, sTime, sWRDifftime, sPBDifftime);
 
 	DataPack dp = new DataPack();
 	dp.WriteCell(GetClientSerial(client));
@@ -497,7 +545,7 @@ public Action Timer_CPTimeMessage(Handle timer, DataPack dp)
 
 	int client = GetClientFromSerial(dp.ReadCell());
 	char sMessage[255];
-	dp.ReadString(sMessage, 255);
+	dp.ReadString(sMessage, sizeof(sMessage));
 
 	delete dp;
 

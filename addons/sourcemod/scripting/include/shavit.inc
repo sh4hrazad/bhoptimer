@@ -55,6 +55,15 @@ enum TimerStatus
 	Timer_Paused
 };
 
+// pb overwrite
+enum
+{
+	PB_UnRanked = -1,
+	PB_NoQuery,
+	PB_Insert,
+	PB_Update
+};
+
 enum //ReplayStatus
 {
 	Replay_Start,
@@ -1185,18 +1194,20 @@ forward void Shavit_OnDatabaseLoaded();
 forward void Shavit_OnChatConfigLoaded();
 
 /**
- * Called when a player triggered wrcp.
+ * Called when there's a new WRCP on the map.
  *
  * @param client					Client index.
- * @param stage						stage number.
- * @param style						style index.
+ * @param stage						Stage number.
+ * @param style						Style index.
  * @param steamid					WRCP steamid.
+ * @param records					Current stage records.
+ * @param oldtime					Old WRCP time.
  * @param time						WRCP time.
- * @param enterspeed				WRCP stage enterspeed.
+ * @param leavespeed				The speed on leaving the stage.
  * @param mapname					Current mapname.
  * @noreturn
  */
-forward void Shavit_OnWRCP(int client, int stage, int style, int steamid, float time, float enterspeed, const char[] mapname);
+forward void Shavit_OnWRCP(int client, int stage, int style, int steamid, int records, float oldtime, float time, float leavespeed, const char[] mapname);
 
 /**
  * Called when a player teleports with checkpoints.
@@ -1669,20 +1680,27 @@ forward void Shavit_OnWRCPDeleted(int stage, int style, int steamid, const char[
  * @param client					Client index.
  * @param stage						Stage id.
  * @param style						Style id.
- * @return							False to prevent the stage from finishing.
+ * @return							Plugin_Handled to prevent the stage from finishing.
  */
-forward bool Shavit_OnFinishStagePre(int client, int stage, int style);
+forward Action Shavit_OnFinishStagePre(int client, int stage, int style);
 
 /**
- * Called when a player finishes a stage. (touches the stage zone)
+ * After forward 'Shavit_OnFinishStage' and the insertion query was called.
+ * Called from shavit-stage
  *
  * @param client					Client index.
  * @param stage						Stage id was done on.
  * @param style						Style the record was done on.
  * @param time						Record time.
+ * @param diff						Difference between old time and current time.
+ * @param overwrite					1 - brand new record. 2 - update.
+ * @param records					The stage's records amount.
+ * @param rank						Client's rank on the stage.
+ * @param wrcp						True if the record is a wrcp.
+ * @param leavespeed				The speed on leaving the stage.
  * @noreturn
  */
-forward void Shavit_OnFinishStage(int client, int stage, int style, float time, bool improved);
+forward void Shavit_OnFinishStage_Post(int client, int stage, int style, float time, float diff, int overwrite, int records, int rank, bool wrcp, float leavespeed);
 
 /**
  * Called before a player finishes a checkpoint.
@@ -1690,9 +1708,9 @@ forward void Shavit_OnFinishStage(int client, int stage, int style, float time, 
  * @param client					Client index.
  * @param cpnum						Checkpoint/Stage zone number was done on.
  * @param style						Style id.
- * @return							False to prevent the Checkpoint/Stage from finishing.
+ * @return							Plugin_Handled to prevent the Checkpoint/Stage from finishing.
  */
-forward bool Shavit_OnFinishCheckpointPre(int client, int cpnum, int style);
+forward Action Shavit_OnFinishCheckpointPre(int client, int cpnum, int style);
 
 /**
  * Called when a player finishes a checkpoint. (touches the checkpoint/stage zone)
@@ -1701,11 +1719,12 @@ forward bool Shavit_OnFinishCheckpointPre(int client, int cpnum, int style);
  * @param cpnum						Checkpoint/Stage zone number was done on.
  * @param style						Style the record was done on.
  * @param time						Current time when the checkpoint finished.
- * @param diff						Difference between wr checkpoint time and pr checkpoint time, below 0 means faster, otherwise slower.
+ * @param wrdiff					Difference between wr checkpoint time and current checkpoint time, below 0 means faster, otherwise slower.
+ * @param pbdiff					Difference between pb checkpoint time and current checkpoint time, below 0 means faster, otherwise slower.
  * @param enterspeed				Speed when client enters checkpoint/stage zone.
  * @noreturn
  */
-forward void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float time, float diff, float enterspeed);
+forward void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float time, float wrdiff, float pbdiff, float enterspeed);
 
 /**
  * Called after shavit-wr caches the current map's WRs.
@@ -3367,23 +3386,25 @@ native void Shavit_ReloadWRStages();
 native void Shavit_ReloadWRCPs();
 
 /**
- * Detect stage conditions first.
+ * Detect bypass first.
  * If true, finishes the stage for a player, with their current timer stats defaultly(depend on bypass).
+ * Otherwise, finishes the stage but not insert any data to forward and mysql.
  * Will not teleport the player to anywhere, it's handled inside the mapzones plugin.
  *
  * @param client					Client index.
- * @param bypass					Bypass call to Shavit_OnFinishStagePre.If false, finish the stage but not insert any data to forward and mysql.
+ * @param bypass					Bypass call to Shavit_OnFinishStagePre.
  * @noreturn
  */
 native void Shavit_FinishStage(int client, bool bypass = true);
 
 /**
- * Detect checkpoint conditions first.
+ * Detect bypass first.
  * If true, finishes the checkpoint for a player, with their current timer stats defaultly(depend on bypass).
+ * Otherwise, finish the checkpoint but not insert any data to forward and mysql.
  * Will not teleport the player to anywhere, it's handled inside the mapzones plugin.
  *
  * @param client					Client index.
- * @param bypass					Bypass call to Shavit_OnFinishCheckpointPre.If false, finish the checkpoint but not insert any data to forward and mysql.
+ * @param bypass					Bypass call to Shavit_OnFinishCheckpointPre.
  * @noreturn
  */
 native void Shavit_FinishCheckpoint(int client, bool bypass = true);

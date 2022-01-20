@@ -295,7 +295,7 @@ public void Shavit_OnWorstRecord(int client, int style, float time, int jumps, i
 	}
 }
 
-public void Shavit_OnWRCP(int client, int stage, int style, int steamid, float time, float prespeed, const char[] mapname)
+public void Shavit_OnWRCP(int client, int stage, int style, int steamid, int records, float oldtime, float time, float leavespeed, const char[] mapname)
 {
 	if(!gCV_Enabled.BoolValue)
 	{

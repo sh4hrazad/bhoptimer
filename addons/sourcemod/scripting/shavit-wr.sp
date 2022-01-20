@@ -2514,11 +2514,6 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 	// client pb
 	oldtime = gF_PlayerRecord[client][style][track];
 
-#if 0
-	time = view_as<float>(0x43611FB3); // 225.123825; // this value loses accuracy and becomes 0x43611FBE \ 225.123992 once it's returned from mysql
-	PrintToServer("time = %f %X record = %f %X", time, time, gF_WRTime[style][track], gF_WRTime[style][track]);
-#endif
-
 	int iSteamID = GetSteamAccountID(client);
 
 	char sTime[32];
@@ -2574,10 +2569,6 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 		Call_PushCell(maxvel);
 		Call_PushCell(timestamp);
 		Call_Finish();
-
-		#if defined DEBUG
-		Shavit_PrintToChat(client, "old: %.01f new: %.01f", fOldWR, time);
-		#endif
 	}
 
 	int iRank = GetRankForTime(style, time, track);

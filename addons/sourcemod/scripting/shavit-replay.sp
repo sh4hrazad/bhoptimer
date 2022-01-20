@@ -3098,7 +3098,7 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 	}
 }
 
-public void Shavit_OnWRCP(int client, int stage, int style, int steamid, float time, float prespeed, const char[] mapname)
+public void Shavit_OnWRCP(int client, int stage, int style, int steamid, int records, float oldtime, float time, float leavespeed, const char[] mapname)
 {
 	if(gCV_StagePlaybackPostRunTime.FloatValue > 0.0)
 	{

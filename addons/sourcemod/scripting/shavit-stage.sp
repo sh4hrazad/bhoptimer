@@ -84,7 +84,7 @@ Handle gH_Forwards_LeaveCheckpoint = null;
 Handle gH_Forwards_OnWRCP = null;
 Handle gH_Forwards_OnWRCPDeleted = null;
 Handle gH_Forwards_OnFinishStagePre = null;
-Handle gH_Forwards_OnFinishStage = null;
+Handle gH_Forwards_OnFinishStage_Post = null;
 Handle gH_Forwards_OnFinishCheckpointPre = null;
 Handle gH_Forwards_OnFinishCheckpoint = null;
 
@@ -158,16 +158,16 @@ public void OnPluginStart()
 	RegAdminCmd("sm_deletemtop", Command_DeleteMaptop, ADMFLAG_RCON, "Alias of sm_delmtop");
 	RegAdminCmd("sm_deletemaptop", Command_DeleteMaptop, ADMFLAG_RCON, "Alias of sm_delmtop");
 
-	gH_Forwards_EnterStage = CreateGlobalForward("Shavit_OnEnterStage", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_Cell);
-	gH_Forwards_EnterCheckpoint = CreateGlobalForward("Shavit_OnEnterCheckpoint", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float);
-	gH_Forwards_LeaveStage = CreateGlobalForward("Shavit_OnLeaveStage", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_Cell);
-	gH_Forwards_LeaveCheckpoint = CreateGlobalForward("Shavit_OnLeaveCheckpoint", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float);
-	gH_Forwards_OnWRCP = CreateGlobalForward("Shavit_OnWRCP", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_String);
-	gH_Forwards_OnWRCPDeleted = CreateGlobalForward("Shavit_OnWRCPDeleted", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_String);
+	gH_Forwards_EnterStage = CreateGlobalForward("Shavit_OnEnterStage", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_Cell);
+	gH_Forwards_EnterCheckpoint = CreateGlobalForward("Shavit_OnEnterCheckpoint", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float);
+	gH_Forwards_LeaveStage = CreateGlobalForward("Shavit_OnLeaveStage", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_Cell);
+	gH_Forwards_LeaveCheckpoint = CreateGlobalForward("Shavit_OnLeaveCheckpoint", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float);
+	gH_Forwards_OnWRCP = CreateGlobalForward("Shavit_OnWRCP", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_Float, Param_String);
+	gH_Forwards_OnWRCPDeleted = CreateGlobalForward("Shavit_OnWRCPDeleted", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_String);
 	gH_Forwards_OnFinishStagePre = CreateGlobalForward("Shavit_OnFinishStagePre", ET_Event, Param_Cell, Param_Cell, Param_Cell);
-	gH_Forwards_OnFinishStage = CreateGlobalForward("Shavit_OnFinishStage", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Cell);
+	gH_Forwards_OnFinishStage_Post = CreateGlobalForward("Shavit_OnFinishStage_Post", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Float);
 	gH_Forwards_OnFinishCheckpointPre = CreateGlobalForward("Shavit_OnFinishCheckpointPre", ET_Event, Param_Cell, Param_Cell, Param_Cell);
-	gH_Forwards_OnFinishCheckpoint = CreateGlobalForward("Shavit_OnFinishCheckpoint", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_Float);
+	gH_Forwards_OnFinishCheckpoint = CreateGlobalForward("Shavit_OnFinishCheckpoint", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Float, Param_Float, Param_Float, Param_Float);
 
 	Shavit_OnStyleConfigLoaded(Shavit_GetStyleCount());
 	SQL_DBConnect();
@@ -1269,141 +1269,128 @@ public void Trans_InsertCP_PR_Failed(Database db, any data, int numQueries, cons
 	LogError("Insert CP error! cp %d failed , failIndex: %d. Reason: %s", numQueries, failIndex, error);
 }
 
-void OnFinishStage(int client, int stage, int style, float time)
+void OnFinishStage(int client, int stage, int style, float time, float oldtime)
 {
-	float wrcpTime = gA_WRStageInfo[style][stage].fTime;
-	if(time < wrcpTime || wrcpTime == -1.0)
+	int iOverwrite = PB_NoQuery;
+
+	if(Shavit_GetStyleSettingInt(style, "unranked") || Shavit_IsPracticeMode(client))
 	{
-		char sName[MAX_NAME_LENGTH];
-		GetClientName(client, sName, sizeof(sName));
+		iOverwrite = PB_UnRanked;
+	}
+	else if(oldtime == 0.0)
+	{
+		iOverwrite = PB_Insert;
+	}
+	else if(time < oldtime)
+	{
+		iOverwrite = PB_Update;
+	}
 
-		char sTime[32];
-		FormatHUDSeconds(time, sTime, 32);
+	int iRecords = GetStageRecordAmount(style, stage);
+	int iRank = GetStageRankForTime(style, time, stage);
+	float wrcpTime = gA_WRStageInfo[style][stage].fTime;
+	bool bWRCP = false;
 
-		char sDiffTime[32];
-		char sRank[32];
-		if(wrcpTime == -1.0)
-		{
-			FormatEx(sDiffTime, 32, "N/A");
-			FormatEx(sRank, 32, "1/1");
-		}
-		else
-		{
-			FormatHUDSeconds(time - wrcpTime, sDiffTime, 32);
-			FormatEx(sRank, 32, "%d/%d", GetStageRankForTime(style, time, stage), GetStageRecordAmount(style, stage));
-		}
-
-		Shavit_PrintToChatAll("%t", "OnWRCP", sName, stage, gS_StyleStrings[style].sStyleName, sTime, sDiffTime, sRank);
-
+	if(iOverwrite > PB_UnRanked && (time < wrcpTime || wrcpTime == -1.0))
+	{
+		bWRCP = true;
 
 		Call_StartForward(gH_Forwards_OnWRCP);
 		Call_PushCell(client);
 		Call_PushCell(stage);
 		Call_PushCell(style);
 		Call_PushCell(GetSteamAccountID(client));
+		Call_PushCell(iRecords);
+		Call_PushFloat(wrcpTime);
 		Call_PushFloat(time);
 		Call_PushFloat(gF_PostSpeed[client][stage]);
 		Call_PushString(gS_Map);
 		Call_Finish();
 	}
 
-	char sQuery[512];
-	FormatEx(sQuery, 512, "SELECT completions FROM `%sstagetimes` WHERE stage = %d AND style = %d AND map = '%s' AND auth = %d;", 
-			gS_MySQLPrefix, stage, style, gS_Map, GetSteamAccountID(client));
-
-	DataPack dp = new DataPack();
-	dp.WriteCell(GetClientSerial(client));
-	dp.WriteCell(stage);
-	dp.WriteCell(style);
-	dp.WriteFloat(time);
-
-	gH_SQL.Query(SQL_WRCP_PR_Check_Callback, sQuery, dp, DBPrio_High);
-}
-
-public void SQL_WRCP_PR_Check_Callback(Database db, DBResultSet results, const char[] error, DataPack dp)
-{
-	dp.Reset();
-
-	int client = GetClientFromSerial(dp.ReadCell());
-	int stage = dp.ReadCell();
-	int style = dp.ReadCell();
-	float time = dp.ReadFloat();
-
-	if(results == null)
+	if(iOverwrite > PB_NoQuery)
 	{
-		delete dp;
-		LogError("Timer SQL query failed. Reason: %s", error);
+		char sQuery[512];
 
-		return;
-	}
-
-	stage_t stagepr;
-	gA_StageInfo[client][style].GetArray(stage, stagepr, sizeof(stage_t));
-	float postSpeed = gF_PostSpeed[client][stage];
-	int iOverwrite = 1;
-
-	char sQuery[512];
-
-	if(results.FetchRow())
-	{
-		if(time < stagepr.fTime || stagepr.fTime == 0.0)
+		if(iOverwrite == PB_Insert)
 		{
 			FormatEx(sQuery, 512,
-			"UPDATE `%sstagetimes` SET time = %f, date = %d, postspeed = %f, completions = completions + 1 WHERE stage = %d AND style = %d AND map = '%s' AND auth = %d;", 
-			gS_MySQLPrefix, time, GetTime(), postSpeed, stage, style, gS_Map, GetSteamAccountID(client));
+				"INSERT INTO `%sstagetimes` (auth, map, time, style, stage, postspeed, date, completions) VALUES (%d, '%s', %f, %d, %d, %f, %d, 1);",
+				gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, time, style, stage, gF_PostSpeed[client][stage], GetTime());
 		}
-
 		else
 		{
 			FormatEx(sQuery, 512,
+				"UPDATE `%sstagetimes` SET time = %f, date = %d, postspeed = %f, completions = completions + 1 WHERE stage = %d AND style = %d AND map = '%s' AND auth = %d;", 
+				gS_MySQLPrefix, time, GetTime(), gF_PostSpeed[client][stage], stage, style, gS_Map, GetSteamAccountID(client));
+		}
+
+		DataPack dp = new DataPack();
+		dp.WriteCell(GetClientSerial(client));
+		dp.WriteCell(bWRCP?1:0);
+
+		gH_SQL.Query(SQL_OnFinishStage_Callback, sQuery, dp, DBPrio_High);
+	}
+	else if (iOverwrite == PB_NoQuery && !bWRCP)
+	{
+		char sQuery[512];
+		FormatEx(sQuery, 512,
 			"UPDATE `%sstagetimes` SET completions = completions + 1 WHERE stage = %d AND style = %d AND map = '%s' AND auth = %d;", 
 			gS_MySQLPrefix, stage, style, gS_Map, GetSteamAccountID(client));
 
-			iOverwrite = 0;
-		}
-	}
-	else
-	{
-		FormatEx(sQuery, 512,
-		"REPLACE INTO `%sstagetimes` (auth, map, time, style, stage, postspeed, date, completions) VALUES (%d, '%s', %f, %d, %d, %f, %d, 1);",
-		gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, time, style, stage, postSpeed, GetTime());
+		gH_SQL.Query(SQL_OnStageIncrementCompletions_Callback, sQuery, 0, DBPrio_Low);
 	}
 
-	Shavit_LogMessage(sQuery);
-
-	dp.WriteCell(iOverwrite);
-
-	gH_SQL.Query(SQL_PrCheck_Callback, sQuery, dp, DBPrio_High);
-}
-
-public void SQL_PrCheck_Callback(Database db, DBResultSet results, const char[] error, DataPack dp)
-{
-	dp.Reset();
-
-	int client = GetClientFromSerial(dp.ReadCell());
-	int stage = dp.ReadCell();
-	int style = dp.ReadCell();
-	float time = dp.ReadFloat();
-	bool bImproved = (dp.ReadCell() == 1);
-	delete dp;
-
-	if(results == null)
-	{
-		LogError("Insert PR error! Reason: %s", error);
-
-		return;
-	}
-
-	Call_StartForward(gH_Forwards_OnFinishStage);
+	Call_StartForward(gH_Forwards_OnFinishStage_Post);
 	Call_PushCell(client);
 	Call_PushCell(stage);
 	Call_PushCell(style);
 	Call_PushFloat(time);
-	Call_PushCell(bImproved);
+	Call_PushFloat(time - oldtime);
+	Call_PushCell(iOverwrite);
+	Call_PushCell(iRecords);
+	Call_PushCell(iRank);
+	Call_PushCell(bWRCP);
+	Call_PushFloat(gF_PostSpeed[client][stage]);
 	Call_Finish();
+}
 
-	ReloadStageInfo(client);
-	ReloadWRStages();
+public void SQL_OnFinishStage_Callback(Database db, DBResultSet results, const char[] error, DataPack dp)
+{
+	if(results == null)
+	{
+		LogError("Insert Stage PR error! Reason: %s", error);
+		delete dp;
+
+		return;
+	}
+
+	dp.Reset();
+
+	int client = GetClientFromSerial(dp.ReadCell());
+	bool wrcp = (dp.ReadCell() == 1);
+
+	delete dp;
+
+	if(client != 0)
+	{
+		ReloadStageInfo(client);
+	}
+
+	if(wrcp)
+	{
+		ReloadWRStages();
+	}
+}
+
+public void SQL_OnStageIncrementCompletions_Callback(Database db, DBResultSet results, const char[] error, any data)
+{
+	if(results == null)
+	{
+		LogError("Timer (Stage OnIncrementCompletions) SQL query failed. Reason: %s", error);
+
+		return;
+	}
 }
 
 void ReloadStageInfo(int client)
@@ -1659,7 +1646,7 @@ public int Native_FinishStage(Handle handler, int numParams)
 	int stage = Shavit_GetCurrentStage(client);
 	int style = Shavit_GetBhopStyle(client);
 
-	if(Shavit_IsPracticeMode(client) || Shavit_GetStyleSettingBool(style, "unranked") || Shavit_GetClientTrack(client) != Track_Main)
+	if(Shavit_GetClientTrack(client) != Track_Main)
 	{
 		return;
 	}
@@ -1676,20 +1663,23 @@ public int Native_FinishStage(Handle handler, int numParams)
 	{
 		if(!bBypass)
 		{
-			bool bResult = true;
+			Action result = Plugin_Continue;
 			Call_StartForward(gH_Forwards_OnFinishStagePre);
 			Call_PushCell(client);
 			Call_PushCell(stage);
 			Call_PushCell(style);
-			Call_Finish(bResult);
+			Call_Finish(result);
 
-			if(!bResult)
+			if(result > Plugin_Continue)
 			{
 				return;
 			}
 		}
 
-		OnFinishStage(client, stage - 1, style, time);
+		stage_t stagepr;
+		gA_StageInfo[client][style].GetArray(stage - 1, stagepr, sizeof(stage_t));
+
+		OnFinishStage(client, stage - 1, style, time, stagepr.fTime);
 	}
 }
 
@@ -1699,7 +1689,7 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 	bool bBypass = (numParams < 2 || view_as<bool>(GetNativeCell(2)));
 	int cpnum = (Shavit_IsLinearMap()) ? Shavit_GetCurrentCP(client) : Shavit_GetCurrentStage(client);
 	int style = Shavit_GetBhopStyle(client);
-	if(Shavit_GetStyleSettingBool(style, "unranked") || Shavit_GetClientTrack(client) != Track_Main)
+	if(Shavit_GetClientTrack(client) != Track_Main)
 	{
 		return;
 	}
@@ -1710,14 +1700,14 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 	{
 		if(!bBypass)
 		{
-			bool bResult = true;
+			Action result = Plugin_Continue;
 			Call_StartForward(gH_Forwards_OnFinishCheckpointPre);
 			Call_PushCell(client);
 			Call_PushCell(cpnum);
 			Call_PushCell(style);
-			Call_Finish(bResult);
+			Call_Finish(result);
 
-			if(!bResult)
+			if(result > Plugin_Continue)
 			{
 				return;
 			}
@@ -1727,6 +1717,9 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 
 		float diff = time - gA_WRCPInfo[style][cpnum].fTime;
 		gF_DiffTime[client] = diff;
+
+		cp_t prcp;
+		gA_CheckpointInfo[client][style].GetArray(cpnum, prcp, sizeof(cp_t));
 
 		float fVelocity[3];
 		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fVelocity);
@@ -1738,6 +1731,7 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 		Call_PushCell(style);
 		Call_PushFloat(time);
 		Call_PushFloat(diff);
+		Call_PushFloat(time - prcp.fTime);
 		Call_PushFloat(prespeed);
 		Call_Finish();
 	}

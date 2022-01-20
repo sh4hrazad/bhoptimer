@@ -370,21 +370,21 @@
 	}
 	"ZoneCheckpointTime"
 	{
-		"#format"	"{1:d},{2:s},{3:s}"
-		"en"		"{grey}CP{default} [{orchid}{1}{default}] | {orchid}{2}{default} | {gold}WR{default} {orchid}{3}{default}."
-		"chi"		"{grey}检查点{default} [{orchid}{1}{default}] | {orchid}{2}{default} | {gold}WR{default} {orchid}{3}{default}."
+		"#format"	"{1:d},{2:s},{3:s},{4:s}"
+		"en"		"{grey}CP{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WR{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default}"
+		"chi"		"{grey}检查点{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WR{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default}"
 	}
 	"ZoneStageTime-Improved"
 	{
-		"#format"	"{1:d},{2:s},{3:s},{4:s}"
-		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {orchid}{2}{default} | {gold}WRCP{default} {orchid}{3}{default} | {gold}Rank{default}: {blue}{4}{default}."
-		"chi"		"{grey}关卡{default} [{orchid}{1}{default}] | {orchid}{2}{default} | {gold}WRCP{default} {orchid}{3}{default} | {gold}排名{default}: {blue}{4}{default}."
+		"#format"	"{1:d},{2:s},{3:s},{4:s},{5:s}"
+		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WRCP{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default} | {gold}Rank{default}: {blue}{5}{default}"
+		"chi"		"{grey}关卡{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WRCP{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default} | {gold}排名{default}: {blue}{5}{default}"
 	}
 	"ZoneStageTime-Noimproved"
 	{
-		"#format"	"{1:d},{2:s},{3:s}"
-		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {orchid}{2}{default} | {gold}WRCP{default} {orchid}{3}{default}."
-		"chi"		"{grey}关卡{default} [{orchid}{1}{default}] | {orchid}{2}{default} | {gold}WRCP{default} {orchid}{3}{default}."
+		"#format"	"{1:d},{2:s},{3:s},{4:s}"
+		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WRCP{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default}"
+		"chi"		"{grey}关卡{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WRCP{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default}"
 	}
 	"EnterStageMessage_Bot_Improved"
 	{
@@ -397,5 +397,11 @@
 		"#format"	"{1:d},{2:s},{3:d}"
 		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {grey}Time:{default} {darkred}{2}{default} | {grey}Attemps:{default} {gold}{3}{default}"
 		"chi"		"{grey}关卡{default} [{orchid}{1}{default}] | {grey}到达时间:{default} {darkred}{2}{default} | {grey}尝试次数:{default} {gold}{3}{default}"
+	}
+	"OnWRCP"
+	{
+		"#format"	"{1:N},{2:d},{3:s},{4:s},{5:s},{6:s}"
+		"en"		"{gold}{1}{default} beat {palered}[Stage {2}]{default} record! Mode: {blue}{3}{default} Time: {orchid}{4}{default} ({green}WR {5}{default}) Rank: {bluegrey}{6}{default}."
+		"chi"		"{gold}{1}{default} 打破了 {palered}[关卡 {2}]{default} 记录! 模式: {blue}{3}{default} 时间: {orchid}{4}{default} ({green}WR {5}{default}) 排名: {bluegrey}{6}{default}."
 	}
 }
