@@ -202,6 +202,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_SetCurrentCP", Native_SetCurrentCP);
 	CreateNative("Shavit_SetLastStage", Native_SetLastStage);
 	CreateNative("Shavit_SetLastCP", Native_SetLastCP);
+	CreateNative("Shavit_IsStageTimer", Native_IsStageTimer);
+	CreateNative("Shavit_SetStageTimer", Native_SetStageTimer);
 
 	// registers library, check "bool LibraryExists(const char[] name)" in order to use with other plugins
 	RegPluginLibrary("shavit");
@@ -1961,6 +1963,16 @@ public int Native_SetLastStage(Handle handler, int numParams)
 public int Native_SetLastCP(Handle handler, int numParams)
 {
 	gA_Timers[GetNativeCell(1)].iLastCP = GetNativeCell(2);
+}
+
+public int Native_IsStageTimer(Handle handler, int numParams)
+{
+	return view_as<int>(gA_Timers[GetNativeCell(1)].bStageTimer);
+}
+
+public int Native_SetStageTimer(Handle handler, int numParams)
+{
+	gA_Timers[GetNativeCell(1)].bStageTimer = view_as<bool>(GetNativeCell(2));
 }
 
 public Action Shavit_OnStartPre(int client, int track)

@@ -1051,7 +1051,7 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 		case Zone_Stage:
 		{
 			gF_PreSpeed[client][data] = fPrespeed;
-			if(!Shavit_IsClientStageTimer(client))
+			if(!Shavit_IsStageTimer(client))
 			{
 				gI_CPStageAttemps[client][data]++;
 				gF_CPEnterStageTime[client][data] = Shavit_GetClientTime(client);
@@ -1063,7 +1063,7 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 			Call_PushCell(Shavit_GetBhopStyle(client));
 			Call_PushFloat(fPrespeed);
 			Call_PushFloat(Shavit_GetClientTime(client));
-			Call_PushCell(Shavit_IsClientStageTimer(client));
+			Call_PushCell(Shavit_IsStageTimer(client));
 			Call_Finish();
 		}
 
@@ -1113,7 +1113,7 @@ public void Shavit_OnLeaveZone(int client, int type, int track, int id, int enti
 			Call_PushCell(Shavit_GetBhopStyle(client));
 			Call_PushFloat(fPostspeed);
 			Call_PushFloat(Shavit_GetClientTime(client));
-			Call_PushCell(Shavit_IsClientStageTimer(client));
+			Call_PushCell(Shavit_IsStageTimer(client));
 			Call_Finish();
 		}
 

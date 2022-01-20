@@ -215,6 +215,8 @@ enum struct timer_snapshot_t
 	int iCurrentCP;
 	int iLastStage;
 	int iLastCP;
+
+	bool bStageTimer;
 }
 
 enum struct cp_cache_t
@@ -239,8 +241,6 @@ enum struct cp_cache_t
 	bool bSegmented;
 	int iGroundEntity;
 	int iSteamID;
-	ArrayList aEvents;
-	ArrayList aOutputWaits;
 	float vecLadderNormal[3];
 }
 
@@ -3128,6 +3128,23 @@ native void Shavit_SetLastStage(int client, int stage);
 native void Shavit_SetLastCP(int client, int cp);
 
 /**
+ * Gets a client's StageTimer status (record single stage, not record whole map)
+ *
+ * @param client					Client index.
+ * @return							StageTimer status.
+ */
+native bool Shavit_IsStageTimer(int client);
+
+/**
+ * Sets stage timer on a client.
+ *
+ * @param client					Client index.
+ * @param enable					Enable or disable stage timer.
+ * @noreturn
+ */
+native void Shavit_SetStageTimer(int client, bool enable);
+
+/**
  * Gets the total number of CPs that a client has saved
  *
  * @param client					Client index
@@ -3350,14 +3367,6 @@ native void Shavit_ReloadWRStages();
 native void Shavit_ReloadWRCPs();
 
 /**
- * Detect client recording single stage time(not recording finish map time).
- *
- * @param client					Client index
- * @return							true if client type !stage and stuff.
- */
-native bool Shavit_IsClientStageTimer(int client);
-
-/**
  * Detect stage conditions first.
  * If true, finishes the stage for a player, with their current timer stats defaultly(depend on bypass).
  * Will not teleport the player to anywhere, it's handled inside the mapzones plugin.
@@ -3478,7 +3487,6 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_InsideZoneGetType");
 	MarkNativeAsOptional("Shavit_IsLinearMap");
 	MarkNativeAsOptional("Shavit_IsClientCreatingZone");
-	MarkNativeAsOptional("Shavit_IsClientStageTimer");
 	MarkNativeAsOptional("Shavit_IsPaused");
 	MarkNativeAsOptional("Shavit_IsPracticeMode");
 	MarkNativeAsOptional("Shavit_IsReplayDataLoaded");
@@ -3528,6 +3536,8 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_SetCurrentCP");
 	MarkNativeAsOptional("Shavit_SetLastStage");
 	MarkNativeAsOptional("Shavit_SetLastCP");
+	MarkNativeAsOptional("Shavit_IsStageTimer");
+	MarkNativeAsOptional("Shavit_SetStageTimer");
 	MarkNativeAsOptional("Shavit_SaveCheckpoint");
 	MarkNativeAsOptional("Shavit_GetCurrentCheckpoint");
 	MarkNativeAsOptional("Shavit_SetCurrentCheckpoint");

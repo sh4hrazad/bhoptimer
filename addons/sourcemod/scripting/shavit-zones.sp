@@ -102,7 +102,6 @@ int gI_ZoneMaxData[TRACKS_SIZE];
 bool gB_WaitingForDataInput[MAXPLAYERS+1];
 bool gB_WaitingForLimitSpeedInput[MAXPLAYERS+1];
 bool gB_HookZoneConfirm[MAXPLAYERS+1];
-bool gB_StageTimer[MAXPLAYERS+1];
 bool gB_ShowTriggers[MAXPLAYERS+1];
 bool gB_EditMaxData[MAXPLAYERS+1];
 
@@ -213,7 +212,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_InsideZoneGetType", Native_InsideZoneGetType);
 	CreateNative("Shavit_IsLinearMap", Native_IsLinearMap);
 	CreateNative("Shavit_IsClientCreatingZone", Native_IsClientCreatingZone);
-	CreateNative("Shavit_IsClientStageTimer", Native_IsClientStageTimer);
 	CreateNative("Shavit_ZoneExists", Native_ZoneExists);
 	CreateNative("Shavit_Zones_DeleteMap", Native_Zones_DeleteMap);
 
@@ -625,11 +623,6 @@ int InsideZoneGetType(int client, int track)
 public int Native_IsClientCreatingZone(Handle handler, int numParams)
 {
 	return (gI_MapStep[GetNativeCell(1)] != EditStep_None);
-}
-
-public int Native_IsClientStageTimer(Handle handler, int numParams)
-{
-	return gB_StageTimer[GetNativeCell(1)];
 }
 
 public int Native_GetMapBonuses(Handle handler, int numParams)
@@ -1679,7 +1672,7 @@ public Action Command_Back(int client, int args)
 		Call_PushCell(client);
 		Call_PushCell(gA_ZoneCache[index].iZoneData);
 		Call_PushCell(Shavit_GetBhopStyle(client));
-		Call_PushCell(gB_StageTimer[client]);
+		Call_PushCell(Shavit_IsStageTimer(client));
 		Call_Finish();
 	}
 
@@ -1735,7 +1728,7 @@ public Action Command_Stages(int client, int args)
 			{
 				Shavit_StopTimer(client);
 				Shavit_SetPracticeMode(client, false, false);
-				gB_StageTimer[client] = true;
+				Shavit_SetStageTimer(client, true);
 
 				DoTeleport(client, i);
 
@@ -1781,7 +1774,7 @@ public int MenuHandler_SelectStage(Menu menu, MenuAction action, int param1, int
 		int index = StringToInt(sInfo);
 
 		Shavit_StopTimer(param1);
-		gB_StageTimer[param1] = true;
+		Shavit_SetStageTimer(param1, true);
 
 		DoTeleport(param1, index);
 	}
@@ -2714,11 +2707,6 @@ void Reset(int client)
 	gF_ZoneLimitSpeed[client] = gCV_EntrySpeedLimit.FloatValue;
 	gI_ZoneID[client] = -1;
 
-	Shavit_SetCurrentStage(client, 0);
-	Shavit_SetCurrentCP(client, 0);
-	Shavit_SetLastStage(client, 0);
-	Shavit_SetLastCP(client, 0);
-
 	gB_ShowTriggers[client] = false;
 	gH_DrawZonesToClient[client] = null;
 
@@ -3646,7 +3634,7 @@ public Action Shavit_OnRestartPre(int client, int track)
 		return Plugin_Handled;
 	}
 
-	gB_StageTimer[client] = false;
+	Shavit_SetStageTimer(client, false);
 	DoRestart(client, track);
 
 	return Plugin_Handled;
@@ -4053,7 +4041,7 @@ public void StartTouchPost(int entity, int other)
 				Shavit_SetCurrentCP(other, nextcp);
 				Shavit_SetLastCP(other, nextcp);
 
-				if(gB_StageTimer[other])
+				if(Shavit_IsStageTimer(other))
 				{
 					Shavit_StopTimer(other);
 				}
@@ -4074,7 +4062,7 @@ public void StartTouchPost(int entity, int other)
 				{
 					Shavit_FinishStage(other);
 
-					if(!gB_StageTimer[other])
+					if(!Shavit_IsStageTimer(other))
 					{
 						Shavit_FinishCheckpoint(other);
 					}
@@ -4109,7 +4097,7 @@ public void StartTouchPost(int entity, int other)
 			{
 				if(EmptyVector(gV_Destinations[entityzone]))
 				{
-					FakeClientCommand(other, "sm_r");
+					Shavit_RestartTimer(other, Shavit_GetClientTrack(other));
 				}
 				else
 				{
@@ -4195,7 +4183,7 @@ public void EndTouchPost(int entity, int other)
 				Call_Finish();
 			}
 
-			else if(type == Zone_Stage && gB_StageTimer[other])
+			else if(type == Zone_Stage && Shavit_IsStageTimer(other))
 			{
 				Call_StartForward(gH_Forwards_StageTimer_Post);
 				Call_PushCell(other);
@@ -4265,7 +4253,7 @@ public void TouchPost(int entity, int other)
 			// so you don't accidentally step on those while running
 			if(gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack == Shavit_GetClientTrack(other))
 			{
-				gB_StageTimer[other] = false;
+				Shavit_SetStageTimer(other, false);
 				Shavit_StartTimer(other, gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack);
 			}
 		}
@@ -4298,7 +4286,7 @@ public void TouchPost(int entity, int other)
 					return;
 				}
 
-				if(gB_StageTimer[other])
+				if(Shavit_IsStageTimer(other))
 				{
 					Shavit_StartTimer(other, Track_Main);
 				}

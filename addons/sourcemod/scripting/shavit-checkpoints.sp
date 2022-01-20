@@ -435,11 +435,11 @@ void PersistData(int client, bool disconnected)
 		(!IsPlayerAlive(client) && !disconnected) ||
 		(!IsPlayerAlive(client) && disconnected && !gB_SaveStates[client]) ||
 		GetSteamAccountID(client) == 0 ||
-		//Shavit_GetTimerStatus(client) == Timer_Stopped ||
-		Shavit_IsClientStageTimer(client) ||
+		Shavit_GetTimerStatus(client) == Timer_Stopped ||
 		(!gCV_RestoreStates.BoolValue && !disconnected) ||
 		(gCV_PersistData.IntValue == 0 && disconnected))
 	{
+		ResetStageStatus(client);
 		return;
 	}
 
@@ -537,8 +537,6 @@ void LoadPersistentData(int serial)
 void DeleteCheckpointCache(cp_cache_t cache)
 {
 	delete cache.aFrames;
-	delete cache.aEvents;
-	delete cache.aOutputWaits;
 }
 
 void DeleteCheckpointCacheList(ArrayList cps)
@@ -1467,6 +1465,10 @@ public void Player_Spawn(Event event, const char[] name, bool dontBroadcast)
 				// events&outputs won't work properly unless we do this next frame...
 				RequestFrame(LoadPersistentData, serial);
 			}
+			else
+			{
+				ResetStageStatus(client);
+			}
 		}
 		else
 		{
@@ -1478,6 +1480,10 @@ public void Player_Spawn(Event event, const char[] name, bool dontBroadcast)
 				gB_SaveStates[client] = true;
 				// events&outputs won't work properly unless we do this next frame...
 				RequestFrame(LoadPersistentData, serial);
+			}
+			else
+			{
+				ResetStageStatus(client);
 			}
 		}
 	}
@@ -1506,6 +1512,14 @@ bool CanSegment(int client)
 int GetMaxCPs(int client)
 {
 	return CanSegment(client)? gCV_MaxCP_Segmented.IntValue:gCV_MaxCP.IntValue;
+}
+
+void ResetStageStatus(int client)
+{
+	Shavit_SetCurrentStage(client, 0);
+	Shavit_SetCurrentCP(client, 0);
+	Shavit_SetLastStage(client, 0);
+	Shavit_SetLastCP(client, 0);
 }
 
 public any Native_GetCheckpoint(Handle plugin, int numParams)

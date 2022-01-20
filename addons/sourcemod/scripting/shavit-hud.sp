@@ -1271,7 +1271,7 @@ void UpdateMainHUD(int client)
 			iZoneHUD = ZoneHUD_End;
 		}
 
-		else if(Shavit_InsideZone(target, Zone_Stage, -1) && Shavit_IsClientStageTimer(target))
+		else if(Shavit_InsideZone(target, Zone_Stage, -1) && Shavit_IsStageTimer(target))
 		{
 			iZoneHUD = ZoneHUD_Stage;
 		}
@@ -1302,7 +1302,7 @@ void UpdateMainHUD(int client)
 	huddata.bReplay = bReplay;
 	huddata.bPractice = (bReplay)? false:Shavit_IsPracticeMode(target);
 	huddata.iFinishNum = (huddata.iStyle == -1 || huddata.iTrack == -1)?Shavit_GetRecordAmount(0, 0):Shavit_GetRecordAmount(huddata.iStyle, huddata.iTrack);
-	huddata.bStageTimer = Shavit_IsClientStageTimer(target);
+	huddata.bStageTimer = Shavit_IsStageTimer(target);
 	strcopy(huddata.sDiff, 64, gS_DiffTime[target]);
 	strcopy(huddata.sPreStrafe, 64, gS_PreStrafeDiff[target]);
 
