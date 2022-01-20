@@ -66,7 +66,6 @@ float gF_CPTime[MAXPLAYERS+1][MAX_STAGES+1];
 float gF_CPEnterStageTime[MAXPLAYERS+1][MAX_STAGES+1];
 float gF_PreSpeed[MAXPLAYERS+1][MAX_STAGES+1];
 float gF_PostSpeed[MAXPLAYERS+1][MAX_STAGES+1];
-float gF_LeaveStageTime[MAXPLAYERS+1];
 float gF_DiffTime[MAXPLAYERS+1];
 
 // menu
@@ -177,10 +176,15 @@ public void OnClientPutInServer(int client)
 {
 	if(gB_Connected && !IsFakeClient(client))
 	{
-		ResetPlayerStatus(client);
-		ReloadStageInfo(client);
-		ReloadCPInfo(client);
+		ResetClientCache(client);
 	}
+}
+
+void ResetClientCache(int client)
+{
+	ResetPlayerStatus(client);
+	ReloadStageInfo(client);
+	ReloadCPInfo(client);
 }
 
 void ResetPlayerStatus(int client)
@@ -208,6 +212,26 @@ void ResetPlayerStatus(int client)
 
 		gA_CheckpointInfo[client][i] = new ArrayList(sizeof(cp_t), MAX_STAGES+1);
 		gA_StageInfo[client][i] = new ArrayList(sizeof(cp_t), MAX_STAGES+1);
+
+		for(int j = 0; j <= MAX_STAGES; j++)
+		{
+			cp_t cpcache; // null cache
+			gA_CheckpointInfo[client][i].SetArray(j, cpcache, sizeof(cp_t));
+
+			stage_t stagecache; // null cache
+			gA_StageInfo[client][i].SetArray(j, stagecache, sizeof(stage_t));
+		}
+	}
+}
+
+void ResetAllClientsCache()
+{
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(IsValidClient(i) && !IsFakeClient(i))
+		{
+			ResetClientCache(i);
+		}
 	}
 }
 
@@ -546,6 +570,7 @@ public void SQL_DeleteWRStage_Callback(Database db, DBResultSet results, const c
 	Call_PushString(gS_Map);
 	Call_Finish();
 
+	ResetAllClientsCache();
 	ResetWRStages();
 
 	Shavit_PrintToChat(client, "%T", "WRCPDeleteSuccessful", client, stage, gS_StyleStrings[style].sStyleName, steamid);
@@ -821,6 +846,7 @@ public void SQL_DeleteMaptop_Callback(Database db, DBResultSet results, const ch
 
 	if(StrEqual(gS_MapChoice[client], gS_Map))
 	{
+		ResetAllClientsCache();
 		ResetWRStages();
 	}
 
@@ -830,7 +856,7 @@ public void SQL_DeleteMaptop_Callback(Database db, DBResultSet results, const ch
 		Call_PushCell(stage);
 		Call_PushCell(style);
 		Call_PushCell(steamid);
-		Call_PushString(gS_Map);
+		Call_PushString(gS_MapChoice[client]);
 		Call_Finish();
 	}
 
@@ -1084,7 +1110,7 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 
 public void Shavit_OnLeaveZone(int client, int type, int track, int id, int entity, int data)
 {
-	if(track != Track_Main)
+	if(track != Track_Main || Shavit_IsTeleporting(client))
 	{
 		return;
 	}
@@ -1097,14 +1123,14 @@ public void Shavit_OnLeaveZone(int client, int type, int track, int id, int enti
 	{
 		case Zone_Start:
 		{
-			gF_LeaveStageTime[client] = Shavit_GetClientTime(client);
+			Shavit_SetLeaveStageTime(client, Shavit_GetClientTime(client));
 			gF_PostSpeed[client][0] = fPostspeed; // linear map hackfix
 			gF_PostSpeed[client][1] = fPostspeed; // stage map hackfix
 		}
 
 		case Zone_Stage:
 		{
-			gF_LeaveStageTime[client] = Shavit_GetClientTime(client);
+			Shavit_SetLeaveStageTime(client, Shavit_GetClientTime(client));
 			gF_PostSpeed[client][data] = fPostspeed;
 
 			Call_StartForward(gH_Forwards_LeaveStage);
@@ -1429,10 +1455,12 @@ public void SQL_ReloadStageInfo_Callback(Database db, DBResultSet results, const
 		int stage = results.FetchInt(1);
 
 		stage_t prstage;
+		prstage.iSteamid = GetSteamAccountID(client);
 		prstage.iDate = results.FetchInt(2);
 		prstage.iCompletions = results.FetchInt(3);
 		prstage.fTime = results.FetchFloat(4);
 		prstage.fPostspeed = results.FetchFloat(5);
+		GetClientName(client, prstage.sName, sizeof(stage_t::sName));
 
 		gA_StageInfo[client][style].SetArray(stage, prstage, sizeof(stage_t));
 	}
@@ -1447,7 +1475,7 @@ void ReloadCPInfo(int client)
 
 	char sQuery[512];
 	FormatEx(sQuery, 512, 
-			"SELECT style, cp, date, time, prespeed, postspeed FROM `%scptimes` WHERE auth = %d AND map = '%s';", 
+			"SELECT style, cp, attemps, date, time, marktime, prespeed, postspeed FROM `%scptimes` WHERE auth = %d AND map = '%s';", 
 		gS_MySQLPrefix, GetSteamAccountID(client), gS_Map);
 
 	gH_SQL.Query(SQL_ReloadCPInfo_Callback, sQuery, GetClientSerial(client));
@@ -1474,10 +1502,12 @@ public void SQL_ReloadCPInfo_Callback(Database db, DBResultSet results, const ch
 		int cp = results.FetchInt(1);
 
 		cp_t prcp;
-		prcp.iDate = results.FetchInt(2);
-		prcp.fTime = results.FetchFloat(3);
-		prcp.fPrespeed = results.FetchFloat(4);
-		prcp.fPostspeed = results.FetchFloat(5);
+		prcp.iAttemps = results.FetchInt(2);
+		prcp.iDate = results.FetchInt(3);
+		prcp.fTime = results.FetchFloat(4);
+		prcp.fRealTime = results.FetchFloat(5);
+		prcp.fPrespeed = results.FetchFloat(6);
+		prcp.fPostspeed = results.FetchFloat(7);
 
 		gA_CheckpointInfo[client][style].SetArray(cp, prcp, sizeof(cp_t));
 	}
@@ -1651,13 +1681,7 @@ public int Native_FinishStage(Handle handler, int numParams)
 		return;
 	}
 
-	if(StrContains(gS_StyleStrings[style].sSpecialString, "segment") != -1)
-	{
-		Shavit_PrintToChat(client, "暂不支持关卡segments模式");
-		return;
-	}
-
-	float time = Shavit_GetClientTime(client) - gF_LeaveStageTime[client];
+	float time = Shavit_GetClientTime(client) - Shavit_GetLeaveStageTime(client);
 
 	if(time > 0.0 && Shavit_GetTimerStatus(client) != Timer_Stopped)
 	{
@@ -1689,6 +1713,7 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 	bool bBypass = (numParams < 2 || view_as<bool>(GetNativeCell(2)));
 	int cpnum = (Shavit_IsLinearMap()) ? Shavit_GetCurrentCP(client) : Shavit_GetCurrentStage(client);
 	int style = Shavit_GetBhopStyle(client);
+
 	if(Shavit_GetClientTrack(client) != Track_Main)
 	{
 		return;

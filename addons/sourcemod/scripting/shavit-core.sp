@@ -33,6 +33,7 @@
 #pragma newdecls required
 #pragma semicolon 1
 
+#define CHANGE_FLAGS(%1,%2) (%1 = (%2))
 #define EFL_CHECK_UNTOUCH (1<<24)
 
 // game type (CS:GO)
@@ -40,7 +41,58 @@ bool gB_Protobuf = false;
 
 // hook stuff
 DynamicHook gH_AcceptInput; // used for hooking player_speedmod's AcceptInput
+DynamicHook gH_HookTeleport; // used for hooking native game teleport function
 Handle gH_PhysicsCheckForEntityUntouch;
+
+enum struct HookingPlayer
+{
+	int iHookedIndex;
+	int iPlayerFlags;
+	bool bHooked;
+
+	void AddHook(int client)
+	{
+		gH_HookTeleport.HookEntity(Hook_Pre, client, Detour_OnTeleport);
+		gH_HookTeleport.HookEntity(Hook_Post, client, Detour_OnTeleport_Post);
+
+		this.bHooked = true;
+		this.iHookedIndex = client;
+	}
+
+	void RemoveHook()
+	{
+		this.bHooked = false;
+		this.iHookedIndex = 0;
+	}
+
+	void AddFlag(int flags)
+	{
+		CHANGE_FLAGS(this.iPlayerFlags, this.iPlayerFlags | flags);
+	}
+
+	// Delay two frames to remove a flag, this is usually used in fastcall
+	void RemoveFlag(int flagsToRemove)
+	{
+		DataPack dp = new DataPack();
+		dp.WriteCell(flagsToRemove);
+		dp.WriteCell(this.iHookedIndex);
+
+		RequestFrame(Frame_RemoveFlag, dp);
+	}
+
+	// No delay, no handle create and delete, more save and faster
+	void RemoveFlagEx(int flagsToRemove)
+	{
+		CHANGE_FLAGS(this.iPlayerFlags, this.iPlayerFlags & ~flagsToRemove);
+	}
+
+	int GetFlags()
+	{
+		return this.iPlayerFlags;
+	}
+}
+
+HookingPlayer gA_HookedPlayer[MAXPLAYERS+1];
 
 // database handle
 Database2 gH_SQL = null;
@@ -204,6 +256,9 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_SetLastCP", Native_SetLastCP);
 	CreateNative("Shavit_IsStageTimer", Native_IsStageTimer);
 	CreateNative("Shavit_SetStageTimer", Native_SetStageTimer);
+	CreateNative("Shavit_GetLeaveStageTime", Native_GetLeaveStageTime);
+	CreateNative("Shavit_SetLeaveStageTime", Native_SetLeaveStageTime);
+	CreateNative("Shavit_IsTeleporting", Native_IsTeleporting);
 
 	// registers library, check "bool LibraryExists(const char[] name)" in order to use with other plugins
 	RegPluginLibrary("shavit");
@@ -417,12 +472,38 @@ void LoadDHooks()
 	// Stolen from dhooks-test.sp
 	offset = AcceptInputGameData.GetOffset("AcceptInput");
 	delete AcceptInputGameData;
-	gH_AcceptInput = new DynamicHook(offset, HookType_Entity, ReturnType_Bool, ThisPointer_CBaseEntity);
-	gH_AcceptInput.AddParam(HookParamType_CharPtr);
-	gH_AcceptInput.AddParam(HookParamType_CBaseEntity);
-	gH_AcceptInput.AddParam(HookParamType_CBaseEntity);
-	gH_AcceptInput.AddParam(HookParamType_Object, 20, DHookPass_ByVal|DHookPass_ODTOR|DHookPass_OCTOR|DHookPass_OASSIGNOP); //variant_t is a union of 12 (float[3]) plus two int type params 12 + 8 = 20
-	gH_AcceptInput.AddParam(HookParamType_Int);
+
+	if(offset != -1)
+	{
+		gH_AcceptInput = new DynamicHook(offset, HookType_Entity, ReturnType_Bool, ThisPointer_CBaseEntity);
+		gH_AcceptInput.AddParam(HookParamType_CharPtr);
+		gH_AcceptInput.AddParam(HookParamType_CBaseEntity);
+		gH_AcceptInput.AddParam(HookParamType_CBaseEntity);
+		gH_AcceptInput.AddParam(HookParamType_Object, 20, DHookPass_ByVal|DHookPass_ODTOR|DHookPass_OCTOR|DHookPass_OASSIGNOP); //variant_t is a union of 12 (float[3]) plus two int type params 12 + 8 = 20
+		gH_AcceptInput.AddParam(HookParamType_Int);
+	}
+	else
+	{
+		SetFailState("Couldn't get the offset for \"AcceptInput\" - make sure your gamedata is updated!");
+	}
+
+
+	GameData TeleportGameData = new GameData("sdktools.games");
+
+	offset = TeleportGameData.GetOffset("Teleport");
+	delete TeleportGameData;
+
+	if(offset != -1)
+	{
+		gH_HookTeleport = new DynamicHook(offset, HookType_Entity, ReturnType_Void, ThisPointer_CBaseEntity);
+		gH_HookTeleport.AddParam(HookParamType_VectorPtr);
+		gH_HookTeleport.AddParam(HookParamType_VectorPtr);
+		gH_HookTeleport.AddParam(HookParamType_VectorPtr);
+	}
+	else
+	{
+		SetFailState("Couldn't get the offset for \"Teleport\" - make sure your gamedata is updated!");
+	}
 }
 
 public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -1975,6 +2056,21 @@ public int Native_SetStageTimer(Handle handler, int numParams)
 	gA_Timers[GetNativeCell(1)].bStageTimer = view_as<bool>(GetNativeCell(2));
 }
 
+public int Native_GetLeaveStageTime(Handle handler, int numParams)
+{
+	return view_as<int>(gA_Timers[GetNativeCell(1)].fLeaveStageTime);
+}
+
+public int Native_SetLeaveStageTime(Handle handler, int numParams)
+{
+	gA_Timers[GetNativeCell(1)].fLeaveStageTime = GetNativeCell(2);
+}
+
+public int Native_IsTeleporting(Handle handler, int numParams)
+{
+	return gA_HookedPlayer[GetNativeCell(1)].GetFlags() & STATUS_ONTELEPORT;
+}
+
 public Action Shavit_OnStartPre(int client, int track)
 {
 	if (GetTimerStatus(client) == Timer_Paused && gCV_PauseMovement.BoolValue)
@@ -2102,6 +2198,7 @@ void ResumeTimer(int client)
 
 public void OnClientDisconnect(int client)
 {
+	gA_HookedPlayer[client].RemoveHook();
 	RequestFrame(StopTimer, client);
 }
 
@@ -2141,6 +2238,11 @@ public void OnClientPutInServer(int client)
 	if(!IsClientConnected(client) || IsFakeClient(client))
 	{
 		return;
+	}
+
+	if(!gA_HookedPlayer[client].bHooked)
+	{
+		gA_HookedPlayer[client].AddHook(client);
 	}
 
 	gA_Timers[client].fStrafeWarning = 0.0;
@@ -3028,6 +3130,20 @@ public MRESReturn DHook_AcceptInput_player_speedmod_Post(int pThis, DHookReturn 
 	return MRES_Ignored;
 }
 
+public MRESReturn Detour_OnTeleport(int pThis, DHookReturn hReturn, DHookParam hParams)
+{
+	gA_HookedPlayer[pThis].AddFlag(STATUS_ONTELEPORT);
+
+	return MRES_Ignored;
+}
+
+public MRESReturn Detour_OnTeleport_Post(int pThis, DHookReturn hReturn, DHookParam hParams)
+{
+	gA_HookedPlayer[pThis].RemoveFlag(STATUS_ONTELEPORT);
+
+	return MRES_Ignored;
+}
+
 bool GetCheckUntouch(int client)
 {
 	int flags = GetEntProp(client, Prop_Data, "m_iEFlags");
@@ -3545,4 +3661,21 @@ void GetPauseMovement(int client)
 void ResumePauseMovement(int client)
 {
 	TeleportEntity(client, gA_Timers[client].fPauseOrigin, gA_Timers[client].fPauseAngles, gA_Timers[client].fPauseVelocity);
+}
+
+public void Frame_RemoveFlag(DataPack dp)
+{
+	RequestFrame(Frame2_RemoveFlag, dp);
+}
+
+public void Frame2_RemoveFlag(DataPack dp)
+{
+	dp.Reset();
+
+	int flagsToRemove = dp.ReadCell();
+	int client = dp.ReadCell();
+
+	delete dp;
+
+	CHANGE_FLAGS(gA_HookedPlayer[client].iPlayerFlags, gA_HookedPlayer[client].iPlayerFlags & ~flagsToRemove);
 }

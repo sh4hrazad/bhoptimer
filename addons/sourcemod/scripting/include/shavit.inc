@@ -92,6 +92,11 @@ enum
 
 enum
 {
+	STATUS_ONTELEPORT = (1 << 0), /* Client is teleporting */
+};
+
+enum
+{
 	Migration_RemoveWorkshopMaptiers,
 	Migration_RemoveWorkshopMapzones,
 	Migration_RemoveWorkshopPlayertimes,
@@ -224,6 +229,7 @@ enum struct timer_snapshot_t
 	int iCurrentCP;
 	int iLastStage;
 	int iLastCP;
+	float fLeaveStageTime;
 
 	bool bStageTimer;
 }
@@ -3164,6 +3170,31 @@ native bool Shavit_IsStageTimer(int client);
 native void Shavit_SetStageTimer(int client, bool enable);
 
 /**
+ * Gets the leave stage time of a player.
+ *
+ * @param client					Client index
+ * @return							Client's leave stage time.
+ */
+native float Shavit_GetLeaveStageTime(int client);
+
+/**
+ * Sets the leave stage time of a player.
+ *
+ * @param client					Client index
+ * @param time						Leave stage time.
+ * @noreturn
+ */
+native void Shavit_SetLeaveStageTime(int client, float time);
+
+/**
+ * Gets client if they're on teleporting.
+ *
+ * @param client					Client index.
+ * @return							True if teleporting.
+ */
+native bool Shavit_IsTeleporting(int client);
+
+/**
  * Gets the total number of CPs that a client has saved
  *
  * @param client					Client index
@@ -3559,6 +3590,9 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_SetLastCP");
 	MarkNativeAsOptional("Shavit_IsStageTimer");
 	MarkNativeAsOptional("Shavit_SetStageTimer");
+	MarkNativeAsOptional("Shavit_GetLeaveStageTime");
+	MarkNativeAsOptional("Shavit_SetLeaveStageTime");
+	MarkNativeAsOptional("Shavit_IsTeleporting");
 	MarkNativeAsOptional("Shavit_SaveCheckpoint");
 	MarkNativeAsOptional("Shavit_GetCurrentCheckpoint");
 	MarkNativeAsOptional("Shavit_SetCurrentCheckpoint");
