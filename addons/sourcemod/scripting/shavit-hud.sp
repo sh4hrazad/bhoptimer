@@ -415,7 +415,7 @@ public void Shavit_OnStageTimer_Post(int client, int style, int stage, float spe
 public void Shavit_OnWRCP(int client, int stage, int style, int steamid, int records, float oldtime, float time, float leavespeed, const char[] mapname)
 {
 	char sTime[32];
-	FormatHUDSeconds(time, sTime, sizeof(sTime));
+	FormatSeconds(time, sTime, sizeof(sTime));
 
 	char sDiffTime[32];
 	char sRank[32];
@@ -427,7 +427,7 @@ public void Shavit_OnWRCP(int client, int stage, int style, int steamid, int rec
 	}
 	else
 	{
-		FormatHUDSeconds(time - oldtime, sDiffTime, sizeof(sDiffTime));
+		FormatSeconds(time - oldtime, sDiffTime, sizeof(sDiffTime));
 		FormatEx(sRank, sizeof(sRank), "1/%d", records == 0 ? 1 : records);
 	}
 
@@ -449,8 +449,8 @@ public void Shavit_OnFinishStage_Post(int client, int stage, int style, float ti
 	}
 	else
 	{
-		FormatHUDSeconds(wrcpDiff, sWRDifftime, sizeof(sWRDifftime));
-		FormatHUDSeconds(diff, sPBDifftime, sizeof(sPBDifftime));
+		FormatSeconds(wrcpDiff, sWRDifftime, sizeof(sWRDifftime));
+		FormatSeconds(diff, sPBDifftime, sizeof(sPBDifftime));
 
 		if(wrcpDiff > 0)
 		{
@@ -466,7 +466,7 @@ public void Shavit_OnFinishStage_Post(int client, int stage, int style, float ti
 	char sMessage[255];
 
 	char sTime[32];
-	FormatHUDSeconds(time, sTime, sizeof(sTime));
+	FormatSeconds(time, sTime, sizeof(sTime));
 
 	switch(overwrite)
 	{
@@ -500,7 +500,7 @@ public void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float ti
 	}
 
 	char sTime[32];
-	FormatHUDSeconds(time, sTime, sizeof(sTime));
+	FormatSeconds(time, sTime, sizeof(sTime));
 
 	char sWRDifftime[32];
 	char sPBDifftime[32];
@@ -509,15 +509,18 @@ public void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float ti
 	{
 		FormatEx(sWRDifftime, sizeof(sWRDifftime), "N/A");
 		FormatEx(sPBDifftime, sizeof(sPBDifftime), "N/A");
+		FormatEx(gS_DiffTime[client], sizeof(gS_DiffTime[]), "N/A");
 	}
 	else
 	{
-		FormatHUDSeconds(wrdiff, sWRDifftime, sizeof(sWRDifftime));
-		FormatHUDSeconds(pbdiff, sPBDifftime, sizeof(sPBDifftime));
+		FormatSeconds(wrdiff, sWRDifftime, sizeof(sWRDifftime));
+		FormatSeconds(pbdiff, sPBDifftime, sizeof(sPBDifftime));
+		FormatHUDSeconds(wrdiff, gS_DiffTime[client], sizeof(gS_DiffTime[]));
 
 		if(wrdiff > 0)
 		{
 			Format(sWRDifftime, sizeof(sWRDifftime), "+%s", sWRDifftime);
+			Format(gS_DiffTime[client], sizeof(gS_DiffTime[]), "+%s", gS_DiffTime[client]);
 		}
 
 		if(pbdiff > 0)
@@ -525,8 +528,6 @@ public void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float ti
 			Format(sPBDifftime, sizeof(sPBDifftime), "+%s", sPBDifftime);
 		}
 	}
-
-	strcopy(gS_DiffTime[client], sizeof(gS_DiffTime[]), sWRDifftime);
 
 	char sMessage[255];
 	FormatEx(sMessage, sizeof(sMessage), "%T", "ZoneCheckpointTime", client, cpnum, sTime, sWRDifftime, sPBDifftime);
