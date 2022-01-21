@@ -230,6 +230,7 @@ enum struct timer_snapshot_t
 	int iLastStage;
 	int iLastCP;
 	float fLeaveStageTime;
+	int iStagePreframes;
 
 	bool bStageTimer;
 }
@@ -3195,6 +3196,26 @@ native void Shavit_SetLeaveStageTime(int client, float time);
 native bool Shavit_IsTeleporting(int client);
 
 /**
+ * returns the number of stage preframes in the players current run.
+ *
+ * @param client					Client index
+ *
+ * @return 							Preframe count
+ */
+native int Shavit_GetPlayerStagePreFrames(int client);
+
+/**
+ * Sets player's stage preframe length.
+ *
+ * @param client					Client index
+ * @param PreFrame					PreFrame length
+ * @param TimerPreFrame				Timer start frame length
+ *
+ * @noreturn
+ */
+native void Shavit_SetPlayerStagePreFrames(int client, int PreFrame);
+
+/**
  * Gets the total number of CPs that a client has saved
  *
  * @param client					Client index
@@ -3593,6 +3614,8 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetLeaveStageTime");
 	MarkNativeAsOptional("Shavit_SetLeaveStageTime");
 	MarkNativeAsOptional("Shavit_IsTeleporting");
+	MarkNativeAsOptional("Shavit_GetPlayerStagePreFrames");
+	MarkNativeAsOptional("Shavit_SetPlayerStagePreFrames");
 	MarkNativeAsOptional("Shavit_SaveCheckpoint");
 	MarkNativeAsOptional("Shavit_GetCurrentCheckpoint");
 	MarkNativeAsOptional("Shavit_SetCurrentCheckpoint");

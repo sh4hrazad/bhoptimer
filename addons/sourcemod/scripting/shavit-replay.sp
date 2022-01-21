@@ -186,7 +186,6 @@ bool gB_Button[MAXPLAYERS+1];
 // we use gI_PlayerFrames instead of grabbing gA_PlayerFrames.Length because the ArrayList is resized to handle 2s worth of extra frames to reduce how often we have to resize it
 int gI_PlayerFrames[MAXPLAYERS+1];
 int gI_PlayerPrerunFrames[MAXPLAYERS+1];
-int gI_PlayerPrerunFrames_Stage[MAXPLAYERS+1];
 int gI_PlayerLastStageFrame[MAXPLAYERS+1];
 ArrayList gA_PlayerFrames[MAXPLAYERS+1];
 int gI_MenuTrack[MAXPLAYERS+1];
@@ -2912,12 +2911,14 @@ public void Shavit_OnLeaveStage(int client, int stage, int style, float leavespe
 		FinishGrabbingPostFrames_Stage(client, gA_WRCPRunInfo[client]);
 	}
 
-	int iMaxPreFrames = RoundToFloor(gCV_StagePlaybackPreRunTime.FloatValue * gF_Tickrate / Shavit_GetStyleSettingFloat(Shavit_GetBhopStyle(client), "speed"));
-	gI_PlayerPrerunFrames_Stage[client] = gI_PlayerFrames[client] - iMaxPreFrames;
-	if(gI_PlayerPrerunFrames_Stage[client] < 0)
+	int iMaxPreFrames = RoundToFloor(gCV_StagePlaybackPreRunTime.FloatValue * gF_Tickrate / Shavit_GetStyleSettingFloat(style, "speed"));
+	int iPreframes = gI_PlayerFrames[client] - iMaxPreFrames;
+	if(iPreframes < 0)
 	{
-		gI_PlayerPrerunFrames_Stage[client] = 0;
+		iPreframes = 0;
 	}
+
+	Shavit_SetPlayerStagePreFrames(client, iPreframes);
 }
 
 public void Shavit_OnStop(int client)
@@ -2944,17 +2945,8 @@ void FinishGrabbingPostFrames_Stage(int client, wrcp_run_info info)
 {
 	delete gH_PostFramesTimer_Stage[client];
 
-	SaveStageReplayPre(client, info.iStage, info.iStyle, info.iSteamid, info.fTime);
+	SaveStageReplay(info.iStage, info.iStyle, info.fTime, info.iSteamid, Shavit_GetPlayerStagePreFrames(client), gA_PlayerFrames[client], gI_PlayerFrames[client]);
 	gB_GrabbingPostFrames_Stage[client] = false;
-}
-
-void SaveStageReplayPre(int client, int stage, int style, int steamid, float time)
-{
-	char sName[MAX_NAME_LENGTH];
-	GetClientName(client, sName, MAX_NAME_LENGTH);
-	ReplaceString(sName, MAX_NAME_LENGTH, "#", "?");
-
-	SaveStageReplay(stage, style, time, steamid, gI_PlayerPrerunFrames_Stage[client], gA_PlayerFrames[client], gI_PlayerFrames[client]);
 }
 
 public Action Timer_PostFrames(Handle timer, int client)
@@ -3115,7 +3107,7 @@ public void Shavit_OnWRCP(int client, int stage, int style, int steamid, int rec
 	}
 	else
 	{
-		SaveStageReplayPre(client, stage, style, steamid, time);
+		SaveStageReplay(stage, style, time, steamid, Shavit_GetPlayerStagePreFrames(client), gA_PlayerFrames[client], gI_PlayerFrames[client]);
 	}
 }
 
@@ -3560,7 +3552,7 @@ void ClearFrames(int client)
 	gI_PlayerFrames[client] = 0;
 	gF_NextFrameTime[client] = 0.0;
 	gI_PlayerPrerunFrames[client] = 0;
-	gI_PlayerPrerunFrames_Stage[client] = 0;
+	Shavit_SetPlayerStagePreFrames(client, 0);
 	gI_PlayerFinishFrame[client] = 0;
 }
 

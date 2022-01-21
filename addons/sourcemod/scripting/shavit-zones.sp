@@ -35,7 +35,6 @@
 #pragma dynamic 131072
 #pragma newdecls required
 
-//#define DEBUG
 #define EF_NODRAW 32
 
 Database2 gH_SQL = null;
