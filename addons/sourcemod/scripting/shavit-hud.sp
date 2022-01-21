@@ -445,18 +445,25 @@ public void Shavit_OnFinishStage_Post(int client, int stage, int style, float ti
 	if(wrcpTime == -1.0)
 	{
 		FormatEx(sWRDifftime, sizeof(sWRDifftime), "N/A");
-		FormatEx(sPBDifftime, sizeof(sPBDifftime), "N/A");
 	}
 	else
 	{
 		FormatSeconds(wrcpDiff, sWRDifftime, sizeof(sWRDifftime));
-		FormatSeconds(diff, sPBDifftime, sizeof(sPBDifftime));
 
 		if(wrcpDiff > 0)
 		{
 			Format(sWRDifftime, sizeof(sWRDifftime), "+%s", sWRDifftime);
 		}
-		
+	}
+
+	if(diff == time)
+	{
+		FormatEx(sPBDifftime, sizeof(sPBDifftime), "N/A");
+	}
+	else
+	{
+		FormatSeconds(diff, sPBDifftime, sizeof(sPBDifftime));
+
 		if(diff > 0)
 		{
 			Format(sPBDifftime, sizeof(sPBDifftime), "+%s", sPBDifftime);
@@ -473,7 +480,7 @@ public void Shavit_OnFinishStage_Post(int client, int stage, int style, float ti
 		case PB_Insert, PB_Update:
 		{
 			char sRank[32];
-			FormatEx(sRank, sizeof(sRank), "%d/%d", rank, records == 0 ? 1 : records);
+			FormatEx(sRank, sizeof(sRank), "%d/%d", rank, overwrite == PB_Insert ? records + 1 : records);
 			FormatEx(sMessage, sizeof(sMessage), "%T", "ZoneStageTime-Improved", client, stage, sTime, sWRDifftime, sPBDifftime, sRank);
 		}
 		case PB_NoQuery:
@@ -482,7 +489,9 @@ public void Shavit_OnFinishStage_Post(int client, int stage, int style, float ti
 		}
 		case PB_UnRanked:
 		{
-			FormatEx(sMessage, sizeof(sMessage), "Unranked stage %d time...", stage);
+			FormatEx(sMessage, sizeof(sMessage), 
+				"{darkred}[未排名]{default} | {grey}关卡{default} [{orchid}%d{default}] | {grey2}%s{default} | {palered}WRCP{default} {yellow}%s{default} | {darkblue}PB{default} {yellow}%s{default}", 
+				stage, sTime, sWRDifftime, sPBDifftime);
 		}
 	}
 
@@ -503,18 +512,14 @@ public void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float ti
 	FormatSeconds(time, sTime, sizeof(sTime));
 
 	char sWRDifftime[32];
-	char sPBDifftime[32];
-
 	if(Shavit_GetWRCPTime(cpnum, style) == -1.0)
 	{
 		FormatEx(sWRDifftime, sizeof(sWRDifftime), "N/A");
-		FormatEx(sPBDifftime, sizeof(sPBDifftime), "N/A");
 		FormatEx(gS_DiffTime[client], sizeof(gS_DiffTime[]), "N/A");
 	}
 	else
 	{
 		FormatSeconds(wrdiff, sWRDifftime, sizeof(sWRDifftime));
-		FormatSeconds(pbdiff, sPBDifftime, sizeof(sPBDifftime));
 		FormatHUDSeconds(wrdiff, gS_DiffTime[client], sizeof(gS_DiffTime[]));
 
 		if(wrdiff > 0)
@@ -522,6 +527,16 @@ public void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float ti
 			Format(sWRDifftime, sizeof(sWRDifftime), "+%s", sWRDifftime);
 			Format(gS_DiffTime[client], sizeof(gS_DiffTime[]), "+%s", gS_DiffTime[client]);
 		}
+	}
+
+	char sPBDifftime[32];
+	if(pbdiff == time)
+	{
+		FormatEx(sPBDifftime, sizeof(sPBDifftime), "N/A");
+	}
+	else
+	{
+		FormatSeconds(pbdiff, sPBDifftime, sizeof(sPBDifftime));
 
 		if(pbdiff > 0)
 		{

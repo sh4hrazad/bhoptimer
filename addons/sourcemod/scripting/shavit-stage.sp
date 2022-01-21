@@ -1253,7 +1253,7 @@ public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, i
 			if(overwrite == 1) // insert
 			{
 				FormatEx(sQuery, 512,
-					"REPLACE INTO `%scptimes` (auth, map, time, marktime, style, cp, attemps, prespeed, postspeed, date) VALUES (%d, '%s', %f, %f, %d, %d, %d, %f, %f, %d);",
+					"INSERT INTO `%scptimes` (auth, map, time, marktime, style, cp, attemps, prespeed, postspeed, date) VALUES (%d, '%s', %f, %f, %d, %d, %d, %f, %f, %d);",
 					gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, gF_CPTime[client][i], gF_CPEnterStageTime[client][i], style, i, gI_CPStageAttemps[client][i], prespeed, postspeed, GetTime());
 			}
 			else // update
@@ -1406,6 +1406,10 @@ public void SQL_OnFinishStage_Callback(Database db, DBResultSet results, const c
 	if(wrcp)
 	{
 		ReloadWRStages();
+	}
+	else
+	{
+		UpdateStageLeaderboards();
 	}
 }
 
