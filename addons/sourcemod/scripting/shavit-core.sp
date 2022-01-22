@@ -3098,7 +3098,7 @@ public void OnEntityCreated(int entity, const char[] classname)
 {
 	if (StrEqual(classname, "player_speedmod"))
 	{
-		gH_AcceptInput.HookEntity(Hook_Pre, entity, DHook_AcceptInput_player_speedmod_Post);
+		gH_AcceptInput.HookEntity(Hook_Post, entity, DHook_AcceptInput_player_speedmod_Post);
 	}
 }
 
@@ -3120,9 +3120,19 @@ public MRESReturn DHook_AcceptInput_player_speedmod_Post(int pThis, DHookReturn 
 		return MRES_Ignored;
 	}
 
-	hParams.GetObjectVarString(4, 0, ObjectValueType_String, buf, sizeof(buf));
+	float speed;
 
-	float speed = StringToFloat(buf);
+	int variant_type = hParams.GetObjectVar(4, 16, ObjectValueType_Int);
+
+	if (variant_type == 2 /* FIELD_STRING */)
+	{
+		hParams.GetObjectVarString(4, 0, ObjectValueType_String, buf, sizeof(buf));
+		speed = StringToFloat(buf);
+	}
+	else // should be FIELD_FLOAT but don't check who cares
+	{
+		speed = hParams.GetObjectVar(4, 0, ObjectValueType_Float);
+	}
 
 	gA_Timers[activator].fplayer_speedmod = speed;
 	UpdateLaggedMovement(activator, true);
