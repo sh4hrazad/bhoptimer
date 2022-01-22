@@ -3098,7 +3098,7 @@ public void OnEntityCreated(int entity, const char[] classname)
 {
 	if (StrEqual(classname, "player_speedmod"))
 	{
-		gH_AcceptInput.HookEntity(Hook_Post, entity, DHook_AcceptInput_player_speedmod_Post);
+		gH_AcceptInput.HookEntity(Hook_Pre, entity, DHook_AcceptInput_player_speedmod_Post);
 	}
 }
 
