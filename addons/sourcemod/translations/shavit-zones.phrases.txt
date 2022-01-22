@@ -163,7 +163,7 @@
 	"ZoneFirst"
 	{
 		"en"		"FIRST"
-		"chi"		"第一个"
+		"chi"		"第一个点"
 	}
 	"ZoneIncreased"
 	{
@@ -242,7 +242,7 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"Press USE (default 'E') to set the {1} corner in your current position."
-		"chi"		"按E键 (默认E键是'使用键') 将{1}角点设置在当前位置."
+		"chi"		"按E键 (默认E键是'使用键') 将{1}设置在当前位置."
 	}
 	"ZonePoint"
 	{
@@ -253,7 +253,12 @@
 	"ZoneSecond"
 	{
 		"en"		"SECOND"
-		"chi"		"第二个"
+		"chi"		"第二个点"
+	}
+	"ZoneHeight"
+	{
+		"en"		"height"
+		"chi"		"高度"
 	}
 	"ZoneSetAdjust"
 	{

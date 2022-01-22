@@ -49,7 +49,8 @@ enum
 	EditStep_None, // 0 - nothing
 	EditStep_First, // 1 - wait for E tap to setup first coord
 	EditStep_Second, // 2 - wait for E tap to setup second coord
-	EditStep_Final // 3 - confirm
+	EditStep_Third, // 3 - wait for E tap to setup height
+	EditStep_Final // 4 - confirm
 };
 
 enum struct zone_cache_t
@@ -142,8 +143,6 @@ int gI_Stages; // how many stages in a map, default 1.
 int gI_Checkpoints; // how many checkpoint zones in a map, default 0.
 
 char gS_BeamSprite[PLATFORM_MAX_PATH];
-char gS_BeamSpriteIgnoreZ[PLATFORM_MAX_PATH];
-int gI_BeamSpriteIgnoreZ;
 int gI_Offset_m_fEffects = -1;
 
 // admin menu
@@ -182,6 +181,7 @@ Handle gH_Forwards_OnEndZone = null;
 Handle gH_Forwards_OnTeleportBackStagePost = null;
 
 bool gB_LinearMap;
+bool gB_DrawEditZone[MAXPLAYERS+1];
 
 // prespeed limit
 int gI_Jumps[MAXPLAYERS+1];
@@ -300,7 +300,7 @@ public void OnPluginStart()
 	// cvars and stuff
 	gCV_Interval = new Convar("shavit_zones_interval", "1.0", "Interval between each time a mapzone is being drawn to the players.", 0, true, 0.5, true, 5.0);
 	gCV_TeleportToEnd = new Convar("shavit_zones_teleporttoend", "1", "Teleport players to the end zone on sm_end?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
-	gCV_UseCustomSprite = new Convar("shavit_zones_usecustomsprite", "1", "Use custom sprite for zone drawing?\nSee `configs/shavit-zones.cfg`.\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
+	gCV_UseCustomSprite = new Convar("shavit_zones_usecustomsprite", "0", "Use custom sprite for zone drawing?\nSee `configs/shavit-zones.cfg`.\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_Offset = new Convar("shavit_zones_offset", "0", "When calculating a zone's *VISUAL* box, by how many units, should we scale it to the center?\n0.0 - no downscaling. Values above 0 will scale it inward and negative numbers will scale it outwards.\nAdjust this value if the zones clip into walls.");
 	gCV_EnforceTracks = new Convar("shavit_zones_enforcetracks", "1", "Enforce zone tracks upon entry?\n0 - allow every zone to affect users on every zone.\n1 - require the user's track to match the zone's track.", 0, true, 0.0, true, 1.0);
 	gCV_PreSpeed = new Convar("shavit_zones_prespeed", "1", "Stop prespeeding in the start zone?\n0 - Disabled, fully allow prespeeding.\n1 - SurfHeaven Limitspeed", 0, true, 0.0, true, 1.0);
@@ -655,7 +655,6 @@ bool LoadZonesConfig()
 
 	kv.JumpToKey("Sprites");
 	kv.GetString("beam", gS_BeamSprite, PLATFORM_MAX_PATH);
-	kv.GetString("beam_ignorez", gS_BeamSpriteIgnoreZ, PLATFORM_MAX_PATH, gS_BeamSprite);
 
 	char sDownloads[PLATFORM_MAX_PATH * 8];
 	kv.GetString("downloads", sDownloads, (PLATFORM_MAX_PATH * 8));
@@ -750,13 +749,10 @@ void LoadZoneSettings()
 		customBeam = defaultBeam;
 	}
 
-	gI_BeamSpriteIgnoreZ = PrecacheModel(gS_BeamSpriteIgnoreZ, true);
-
 	for (int i = 0; i < ZONETYPES_SIZE; i++)
 	{
 		for (int j = 0; j < TRACKS_SIZE; j++)
 		{
-
 			if (gA_ZoneSettings[i][j].bUseVanillaSprite)
 			{
 				gA_ZoneSettings[i][j].iBeam = defaultBeam;
@@ -2487,7 +2483,7 @@ public int MenuHandler_ZoneEdit(Menu menu, MenuAction action, int param1, int pa
 				gF_ZoneLimitSpeed[param1] = gA_ZoneCache[id].fLimitSpeed;
 
 				// draw the zone edit
-				CreateTimer(0.1, Timer_Draw, GetClientSerial(param1), TIMER_REPEAT);
+				gB_DrawEditZone[param1] = true;
 
 				CreateEditMenu(param1);
 			}
@@ -2724,6 +2720,7 @@ void Reset(int client)
 
 	gB_ShowTriggers[client] = false;
 	gH_DrawZonesToClient[client] = null;
+	gB_DrawEditZone[client] = false;
 
 	for(int i = 0; i < 3; i++)
 	{
@@ -2748,20 +2745,38 @@ void ShowPanel(int client, int step)
 {
 	gI_MapStep[client] = step;
 
-	if(step == 1)
+	if(step == EditStep_First || step == EditStep_Second)
 	{
-		CreateTimer(0.1, Timer_Draw, GetClientSerial(client), TIMER_REPEAT);
+		gB_DrawEditZone[client] = true;
 	}
 
 	Panel pPanel = new Panel();
 
 	char sPanelText[128];
-	char sFirst[64];
-	char sSecond[64];
-	FormatEx(sFirst, 64, "%T", "ZoneFirst", client);
-	FormatEx(sSecond, 64, "%T", "ZoneSecond", client);
 
-	FormatEx(sPanelText, 128, "%T", "ZonePlaceText", client, (step == 1)? sFirst:sSecond);
+	switch(step)
+	{
+		case EditStep_First:
+		{
+			char sFirst[64];
+			FormatEx(sFirst, 64, "%T", "ZoneFirst", client);
+			FormatEx(sPanelText, 128, "%T", "ZonePlaceText", client, sFirst);
+		}
+
+		case EditStep_Second:
+		{
+			char sSecond[64];
+			FormatEx(sSecond, 64, "%T", "ZoneSecond", client);
+			FormatEx(sPanelText, 128, "%T", "ZonePlaceText", client, sSecond);
+		}
+
+		case EditStep_Third:
+		{
+			char sHeight[64];
+			FormatEx(sHeight, 64, "%T", "ZoneHeight", client);
+			FormatEx(sPanelText, 128, "%T", "ZonePlaceText", client, sHeight);
+		}
+	}
 
 	pPanel.DrawItem(sPanelText, ITEMDRAW_RAWLINE);
 	char sPanelItem[64];
@@ -2952,6 +2967,11 @@ void DumbSetVelocity(int client, float fSpeed[3])
 
 public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float vel[3], float angles[3], TimerStatus status, int track, int style)
 {
+	if(gB_DrawEditZone[client])
+	{
+		DrawEditZone(client);
+	}
+
 	if(gI_MapStep[client] > EditStep_None && gI_MapStep[client] != EditStep_Final)
 	{
 		int button = IN_USE;
@@ -2969,31 +2989,41 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 				{
 					origin = GetAimPosition(client);
 				}
-
 				else if(!(gB_SnapToWall[client] && SnapToWall(vPlayerOrigin, client, origin)))
 				{
 					origin = SnapToGrid(vPlayerOrigin, gI_GridSnap[client], false);
 				}
-
 				else
 				{
 					gV_WallSnap[client] = origin;
 				}
 
-				if(gI_MapStep[client] == EditStep_First)
+				switch(gI_MapStep[client])
 				{
-					gV_Point1[client] = origin;
+					case EditStep_First:
+					{
+						gV_Point1[client] = origin;
 
-					ShowPanel(client, EditStep_Second);
-				}
+						ShowPanel(client, EditStep_Second);
+					}
 
-				else if(gI_MapStep[client] == EditStep_Second)
-				{
-					gV_Point2[client] = origin;
+					case EditStep_Second:
+					{
+						gV_Point2[client][0] = origin[0];
+						gV_Point2[client][1] = origin[1];
+						gV_Point2[client][2] = vPlayerOrigin[2];
 
-					gI_MapStep[client] = EditStep_Final;
+						ShowPanel(client, EditStep_Third);
+					}
 
-					CreateEditMenu(client);
+					case EditStep_Third:
+					{
+						gV_Point2[client][2] = origin[2];
+
+						gI_MapStep[client] = EditStep_Final;
+
+						CreateEditMenu(client);
+					}
 				}
 			}
 
@@ -3448,15 +3478,13 @@ int[] GetZoneColors(int type, int track, int customalpha = 0)
 	return colors;
 }
 
-public Action Timer_Draw(Handle Timer, any data)
+void DrawEditZone(int client)
 {
-	int client = GetClientFromSerial(data);
-
-	if(client == 0 || gI_MapStep[client] == EditStep_None)
+	if(gI_MapStep[client] == EditStep_None)
 	{
 		Reset(client);
 
-		return Plugin_Stop;
+		return;
 	}
 
 	float vPlayerOrigin[3];
@@ -3468,20 +3496,30 @@ public Action Timer_Draw(Handle Timer, any data)
 	{
 		origin = GetAimPosition(client);
 	}
-
 	else if(!(gB_SnapToWall[client] && SnapToWall(vPlayerOrigin, client, origin)))
 	{
 		origin = SnapToGrid(vPlayerOrigin, gI_GridSnap[client], false);
 	}
-
 	else
 	{
 		gV_WallSnap[client] = origin;
 	}
 
-	if(gI_MapStep[client] == EditStep_Final)
+	switch(gI_MapStep[client])
 	{
-		origin = gV_Point2[client];
+		case EditStep_Second:
+		{
+			origin[2] = vPlayerOrigin[2];
+		}
+		case EditStep_Third:
+		{
+			origin[0] = gV_Point2[client][0];
+			origin[1] = gV_Point2[client][1];
+		}
+		case EditStep_Final:
+		{
+			origin = gV_Point2[client];
+		}
 	}
 
 	int type = gI_ZoneType[client];
@@ -3497,19 +3535,19 @@ public Action Timer_Draw(Handle Timer, any data)
 		// This is here to make the zone setup grid snapping be 1:1 to how it looks when done with the setup.
 		origin = points[7];
 
-		DrawZone(points, GetZoneColors(type, track, 125), 0.1, gA_ZoneSettings[type][track].fWidth, false, gI_BeamSpriteIgnoreZ, gA_ZoneSettings[type][track].iHalo);
+		DrawZone(points, GetZoneColors(type, track, 125), 0.1, gA_ZoneSettings[type][track].fWidth, false, gA_ZoneSettings[type][track].iBeam, gA_ZoneSettings[type][track].iHalo);
 
 		if(gI_ZoneType[client] == Zone_Teleport && !EmptyVector(gV_Teleport[client]))
 		{
 			TE_SetupEnergySplash(gV_Teleport[client], NULL_VECTOR, false);
-			TE_SendToAll(0.0);
+			TE_SendToClient(client);
 		}
 	}
 
 	if(gI_MapStep[client] != EditStep_Final && !EmptyVector(origin))
 	{
-		TE_SetupBeamPoints(vPlayerOrigin, origin, gI_BeamSpriteIgnoreZ, gA_ZoneSettings[type][track].iHalo, 0, 0, 0.1, 1.0, 1.0, 0, 0.0, {255, 255, 255, 75}, 0);
-		TE_SendToAll(0.0);
+		TE_SetupBeamPoints(vPlayerOrigin, origin, gA_ZoneSettings[type][track].iBeam, gA_ZoneSettings[type][track].iHalo, 0, 0, 0.1, 1.0, 1.0, 0, 0.0, {255, 255, 255, 75}, 0);
+		TE_SendToClient(client);
 
 		// visualize grid snap
 		float snap1[3];
@@ -3523,12 +3561,10 @@ public Action Timer_Draw(Handle Timer, any data)
 			snap2 = origin;
 			snap2[i] += (gI_GridSnap[client] / 2);
 
-			TE_SetupBeamPoints(snap1, snap2, gI_BeamSpriteIgnoreZ, gA_ZoneSettings[type][track].iHalo, 0, 0, 0.1, 1.0, 1.0, 0, 0.0, {255, 255, 255, 75}, 0);
-			TE_SendToAll(0.0);
+			TE_SetupBeamPoints(snap1, snap2, gA_ZoneSettings[type][track].iBeam, gA_ZoneSettings[type][track].iHalo, 0, 0, 0.1, 1.0, 1.0, 0, 0.0, {255, 255, 255, 75}, 0);
+			TE_SendToClient(client);
 		}
 	}
-
-	return Plugin_Continue;
 }
 
 void DrawZone(float points[8][3], int color[4], float life, float width, bool flat, int beam, int halo)
@@ -3994,7 +4030,7 @@ public void StartTouchPost(int entity, int other)
 
 	if(!IsFakeClient(other))
 	{
-		if(gCV_EnforceTracks.BoolValue && type > Zone_End && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack != Shavit_GetClientTrack(other))
+		if(gCV_EnforceTracks.BoolValue && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack != Shavit_GetClientTrack(other))
 		{
 			return;
 		}
