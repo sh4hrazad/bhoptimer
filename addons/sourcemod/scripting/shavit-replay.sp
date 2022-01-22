@@ -186,6 +186,7 @@ bool gB_Button[MAXPLAYERS+1];
 // we use gI_PlayerFrames instead of grabbing gA_PlayerFrames.Length because the ArrayList is resized to handle 2s worth of extra frames to reduce how often we have to resize it
 int gI_PlayerFrames[MAXPLAYERS+1];
 int gI_PlayerPrerunFrames[MAXPLAYERS+1];
+int gI_PlayerPrerunFrames_Stage[MAXPLAYERS+1];
 int gI_PlayerLastStageFrame[MAXPLAYERS+1];
 ArrayList gA_PlayerFrames[MAXPLAYERS+1];
 int gI_MenuTrack[MAXPLAYERS+1];
@@ -329,6 +330,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_SetReplayData", Native_SetReplayData);
 	CreateNative("Shavit_GetPlayerPreFrames", Native_GetPlayerPreFrames);
 	CreateNative("Shavit_SetPlayerPreFrames", Native_SetPlayerPreFrames);
+	CreateNative("Shavit_GetPlayerStagePreFrames", Native_GetPlayerStagePreFrames);
+	CreateNative("Shavit_SetPlayerStagePreFrames", Native_SetPlayerStagePreFrames);
 	CreateNative("Shavit_GetClosestReplayTime", Native_GetClosestReplayTime);
 	CreateNative("Shavit_GetClosestReplayStyle", Native_GetClosestReplayStyle);
 	CreateNative("Shavit_SetClosestReplayStyle", Native_SetClosestReplayStyle);
@@ -1099,12 +1102,17 @@ public int Native_SetReplayData(Handle handler, int numParams)
 	ArrayList data = view_as<ArrayList>(GetNativeCell(2));
 	bool cheapCloneHandle = view_as<bool>(GetNativeCell(3));
 
-	if (gB_GrabbingPostFrames[client])
+	if(gB_GrabbingPostFrames_Stage[client])
+	{
+		FinishGrabbingPostFrames_Stage(client, gA_WRCPRunInfo[client]);
+	}
+
+	if(gB_GrabbingPostFrames[client])
 	{
 		FinishGrabbingPostFrames(client, gA_FinishedRunInfo[client]);
 	}
 
-	if (cheapCloneHandle)
+	if(cheapCloneHandle)
 	{
 		data = view_as<ArrayList>(CloneHandle(data));
 	}
@@ -1335,6 +1343,19 @@ public int Native_SetPlayerPreFrames(Handle handler, int numParams)
 	int preframes = GetNativeCell(2);
 
 	gI_PlayerPrerunFrames[client] = preframes;
+}
+
+public int Native_GetPlayerStagePreFrames(Handle handler, int numParams)
+{
+	return gI_PlayerPrerunFrames_Stage[GetNativeCell(1)];
+}
+
+public int Native_SetPlayerStagePreFrames(Handle handler, int numParams)
+{
+	int client = GetNativeCell(1);
+	int preframes = GetNativeCell(2);
+
+	gI_PlayerPrerunFrames_Stage[client] = preframes;
 }
 
 public int Native_GetClosestReplayTime(Handle plugin, int numParams)
@@ -2918,7 +2939,7 @@ public void Shavit_OnLeaveStage(int client, int stage, int style, float leavespe
 		iPreframes = 0;
 	}
 
-	Shavit_SetPlayerStagePreFrames(client, iPreframes);
+	gI_PlayerPrerunFrames_Stage[client] = iPreframes;
 }
 
 public void Shavit_OnStop(int client)
@@ -2945,7 +2966,7 @@ void FinishGrabbingPostFrames_Stage(int client, wrcp_run_info info)
 {
 	delete gH_PostFramesTimer_Stage[client];
 
-	SaveStageReplay(info.iStage, info.iStyle, info.fTime, info.iSteamid, Shavit_GetPlayerStagePreFrames(client), gA_PlayerFrames[client], gI_PlayerFrames[client]);
+	SaveStageReplay(info.iStage, info.iStyle, info.fTime, info.iSteamid, gI_PlayerPrerunFrames_Stage[client], gA_PlayerFrames[client], gI_PlayerFrames[client]);
 	gB_GrabbingPostFrames_Stage[client] = false;
 }
 
@@ -3107,7 +3128,7 @@ public void Shavit_OnWRCP(int client, int stage, int style, int steamid, int rec
 	}
 	else
 	{
-		SaveStageReplay(stage, style, time, steamid, Shavit_GetPlayerStagePreFrames(client), gA_PlayerFrames[client], gI_PlayerFrames[client]);
+		SaveStageReplay(stage, style, time, steamid, gI_PlayerPrerunFrames_Stage[client], gA_PlayerFrames[client], gI_PlayerFrames[client]);
 	}
 }
 
@@ -3322,89 +3343,93 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 		return Plugin_Continue;
 	}
 
-	if (IsFakeClient(client))
+	if(IsFakeClient(client))
 	{
 		if (gA_BotInfo[client].iEnt == client)
 		{
 			return OnReplayRunCmd(gA_BotInfo[client], buttons, impulse, vel);
 		}
 	}
-	else if (gB_GrabbingPostFrames[client] || gB_GrabbingPostFrames_Stage[client] || 
-		(ReplayEnabled(Shavit_GetBhopStyle(client)) && Shavit_GetTimerStatus(client) == Timer_Running))
+	else 
 	{
-		if((gI_PlayerFrames[client] / gF_Tickrate) > gCV_TimeLimit.FloatValue)
+		bool grabbing = (gB_GrabbingPostFrames[client] || gB_GrabbingPostFrames_Stage[client]);
+
+		if(grabbing || (ReplayEnabled(Shavit_GetBhopStyle(client)) && Shavit_GetTimerStatus(client) == Timer_Running))
 		{
-			if (gI_HijackFrames[client])
+			if((gI_PlayerFrames[client] / gF_Tickrate) > gCV_TimeLimit.FloatValue)
 			{
-				gI_HijackFrames[client] = 0;
+				if (gI_HijackFrames[client])
+				{
+					gI_HijackFrames[client] = 0;
+				}
+
+				return Plugin_Continue;
 			}
 
-			return Plugin_Continue;
-		}
+			float fTimescale = Shavit_GetClientTimescale(client);
 
-		float fTimescale = Shavit_GetClientTimescale(client);
-
-		if(fTimescale != 0.0)
-		{
-			if(gF_NextFrameTime[client] <= 0.0)
+			if(fTimescale != 0.0)
 			{
-				if (gA_PlayerFrames[client].Length <= gI_PlayerFrames[client])
+				if(gF_NextFrameTime[client] <= 0.0)
 				{
-					// Add about two seconds worth of frames so we don't have to resize so often
-					gA_PlayerFrames[client].Resize(gI_PlayerFrames[client] + (RoundToCeil(gF_Tickrate) * 2));
+					if (gA_PlayerFrames[client].Length <= gI_PlayerFrames[client])
+					{
+						// Add about two seconds worth of frames so we don't have to resize so often
+						gA_PlayerFrames[client].Resize(gI_PlayerFrames[client] + (RoundToCeil(gF_Tickrate) * 2));
+					}
+
+					frame_t aFrame;
+					GetClientAbsOrigin(client, aFrame.pos);
+
+					if (!gI_HijackFrames[client])
+					{
+						float vecEyes[3];
+						GetClientEyeAngles(client, vecEyes);
+						aFrame.ang[0] = vecEyes[0];
+						aFrame.ang[1] = vecEyes[1];
+					}
+					else
+					{
+						aFrame.ang = gF_HijackedAngles[client];
+						--gI_HijackFrames[client];
+					}
+
+					aFrame.buttons = buttons;
+					aFrame.flags = GetEntityFlags(client);
+					aFrame.mt = GetEntityMoveType(client);
+
+					aFrame.mousexy = (mouse[0] & 0xFFFF) | ((mouse[1] & 0xFFFF) << 16);
+					aFrame.vel = LimitMoveVelFloat(vel[0]) | (LimitMoveVelFloat(vel[1]) << 16);
+
+					gA_PlayerFrames[client].SetArray(gI_PlayerFrames[client]++, aFrame, sizeof(frame_t));
+
+					if(fTimescale != -1.0)
+					{
+						gF_NextFrameTime[client] += (1.0 - fTimescale);
+					}
 				}
-
-				frame_t aFrame;
-				GetClientAbsOrigin(client, aFrame.pos);
-
-				if (!gI_HijackFrames[client])
+				else if(fTimescale != -1.0)
 				{
-					float vecEyes[3];
-					GetClientEyeAngles(client, vecEyes);
-					aFrame.ang[0] = vecEyes[0];
-					aFrame.ang[1] = vecEyes[1];
-				}
-				else
-				{
-					aFrame.ang = gF_HijackedAngles[client];
-					--gI_HijackFrames[client];
-				}
-
-				aFrame.buttons = buttons;
-				aFrame.flags = GetEntityFlags(client);
-				aFrame.mt = GetEntityMoveType(client);
-
-				aFrame.mousexy = (mouse[0] & 0xFFFF) | ((mouse[1] & 0xFFFF) << 16);
-				aFrame.vel = LimitMoveVelFloat(vel[0]) | (LimitMoveVelFloat(vel[1]) << 16);
-
-				gA_PlayerFrames[client].SetArray(gI_PlayerFrames[client]++, aFrame, sizeof(frame_t));
-
-				if(fTimescale != -1.0)
-				{
-					gF_NextFrameTime[client] += (1.0 - fTimescale);
+					gF_NextFrameTime[client] -= fTimescale;
 				}
 			}
-			else if(fTimescale != -1.0)
+
+			if (!gCV_EnableDynamicTimeDifference.BoolValue)
 			{
-				gF_NextFrameTime[client] -= fTimescale;
+				return Plugin_Continue;
 			}
-		}
 
-		if (!gCV_EnableDynamicTimeDifference.BoolValue)
-		{
-			return Plugin_Continue;
-		}
+			if(Shavit_InsideZone(client, Zone_Start, -1))
+			{
+				gF_VelocityDifference2D[client] = 0.0;
+				gF_VelocityDifference3D[client] = 0.0;
+				return Plugin_Continue;
+			}
 
-		if(Shavit_InsideZone(client, Zone_Start, -1))
-		{
-			gF_VelocityDifference2D[client] = 0.0;
-			gF_VelocityDifference3D[client] = 0.0;
-			return Plugin_Continue;
-		}
-
-		if ((GetGameTickCount() % gCV_DynamicTimeTick.IntValue) == 0)
-		{
-			gF_TimeDifference[client] = GetClosestReplayTime(client);
+			if ((GetGameTickCount() % gCV_DynamicTimeTick.IntValue) == 0)
+			{
+				gF_TimeDifference[client] = GetClosestReplayTime(client);
+			}
 		}
 	}
 
@@ -3552,7 +3577,7 @@ void ClearFrames(int client)
 	gI_PlayerFrames[client] = 0;
 	gF_NextFrameTime[client] = 0.0;
 	gI_PlayerPrerunFrames[client] = 0;
-	Shavit_SetPlayerStagePreFrames(client, 0);
+	gI_PlayerPrerunFrames_Stage[client] = 0;
 	gI_PlayerFinishFrame[client] = 0;
 }
 

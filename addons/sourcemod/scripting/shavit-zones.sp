@@ -1001,7 +1001,7 @@ void UnhookEntity(int entity)
 void KillZoneEntity(int index)
 {
 	int entity = gA_ZoneCache[index].iEntityID;
-	
+
 	if(entity > MaxClients && IsValidEntity(entity))
 	{
 		for(int i = 1; i <= MaxClients; i++)
@@ -3666,6 +3666,8 @@ void DoRestart(int client, int track)
 		GetTrackName(client, track, sTrack, 32);
 
 		Shavit_PrintToChat(client, "%T", "StartZoneUndefined", client, sTrack);
+
+		Shavit_StopTimer(client);
 	}
 }
 
@@ -4134,7 +4136,7 @@ public void StartTouchPost(int entity, int other)
 
 public void EndTouchPost(int entity, int other)
 {
-	if(other < 1 || other > MaxClients || Shavit_GetTimerStatus(other) == Timer_Paused || gI_EntityZone[entity] == -1 || gI_EntityZone[entity] >= sizeof(gA_ZoneCache))
+	if(other < 1 || other > MaxClients || Shavit_GetTimerStatus(other) == Timer_Paused || gI_EntityZone[entity] == -1)
 	{
 		return;
 	}

@@ -230,7 +230,6 @@ enum struct timer_snapshot_t
 	int iLastStage;
 	int iLastCP;
 	float fLeaveStageTime;
-	int iStagePreframes;
 
 	bool bStageTimer;
 }
@@ -254,6 +253,7 @@ enum struct cp_cache_t
 	char sClassname[64];
 	ArrayList aFrames;
 	int iPreFrames;
+	int iStagePreFrames;
 	bool bSegmented;
 	int iGroundEntity;
 	int iSteamID;
@@ -3196,26 +3196,6 @@ native void Shavit_SetLeaveStageTime(int client, float time);
 native bool Shavit_IsTeleporting(int client);
 
 /**
- * returns the number of stage preframes in the players current run.
- *
- * @param client					Client index
- *
- * @return 							Preframe count
- */
-native int Shavit_GetPlayerStagePreFrames(int client);
-
-/**
- * Sets player's stage preframe length.
- *
- * @param client					Client index
- * @param PreFrame					PreFrame length
- * @param TimerPreFrame				Timer start frame length
- *
- * @noreturn
- */
-native void Shavit_SetPlayerStagePreFrames(int client, int PreFrame);
-
-/**
  * Gets the total number of CPs that a client has saved
  *
  * @param client					Client index
@@ -3382,6 +3362,26 @@ native int Shavit_GetPlayerPreFrames(int client);
  * @noreturn
  */
 native void Shavit_SetPlayerPreFrames(int client, int PreFrame);
+
+/**
+ * returns the number of stage preframes in the players current run.
+ *
+ * @param client					Client index
+ *
+ * @return 							Preframe count
+ */
+native int Shavit_GetPlayerStagePreFrames(int client);
+
+/**
+ * Sets player's stage preframe length.
+ *
+ * @param client					Client index
+ * @param PreFrame					PreFrame length
+ * @param TimerPreFrame				Timer start frame length
+ *
+ * @noreturn
+ */
+native void Shavit_SetPlayerStagePreFrames(int client, int PreFrame);
 
 /**
  * Retrieves the player's chatrank trimmed and without colors.
@@ -3614,8 +3614,6 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetLeaveStageTime");
 	MarkNativeAsOptional("Shavit_SetLeaveStageTime");
 	MarkNativeAsOptional("Shavit_IsTeleporting");
-	MarkNativeAsOptional("Shavit_GetPlayerStagePreFrames");
-	MarkNativeAsOptional("Shavit_SetPlayerStagePreFrames");
 	MarkNativeAsOptional("Shavit_SaveCheckpoint");
 	MarkNativeAsOptional("Shavit_GetCurrentCheckpoint");
 	MarkNativeAsOptional("Shavit_SetCurrentCheckpoint");
@@ -3623,6 +3621,8 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_HasSavestate");
 	MarkNativeAsOptional("Shavit_GetPlayerPreFrames");
 	MarkNativeAsOptional("Shavit_SetPlayerPreFrames");
+	MarkNativeAsOptional("Shavit_GetPlayerStagePreFrames");
+	MarkNativeAsOptional("Shavit_SetPlayerStagePreFrames");
 	MarkNativeAsOptional("Shavit_GetClosestReplayTime");
 	MarkNativeAsOptional("Shavit_SetStyleSetting");
 	MarkNativeAsOptional("Shavit_SetStyleSettingFloat");

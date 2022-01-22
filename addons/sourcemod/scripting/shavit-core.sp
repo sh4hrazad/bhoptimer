@@ -259,8 +259,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetLeaveStageTime", Native_GetLeaveStageTime);
 	CreateNative("Shavit_SetLeaveStageTime", Native_SetLeaveStageTime);
 	CreateNative("Shavit_IsTeleporting", Native_IsTeleporting);
-	CreateNative("Shavit_GetPlayerStagePreFrames", Native_GetPlayerStagePreFrames);
-	CreateNative("Shavit_SetPlayerStagePreFrames", Native_SetPlayerStagePreFrames);
 
 	// registers library, check "bool LibraryExists(const char[] name)" in order to use with other plugins
 	RegPluginLibrary("shavit");
@@ -2071,16 +2069,6 @@ public int Native_SetLeaveStageTime(Handle handler, int numParams)
 public int Native_IsTeleporting(Handle handler, int numParams)
 {
 	return gA_HookedPlayer[GetNativeCell(1)].GetFlags() & STATUS_ONTELEPORT;
-}
-
-public int Native_GetPlayerStagePreFrames(Handle handler, int numParams)
-{
-	return gA_Timers[GetNativeCell(1)].iStagePreframes;
-}
-
-public int Native_SetPlayerStagePreFrames(Handle handler, int numParams)
-{
-	gA_Timers[GetNativeCell(1)].iStagePreframes = GetNativeCell(2);
 }
 
 public Action Shavit_OnStartPre(int client, int track)

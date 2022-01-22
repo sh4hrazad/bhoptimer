@@ -460,6 +460,7 @@ void PersistData(int client, bool disconnected)
 		{
 			aData.cpcache.aFrames = Shavit_GetReplayData(client, true);
 			aData.cpcache.iPreFrames = Shavit_GetPlayerPreFrames(client);
+			aData.cpcache.iStagePreFrames = Shavit_GetPlayerStagePreFrames(client);
 		}
 	}
 	else
@@ -1223,6 +1224,7 @@ void SaveCheckpointCache(int target, cp_cache_t cpcache, bool actually_a_checkpo
 	{
 		cpcache.aFrames = Shavit_GetReplayData(target, false);
 		cpcache.iPreFrames = Shavit_GetPlayerPreFrames(target);
+		cpcache.iStagePreFrames = Shavit_GetPlayerStagePreFrames(target);
 	}
 
 	cpcache.iSteamID = GetSteamAccountID(target);
@@ -1341,6 +1343,7 @@ void LoadCheckpointCache(int client, cp_cache_t cpcache, bool isPersistentData)
 		// if isPersistentData, then CloneHandle() is done instead of ArrayList.Clone()
 		Shavit_SetReplayData(client, cpcache.aFrames, isPersistentData);
 		Shavit_SetPlayerPreFrames(client, cpcache.iPreFrames);
+		Shavit_SetPlayerStagePreFrames(client, cpcache.iStagePreFrames);
 	}
 }
 
