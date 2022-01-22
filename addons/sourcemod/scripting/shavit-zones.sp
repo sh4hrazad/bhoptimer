@@ -36,6 +36,7 @@
 #pragma newdecls required
 
 #define EF_NODRAW 32
+#define MAX(%1,%2) (%1>%2?%1:%2)
 
 Database2 gH_SQL = null;
 bool gB_Connected = false;
@@ -102,7 +103,6 @@ bool gB_WaitingForDataInput[MAXPLAYERS+1];
 bool gB_WaitingForLimitSpeedInput[MAXPLAYERS+1];
 bool gB_HookZoneConfirm[MAXPLAYERS+1];
 bool gB_ShowTriggers[MAXPLAYERS+1];
-bool gB_EditMaxData[MAXPLAYERS+1];
 
 // cache
 float gV_Point1[MAXPLAYERS+1][3];
@@ -868,9 +868,6 @@ public void OnMapStart()
 
 	gB_LinearMap = false;
 	gI_MapZones = 0;
-	gI_Bonuses = 0;
-	gI_Stages = 1;
-	gI_Checkpoints = 0;
 
 	UnloadZones(0);
 	FindTriggers();
@@ -899,6 +896,8 @@ public void OnMapStart()
 
 void LoadBonusZones()
 {
+	gI_Bonuses = 0;
+
 	char sQuery[256];
 	FormatEx(sQuery, 256, "SELECT track FROM mapzones WHERE map = '%s' ORDER BY track DESC LIMIT 1;", gS_Map);
 	gH_SQL.Query(SQL_GetBonusZone_Callback, sQuery, 0, DBPrio_High);
@@ -920,6 +919,8 @@ public void SQL_GetBonusZone_Callback(Database db, DBResultSet results, const ch
 
 void LoadStageZones()
 {
+	gI_Stages = 1;
+
 	char sQuery[256];
 	FormatEx(sQuery, 256, "SELECT data FROM mapzones WHERE type = %d and map = '%s' ORDER BY data DESC LIMIT 1;", Zone_Stage, gS_Map);
 	gH_SQL.Query(SQL_GetStageZone_Callback, sQuery, 0, DBPrio_High);
@@ -943,6 +944,8 @@ public void SQL_GetStageZone_Callback(Database db, DBResultSet results, const ch
 
 void LoadCheckpointZones()
 {
+	gI_Checkpoints = 0;
+
 	char sQuery[256];
 	FormatEx(sQuery, 256, "SELECT data FROM mapzones WHERE type = %d AND map = '%s' ORDER BY data DESC LIMIT 1;", Zone_Checkpoint, gS_Map);
 	gH_SQL.Query(SQL_GetCheckpointZone_Callback, sQuery, 0, DBPrio_High);
@@ -1118,7 +1121,7 @@ public void SQL_RefreshZones_Callback(Database db, DBResultSet results, const ch
 		gA_ZoneCache[gI_MapZones].iDatabaseID = results.FetchInt(11);
 		gA_ZoneCache[gI_MapZones].iZoneFlags = results.FetchInt(12);
 		gA_ZoneCache[gI_MapZones].iZoneData = results.FetchInt(13);
-		gI_ZoneMaxData[type] = results.FetchInt(13);
+		gI_ZoneMaxData[type] = MAX(gI_ZoneMaxData[type], results.FetchInt(13));
 		gA_ZoneCache[gI_MapZones].iHookedHammerID = results.FetchInt(14);
 		results.FetchString(15, gA_ZoneCache[gI_MapZones].sZoneHookname, 128);
 		gA_ZoneCache[gI_MapZones].fLimitSpeed = results.FetchFloat(16);
@@ -2295,8 +2298,6 @@ void OpenAddZonesMenu(int client)
 {
 	Reset(client);
 
-	gB_EditMaxData[client] = true;
-
 	Menu menu = new Menu(MenuHandler_SelectZoneTrack);
 	menu.SetTitle("%T", "ZoneMenuTrack", client);
 
@@ -2333,12 +2334,12 @@ public int MenuHandler_SelectZoneTrack(Menu menu, MenuAction action, int param1,
 			char sZoneName[64];
 			GetZoneName(param1, i, sZoneName, 64);
 
-			if(i == Zone_Stage && (gI_Checkpoints > 0 || gI_ZoneTrack[param1] != 0))
+			if(i == Zone_Stage && (gI_Checkpoints > 0 || gI_ZoneTrack[param1] != Track_Main))
 			{
 				continue;
 			}
 
-			else if(i == Zone_Checkpoint && (gI_Stages > 1 || gI_ZoneTrack[param1] != 0))
+			else if(i == Zone_Checkpoint && (gI_Stages > 1 || gI_ZoneTrack[param1] != Track_Main))
 			{
 				continue;
 			}
@@ -2365,13 +2366,20 @@ public int MenuHandler_SelectZoneType(Menu menu, MenuAction action, int param1, 
 		char info[8];
 		menu.GetItem(param2, info, 8);
 
-		gI_ZoneType[param1] = StringToInt(info);
+		int type = StringToInt(info);
 
-		gI_ZoneData[param1][gI_ZoneType[param1]] = gI_ZoneMaxData[gI_ZoneType[param1]] + 1;
+		gI_ZoneType[param1] = type;
 
-		if(gI_Stages == 0)
+		gI_ZoneData[param1][type] = gI_ZoneMaxData[type] + 1;
+
+		if(gI_Stages == 1)
 		{
-			gI_ZoneData[param1][gI_ZoneType[param1]] = 2; // hack fix for creating first stage zone
+			gI_ZoneData[param1][Zone_Stage] = 2; // hack fix for creating first stage zone
+		}
+
+		if(gI_Checkpoints == 0)
+		{
+			gI_ZoneData[param1][Zone_Checkpoint] = 1; // hack fix for creating first checkpoint zone
 		}
 
 		ShowPanel(param1, EditStep_First);
@@ -2611,6 +2619,7 @@ public void SQL_DeleteZone_Callback(Database db, DBResultSet results, const char
 
 	UnloadZones(type);
 	RefreshZones();
+	LoadBonusZones();
 	LoadStageZones();
 	LoadCheckpointZones();
 
@@ -2697,7 +2706,6 @@ void Reset(int client)
 	gB_WaitingForDataInput[client] = false;
 	gB_WaitingForLimitSpeedInput[client] = false;
 	gB_HookZoneConfirm[client] = false;
-	gB_EditMaxData[client] = false;
 
 	gI_ZoneFlags[client] = 0;
 	gI_ZoneDatabaseID[client] = -1;
@@ -3106,20 +3114,6 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 			return 0;
 		}
 
-		else if(StrEqual(sInfo, "setmaxdata"))
-		{
-			gB_EditMaxData[param1] = !gB_EditMaxData[param1];
-
-			if(gB_EditMaxData[param1])
-			{
-				gI_ZoneData[param1][gI_ZoneType[param1]] = gI_ZoneMaxData[gI_ZoneType[param1]] + 1;
-			}
-			else
-			{
-				gI_ZoneData[param1][gI_ZoneType[param1]] = gA_ZoneCache[gI_ZoneID[param1]].iZoneData;
-			}
-		}
-
 		else if(StrEqual(sInfo, "adjust"))
 		{
 			CreateAdjustMenu(param1, 0);
@@ -3226,9 +3220,6 @@ void CreateEditMenu(int client)
 
 	FormatEx(sMenuItem, 64, "%T", "ZoneSetData", client, gI_ZoneData[client][gI_ZoneType[client]]);
 	menu.AddItem("datafromchat", sMenuItem);
-
-	FormatEx(sMenuItem, 64, "%T", "ZoneForceMaxData", client, (gB_EditMaxData[client])? "＋":"－");
-	menu.AddItem("setmaxdata", sMenuItem);
 
 	FormatEx(sMenuItem, 64, "%T", "ZoneSetAdjust", client);
 	menu.AddItem("adjust", sMenuItem);
@@ -3393,6 +3384,7 @@ public void SQL_InsertZone_Callback(Database db, DBResultSet results, const char
 
 	UnloadZones(0);
 	RefreshZones();
+	LoadBonusZones();
 	LoadStageZones();
 	LoadCheckpointZones();
 	Reset(client);
@@ -3994,7 +3986,7 @@ public void StartTouchPost(int entity, int other)
 
 	if(!IsFakeClient(other))
 	{
-		if(gCV_EnforceTracks.BoolValue && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack != Shavit_GetClientTrack(other))
+		if(gCV_EnforceTracks.BoolValue && type > Zone_End && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack != Shavit_GetClientTrack(other))
 		{
 			return;
 		}
