@@ -969,6 +969,14 @@ public void OnMapEnd()
 {
 	UnloadZones(0);
 	delete gH_DrawEverything;
+
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(gH_DrawZonesToClient[i] != null)
+		{
+			delete gH_DrawZonesToClient[i];
+		}
+	}
 }
 
 void ClearZone(int index)
@@ -1094,7 +1102,7 @@ public void SQL_RefreshZones_Callback(Database db, DBResultSet results, const ch
 		// how you got type == -1?
 		if(type < 0)
 		{
-			LogError("Timer (zone refresh) SQL query got zone_type < 0, type -> %d", type);
+			LogError("Timer (zone refresh) SQL query got zone_type < 0, type -> %d, map -> %s", type, gS_Map);
 			continue;
 		}
 

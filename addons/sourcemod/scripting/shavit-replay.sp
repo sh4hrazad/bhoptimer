@@ -31,12 +31,7 @@
 
 #undef REQUIRE_EXTENSIONS
 #include <cstrike>
-#include <tf2>
-#include <tf2_stocks>
 #include <closestpos>
-
-//#include <TickRateControl>
-forward void TickRate_OnTickRateChanged(float fOld, float fNew);
 
 // History of REPLAY_FORMAT_SUBVERSION:
 // 0x01: standard origin[3], angles[2], and buttons
@@ -4418,11 +4413,6 @@ void GetReplayName(int style, int track, char[] buffer, int length, int stage = 
 
 		Shavit_GetWRStageName(style, stage, buffer, length);
 	}
-}
-
-public void TickRate_OnTickRateChanged(float fOld, float fNew)
-{
-	gF_Tickrate = fNew;
 }
 
 // also calculates gF_VelocityDifference2D & gF_VelocityDifference3D
