@@ -563,7 +563,6 @@ bool InsideZone(int client, int type, int track)
 	{
 		return gB_InsideZone[client][type][track];
 	}
-
 	else
 	{
 		for(int i = 0; i < TRACKS_SIZE; i++)
@@ -1733,7 +1732,7 @@ public Action Command_Stages(int client, int args)
 			if(gA_ZoneCache[i].bZoneInitialized && gA_ZoneCache[i].iZoneType == Zone_Stage && gA_ZoneCache[i].iZoneData == iStage)
 			{
 				Shavit_StopTimer(client);
-				Shavit_SetPracticeMode(client, false, false);
+				Shavit_SetPracticeMode(client, false);
 				Shavit_SetStageTimer(client, true);
 
 				DoTeleport(client, i);
@@ -2955,16 +2954,6 @@ public bool TraceFilter_World(int entity, int contentsMask)
 	return (entity == 0);
 }
 
-// This is used instead of `TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed)`.
-// Why: TeleportEntity somehow triggers the zone EndTouch which fucks with `Shavit_InsideZone`.
-void DumbSetVelocity(int client, float fSpeed[3])
-{
-	// Someone please let me know if any of these are unnecessary.
-	SetEntPropVector(client, Prop_Data, "m_vecBaseVelocity", NULL_VECTOR);
-	SetEntPropVector(client, Prop_Data, "m_vecVelocity", fSpeed);
-	SetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed); // m_vecBaseVelocity+m_vecVelocity
-}
-
 public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float vel[3], float angles[3], TimerStatus status, int track, int style)
 {
 	if(gB_DrawEditZone[client])
@@ -3036,76 +3025,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 		}
 	}
 
-	// prespeed
-	bool onGround = view_as<bool>(GetEntityFlags(client) & FL_ONGROUND);
-	bool bInStart = InsideZone(client, Zone_Start, track);
-	bool bInStage = InsideZone(client, Zone_Stage, track);
-
-	if(GetEntityMoveType(client) != MOVETYPE_NOCLIP && (bInStart || bInStage))
-	{
-		if(gCV_PreSpeed.IntValue >= 1)
-		{
-			// surfheaven prespeed
-			// limit speed since 2 jumps
-			// int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
-			// iGroundEntity == 0 ---> onGround
-			// iGroundEntity == -1 ---> onAir
-
-			if(bInStage && !Shavit_GetMapLimitspeed()) // do not limit all stages' speed
-			{
-				return Plugin_Continue;
-			}
-
-			float fSpeed[3];
-			GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
-			float fSpeedXY = SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0));
-
-			if((bInStart && !gB_InStart[client]) || (bInStage && !gB_InStage[client]))
-			{
-				int zone = InsideZoneGetID(client, InsideZoneGetType(client, track), track);
-				if(gA_ZoneCache[zone].fLimitSpeed <= 0.0)
-				{
-					return Plugin_Continue;
-				}
-
-				if(fSpeedXY > gA_ZoneCache[zone].fLimitSpeed)
-				{
-					fSpeed[0] *= 0.1;
-					fSpeed[1] *= 0.1;
-					DumbSetVelocity(client, fSpeed);
-				}
-			}
-
-			if(GetEntityFlags(client) & FL_BASEVELOCITY) // they are on booster, dont limit them
-			{
-				return Plugin_Continue;
-			}
-
-			if(gB_OnGround[client] && !onGround) // 起跳 starts jump
-			{
-				if(++gI_Jumps[client] >= 2)
-				{
-					float fScale = 260.0 / fSpeedXY;
-
-					if(fScale < 1.0)
-					{
-						fSpeed[0] *= fScale;
-						fSpeed[1] *= fScale;
-						DumbSetVelocity(client, fSpeed);
-					}
-				}
-			}
-
-			else if(gB_OnGround[client] && onGround) // 不跳 not jumping
-			{
-				gI_Jumps[client] = 0;
-			}
-		}
-	}
-
-	gB_OnGround[client] = onGround;
-	gB_InStart[client] = bInStart;
-	gB_InStage[client] = bInStage;
+	gB_OnGround[client] = view_as<bool>(GetEntityFlags(client) & FL_ONGROUND);
 
 	return Plugin_Continue;
 }
@@ -4030,7 +3950,10 @@ public void StartTouchPost(int entity, int other)
 
 	if(!IsFakeClient(other))
 	{
-		if(gCV_EnforceTracks.BoolValue && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack != Shavit_GetClientTrack(other))
+		gB_InsideZone[other][type][track] = true;
+		gB_InsideZoneID[other][entityzone] = true;
+
+		if(!IsCurrentTrack(other, track))
 		{
 			return;
 		}
@@ -4042,6 +3965,7 @@ public void StartTouchPost(int entity, int other)
 			return;
 		}
 
+		Action result = Plugin_Continue;
 		Call_StartForward(gH_Forwards_EnterZone);
 		Call_PushCell(other);
 		Call_PushCell(type);
@@ -4049,7 +3973,12 @@ public void StartTouchPost(int entity, int other)
 		Call_PushCell(entityzone);
 		Call_PushCell(entity);
 		Call_PushCell(data);
-		Call_Finish();
+		Call_Finish(result);
+
+		if(result != Plugin_Continue)
+		{
+			return;
+		}
 
 		switch(type)
 		{
@@ -4142,9 +4071,6 @@ public void StartTouchPost(int entity, int other)
 				}
 			}
 		}
-
-		gB_InsideZone[other][type][track] = true;
-		gB_InsideZoneID[other][entityzone] = true;
 	}
 
 	else
@@ -4190,6 +4116,13 @@ public void EndTouchPost(int entity, int other)
 	{
 		gB_InsideZone[other][type][track] = false;
 		gB_InsideZoneID[other][entityzone] = false;
+
+		DataPack dp = new DataPack();
+		dp.WriteCell(GetClientSerial(other));
+		dp.WriteCell(type);
+		dp.WriteCell(entityzone);
+
+		RequestFrame(Frame_ClearShittyLimitPrestrafe, dp);
 
 		Action result = Plugin_Continue;
 		Call_StartForward(gH_Forwards_LeaveZone);
@@ -4273,14 +4206,24 @@ public void EndTouchPost(int entity, int other)
 
 public void TouchPost(int entity, int other)
 {
-	if(other < 1 || other > MaxClients || gI_EntityZone[entity] == -1 || IsFakeClient(other) || Shavit_GetTimerStatus(other) == Timer_Paused || Shavit_IsPracticeMode(other) || 
-		(gCV_EnforceTracks.BoolValue && gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack != Shavit_GetClientTrack(other)))
+	if(other < 1 || other > MaxClients || gI_EntityZone[entity] == -1 || IsFakeClient(other) || Shavit_GetTimerStatus(other) == Timer_Paused || Shavit_IsPracticeMode(other))
 	{
 		return;
 	}
 
 	// do precise stuff here, this will be called *A LOT*
-	int type = gA_ZoneCache[gI_EntityZone[entity]].iZoneType;
+	int entityzone = gI_EntityZone[entity];
+	int type = gA_ZoneCache[entityzone].iZoneType;
+	int track = gA_ZoneCache[entityzone].iZoneTrack;
+	int data = gA_ZoneCache[entityzone].iZoneData;
+
+	//gB_InsideZone[other][type][track] = true;
+	//gB_InsideZoneID[other][entityzone] = true;
+
+	if(!IsCurrentTrack(other, track))
+	{
+		return;
+	}
 
 	switch(type)
 	{
@@ -4288,10 +4231,13 @@ public void TouchPost(int entity, int other)
 		{
 			// start timer instantly for main track, but require bonuses to have the current timer stopped
 			// so you don't accidentally step on those while running
-			if(gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack == Shavit_GetClientTrack(other))
+			Shavit_SetStageTimer(other, false);
+			Shavit_StartTimer(other, track);
+
+			if(ShittyLimitPrestrafe(other, entityzone, true, false))
 			{
-				Shavit_SetStageTimer(other, false);
-				Shavit_StartTimer(other, gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack);
+				Shavit_PrintToChat(other, "{darkred}You exceeded the speed limit!{default}");
+				SendMessageToSpectator(other, "{darkred}You exceeded the speed limit!{default}");
 			}
 		}
 
@@ -4315,12 +4261,18 @@ public void TouchPost(int entity, int other)
 				Action result = Plugin_Continue;
 				Call_StartForward(gH_Forwards_OnStage);
 				Call_PushCell(other);
-				Call_PushCell(gA_ZoneCache[gI_EntityZone[entity]].iZoneData);
+				Call_PushCell(data);
 				Call_Finish(result);
 
 				if(result != Plugin_Continue)
 				{
 					return;
+				}
+
+				if(ShittyLimitPrestrafe(other, entityzone, false, true))
+				{
+					Shavit_PrintToChat(other, "{darkred}You exceeded the speed limit!{default}");
+					SendMessageToSpectator(other, "{darkred}You exceeded the speed limit!{default}");
 				}
 
 				if(Shavit_IsStageTimer(other))
@@ -4339,9 +4291,6 @@ public void TouchPost(int entity, int other)
 			}
 		}
 	}
-
-	gB_InsideZone[other][gA_ZoneCache[gI_EntityZone[entity]].iZoneType][gA_ZoneCache[gI_EntityZone[entity]].iZoneTrack] = true;
-	gB_InsideZoneID[other][gI_EntityZone[entity]] = true;
 }
 
 void FillBoxMinMax(float point1[3], float point2[3], float boxmin[3], float boxmax[3])
@@ -4534,4 +4483,171 @@ int FindNumberInString(const char[] str)
 	delete sRegex;
 
 	return StringToInt(sNum);
+}
+
+// This is used instead of `TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed)`.
+// Why: TeleportEntity somehow triggers the zone EndTouch which fucks with `InsideZone`.
+void DumbSetVelocity(int client, float fSpeed[3])
+{
+	// Someone please let me know if any of these are unnecessary.
+	SetEntPropVector(client, Prop_Data, "m_vecBaseVelocity", NULL_VECTOR);
+	SetEntPropVector(client, Prop_Data, "m_vecVelocity", fSpeed);
+	SetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed); // m_vecBaseVelocity+m_vecVelocity
+}
+
+bool ShittyLimitPrestrafe(int client, int id, bool inStart, bool inStage)
+{
+	bool onGround = view_as<bool>(GetEntityFlags(client) & FL_ONGROUND);
+	bool bLimited = false;
+
+	if(GetEntityMoveType(client) != MOVETYPE_NOCLIP)
+	{
+		if(gCV_PreSpeed.IntValue >= 1)
+		{
+			// surfheaven prespeed
+			// limit speed since 2 jumps
+			// int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
+			// iGroundEntity == 0 ---> onGround
+			// iGroundEntity == -1 ---> onAir
+
+			if(inStage && !Shavit_GetMapLimitspeed()) // do not limit all stages' speed
+			{
+				return false;
+			}
+
+			float fSpeed[3];
+			GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
+			float fSpeedXY = SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0));
+
+			if(!gB_InStart[client] || !gB_InStage[client]) // limit those one that enter zone by outsiding zone
+			{
+				if(gA_ZoneCache[id].fLimitSpeed <= 0.0)
+				{
+					return false;
+				}
+
+				if(fSpeedXY > gA_ZoneCache[id].fLimitSpeed)
+				{
+					fSpeed[0] *= 0.1;
+					fSpeed[1] *= 0.1;
+					DumbSetVelocity(client, fSpeed);
+
+					bLimited = true;
+				}
+			}
+
+			if(GetEntityFlags(client) & FL_BASEVELOCITY) // they are on booster, dont limit them
+			{
+				return false;
+			}
+
+			if(gB_OnGround[client] && !onGround) // 起跳 starts jump
+			{
+				if(++gI_Jumps[client] >= 2)
+				{
+					float fScale = 260.0 / fSpeedXY;
+
+					if(fScale < 1.0)
+					{
+						fSpeed[0] *= fScale;
+						fSpeed[1] *= fScale;
+						DumbSetVelocity(client, fSpeed);
+
+						bLimited = true;
+					}
+				}
+			}
+			else if(gB_OnGround[client] && onGround) // 不跳 not jumping
+			{
+				gI_Jumps[client] = 0;
+			}
+		}
+	}
+
+	gB_InStart[client] = inStart;
+	gB_InStage[client] = inStage;
+
+	return bLimited;
+}
+
+public void Frame_ClearShittyLimitPrestrafe(DataPack dp)
+{
+	dp.Reset();
+
+	int client = GetClientFromSerial(dp.ReadCell());
+	int type = dp.ReadCell();
+	int id = dp.ReadCell();
+
+	delete dp;
+
+	ClearShittyLimitPrestrafe(client, type, id);
+}
+
+// clear them when leave zone
+void ClearShittyLimitPrestrafe(int client, int type, int id)
+{
+	switch(type)
+	{
+		case Zone_Start:
+		{
+			if(ShittyLimitPrestrafe(client, id, true, false))
+			{
+				Shavit_PrintToChat(client, "{darkred}You exceeded the speed limit!{default}");
+				SendMessageToSpectator(client, "{darkred}You exceeded the speed limit!{default}");
+			}
+
+			gB_InStart[client] = false;
+		}
+
+		case Zone_Stage:
+		{
+			if(ShittyLimitPrestrafe(client, id, false, true))
+			{
+				Shavit_PrintToChat(client, "{darkred}You exceeded the speed limit!{default}");
+				SendMessageToSpectator(client, "{darkred}You exceeded the speed limit!{default}");
+			}
+
+			gB_InStage[client] = false;
+		}
+	}
+
+	switch(gI_Jumps[client])
+	{
+		case 1:
+		{
+			return;
+		}
+
+		default:
+		{
+			gI_Jumps[client] = 0;
+		}
+	}
+}
+
+bool IsCurrentTrack(int client, int track)
+{
+	return gCV_EnforceTracks.BoolValue && track == Shavit_GetClientTrack(client);
+}
+
+stock void SendMessageToSpectator(int client, const char[] message, any ..., bool translate = false)
+{
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
+		{
+			if(!translate)
+			{
+				Shavit_PrintToChat(i, message);
+			}
+			else
+			{
+				SetGlobalTransTarget(i);
+
+				char sBuffer[256];
+				VFormat(sBuffer, sizeof(sBuffer), message, 3);
+				Shavit_PrintToChat(i, sBuffer);
+			}
+		}
+	}
 }

@@ -1041,11 +1041,11 @@ public Action Command_CCP(int client, int args)
 	return Plugin_Handled;
 }
 
-public void Shavit_OnEnterZone(int client, int type, int track, int id, int entity, int data)
+public Action Shavit_OnEnterZone(int client, int type, int track, int id, int entity, int data)
 {
 	if(track != Track_Main)
 	{
-		return;
+		return Plugin_Continue;
 	}
 
 	float fVelocity[3];
@@ -1106,13 +1106,15 @@ public void Shavit_OnEnterZone(int client, int type, int track, int id, int enti
 			Call_Finish();
 		}
 	}
+
+	return Plugin_Continue;
 }
 
-public void Shavit_OnLeaveZone(int client, int type, int track, int id, int entity, int data)
+public Action Shavit_OnLeaveZone(int client, int type, int track, int id, int entity, int data)
 {
 	if(track != Track_Main || Shavit_IsTeleporting(client))
 	{
-		return;
+		return Plugin_Continue;
 	}
 
 	float fVelocity[3];
@@ -1156,6 +1158,8 @@ public void Shavit_OnLeaveZone(int client, int type, int track, int id, int enti
 			Call_Finish();
 		}
 	}
+
+	return Plugin_Continue;
 }
 
 public void Shavit_OnWRDeleted(int style, int id, int track, int accountid, const char[] mapname)

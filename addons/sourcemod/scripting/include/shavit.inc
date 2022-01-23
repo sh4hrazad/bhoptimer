@@ -1253,9 +1253,9 @@ forward Action Shavit_OnDelete(int client, int index);
  * @param id						Zone ID.
  * @param entity					Zone trigger entity index.
  * @param data						Zone data if any.
- * @noreturn
+ * @return							Plugin_Continue to continue deletion, anything else to prevent.
  */
-forward void Shavit_OnEnterZone(int client, int type, int track, int id, int entity, int data);
+forward Action Shavit_OnEnterZone(int client, int type, int track, int id, int entity, int data);
 
 /**
  * Called when a player leaves a zone.
@@ -1266,9 +1266,9 @@ forward void Shavit_OnEnterZone(int client, int type, int track, int id, int ent
  * @param id						Zone ID.
  * @param entity					Zone trigger entity index.
  * @param data						Zone data if any.
- * @noreturn
+ * @return							Plugin_Continue to continue deletion, anything else to prevent.
  */
-forward void Shavit_OnLeaveZone(int client, int type, int track, int id, int entity, int data);
+forward Action Shavit_OnLeaveZone(int client, int type, int track, int id, int entity, int data);
 
 /**
  * Called when a bot enters a stage zone.
@@ -2776,10 +2776,9 @@ native int Shavit_GetHUDSettings(int client);
  *
  * @param client					Client index.
  * @param practice					Enable or disable practice mode.
- * @param alert						Alert the client about practice mode?
  * @noreturn
  */
-native void Shavit_SetPracticeMode(int client, bool practice, bool alert);
+native void Shavit_SetPracticeMode(int client, bool practice);
 
 /**
  * Gets a client's practice mode status.

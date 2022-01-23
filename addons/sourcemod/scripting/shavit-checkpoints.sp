@@ -1320,11 +1320,11 @@ void LoadCheckpointCache(int client, cp_cache_t cpcache, bool isPersistentData)
 
 	if (cpcache.aSnapshot.bPracticeMode || !(cpcache.bSegmented || isPersistentData) || GetSteamAccountID(client) != cpcache.iSteamID)
 	{
-		Shavit_SetPracticeMode(client, true, true);
+		Shavit_SetPracticeMode(client, true);
 	}
 	else
 	{
-		Shavit_SetPracticeMode(client, false, true);
+		Shavit_SetPracticeMode(client, false);
 
 		float latency = GetClientLatency(client, NetFlow_Both);
 
