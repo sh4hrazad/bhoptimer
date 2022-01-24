@@ -341,7 +341,7 @@
 		"en"		"{grey}CP{default} [{orchid}{1}{default}] | Speed: {grey2}{2} u/s{default} | {gold}WR:{default} {3} | {darkblue}PB:{default} {4}."
 		"chi"		"{grey}检查点{default} [{orchid}{1}{default}] | Speed: {grey2}{2} u/s{default} | {gold}WR:{default} {3} | {darkblue}PB:{default} {4}."
 	}
-	"StageTimerPrestrafe"
+	"StagePrestrafe"
 	{
 		"#format"	"{1:d},{2:d},{3:s},{4:s}"
 		"en"		"{grey}Stage {1}: {grey2}{2} u/s {default}| {gold}WRCP:{default} {3} | {darkblue}PB:{default} {4}"

@@ -399,7 +399,7 @@ public void Shavit_OnStartTimer_Post(int client, int style, int track, float spe
 		Shavit_GetStagePB(client, style, 1, pb);
 		FormatDiffPreStrafeSpeed(sStagePBDiff, speed, pb.fPostspeed);
 
-		FormatEx(sPrestrafe, sizeof(sPrestrafe), "%T", "StageTimerPrestrafe", client, 1, RoundToFloor(speed), sStageWRDiff, sStagePBDiff);
+		FormatEx(sPrestrafe, sizeof(sPrestrafe), "%T", "StagePrestrafe", client, 1, RoundToFloor(speed), sStageWRDiff, sStagePBDiff);
 
 		Shavit_PrintToChat(client, sPrestrafe);
 		SendMessageToSpectator(client, sPrestrafe);
@@ -422,7 +422,7 @@ public void Shavit_OnStageTimer_Post(int client, int style, int stage, float spe
 	FormatDiffPreStrafeSpeed(sPBDiff, speed, pb.fPostspeed);
 
 	char sPrestrafe[256];
-	FormatEx(sPrestrafe, sizeof(sPrestrafe), "%T", "StageTimerPrestrafe", client, stage, RoundToFloor(speed), gS_PreStrafeDiff[client], sPBDiff);
+	FormatEx(sPrestrafe, sizeof(sPrestrafe), "%T", "StagePrestrafe", client, stage, RoundToFloor(speed), gS_PreStrafeDiff[client], sPBDiff);
 	Shavit_PrintToChat(client, sPrestrafe);
 	SendMessageToSpectator(client, sPrestrafe);
 }
