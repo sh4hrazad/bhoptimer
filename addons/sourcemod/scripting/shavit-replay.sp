@@ -1119,6 +1119,8 @@ public int Native_SetReplayData(Handle handler, int numParams)
 	delete gA_PlayerFrames[client];
 	gA_PlayerFrames[client] = data;
 	gI_PlayerFrames[client] = data.Length;
+
+	return 0;
 }
 
 public int Native_GetReplayData(Handle plugin, int numParams)
@@ -1267,6 +1269,8 @@ public int Native_HijackAngles(Handle handler, int numParams)
 	gF_HijackedAngles[client][0] = view_as<float>(GetNativeCell(2));
 	gF_HijackedAngles[client][1] = view_as<float>(GetNativeCell(3));
 	gI_HijackFrames[client] = GetNativeCell(4);
+
+	return 0;
 }
 
 public int Native_GetReplayBotStage(Handle handler, int numParams)
@@ -1325,6 +1329,8 @@ public int Native_Replay_DeleteMap(Handle handler, int numParams)
 	{
 		OnMapStart();
 	}
+
+	return 0;
 }
 
 public int Native_GetPlayerPreFrames(Handle handler, int numParams)
@@ -1338,6 +1344,8 @@ public int Native_SetPlayerPreFrames(Handle handler, int numParams)
 	int preframes = GetNativeCell(2);
 
 	gI_PlayerPrerunFrames[client] = preframes;
+
+	return 0;
 }
 
 public int Native_GetPlayerStagePreFrames(Handle handler, int numParams)
@@ -1351,6 +1359,8 @@ public int Native_SetPlayerStagePreFrames(Handle handler, int numParams)
 	int preframes = GetNativeCell(2);
 
 	gI_PlayerPrerunFrames_Stage[client] = preframes;
+
+	return 0;
 }
 
 public int Native_GetClosestReplayTime(Handle plugin, int numParams)
@@ -1386,6 +1396,8 @@ public int Native_GetClosestReplayStyle(Handle plugin, int numParams)
 public int Native_SetClosestReplayStyle(Handle plugin, int numParams)
 {
 	gI_TimeDifferenceStyle[GetNativeCell(1)] = GetNativeCell(2);
+
+	return 0;
 }
 
 public int Native_SetReplayCacheName(Handle plugin, int numParams)

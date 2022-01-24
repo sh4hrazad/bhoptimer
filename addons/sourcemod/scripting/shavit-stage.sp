@@ -11,6 +11,7 @@
 
 #include <sourcemod>
 #include <regex>
+#include <sdktools>
 
 #undef REQUIRE_PLUGIN
 #include <shavit>
@@ -1608,6 +1609,8 @@ public int Native_ReloadWRStages(Handle handler, int numParams)
 	{
 		ResetWRStages();
 	}
+
+	return 0;
 }
 
 public int Native_ReloadWRCPs(Handle handler, int numParams)
@@ -1616,12 +1619,14 @@ public int Native_ReloadWRCPs(Handle handler, int numParams)
 	{
 		ResetWRCPs();
 	}
+
+	return 0;
 }
 
 //native float Shavit_GetWRStageDate(int stage, int style)
 public int Native_GetWRStageDate(Handle handler, int numParams)
 {
-	// TODO
+	return 0;
 }
 
 //native float Shavit_GetWRStageTime(int stage, int style)
@@ -1640,6 +1645,8 @@ public int Native_GetWRStagePostspeed(Handle handler, int numParams)
 public int Native_GetWRStageName(Handle handler, int numParams)
 {
 	SetNativeString(3, gA_WRStageInfo[GetNativeCell(1)][GetNativeCell(2)].sName, GetNativeCell(4));
+
+	return 0;
 }
 
 //native int Shavit_GetWRCPAttemps(int cp, int style)
@@ -1686,7 +1693,7 @@ public int Native_FinishStage(Handle handler, int numParams)
 
 	if(Shavit_GetClientTrack(client) != Track_Main)
 	{
-		return;
+		return 0;
 	}
 
 	float time = Shavit_GetClientTime(client) - Shavit_GetLeaveStageTime(client);
@@ -1704,7 +1711,7 @@ public int Native_FinishStage(Handle handler, int numParams)
 
 			if(result > Plugin_Continue)
 			{
-				return;
+				return 0;
 			}
 		}
 
@@ -1713,6 +1720,8 @@ public int Native_FinishStage(Handle handler, int numParams)
 
 		OnFinishStage(client, stage - 1, style, time, stagepr.fTime);
 	}
+
+	return 0;
 }
 
 public int Native_FinishCheckpoint(Handle handler, int numParams)
@@ -1724,7 +1733,7 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 
 	if(Shavit_GetClientTrack(client) != Track_Main)
 	{
-		return;
+		return 0;
 	}
 
 	float time = Shavit_GetClientTime(client);
@@ -1742,7 +1751,7 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 
 			if(result > Plugin_Continue)
 			{
-				return;
+				return 0;
 			}
 		}
 
@@ -1768,6 +1777,8 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 		Call_PushFloat(prespeed);
 		Call_Finish();
 	}
+
+	return 0;
 }
 
 //native int Shavit_GetStageRecordAmount(int style, int stage)

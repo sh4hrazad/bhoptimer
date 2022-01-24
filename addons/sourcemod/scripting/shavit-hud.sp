@@ -356,6 +356,8 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 public Action Shavit_OnStart(int client, int track)
 {
 	strcopy(gS_PreStrafeDiff[client], 64, "None");
+
+	return Plugin_Continue;
 }
 
 public void Shavit_OnStartTimer_Post(int client, int style, int track, float speed)
@@ -395,6 +397,8 @@ public void Shavit_OnStartTimer_Post(int client, int style, int track, float spe
 public Action Shavit_OnStage(int client, int stage)
 {
 	strcopy(gS_PreStrafeDiff[client], 64, "None");
+
+	return Plugin_Continue;
 }
 
 public void Shavit_OnStageTimer_Post(int client, int style, int stage, float speed)

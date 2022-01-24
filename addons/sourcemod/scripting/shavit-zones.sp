@@ -531,6 +531,8 @@ public int Native_Zones_DeleteMap(Handle handler, int numParams)
 	GetNativeString(1, sMap, 160);
 
 	DeleteMapAllZones(sMap);
+
+	return 0;
 }
 
 void DeleteMapAllZones(const char[] map)
@@ -2054,11 +2056,12 @@ public int MenuHandler_SelectHookZone(Menu menu, MenuAction action, int param1, 
 			}
 		}
 	}
-
 	else if(action == MenuAction_Cancel)
 	{
 		OpenHookZonesMenu_SelectMethod(param1);
 	}
+
+	return 0;
 }
 
 void OpenHookZonesMenu_Track(int client)
@@ -2683,18 +2686,19 @@ public int MenuHandler_DeleteAllZones(Menu menu, MenuAction action, int param1, 
 
 		if(iInfo == -1)
 		{
-			return;
+			return 0;
 		}
 
 		Shavit_LogMessage("%L - deleted all zones from map `%s`.", param1, gS_Map);
 
 		DeleteMapAllZones(gS_Map);
 	}
-
 	else if(action == MenuAction_End)
 	{
 		delete menu;
 	}
+
+	return 0;
 }
 
 void Reset(int client)

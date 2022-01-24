@@ -1421,7 +1421,7 @@ public int Native_FinishMap(Handle handler, int numParams)
 
 	if(result != Plugin_Continue && result != Plugin_Changed)
 	{
-		return;
+		return 0;
 	}
 
 	Call_StartForward(gH_Forwards_Finish);
@@ -1467,6 +1467,8 @@ public int Native_FinishMap(Handle handler, int numParams)
 	Call_Finish();
 
 	StopTimer(client);
+
+	return 0;
 }
 
 public int Native_PauseTimer(Handle handler, int numParams)
@@ -1475,6 +1477,8 @@ public int Native_PauseTimer(Handle handler, int numParams)
 
 	GetPauseMovement(client);
 	PauseTimer(client);
+
+	return 0;
 }
 
 public any Native_GetZoneOffset(Handle handler, int numParams)
@@ -1513,11 +1517,15 @@ public int Native_ResumeTimer(Handle handler, int numParams)
 	{
 		ResumePauseMovement(client);
 	}
+
+	return 0;
 }
 
 public int Native_StopChatSound(Handle handler, int numParams)
 {
 	gB_StopChatSound = true;
+
+	return 0;
 }
 
 public int Native_PrintToChatAll(Handle plugin, int numParams)
@@ -1535,6 +1543,8 @@ public int Native_PrintToChatAll(Handle plugin, int numParams)
 	}
 
 	gB_StopChatSound = false;
+
+	return 0;
 }
 
 public int Native_PrintToChat(Handle handler, int numParams)
@@ -1625,6 +1635,8 @@ public int Native_RestartTimer(Handle handler, int numParams)
 	Call_PushCell(client);
 	Call_PushCell(track);
 	Call_Finish();
+
+	return 0;
 }
 
 public int Native_GetStrafeCount(Handle handler, int numParams)
@@ -1741,6 +1753,8 @@ public int Native_GetChatStringsStruct(Handle plugin, int numParams)
 public int Native_SetPracticeMode(Handle handler, int numParams)
 {
 	gA_Timers[GetNativeCell(1)].bPracticeMode = view_as<bool>(GetNativeCell(2));
+
+	return 0;
 }
 
 public int Native_IsPaused(Handle handler, int numParams)
@@ -1815,6 +1829,8 @@ public int Native_LogMessage(Handle plugin, int numParams)
 	FormatNativeString(0, 1, 2, 300, iWritten, sBuffer);
 
 	LogToFileEx(gS_LogPath, "[%s] %s", sPlugin, sBuffer);
+
+	return 0;
 }
 
 public int Native_GetClientTimescale(Handle handler, int numParams)
@@ -1839,6 +1855,8 @@ public int Native_SetClientTimescale(Handle handler, int numParams)
 		CallOnTimescaleChanged(client, gA_Timers[client].fTimescale, timescale);
 		UpdateLaggedMovement(client, true);
 	}
+
+	return 0;
 }
 
 public int Native_GetStyleSetting(Handle handler, int numParams)
@@ -1927,14 +1945,18 @@ public any Native_GetMaxVelocity(Handle plugin, int numParams)
 	return gA_Timers[GetNativeCell(1)].fMaxVelocity;
 }
 
-public any Native_SetAvgVelocity(Handle plugin, int numParams)
+public int Native_SetAvgVelocity(Handle plugin, int numParams)
 {
 	gA_Timers[GetNativeCell(1)].fAvgVelocity = GetNativeCell(2);
+
+	return 0;
 }
 
-public any Native_SetMaxVelocity(Handle plugin, int numParams)
+public int Native_SetMaxVelocity(Handle plugin, int numParams)
 {
 	gA_Timers[GetNativeCell(1)].fMaxVelocity = GetNativeCell(2);
+
+	return 0;
 }
 
 bool HasStyleSetting(int style, char[] key)
@@ -2029,21 +2051,29 @@ public int Native_GetLastCP(Handle handler, int numParams)
 public int Native_SetCurrentStage(Handle handler, int numParams)
 {
 	gA_Timers[GetNativeCell(1)].iCurrentStage = GetNativeCell(2);
+
+	return 0;
 }
 
 public int Native_SetCurrentCP(Handle handler, int numParams)
 {
 	gA_Timers[GetNativeCell(1)].iCurrentCP = GetNativeCell(2);
+
+	return 0;
 }
 
 public int Native_SetLastStage(Handle handler, int numParams)
 {
 	gA_Timers[GetNativeCell(1)].iLastStage = GetNativeCell(2);
+
+	return 0;
 }
 
 public int Native_SetLastCP(Handle handler, int numParams)
 {
 	gA_Timers[GetNativeCell(1)].iLastCP = GetNativeCell(2);
+
+	return 0;
 }
 
 public int Native_IsStageTimer(Handle handler, int numParams)
@@ -2054,6 +2084,8 @@ public int Native_IsStageTimer(Handle handler, int numParams)
 public int Native_SetStageTimer(Handle handler, int numParams)
 {
 	gA_Timers[GetNativeCell(1)].bStageTimer = view_as<bool>(GetNativeCell(2));
+
+	return 0;
 }
 
 public int Native_GetLeaveStageTime(Handle handler, int numParams)
@@ -2064,6 +2096,8 @@ public int Native_GetLeaveStageTime(Handle handler, int numParams)
 public int Native_SetLeaveStageTime(Handle handler, int numParams)
 {
 	gA_Timers[GetNativeCell(1)].fLeaveStageTime = GetNativeCell(2);
+
+	return 0;
 }
 
 public int Native_IsTeleporting(Handle handler, int numParams)
@@ -2452,7 +2486,7 @@ public SMCResult OnStyleLeaveSection(SMCParser smc)
 		// OnStyleLeaveSection can be called back to back.
 		// And does for when hitting the last style!
 		// So we set gI_CurrentParserIndex to -1 at the end of this function.
-		return;
+		return SMCParse_Halt;
 	}
 
 	// if this style is disabled, we will force certain settings
@@ -2543,11 +2577,15 @@ public SMCResult OnStyleLeaveSection(SMCParser smc)
 	}
 
 	gI_CurrentParserIndex = -1;
+
+	return SMCParse_Continue;
 }
 
 public SMCResult OnStyleKeyValue(SMCParser smc, const char[] key, const char[] value, bool key_quotes, bool value_quotes)
 {
 	gSM_StyleKeys[gI_CurrentParserIndex].SetString(key, value);
+
+	return SMCParse_Continue;
 }
 
 public int SortAscending_StyleOrder(int index1, int index2, const int[] array, any hndl)

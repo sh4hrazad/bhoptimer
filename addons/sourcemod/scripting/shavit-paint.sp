@@ -169,6 +169,8 @@ public Action Timer_Paint(Handle timer)
 			}
 		}
 	}
+
+	return Plugin_Continue;
 }
 
 void AddPaint(int client, float pos[3], int paint = 0, int size = 0)
@@ -224,20 +226,24 @@ void CreatePaintMenus()
 	}
 }
 
-public int PaintColourMenuHandle(Menu menu, MenuAction menuAction, int param1, int param2)
+public int PaintColourMenuHandle(Menu menu, MenuAction action, int param1, int param2)
 {
-	if (menuAction == MenuAction_Select)
+	if(action == MenuAction_Select)
 	{
 		SetClientPaintColour(param1, param2);
 	}
+
+	return 0;
 }
 
-public int PaintSizeMenuHandle(Menu menu, MenuAction menuAction, int param1, int param2)
+public int PaintSizeMenuHandle(Menu menu, MenuAction action, int param1, int param2)
 {
-	if (menuAction == MenuAction_Select)
+	if(action == MenuAction_Select)
 	{
 		SetClientPaintSize(param1, param2);
 	}
+
+	return 0;
 }
 
 void SetClientPaintColour(int client, int paint)

@@ -870,6 +870,8 @@ public int MenuHandler_ChatRanks(Menu menu, MenuAction action, int param1, int p
 	{
 		delete menu;
 	}
+
+	return 0;
 }
 
 public Action Command_Ranks(int client, int args)
@@ -992,6 +994,8 @@ public int MenuHandler_Ranks(Menu menu, MenuAction action, int param1, int param
 	{
 		delete menu;
 	}
+
+	return 0;
 }
 
 void PreviewChat(int client, int rank)

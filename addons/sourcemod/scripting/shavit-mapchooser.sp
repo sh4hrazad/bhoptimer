@@ -1,5 +1,6 @@
 #include <sourcemod>
 #include <convar_class>
+#include <sdktools>
 
 #undef REQUIRE_PLUGIN
 #include <shavit>
@@ -449,6 +450,8 @@ public Action Timer_OnMapTimeLeftChanged(Handle Timer)
 	{
 		CheckTimeLeft();
 	}
+
+	return Plugin_Continue;
 }
 
 void CheckTimeLeft()
@@ -1261,6 +1264,8 @@ public Action Timer_ChangeMap(Handle timer, DataPack data)
 	data.ReadString(reason, sizeof(reason));
 
 	ForceChangeLevel(map, reason);
+
+	return Plugin_Stop;
 }
 
 /* Commands */
@@ -1676,6 +1681,8 @@ public int EnhancedMenuHandler(Menu menu, MenuAction action, int client, int par
 	{
 		OpenEnhancedMenu(client);
 	}
+
+	return 0;
 }
 
 void Nominate(int client, const char mapname[PLATFORM_MAX_PATH])
@@ -1884,6 +1891,8 @@ public int Null_Callback(Menu menu, MenuAction action, int param1, int param2)
 	{
 		delete menu;
 	}
+
+	return 0;
 }
 
 public void FindUnzonedMapCallback(Database db, DBResultSet results, const char[] error, any data)

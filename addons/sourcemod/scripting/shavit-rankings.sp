@@ -1633,6 +1633,8 @@ public int Native_Rankings_DeleteMap(Handle handler, int numParams)
 	LowercaseString(sMap);
 
 	DeleteMapAllRankings(sMap);
+
+	return 0;
 }
 
 public int Native_GuessPointsForTime(Handle plugin, int numParams)
