@@ -23,8 +23,6 @@
 #endif
 #define _shavit_included
 
-#include <sdktools>
-
 #define SHAVIT_VERSION "3.0.9a"
 #define TRACK_LIMIT 16
 #define STYLE_LIMIT 16

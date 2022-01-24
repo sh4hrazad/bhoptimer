@@ -11,6 +11,7 @@
 
 #include <sourcemod>
 #include <regex>
+#include <sdktools>
 
 #undef REQUIRE_PLUGIN
 #include <shavit>
