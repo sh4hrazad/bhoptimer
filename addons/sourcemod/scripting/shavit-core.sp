@@ -1836,12 +1836,6 @@ public int Native_LogMessage(Handle plugin, int numParams)
 public int Native_GetClientTimescale(Handle handler, int numParams)
 {
 	int client = GetNativeCell(1);
-
-	if (gA_Timers[client].fTimescale == GetStyleSettingFloat(gA_Timers[client].bsStyle, "timescale"))
-	{
-		return view_as<int>(-1.0);
-	}
-
 	return view_as<int>(gA_Timers[client].fTimescale);
 }
 
@@ -1849,6 +1843,8 @@ public int Native_SetClientTimescale(Handle handler, int numParams)
 {
 	int client = GetNativeCell(1);
 	float timescale = GetNativeCell(2);
+
+	timescale = float(RoundFloat((timescale * 10000.0)))/10000.0;
 
 	if (timescale != gA_Timers[client].fTimescale && timescale > 0.0)
 	{
