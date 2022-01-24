@@ -23,8 +23,6 @@
 #endif
 #define _shavit_included
 
-#include <sdktools>
-
 #define SHAVIT_VERSION "3.0.9a"
 #define TRACK_LIMIT 16
 #define STYLE_LIMIT 16
@@ -288,6 +286,26 @@ enum struct frame_cache_t
 	// iReplayVersion >= 0x05
 	int iPostFrames;
 	float fTickrate;
+}
+
+enum struct cp_t
+{
+	int iAttemps;
+	int iDate;
+	float fTime;
+	float fRealTime;
+	float fPrespeed;
+	float fPostspeed;
+}
+
+enum struct stage_t
+{
+	int iSteamid;
+	int iDate;
+	int iCompletions;
+	float fTime;
+	float fPostspeed;
+	char sName[MAX_NAME_LENGTH];
 }
 
 stock void Shavit_LogQuery(const char[] query)
@@ -2118,15 +2136,6 @@ native int Shavit_GetStageRecordAmount(int style, int stage);
 native int Shavit_GetStageRankForTime(int style, float time, int stage);
 
 /**
- * Get the total time of a player stayed at a stage.
- *
- * @param client					Client index.
- * @param stage						Stage.
- * @return							Total time of player stay at a stage.
- */
-native float Shavit_GetClientStageStayTime(int client, int stage);
-
-/**
  * Retrieves the best time of a player.
  *
  * @param client					Client index.
@@ -2156,6 +2165,16 @@ native void Shavit_SetClientPB(int client, int style, int track, float time);
  * @return							Number of the player's Completions for given style/track.
  */
 native int Shavit_GetClientCompletions(int client, int style, int track);
+
+/**
+ * Retrieves the prestrafe of a player.
+ *
+ * @param client					Client index.
+ * @param style						Style to get the Completions for.
+ * @param track						Timer track.
+ * @return							Prestrafe of the player for given style/track.
+ */
+native float Shavit_GetClientPrestrafe(int client, int style, int track);
 
 /**
  * Get the amount of records on the current map/style on a track.
@@ -2205,6 +2224,16 @@ native float Shavit_GetTimeForRank(int style, int rank, int track);
  * @return							Record steamid. -1 if none.
  */
 native int Shavit_GetSteamidForRank(int style, int rank, int track);
+
+/**
+ * Retrieves the prestrafe of a record from a specified rank.
+ *
+ * @param style						Style.
+ * @param rank						Rank to retrieve the time from.
+ * @param track						Timer track.
+ * @return							Prestrafe. 0.0 if none.
+ */
+native float Shavit_GetPrestrafeForRank(int style, int rank, int track);
 
 /**
  * Checks if a mapzone exists.
@@ -3462,6 +3491,30 @@ native void Shavit_FinishStage(int client, bool bypass = true);
  */
 native void Shavit_FinishCheckpoint(int client, bool bypass = true);
 
+/**
+ * Retrieves the best stage status of a player.
+ *
+ * @param client					Client index.
+ * @param style						Style to get the PB for.
+ * @param stage						Timer stage.
+ * @param pb						stage_t struct type.
+ * @param size						Size of the stagepb buffer, e.g sizeof(stage_t)
+ * @noreturn
+ */
+native void Shavit_GetStagePB(int client, int style, int stage, any[] pb, int size = sizeof(stage_t));
+
+/**
+ * Retrieves the best checkpoint status of a player.
+ *
+ * @param client					Client index.
+ * @param style						Style to get the PB for.
+ * @param cp						Timer checkpoint(map cp).
+ * @param pb						cp_t struct type.
+ * @param size						Size of the checkpointpb buffer, e.g sizeof(cp_t)
+ * @noreturn
+ */
+native void Shavit_GetCheckpointPB(int client, int style, int cp, any[] pb, int size = sizeof(cp_t));
+
 /*
  * Used to find a looping replay bot from the loop config name.
  *
@@ -3497,6 +3550,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetChatStrings");
 	MarkNativeAsOptional("Shavit_GetChatStringsStruct");
 	MarkNativeAsOptional("Shavit_GetClientCompletions");
+	MarkNativeAsOptional("Shavit_GetClientPrestrafe");
 	MarkNativeAsOptional("Shavit_GetClientJumps");
 	MarkNativeAsOptional("Shavit_GetClientPB");
 	MarkNativeAsOptional("Shavit_GetClientTime");
@@ -3545,6 +3599,7 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetDistanceOffset");
 	MarkNativeAsOptional("Shavit_GetTimeForRank");
 	MarkNativeAsOptional("Shavit_GetSteamidForRank");
+	MarkNativeAsOptional("Shavit_GetPrestrafeForRank");
 	MarkNativeAsOptional("Shavit_GetTimerStatus");
 	MarkNativeAsOptional("Shavit_GetWorldRecord");
 	MarkNativeAsOptional("Shavit_GetWRCount");
@@ -3659,6 +3714,8 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetWRCPDiffTime");
 	MarkNativeAsOptional("Shavit_FinishStage");
 	MarkNativeAsOptional("Shavit_FinishCheckpoint");
+	MarkNativeAsOptional("Shavit_GetStagePB");
+	MarkNativeAsOptional("Shavit_GetCheckpointPB");
 	MarkNativeAsOptional("Shavit_GetReplayPreFrames");
 	MarkNativeAsOptional("Shavit_GetReplayPostFrames");
 	MarkNativeAsOptional("Shavit_GetReplayCachePreFrames");

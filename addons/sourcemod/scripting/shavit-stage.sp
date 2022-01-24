@@ -28,26 +28,6 @@ char gS_MySQLPrefix[32];
 // timer settings
 stylestrings_t gS_StyleStrings[STYLE_LIMIT];
 
-enum struct cp_t
-{
-	int iAttemps;
-	int iDate;
-	float fTime;
-	float fRealTime;
-	float fPrespeed;
-	float fPostspeed;
-}
-
-enum struct stage_t
-{
-	int iSteamid;
-	int iDate;
-	int iCompletions;
-	float fTime;
-	float fPostspeed;
-	char sName[MAX_NAME_LENGTH];
-}
-
 int gI_Styles = 0;
 char gS_Map[160];
 
@@ -114,7 +94,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetWRCPDiffTime", Native_GetWRCPDiffTime);
 	CreateNative("Shavit_FinishStage", Native_FinishStage);
 	CreateNative("Shavit_FinishCheckpoint", Native_FinishCheckpoint);
-	CreateNative("Shavit_GetClientStageStayTime", Native_GetClientStageStayTime);
+	CreateNative("Shavit_GetStagePB", Native_GetStagePB);
+	CreateNative("Shavit_GetCheckpointPB", Native_GetCheckpointPB);
 
 	RegPluginLibrary("shavit-stage");
 
@@ -1057,11 +1038,9 @@ public Action Shavit_OnEnterZone(int client, int type, int track, int id, int en
 		case Zone_Start:
 		{
 			// linear map hackfix
-			gF_PreSpeed[client][0] = fPrespeed;
 			gF_CPTime[client][0] = 0.0;
 
 			// stage map hackfix
-			gF_PreSpeed[client][1] = fPrespeed;
 			gF_CPTime[client][1] = 0.0;
 			gF_CPEnterStageTime[client][0] = 0.0;
 			gF_CPEnterStageTime[client][1] = 0.0;
@@ -1126,8 +1105,6 @@ public Action Shavit_OnLeaveZone(int client, int type, int track, int id, int en
 		case Zone_Start:
 		{
 			Shavit_SetLeaveStageTime(client, Shavit_GetClientTime(client));
-			gF_PostSpeed[client][0] = fPostspeed; // linear map hackfix
-			gF_PostSpeed[client][1] = fPostspeed; // stage map hackfix
 		}
 
 		case Zone_Stage:
@@ -1236,7 +1213,6 @@ public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, i
 	{
 		maxCPs = Shavit_GetMapCheckpoints();
 	}
-
 	else
 	{
 		maxCPs = Shavit_GetMapStages();
@@ -1247,7 +1223,7 @@ public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, i
 		Transaction hTransaction = new Transaction();
 		char sQuery[512];
 
-		int cpnum = (bLinear)? 0 : 1;
+		int cpnum = (bLinear)? 1 : 2;
 
 		for(int i = cpnum; i <= maxCPs; i++)
 		{
@@ -1780,6 +1756,42 @@ public int Native_FinishCheckpoint(Handle handler, int numParams)
 	return 0;
 }
 
+public int Native_GetStagePB(Handle handler, int numParams)
+{
+	if(GetNativeCell(5) != sizeof(stage_t))
+	{
+		return ThrowNativeError(200, "stage_t does not match latest(got %i expected %i). Please update your includes and recompile your plugins",
+			GetNativeCell(4), sizeof(stage_t));
+	}
+
+	int client = GetNativeCell(1);
+	int style = GetNativeCell(2);
+	int stage = GetNativeCell(3);
+
+	stage_t stagepb;
+	gA_StageInfo[client][style].GetArray(stage, stagepb, sizeof(stage_t));
+
+	return SetNativeArray(4, stagepb, sizeof(stage_t));
+}
+
+public int Native_GetCheckpointPB(Handle handler, int numParams)
+{
+	if(GetNativeCell(5) != sizeof(cp_t))
+	{
+		return ThrowNativeError(200, "cp_t does not match latest(got %i expected %i). Please update your includes and recompile your plugins",
+			GetNativeCell(4), sizeof(cp_t));
+	}
+
+	int client = GetNativeCell(1);
+	int style = GetNativeCell(2);
+	int cp = GetNativeCell(3);
+
+	cp_t prcp;
+	gA_CheckpointInfo[client][style].GetArray(cp, prcp, sizeof(cp_t));
+
+	return SetNativeArray(4, prcp, sizeof(cp_t));
+}
+
 //native int Shavit_GetStageRecordAmount(int style, int stage)
 public int Native_GetStageRecordAmount(Handle handler, int numParams)
 {
@@ -1798,13 +1810,6 @@ public int Native_GetStageRankForTime(Handle handler, int numParams)
 	}
 
 	return GetStageRankForTime(style, GetNativeCell(2), stage);
-}
-
-// TODO
-//native int Shavit_GetClientStageStayTime(int client, int stage)
-public int Native_GetClientStageStayTime(Handle handler, int numParams)
-{
-	return 0;
 }
 
 void SQL_DBConnect()

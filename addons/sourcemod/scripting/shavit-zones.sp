@@ -4501,6 +4501,11 @@ void DumbSetVelocity(int client, float fSpeed[3])
 
 bool ShittyLimitPrestrafe(int client, int id, bool inStart, bool inStage)
 {
+	if(Shavit_IsTeleporting(client) || !IsValidClient(client, true))
+	{
+		return false;
+	}
+
 	bool onGround = view_as<bool>(GetEntityFlags(client) & FL_ONGROUND);
 	bool bLimited = false;
 

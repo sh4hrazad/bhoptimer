@@ -497,7 +497,7 @@ void LoadDHooks()
 	{
 		gH_HookTeleport = new DynamicHook(offset, HookType_Entity, ReturnType_Void, ThisPointer_CBaseEntity);
 		gH_HookTeleport.AddParam(HookParamType_VectorPtr);
-		gH_HookTeleport.AddParam(HookParamType_VectorPtr);
+		gH_HookTeleport.AddParam(HookParamType_ObjectPtr);
 		gH_HookTeleport.AddParam(HookParamType_VectorPtr);
 	}
 	else
@@ -1253,14 +1253,14 @@ public int Native_GetOrderedStyles(Handle handler, int numParams)
 	return SetNativeArray(1, gI_OrderedStyles, GetNativeCell(2));
 }
 
-public int Native_GetDatabase(Handle handler, int numParams)
+public any Native_GetDatabase(Handle handler, int numParams)
 {
-	return view_as<int>(CloneHandle(gH_SQL, handler));
+	return CloneHandle(gH_SQL, handler);
 }
 
-public int Native_GetClientTime(Handle handler, int numParams)
+public any Native_GetClientTime(Handle handler, int numParams)
 {
-	return view_as<int>(gA_Timers[GetNativeCell(1)].fCurrentTime);
+	return gA_Timers[GetNativeCell(1)].fCurrentTime;
 }
 
 public int Native_GetClientTrack(Handle handler, int numParams)
@@ -1278,9 +1278,9 @@ public int Native_GetBhopStyle(Handle handler, int numParams)
 	return gA_Timers[GetNativeCell(1)].bsStyle;
 }
 
-public int Native_GetTimerStatus(Handle handler, int numParams)
+public any Native_GetTimerStatus(Handle handler, int numParams)
 {
-	return view_as<int>(GetTimerStatus(GetNativeCell(1)));
+	return GetTimerStatus(GetNativeCell(1));
 }
 
 public int Native_HasStyleAccess(Handle handler, int numParams)
@@ -1644,11 +1644,11 @@ public int Native_GetStrafeCount(Handle handler, int numParams)
 	return gA_Timers[GetNativeCell(1)].iStrafes;
 }
 
-public int Native_GetSync(Handle handler, int numParams)
+public any Native_GetSync(Handle handler, int numParams)
 {
 	int client = GetNativeCell(1);
 
-	return view_as<int>((GetStyleSettingBool(gA_Timers[client].bsStyle, "sync")? (gA_Timers[client].iGoodGains == 0)? 0.0:(gA_Timers[client].iGoodGains / float(gA_Timers[client].iTotalMeasures) * 100.0):-1.0));
+	return (GetStyleSettingBool(gA_Timers[client].bsStyle, "sync")? (gA_Timers[client].iGoodGains == 0)? 0.0:(gA_Timers[client].iGoodGains / float(gA_Timers[client].iTotalMeasures) * 100.0):-1.0);
 }
 
 public int Native_GetStyleCount(Handle handler, int numParams)
@@ -1757,14 +1757,14 @@ public int Native_SetPracticeMode(Handle handler, int numParams)
 	return 0;
 }
 
-public int Native_IsPaused(Handle handler, int numParams)
+public any Native_IsPaused(Handle handler, int numParams)
 {
-	return view_as<int>(gA_Timers[GetNativeCell(1)].bClientPaused);
+	return gA_Timers[GetNativeCell(1)].bClientPaused;
 }
 
 public int Native_IsPracticeMode(Handle handler, int numParams)
 {
-	return view_as<int>(gA_Timers[GetNativeCell(1)].bPracticeMode);
+	return gA_Timers[GetNativeCell(1)].bPracticeMode;
 }
 
 public int Native_SaveSnapshot(Handle handler, int numParams)
@@ -1833,10 +1833,10 @@ public int Native_LogMessage(Handle plugin, int numParams)
 	return 0;
 }
 
-public int Native_GetClientTimescale(Handle handler, int numParams)
+public any Native_GetClientTimescale(Handle handler, int numParams)
 {
 	int client = GetNativeCell(1);
-	return view_as<int>(gA_Timers[client].fTimescale);
+	return gA_Timers[client].fTimescale;
 }
 
 public int Native_SetClientTimescale(Handle handler, int numParams)
@@ -2072,9 +2072,9 @@ public int Native_SetLastCP(Handle handler, int numParams)
 	return 0;
 }
 
-public int Native_IsStageTimer(Handle handler, int numParams)
+public any Native_IsStageTimer(Handle handler, int numParams)
 {
-	return view_as<int>(gA_Timers[GetNativeCell(1)].bStageTimer);
+	return gA_Timers[GetNativeCell(1)].bStageTimer;
 }
 
 public int Native_SetStageTimer(Handle handler, int numParams)
@@ -2084,9 +2084,9 @@ public int Native_SetStageTimer(Handle handler, int numParams)
 	return 0;
 }
 
-public int Native_GetLeaveStageTime(Handle handler, int numParams)
+public any Native_GetLeaveStageTime(Handle handler, int numParams)
 {
-	return view_as<int>(gA_Timers[GetNativeCell(1)].fLeaveStageTime);
+	return gA_Timers[GetNativeCell(1)].fLeaveStageTime;
 }
 
 public int Native_SetLeaveStageTime(Handle handler, int numParams)

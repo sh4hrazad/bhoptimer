@@ -46,6 +46,7 @@ enum struct prcache_t
 {
 	float fTime;
 	int iSteamid;
+	float fPrestrafe;
 	//int iRank; -> gA_Leaderboard[style][track].index
 }
 
@@ -82,6 +83,8 @@ ArrayList gA_Leaderboard[STYLE_LIMIT][TRACKS_SIZE];
 bool gB_LoadedCache[MAXPLAYERS+1];
 float gF_PlayerRecord[MAXPLAYERS+1][STYLE_LIMIT][TRACKS_SIZE];
 int gI_PlayerCompletion[MAXPLAYERS+1][STYLE_LIMIT][TRACKS_SIZE];
+float gF_PlayerPrestrafe[MAXPLAYERS+1][STYLE_LIMIT][TRACKS_SIZE];
+float gF_CurrentPrestrafe[MAXPLAYERS+1];
 
 // admin menu
 TopMenu gH_AdminMenu = null;
@@ -116,11 +119,13 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetClientPB", Native_GetClientPB);
 	CreateNative("Shavit_SetClientPB", Native_SetClientPB);
 	CreateNative("Shavit_GetClientCompletions", Native_GetClientCompletions);
+	CreateNative("Shavit_GetClientPrestrafe", Native_GetClientPrestrafe);
 	CreateNative("Shavit_GetRankForSteamid", Native_GetRankForSteamid);
 	CreateNative("Shavit_GetRankForTime", Native_GetRankForTime);
 	CreateNative("Shavit_GetRecordAmount", Native_GetRecordAmount);
 	CreateNative("Shavit_GetTimeForRank", Native_GetTimeForRank);
 	CreateNative("Shavit_GetSteamidForRank", Native_GetSteamidForRank);
+	CreateNative("Shavit_GetPrestrafeForRank", Native_GetPrestrafeForRank);
 	CreateNative("Shavit_GetWorldRecord", Native_GetWorldRecord);
 	CreateNative("Shavit_GetWRName", Native_GetWRName);
 	CreateNative("Shavit_GetWRRecordID", Native_GetWRRecordID);
@@ -511,6 +516,7 @@ public void OnClientConnected(int client)
 	{
 		gF_PlayerRecord[client][i] = empty_cells;
 		gI_PlayerCompletion[client][i] = empty_cells;
+		gF_PlayerPrestrafe[client][i] = empty_cells;
 	}
 }
 
@@ -532,7 +538,7 @@ void UpdateClientCache(int client)
 	}
 
 	char sQuery[512];
-	FormatEx(sQuery, sizeof(sQuery), "SELECT time, style, track, completions, exact_time_int FROM %splayertimes WHERE map = '%s' AND auth = %d;", gS_MySQLPrefix, gS_Map, iSteamID);
+	FormatEx(sQuery, sizeof(sQuery), "SELECT time, style, track, completions, exact_time_int, prestrafe FROM %splayertimes WHERE map = '%s' AND auth = %d;", gS_MySQLPrefix, gS_Map, iSteamID);
 	gH_SQL.Query(SQL_UpdateCache_Callback, sQuery, GetClientSerial(client), DBPrio_High);
 }
 
@@ -566,7 +572,7 @@ public void SQL_UpdateCache_Callback(Database db, DBResultSet results, const cha
 
 		gF_PlayerRecord[client][style][track] = ExactTimeMaybe(results.FetchFloat(0), results.FetchInt(4));
 		gI_PlayerCompletion[client][style][track] = results.FetchInt(3);
-
+		gF_PlayerPrestrafe[client][style][track] = results.FetchFloat(5);
 	}
 
 	gB_LoadedCache[client] = true;
@@ -684,9 +690,9 @@ public int Native_GetWRName(Handle handler, int numParams)
 	return 0;
 }
 
-public int Native_GetClientPB(Handle handler, int numParams)
+public any Native_GetClientPB(Handle handler, int numParams)
 {
-	return view_as<int>(gF_PlayerRecord[GetNativeCell(1)][GetNativeCell(2)][GetNativeCell(3)]);
+	return gF_PlayerRecord[GetNativeCell(1)][GetNativeCell(2)][GetNativeCell(3)];
 }
 
 public int Native_SetClientPB(Handle handler, int numParams)
@@ -704,6 +710,11 @@ public int Native_SetClientPB(Handle handler, int numParams)
 public int Native_GetClientCompletions(Handle handler, int numParams)
 {
 	return gI_PlayerCompletion[GetNativeCell(1)][GetNativeCell(2)][GetNativeCell(3)];
+}
+
+public any Native_GetClientPrestrafe(Handle handler, int numParams)
+{
+	return gF_PlayerPrestrafe[GetNativeCell(1)][GetNativeCell(2)][GetNativeCell(3)];
 }
 
 public int Native_GetRankForSteamid(Handle handler, int numParams)
@@ -773,6 +784,23 @@ public int Native_GetSteamidForRank(Handle handler, int numParams)
 	gA_Leaderboard[style][track].GetArray(rank - 1, pr, sizeof(pr));
 
 	return pr.iSteamid;
+}
+
+public any Native_GetPrestrafeForRank(Handle handler, int numParams)
+{
+	int style = GetNativeCell(1);
+	int rank = GetNativeCell(2);
+	int track = GetNativeCell(3);
+
+	if(rank > GetRecordAmount(style, track))
+	{
+		return 0.0;
+	}
+
+	prcache_t pr;
+	gA_Leaderboard[style][track].GetArray(rank - 1, pr, sizeof(pr));
+
+	return pr.fPrestrafe;
 }
 
 public int Native_DeleteWR(Handle handle, int numParams)
@@ -2416,7 +2444,7 @@ void SQL_DBConnect()
 	if(gB_MySQL)
 	{
 		FormatEx(sQuery, sizeof(sQuery),
-			"CREATE TABLE IF NOT EXISTS `%splayertimes` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `jumps` INT, `style` TINYINT, `date` INT, `strafes` INT, `sync` FLOAT, `points` FLOAT NOT NULL DEFAULT 0, `track` TINYINT NOT NULL DEFAULT 0, `perfs` FLOAT DEFAULT 0, `completions` SMALLINT DEFAULT 1, `exact_time_int` INT DEFAULT 0, PRIMARY KEY (`id`), INDEX `map` (`map`, `style`, `track`, `time`), INDEX `auth` (`auth`, `date`, `points`), INDEX `time` (`time`), CONSTRAINT `%spt_auth` FOREIGN KEY (`auth`) REFERENCES `%susers` (`auth`) ON UPDATE CASCADE ON DELETE CASCADE) ENGINE=INNODB;",
+			"CREATE TABLE IF NOT EXISTS `%splayertimes` (`id` INT NOT NULL AUTO_INCREMENT, `auth` INT, `map` VARCHAR(128), `time` FLOAT, `jumps` INT, `style` TINYINT, `date` INT, `strafes` INT, `sync` FLOAT, `points` FLOAT NOT NULL DEFAULT 0, `track` TINYINT NOT NULL DEFAULT 0, `perfs` FLOAT DEFAULT 0, `completions` SMALLINT DEFAULT 1, `exact_time_int` INT DEFAULT 0, `prestrafe` FLOAT DEFAULT 0, PRIMARY KEY (`id`), INDEX `map` (`map`, `style`, `track`, `time`), INDEX `auth` (`auth`, `date`, `points`), INDEX `time` (`time`), CONSTRAINT `%spt_auth` FOREIGN KEY (`auth`) REFERENCES `%susers` (`auth`) ON UPDATE CASCADE ON DELETE CASCADE) ENGINE=INNODB;",
 			gS_MySQLPrefix, gS_MySQLPrefix, gS_MySQLPrefix);
 	}
 	else
@@ -2515,6 +2543,11 @@ public void Shavit_OnDeleteRestOfUserSuccess(int client, int steamid)
 	UpdateWRCache();
 }
 
+public void Shavit_OnStartTimer_Post(int client, int style, int track, float speed)
+{
+	gF_CurrentPrestrafe[client] = speed;
+}
+
 public void Shavit_OnFinish(int client, int style, float time, int jumps, int strafes, float sync, int track, float& oldtime, float avgvel, float maxvel, int timestamp)
 {
 	// do not risk overwriting the player's data if their PB isn't loaded to cache yet
@@ -2527,6 +2560,7 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 	oldtime = gF_PlayerRecord[client][style][track];
 
 	int iSteamID = GetSteamAccountID(client);
+	float fPrestrafe = gF_CurrentPrestrafe[client];
 
 	char sTime[32];
 	FormatHUDSeconds(time, sTime, sizeof(sTime));
@@ -2564,7 +2598,6 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 	{
 		float fOldWR = gF_WRTime[style][track];
 		gF_WRTime[style][track] = time;
-
 		gI_WRSteamID[style][track] = iSteamID;
 
 		Call_StartForward(gH_OnWorldRecord);
@@ -2634,8 +2667,8 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 			}
 
 			FormatEx(sQuery, sizeof(sQuery),
-				"INSERT INTO %splayertimes (auth, map, time, jumps, date, style, strafes, sync, points, track, exact_time_int) VALUES (%d, '%s', %f, %d, %d, %d, %d, %.2f, %f, %d, %d);",
-				gS_MySQLPrefix, iSteamID, gS_Map, time, jumps, timestamp, style, strafes, sync, fPoints, track, view_as<int>(time));
+				"INSERT INTO %splayertimes (auth, map, time, jumps, date, style, strafes, sync, points, track, exact_time_int, prestrafe) VALUES (%d, '%s', %f, %d, %d, %d, %d, %.2f, %f, %d, %d, %.2f);",
+				gS_MySQLPrefix, iSteamID, gS_Map, time, jumps, timestamp, style, strafes, sync, fPoints, track, view_as<int>(time), fPrestrafe);
 		}
 		else // update
 		{
@@ -2649,8 +2682,8 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 			}
 
 			FormatEx(sQuery, sizeof(sQuery),
-				"UPDATE %splayertimes SET time = %f, jumps = %d, date = %d, strafes = %d, sync = %.02f, points = %f, exact_time_int = %d, completions = completions + 1 WHERE map = '%s' AND auth = %d AND style = %d AND track = %d;",
-				gS_MySQLPrefix, time, jumps, timestamp, strafes, sync, fPoints, view_as<int>(time), gS_Map, iSteamID, style, track);
+				"UPDATE %splayertimes SET time = %f, jumps = %d, date = %d, strafes = %d, sync = %.02f, points = %f, exact_time_int = %d, prestrafe = %.02f, completions = completions + 1 WHERE map = '%s' AND auth = %d AND style = %d AND track = %d;",
+				gS_MySQLPrefix, time, jumps, timestamp, strafes, sync, fPoints, view_as<int>(time), fPrestrafe, gS_Map, iSteamID, style, track);
 		}
 
 		gH_SQL.Query(SQL_OnFinish_Callback, sQuery, GetClientSerial(client), DBPrio_High);
@@ -2807,7 +2840,7 @@ public void SQL_OnFinish_Callback(Database db, DBResultSet results, const char[]
 void UpdateLeaderboards()
 {
 	char sQuery[512];
-	FormatEx(sQuery, sizeof(sQuery), "SELECT style, track, time, exact_time_int, auth FROM %splayertimes WHERE map = '%s' ORDER BY time ASC, date ASC;", gS_MySQLPrefix, gS_Map);
+	FormatEx(sQuery, sizeof(sQuery), "SELECT style, track, time, exact_time_int, auth, prestrafe FROM %splayertimes WHERE map = '%s' ORDER BY time ASC, date ASC;", gS_MySQLPrefix, gS_Map);
 	gH_SQL.Query(SQL_UpdateLeaderboards_Callback, sQuery);
 }
 
@@ -2835,35 +2868,11 @@ public void SQL_UpdateLeaderboards_Callback(Database db, DBResultSet results, co
 		prcache_t pr;
 		pr.fTime = ExactTimeMaybe(results.FetchFloat(2), results.FetchInt(3));
 		pr.iSteamid = results.FetchInt(4);
+		pr.fPrestrafe = results.FetchFloat(5);
 
 		gA_Leaderboard[style][track].PushArray(pr);
 	}
-
-	/* for(int i = 0; i < gI_Styles; i++)
-	{
-		if (Shavit_GetStyleSettingInt(i, "unranked"))
-		{
-			continue;
-		}
-
-		for(int j = 0; j < TRACKS_SIZE; j++)
-		{
-			gA_Leaderboard[i][j].SortCustom(ADT_SortTimeAscending);
-		}
-	} */
 }
-
-/* public int ADT_SortTimeAscending(int index1, int index2, Handle array, Handle hndl)
-{
-	prcache_t pr1;
-	prcache_t pr2;
-
-	ArrayList leaderboard = view_as<ArrayList>(array);
-	leaderboard.GetArray(index1, pr1, sizeof(prcache_t));
-	leaderboard.GetArray(index2, pr2, sizeof(prcache_t));
-
-	return pr1.fTime - pr2.fTime;
-} */
 
 int GetRecordAmount(int style, int track)
 {
