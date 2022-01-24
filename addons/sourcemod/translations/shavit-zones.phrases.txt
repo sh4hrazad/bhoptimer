@@ -378,6 +378,11 @@
 		"en"		"{darkred}Your timer has been stopped for entering a {orchid}glitch zone{darkred}."
 		"chi"		"{darkred}您的计时器因进入{orchid}故障区域{darkred}而停止."
 	}
+	"ZoneExceededLimit"
+	{
+		"en"		"{darkred}You exceeded the speed limit!{default}"
+		"chi"		"{darkred}您已超出最大限速!{default}"
+	}
 	// ---------- Restart ----------- //
 	"StartZoneUndefined"
 	{

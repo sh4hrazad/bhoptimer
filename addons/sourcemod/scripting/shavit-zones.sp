@@ -4240,8 +4240,7 @@ public void TouchPost(int entity, int other)
 
 			if(ShittyLimitPrestrafe(other, entityzone, true, false))
 			{
-				Shavit_PrintToChat(other, "{darkred}You exceeded the speed limit!{default}");
-				SendMessageToSpectator(other, "{darkred}You exceeded the speed limit!{default}");
+				SendLimitMessage(other);
 			}
 		}
 
@@ -4275,8 +4274,7 @@ public void TouchPost(int entity, int other)
 
 				if(ShittyLimitPrestrafe(other, entityzone, false, true))
 				{
-					Shavit_PrintToChat(other, "{darkred}You exceeded the speed limit!{default}");
-					SendMessageToSpectator(other, "{darkred}You exceeded the speed limit!{default}");
+					SendLimitMessage(other);
 				}
 
 				if(Shavit_IsStageTimer(other))
@@ -4601,8 +4599,7 @@ void ClearShittyLimitPrestrafe(int client, int type, int id)
 		{
 			if(ShittyLimitPrestrafe(client, id, true, false))
 			{
-				Shavit_PrintToChat(client, "{darkred}You exceeded the speed limit!{default}");
-				SendMessageToSpectator(client, "{darkred}You exceeded the speed limit!{default}");
+				SendLimitMessage(client);
 			}
 
 			gB_InStart[client] = false;
@@ -4612,8 +4609,7 @@ void ClearShittyLimitPrestrafe(int client, int type, int id)
 		{
 			if(ShittyLimitPrestrafe(client, id, false, true))
 			{
-				Shavit_PrintToChat(client, "{darkred}You exceeded the speed limit!{default}");
-				SendMessageToSpectator(client, "{darkred}You exceeded the speed limit!{default}");
+				SendLimitMessage(client);
 			}
 
 			gB_InStage[client] = false;
@@ -4637,6 +4633,12 @@ void ClearShittyLimitPrestrafe(int client, int type, int id)
 bool IsCurrentTrack(int client, int track)
 {
 	return gCV_EnforceTracks.BoolValue && track == Shavit_GetClientTrack(client);
+}
+
+void SendLimitMessage(int client)
+{
+	Shavit_PrintToChat(client, "%T", "ZoneExceededLimit", client);
+	SendMessageToSpectator(client, "%t", "ZoneExceededLimit", client, true);
 }
 
 stock void SendMessageToSpectator(int client, const char[] message, any ..., bool translate = false)
