@@ -4221,8 +4221,8 @@ public void TouchPost(int entity, int other)
 	int track = gA_ZoneCache[entityzone].iZoneTrack;
 	int data = gA_ZoneCache[entityzone].iZoneData;
 
-	//gB_InsideZone[other][type][track] = true;
-	//gB_InsideZoneID[other][entityzone] = true;
+	gB_InsideZone[other][type][track] = true;
+	gB_InsideZoneID[other][entityzone] = true;
 
 	if(!IsCurrentTrack(other, track))
 	{

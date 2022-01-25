@@ -30,6 +30,13 @@
 #define MAX_STAGES 32
 #define MAX_CPZONES 16
 
+// Replays
+#define REPLAY_FORMAT_V2 "{SHAVITREPLAYFORMAT}{V2}"
+#define REPLAY_FORMAT_FINAL "{SHAVITREPLAYFORMAT}{FINAL}"
+#define REPLAY_FORMAT_SUBVERSION 0x08
+#define REPLAY_FORMAT_CURRENT_USED_CELLS 8
+#define FRAMES_PER_WRITE 100 // amounts of frames to write per read/write call
+
 // HUD
 #define HUD_NONE				0
 #define HUD_MASTER				(1 << 0) // master setting
@@ -1495,44 +1502,56 @@ forward void Shavit_OnReplaysLoaded();
 /**
  * Called when a player finishes a time. Allows you to save a replay even if the run is not a WR.
  *
- * @param client					Client index.
- * @param style						Style the record was done on.
- * @param time						Record time.
- * @param jumps						Jumps amount.
- * @param strafes					Amount of strafes.
- * @param sync						Sync percentage (0.0 to 100.0) or -1.0 when not measured.
- * @param track						Timer track.
- * @param oldtime					The player's best time on the map before this finish.
- * @param avgvel					Player's average velocity throughout the run.
- * @param maxvel					Player's highest reached velocity.
- * @param timestamp					System time of when player finished.
- * @param isbestreplay				If the time is the new replay.
- * @param istoolong					If the time is too long to save a replay if the time is a WR. Note: replays WON'T be full length if this is true.
- * @return							Return Plugin_Changed (or higher) to cause a copy of the replay to be saved. Return Plugin_Continue otherwise.
+ * @param client                    Client index.
+ * @param style                     Style the record was done on.
+ * @param time                      Record time.
+ * @param jumps                     Jumps amount.
+ * @param strafes                   Amount of strafes.
+ * @param sync                      Sync percentage (0.0 to 100.0) or -1.0 when not measured.
+ * @param track                     Timer track.
+ * @param oldtime                   The player's best time on the map before this finish.
+ * @param avgvel                    Player's average velocity throughout the run.
+ * @param maxvel                    Player's highest reached velocity.
+ * @param timestamp                 System time of when player finished.
+ * @param isbestreplay              If the time is the new replay.
+ * @param istoolong                 If the time is too long to save a replay if the time is a WR. Note: replays WON'T be full length if this is true.
+ *
+ * @return                          Return Plugin_Changed (or higher) to cause a copy of the replay to be saved. Return Plugin_Continue otherwise.
  */
 forward Action Shavit_ShouldSaveReplayCopy(int client, int style, float time, int jumps, int strafes, float sync, int track, float oldtime, float avgvel, float maxvel, int timestamp, bool isbestreplay, bool istoolong);
 
 /**
  * Called when either a WR replay or a copy of a replay has been saved.
  *
- * @param client					Client index.
- * @param style						Style the record was done on.
- * @param time						Record time.
- * @param jumps						Jumps amount.
- * @param strafes					Amount of strafes.
- * @param sync						Sync percentage (0.0 to 100.0) or -1.0 when not measured.
- * @param track						Timer track.
- * @param oldtime					The player's best time on the map before this finish.
- * @param avgvel					Player's average velocity throughout the run.
- * @param maxvel					Player's highest reached velocity.
- * @param timestamp					System time of when player finished.
- * @param isbestreplay				If the time is the new replay.
- * @param istoolong					If the time is too long to save a replay if the time is a WR. Note: replays WON'T be full length if this is true.
- * @param iscopy					If the path points to a copy of the replay.
- * @param replaypath				Path to the saved replay.
+ * @param client                    Client index.
+ * @param style                     Style the record was done on.
+ * @param time                      Record time.
+ * @param jumps                     Jumps amount.
+ * @param strafes                   Amount of strafes.
+ * @param sync                      Sync percentage (0.0 to 100.0) or -1.0 when not measured.
+ * @param track                     Timer track.
+ * @param oldtime                   The player's best time on the map before this finish.
+ * @param avgvel                    Player's average velocity throughout the run.
+ * @param maxvel                    Player's highest reached velocity.
+ * @param timestamp                 System time of when player finished.
+ * @param isbestreplay              If the time is the new replay.
+ * @param istoolong                 If the time is too long to save a replay if the time is a WR. Note: replays WON'T be full length if this is true.
+ * @param iscopy                    If the path points to a copy of the replay.
+ * @param replaypath                Path to the saved replay.
+ * @param frames                	ArrayList of the player's frames in the replay.
+ * @param preframes                	The number of preframes in the replay.
+ * @param postframes                The number of postframes in the replay.
+ * @param name                		Player's name at the time of the replay.
+ *
  * @noreturn
  */
-forward void Shavit_OnReplaySaved(int client, int style, float time, int jumps, int strafes, float sync, int track, float oldtime, float avgvel, float maxvel, int timestamp, bool isbestreplay, bool istoolong, bool iscopy, const char[] replaypath);
+forward void Shavit_OnReplaySaved(int client, int style, float time, int jumps, int strafes, float sync, int track, float oldtime, float avgvel, float maxvel, int timestamp, bool isbestreplay, bool istoolong, bool iscopy, const char[] replaypath, ArrayList frames, int preframes, int postframes, const char[] name);
+
+/**
+ * TODO
+ * @noreturn
+ */
+forward void Shavit_OnStageReplaySaved(int client, int stage, int style, float time, int steamid, ArrayList playerrecording, int preframes, int iSize);
 
 /**
  * Called when top left HUD updates.

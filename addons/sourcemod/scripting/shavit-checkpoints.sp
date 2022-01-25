@@ -183,7 +183,7 @@ public void OnPluginStart()
 	CreateTimer(10.0, Timer_Cron, 0, TIMER_REPEAT);
 
 	// modules
-	gB_Replay = LibraryExists("shavit-replay");
+	gB_Replay = LibraryExists("shavit-replay-recorder");
 }
 
 public void OnClientCookiesCached(int client)
@@ -299,7 +299,7 @@ public void OnMapEnd()
 
 public void OnLibraryAdded(const char[] name)
 {
-	if(StrEqual(name, "shavit-replay"))
+	if(StrEqual(name, "shavit-replay-recorder"))
 	{
 		gB_Replay = true;
 	}
@@ -307,7 +307,7 @@ public void OnLibraryAdded(const char[] name)
 
 public void OnLibraryRemoved(const char[] name)
 {
-	if(StrEqual(name, "shavit-replay"))
+	if(StrEqual(name, "shavit-replay-recorder"))
 	{
 		gB_Replay = false;
 	}
@@ -620,6 +620,8 @@ public Action Command_Tele(int client, int args)
 		return Plugin_Handled;
 	}
 
+	bool usingOther = gB_UsingOtherCheckpoint[client];
+
 	if(args > 0)
 	{
 		char arg[8];
@@ -631,11 +633,25 @@ public Action Command_Tele(int client, int args)
 
 		if(0 < parsed <= gCV_MaxCP.IntValue)
 		{
-			gI_CurrentCheckpoint[client] = parsed;
+			if(usingOther)
+			{
+				gI_OtherCurrentCheckpoint[client] = parsed;
+			}
+			else
+			{
+				gI_CurrentCheckpoint[client] = parsed;
+			}
 		}
 	}
 
-	TeleportToCheckpoint(client, gI_CurrentCheckpoint[client], true);
+	if(usingOther)
+	{
+		TeleportToOtherCheckpoint(client, gI_OtherClientIndex[client], gI_OtherCurrentCheckpoint[client], true);
+	}
+	else
+	{
+		TeleportToCheckpoint(client, gI_CurrentCheckpoint[client], true);
+	}
 
 	return Plugin_Handled;
 }
@@ -649,6 +665,7 @@ public Action OpenCheckpointsMenu(int client)
 
 void OpenNormalCPMenu(int client)
 {
+	gB_UsingOtherCheckpoint[client] = false;
 	bool bSegmented = CanSegment(client);
 
 	if(!gCV_Checkpoints.BoolValue && !bSegmented)
@@ -844,17 +861,17 @@ void UseOtherCheckpoints(int client)
 	Menu menu = new Menu(OtherCheckpointMenu_handler);
 	for(int i = 1; i < MaxClients + 1; i++)
 	{
-		if(IsValidClient(i) && !IsFakeClient(i))
+		if(IsValidClient(i) && !IsFakeClient(i) && i != client)
 		{
 			char sName[MAX_NAME_LENGTH];
 			GetClientName(i, sName, sizeof(sName));
-			
-			char sItem[16];
-			IntToString(i, sItem, 16);
+
+			char sItem[4];
+			IntToString(i, sItem, 4);
 			menu.AddItem(sItem, sName);
 		}
 	}
-	
+
 	menu.Display(client, -1);
 }
 
@@ -862,8 +879,8 @@ public int OtherCheckpointMenu_handler(Menu menu, MenuAction action, int param1,
 {
 	if(action == MenuAction_Select)
 	{
-		char sInfo[16];
-		menu.GetItem(param2, sInfo, 16);
+		char sInfo[4];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
 
 		int other = StringToInt(sInfo);
 
@@ -967,6 +984,8 @@ void TeleportToOtherCheckpoint(int client, int other, int index, bool suppressMe
 		return;
 	}
 
+	gB_UsingOtherCheckpoint[client] = true;
+
 	if(index > gA_Checkpoints[other].Length)
 	{
 		Shavit_PrintToChat(client, "%T", "MiscCheckpointsEmpty", client, index);
@@ -997,7 +1016,6 @@ void TeleportToOtherCheckpoint(int client, int other, int index, bool suppressMe
 
 	LoadCheckpointCache(client, cpcache, false);
 	Shavit_ResumeTimer(client);
-	gB_UsingOtherCheckpoint[client] = CanSegment(other);
 
 	if(!suppressMessage)
 	{
@@ -1005,11 +1023,15 @@ void TeleportToOtherCheckpoint(int client, int other, int index, bool suppressMe
 	}
 }
 
+public void Shavit_OnRestart(int client, int track)
+{
+	gB_UsingOtherCheckpoint[client] = false;
+}
+
 public Action Shavit_OnFinishPre(int client, timer_snapshot_t snapshot)
 {
-	if(gB_UsingOtherCheckpoint[client] && StrContains(gS_StyleStrings[Shavit_GetBhopStyle(client)].sSpecialString, "segments") != -1)
+	if(gB_UsingOtherCheckpoint[client])
 	{
-		gB_UsingOtherCheckpoint[client] = false;
 		return Plugin_Handled;
 	}
 

@@ -282,7 +282,7 @@ public void OnPluginStart()
 	// modules
 	gB_Checkpoints = LibraryExists("shavit-checkpoints");
 	gB_Rankings = LibraryExists("shavit-rankings");
-	gB_Replay = LibraryExists("shavit-replay");
+	gB_Replay = LibraryExists("shavit-replay-playback");
 	gB_Zones = LibraryExists("shavit-zones");
 	gB_Chat = LibraryExists("shavit-chat");
 }
@@ -639,7 +639,7 @@ public void OnLibraryAdded(const char[] name)
 		gB_Rankings = true;
 	}
 
-	else if(StrEqual(name, "shavit-replay"))
+	else if(StrEqual(name, "shavit-replay-playback"))
 	{
 		gB_Replay = true;
 	}
@@ -667,7 +667,7 @@ public void OnLibraryRemoved(const char[] name)
 		gB_Rankings = false;
 	}
 
-	else if(StrEqual(name, "shavit-replay"))
+	else if(StrEqual(name, "shavit-replay-playback"))
 	{
 		gB_Replay = false;
 	}

@@ -174,7 +174,7 @@ public void OnPluginStart()
 	}
 
 	// prevent errors in case the replay bot isn't loaded
-	gB_Replay = LibraryExists("shavit-replay");
+	gB_Replay = LibraryExists("shavit-replay-playback");
 	gB_Zones = LibraryExists("shavit-zones");
 	gB_Sounds = LibraryExists("shavit-sounds");
 
@@ -270,7 +270,7 @@ public void OnMapStart()
 
 public void OnLibraryAdded(const char[] name)
 {
-	if(StrEqual(name, "shavit-replay"))
+	if(StrEqual(name, "shavit-replay-playback"))
 	{
 		gB_Replay = true;
 	}
@@ -288,7 +288,7 @@ public void OnLibraryAdded(const char[] name)
 
 public void OnLibraryRemoved(const char[] name)
 {
-	if(StrEqual(name, "shavit-replay"))
+	if(StrEqual(name, "shavit-replay-playback"))
 	{
 		gB_Replay = false;
 	}
@@ -1241,7 +1241,6 @@ int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 			FormatEx(sLine, 64, "SR: %s", sTargetSR);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 		}
-
 		else
 		{
 			char sTargetPB[64];
@@ -1261,9 +1260,27 @@ int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 
 		iLines = 0;
 
-		if(data.fTime == 0.0 && data.iTimerStatus != Timer_Stopped)
+		switch(data.iZoneHUD)
 		{
-			if(data.iZoneHUD == ZoneHUD_Start)
+			case ZoneHUD_None:
+			{
+				if(data.iTrack == 0)
+				{
+					if(bLinearMap)
+					{
+						FormatEx(sLine, 32, " | Linear Map");
+					}
+					else
+					{
+						FormatEx(sLine, 32, " | Stage %d / %d", data.iStage, Shavit_GetMapStages());
+					}
+				}
+				else
+				{
+					FormatEx(sLine, 32, " | Bonus %d", data.iTrack);
+				}
+			}
+			case ZoneHUD_Start:
 			{
 				if(data.iTrack == 0)
 				{
@@ -1274,34 +1291,24 @@ int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 					FormatEx(sLine, 32, " | Bonus %d Start", data.iTrack);
 				}
 			}
-			else if(data.iZoneHUD == ZoneHUD_Stage)
+			case ZoneHUD_End:
 			{
-				FormatEx(sLine, 32, " | Stage %d Start", data.iStage);
-			}
-
-			AddHUDLine(buffer, maxlen, sLine, iLines);
-		}
-
-		else if(data.iTimerStatus == Timer_Running || data.iTimerStatus == Timer_Stopped)
-		{
-			if(data.iTrack == 0)
-			{
-				if(bLinearMap)
+				if(data.iTrack == 0)
 				{
-					FormatEx(sLine, 32, " | Linear Map");
+					FormatEx(sLine, 32, " | Map End");
 				}
 				else
 				{
-					FormatEx(sLine, 32, " | Stage %d / %d", data.iStage, Shavit_GetMapStages());
+					FormatEx(sLine, 32, " | Bonus %d End", data.iTrack);
 				}
 			}
-			else
+			case ZoneHUD_Stage:
 			{
-				FormatEx(sLine, 32, " | Bonus %d", data.iTrack);
+				FormatEx(sLine, 32, " | Stage %d Start", data.iStage);
 			}
-
-			AddHUDLine(buffer, maxlen, sLine, iLines);
 		}
+
+		AddHUDLine(buffer, maxlen, sLine, iLines);
 
 		iLines++;
 
@@ -1353,7 +1360,7 @@ void UpdateMainHUD(int client)
 
 	if(!bReplay)
 	{
-		if (Shavit_InsideZone(target, Zone_Start, huddata.iTrack))
+		if(Shavit_InsideZone(target, Zone_Start, huddata.iTrack))
 		{
 			iZoneHUD = ZoneHUD_Start;
 		}
@@ -1361,8 +1368,7 @@ void UpdateMainHUD(int client)
 		{
 			iZoneHUD = ZoneHUD_End;
 		}
-
-		else if(Shavit_InsideZone(target, Zone_Stage, -1) && Shavit_IsStageTimer(target))
+		else if(Shavit_InsideZone(target, Zone_Stage, huddata.iTrack) && Shavit_IsStageTimer(target))
 		{
 			iZoneHUD = ZoneHUD_Stage;
 		}
