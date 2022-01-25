@@ -213,6 +213,8 @@ native int Shavit_GetReplayCachePreFrames(int bot);
  */
 native int Shavit_GetReplayCachePostFrames(int bot);
 
+#if !defined _shavit_replay_shared_included_
+
 /**
  * Retrieves a replay's total length in seconds.
  *
@@ -222,6 +224,8 @@ native int Shavit_GetReplayCachePostFrames(int bot);
  * @return							Replay length.
  */
 native float Shavit_GetReplayLength(int style, int track, int stage = 0);
+
+#endif
 
 /**
  * Retrieves the replay's total length in seconds from the currently running replay bot's frame_cache_t.

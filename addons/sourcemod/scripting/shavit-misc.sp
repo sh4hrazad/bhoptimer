@@ -24,6 +24,7 @@
 #include <clientprefs>
 #include <convar_class>
 #include <dhooks>
+#include <shavit/replay-shared>
 
 #undef REQUIRE_EXTENSIONS
 #include <SteamWorks>
@@ -31,6 +32,7 @@
 
 #undef REQUIRE_PLUGIN
 #include <shavit>
+#include <shavit/replay-playback>
 
 #pragma newdecls required
 #pragma semicolon 1
