@@ -42,5 +42,5 @@
 
 
 
-# 不懂就亲自 **出钱** [QQ找我](https://wpa.qq.com/msgrd?v=3&uin=1593464801)，我吐了
+# 不懂就亲自 **出钱** [QQ找我](https://wpa.qq.com/msgrd?v=3&uin=1593464801)，我吐了 
 
