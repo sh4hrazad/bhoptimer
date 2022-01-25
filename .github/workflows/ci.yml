@@ -3,10 +3,10 @@ name: ci
 on: 
   push:
     branches: 
-      - *
+      - gokz-framework
   pull_request:
     branches: 
-      - *
+      - gokz-framework
 
 jobs:
   build:
