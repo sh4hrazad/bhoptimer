@@ -21,10 +21,10 @@
 #include <sourcemod>
 #include <sdktools>
 #include <convar_class>
-#include <shavit/replay-shared>
-
-#undef REQUIRE_PLUGIN
 #include <shavit>
+#include <shavit/replay-shared>
+#include <shavit/replay-recorder>
+
 
 #pragma newdecls required
 #pragma semicolon 1

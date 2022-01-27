@@ -41,12 +41,15 @@
 #include <sourcemod>
 #include <convar_class>
 #include <dhooks>
-
-#undef REQUIRE_PLUGIN
 #include <shavit>
+#include <shavit/wr>
+
+
 
 #undef REQUIRE_EXTENSIONS
 #include <cstrike>
+
+
 
 #pragma newdecls required
 #pragma semicolon 1

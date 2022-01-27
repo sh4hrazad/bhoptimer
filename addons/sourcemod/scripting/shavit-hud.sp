@@ -24,14 +24,16 @@
 #include <clientprefs>
 #include <convar_class>
 #include <dhooks>
-#include <shavit/replay-shared>
-
-#undef REQUIRE_PLUGIN
 #include <shavit>
+#include <shavit/wr>
 #include <shavit/replay-playback>
+
+
 
 #pragma newdecls required
 #pragma semicolon 1
+
+
 
 // HUD2 - these settings will *disable* elements for the main hud
 #define HUD2_NONE				0

@@ -24,15 +24,17 @@
 #include <clientprefs>
 #include <convar_class>
 #include <dhooks>
-#include <shavit/replay-shared>
+#include <shavit>
+#include <shavit/wr>
+#include <shavit/replay-playback>
+
+
 
 #undef REQUIRE_EXTENSIONS
 #include <SteamWorks>
 #include <cstrike>
 
-#undef REQUIRE_PLUGIN
-#include <shavit>
-#include <shavit/replay-playback>
+
 
 #pragma newdecls required
 #pragma semicolon 1

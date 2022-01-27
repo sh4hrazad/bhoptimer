@@ -23,10 +23,13 @@
 #include <sdkhooks>
 #include <convar_class>
 #include <dhooks>
+
+#include <shavit>
+#include <shavit/wr>
 #include <shavit/replay-shared>
+#include <shavit/replay-playback>
 
 #undef REQUIRE_PLUGIN
-#include <shavit>
 #include <adminmenu>
 
 #undef REQUIRE_EXTENSIONS
@@ -47,74 +50,11 @@ public Plugin myinfo =
 	url = "https://github.com/shavitush/bhoptimer"
 }
 
-enum struct replaystrings_t
-{
-	char sClanTag[MAX_NAME_LENGTH];
-	char sNameStyle[MAX_NAME_LENGTH];
-	char sCentralName[MAX_NAME_LENGTH];
-	char sUnloaded[MAX_NAME_LENGTH];
-}
-
 // os type
 bool gB_Linux;
 
-// cache
+
 char gS_ReplayFolder[PLATFORM_MAX_PATH];
-
-enum struct bot_info_t
-{
-	int iEnt;
-	int iStyle; // Shavit_GetReplayBotStyle
-	int iStage; // Shavit_GetReplayBotStage
-	int iStatus; // Shavit_GetReplayStatus
-	int iType; // Shavit_GetReplayBotType
-	int iTrack; // Shavit_GetReplayBotTrack
-	int iStarterSerial; // Shavit_GetReplayStarter
-	int iTick; // Shavit_GetReplayBotCurrentFrame
-	int iRealTick;
-	float fRealTime;
-	Handle hTimer;
-	float fFirstFrameTime; // Shavit_GetReplayBotFirstFrameTime
-	bool bCustomFrames;
-	bool bIgnoreLimit;
-	bool b2x;
-	float fDelay;
-	frame_cache_t aCache;
-}
-
-enum //ReplayStatus
-{
-	Replay_Start,
-	Replay_Running,
-	Replay_End,
-	Replay_Idle
-};
-
-enum //ReplayBotType
-{
-	Replay_Central,
-	Replay_Looping, // these are the ones that loop styles, tracks, and (eventually) stages...
-	Replay_Dynamic, // these are bots that spawn on !replay when the central bot is taken
-};
-
-enum
-{
-	iBotShooting_Attack1 = (1 << 0),
-	iBotShooting_Attack2 = (1 << 1)
-}
-
-enum
-{
-	CSGO_ANIM_FIRE_GUN_PRIMARY,
-	CSGO_ANIM_FIRE_GUN_PRIMARY_OPT,
-	CSGO_ANIM_FIRE_GUN_PRIMARY__SPECIAL,
-	CSGO_ANIM_FIRE_GUN_PRIMARY_OPT_SPECIAL,
-	CSGO_ANIM_FIRE_GUN_SECONDARY,
-	CSGO_ANIM_FIRE_GUN_SECONDARY_SPECIAL,
-	CSGO_ANIM_GRENADE_PULL_PIN,
-	CSGO_ANIM_THROW_GRENADE,
-	CSGO_ANIM_JUMP
-}
 
 // custom cvar settings
 char gS_ForcedCvars[][][] =
@@ -131,6 +71,7 @@ char gS_ForcedCvars[][][] =
 	{ "bot_controllable", "0" }
 };
 
+// cache
 frame_cache_t gA_FrameCache[STYLE_LIMIT][TRACKS_SIZE];
 frame_cache_t gA_FrameCache_Stage[STYLE_LIMIT][MAX_STAGES];
 
@@ -216,11 +157,13 @@ bool gB_ClosestPos;
 #include "shavit-replay-playback/closestpos.sp"
 #include "shavit-replay-playback/commands.sp"
 #include "shavit-replay-playback/control.sp"
+#include "shavit-replay-playback/db.sp"
 #include "shavit-replay-playback/nav.sp"
 #include "shavit-replay-playback/replay_cache.sp"
 #include "shavit-replay-playback/replay_menu.sp"
 #include "shavit-replay-playback/playback.sp"
-#include "shavit-replay-playback/sql.sp"
+
+
 
 // =====[ PLUGIN EVENTS ]=====
 

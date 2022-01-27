@@ -22,9 +22,6 @@
 #include <sdktools>
 #include <clientprefs>
 #include <convar_class>
-#include <shavit/replay-shared>
-
-#undef REQUIRE_PLUGIN
 #include <shavit>
 #include <shavit/replay-recorder>
 #include <shavit/replay-playback>

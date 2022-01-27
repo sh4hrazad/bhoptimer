@@ -11,12 +11,15 @@
 
 #include <sourcemod>
 #include <regex>
-
-#undef REQUIRE_PLUGIN
 #include <shavit>
+#include <shavit/wr>
+
+
 
 #pragma semicolon 1
 #pragma newdecls required
+
+
 
 // plugin cache
 Database2 gH_SQL = null;

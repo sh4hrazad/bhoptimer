@@ -4121,12 +4121,7 @@ public void EndTouchPost(int entity, int other)
 		gB_InsideZone[other][type][track] = false;
 		gB_InsideZoneID[other][entityzone] = false;
 
-		DataPack dp = new DataPack();
-		dp.WriteCell(GetClientSerial(other));
-		dp.WriteCell(type);
-		dp.WriteCell(entityzone);
-
-		RequestFrame(Frame_ClearShittyLimitPrestrafe, dp);
+		ClearShittyLimitPrestrafe(other, type);
 
 		Action result = Plugin_Continue;
 		Call_StartForward(gH_Forwards_LeaveZone);
@@ -4577,41 +4572,18 @@ bool ShittyLimitPrestrafe(int client, int id, bool inStart, bool inStage)
 	return bLimited;
 }
 
-public void Frame_ClearShittyLimitPrestrafe(DataPack dp)
-{
-	dp.Reset();
-
-	int client = GetClientFromSerial(dp.ReadCell());
-	int type = dp.ReadCell();
-	int id = dp.ReadCell();
-
-	delete dp;
-
-	ClearShittyLimitPrestrafe(client, type, id);
-}
-
 // clear them when leave zone
-void ClearShittyLimitPrestrafe(int client, int type, int id)
+void ClearShittyLimitPrestrafe(int client, int type)
 {
 	switch(type)
 	{
 		case Zone_Start:
 		{
-			if(ShittyLimitPrestrafe(client, id, true, false))
-			{
-				SendLimitMessage(client);
-			}
-
 			gB_InStart[client] = false;
 		}
 
 		case Zone_Stage:
 		{
-			if(ShittyLimitPrestrafe(client, id, false, true))
-			{
-				SendLimitMessage(client);
-			}
-
 			gB_InStage[client] = false;
 		}
 	}

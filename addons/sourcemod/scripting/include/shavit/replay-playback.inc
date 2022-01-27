@@ -11,7 +11,7 @@
 
 
 
-// =====[ CONSTANTS ]=====
+// =====[ ENUMS ]=====
 
 enum //ReplayStatus
 {
@@ -27,6 +27,107 @@ enum //ReplayBotType
 	Replay_Looping, // these are the ones that loop styles, tracks, and (eventually) stages...
 	Replay_Dynamic, // these are bots that spawn on !replay when the central bot is taken
 };
+
+enum
+{
+	iBotShooting_Attack1 = (1 << 0),
+	iBotShooting_Attack2 = (1 << 1)
+}
+
+enum
+{
+	CSGO_ANIM_FIRE_GUN_PRIMARY,
+	CSGO_ANIM_FIRE_GUN_PRIMARY_OPT,
+	CSGO_ANIM_FIRE_GUN_PRIMARY__SPECIAL,
+	CSGO_ANIM_FIRE_GUN_PRIMARY_OPT_SPECIAL,
+	CSGO_ANIM_FIRE_GUN_SECONDARY,
+	CSGO_ANIM_FIRE_GUN_SECONDARY_SPECIAL,
+	CSGO_ANIM_GRENADE_PULL_PIN,
+	CSGO_ANIM_THROW_GRENADE,
+	CSGO_ANIM_JUMP
+}
+
+
+
+// =====[ STRUCTS ]=====
+
+#if !defined _shavit_replay_recorder_included_
+
+enum struct frame_t
+{
+	float pos[3];
+	float ang[2];
+	int buttons;
+	// iReplayVersion >= 0x02
+	int flags;
+	MoveType mt;
+	// Everything below is generally NOT loaded into memory for playback
+	// iReplayVersion >= 0x06
+	int mousexy; // `mousex | (mousey << 16)` // unpack with UnpackSignedShorts
+	int vel; // basically `forwardmove | (sidemove << 16)` // unpack with UnpackSignedShorts
+}
+
+enum struct frame_cache_t
+{
+	int iFrameCount;
+	float fTime;
+	bool bNewFormat;
+	int iReplayVersion;
+	char sReplayName[MAX_NAME_LENGTH];
+	int iPreFrames;
+	ArrayList aFrames;
+	// iReplayVersion >= 0x05
+	int iPostFrames;
+	float fTickrate;
+}
+
+enum struct replay_header_t
+{
+	char sReplayFormat[40];
+	int iReplayVersion;
+	char sMap[PLATFORM_MAX_PATH];
+	int iStyle;
+	int iTrack;
+	int iStage;
+	int iPreFrames;
+	int iFrameCount;
+	float fTime;
+	int iSteamID;
+	int iPostFrames;
+	float fTickrate;
+	float fZoneOffset[2];
+}
+
+#endif
+
+enum struct replaystrings_t
+{
+	char sClanTag[MAX_NAME_LENGTH];
+	char sNameStyle[MAX_NAME_LENGTH];
+	char sCentralName[MAX_NAME_LENGTH];
+	char sUnloaded[MAX_NAME_LENGTH];
+}
+
+enum struct bot_info_t
+{
+	int iEnt;
+	int iStyle; // Shavit_GetReplayBotStyle
+	int iStage; // Shavit_GetReplayBotStage
+	int iStatus; // Shavit_GetReplayStatus
+	int iType; // Shavit_GetReplayBotType
+	int iTrack; // Shavit_GetReplayBotTrack
+	int iStarterSerial; // Shavit_GetReplayStarter
+	int iTick; // Shavit_GetReplayBotCurrentFrame
+	int iRealTick;
+	float fRealTime;
+	Handle hTimer;
+	float fFirstFrameTime; // Shavit_GetReplayBotFirstFrameTime
+	bool bCustomFrames;
+	bool bIgnoreLimit;
+	bool b2x;
+	float fDelay;
+	frame_cache_t aCache;
+}
 
 
 
