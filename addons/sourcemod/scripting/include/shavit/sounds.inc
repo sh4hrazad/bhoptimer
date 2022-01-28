@@ -24,3 +24,18 @@
  * @return							Plugin_Handled or Plugin_Stop to block the sound from being played. Anything else to continue the operation.
  */
 forward Action Shavit_OnPlaySound(int client, char[] sound, int maxlength, int[] clients, int &count);
+
+
+
+// =====[ DEPENDENCY ]=====
+
+public SharedPlugin __pl_shavit_sounds = 
+{
+	name = "shavit-sounds", 
+	file = "shavit-sounds.smx", 
+	#if defined REQUIRE_PLUGIN
+	required = 1, 
+	#else
+	required = 0, 
+	#endif
+};

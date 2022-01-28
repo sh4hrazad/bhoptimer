@@ -122,8 +122,6 @@ forward void Shavit_OnStageReplaySaved(int client, int stage, int style, float t
 
 // =====[ NATIVES ]====
 
-#if !defined _shavit_replay_shared_included_
-
 /**
  * Retrieves a client's frame count.
  *
@@ -131,8 +129,6 @@ forward void Shavit_OnStageReplaySaved(int client, int stage, int style, float t
  * @return							Current number of frames.
  */
 native int Shavit_GetClientFrameCount(int client);
-
-#endif
 
 /**
  * Hijack the replay data so that this view angle will be used for the next tick.
@@ -166,8 +162,6 @@ native ArrayList Shavit_GetReplayData(int client, bool cheapCloneHandle=false);
  */
 native void Shavit_SetReplayData(int client, ArrayList data, bool cheapCloneHandle=false);
 
-#if !defined _shavit_replay_shared_included_
-
 /**
  * returns the number of preframes in the players current run.
  *
@@ -176,8 +170,6 @@ native void Shavit_SetReplayData(int client, ArrayList data, bool cheapCloneHand
  * @return 							Preframe count
  */
 native int Shavit_GetPlayerPreFrames(int client);
-
-#endif
 
 /**
  * Sets player's preframe length.

@@ -26,8 +26,8 @@
 
 #include <shavit>
 #include <shavit/wr>
-#include <shavit/replay-shared>
 #include <shavit/replay-playback>
+#include <shavit/replay-recorder>
 
 #undef REQUIRE_PLUGIN
 #include <adminmenu>

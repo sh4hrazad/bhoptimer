@@ -1355,26 +1355,6 @@ forward void Shavit_OnRankAssigned(int client, int rank, float points, bool firs
 forward Action Shavit_OnTopLeftHUD(int client, int target, char[] topleft, int topleftlength);
 
 /**
- * Called before clan tag variables are processed.
- *
- * @param client					Client index.
- * @param clantag					Reference to the clan tag buffer.
- * @param clantaglength				Max length of the customtag buffer.
- * @return							Plugin_Handled or Plugin_Stop to block the clan tag from changing. Anything else to pass along new values.
- */
-forward Action Shavit_OnClanTagChangePre(int client, char[] clantag, int clantaglength);
-
-/**
- * Called after clan tags are changed.
- *
- * @param client					Client index.
- * @param customtag					Reference to the custom clan tag buffer.
- * @param customtaglength			Max length of the customtag buffer.
- * @noreturn							
- */
-forward void Shavit_OnClanTagChangePost(int client, char[] customtag, int customtaglength);
-
-/**
  * Called when a time offset is calculated
  *
  * @param client					Client index.
@@ -1558,13 +1538,6 @@ forward void Shavit_OnUnRTV(int client);
  * @noreturn
  */
 forward void Shavit_OnSuccesfulRTV();
-
-/**
- * Called from shavit-timelimit when the 5 second map change countdown starts.
- *
- * @noreturn
- */
-forward void Shavit_OnCountdownStart();
 
 /**
  * Returns bhoptimer's database handle.

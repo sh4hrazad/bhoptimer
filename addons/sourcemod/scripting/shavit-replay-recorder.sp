@@ -22,8 +22,11 @@
 #include <sdktools>
 #include <convar_class>
 #include <shavit>
-#include <shavit/replay-shared>
 #include <shavit/replay-recorder>
+
+#undef REQUIRE_PLUGIN
+#include <shavit/replay-playback>
+
 
 
 #pragma newdecls required
@@ -106,6 +109,8 @@ bool gB_HijackFramesKeepOnStart[MAXPLAYERS+1];
 
 #include "shavit-replay-recorder/api.sp"
 #include "shavit-replay-recorder/recording.sp"
+
+
 
 // =====[ PLUGIN EVENTS ]=====
 

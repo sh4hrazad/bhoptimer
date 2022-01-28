@@ -77,9 +77,6 @@ float gF_CurrentPrestrafe[MAXPLAYERS+1];
 TopMenu gH_AdminMenu = null;
 TopMenuObject gH_TimerCommands = INVALID_TOPMENUOBJECT;
 
-// table prefix
-char gS_MySQLPrefix[32];
-
 // cvars
 Convar gCV_RecordsLimit = null;
 Convar gCV_RecentLimit = null;
