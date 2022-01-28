@@ -186,8 +186,7 @@ bool gB_DrawEditZone[MAXPLAYERS+1];
 // prespeed limit
 int gI_Jumps[MAXPLAYERS+1];
 bool gB_OnGround[MAXPLAYERS+1];
-bool gB_InStart[MAXPLAYERS+1];
-bool gB_InStage[MAXPLAYERS+1];
+bool gB_InZone[MAXPLAYERS+1];
 
 public Plugin myinfo =
 {
@@ -1174,8 +1173,8 @@ bool PreBuildZones()
 
 		char sTriggerName[128];
 		GetEntPropString(iEnt, Prop_Send, "m_iName", sTriggerName, 128);
-		if(StrContains(sTriggerName, "trigger_", false) != -1 ||
-			StrContains(sTriggerName, "tele", false) != -1 ||
+		// block weird trigger
+		if(StrContains(sTriggerName, "tele", false) != -1 ||
 			StrContains(sTriggerName, "tp", false) != -1 ||
 			StrContains(sTriggerName, "to", false) != -1 ||
 			StrContains(sTriggerName, "jail", false) != -1)
@@ -4121,12 +4120,7 @@ public void EndTouchPost(int entity, int other)
 		gB_InsideZone[other][type][track] = false;
 		gB_InsideZoneID[other][entityzone] = false;
 
-		DataPack dp = new DataPack();
-		dp.WriteCell(GetClientSerial(other));
-		dp.WriteCell(type);
-		dp.WriteCell(entityzone);
-
-		RequestFrame(Frame_ClearShittyLimitPrestrafe, dp);
+		ClearShittyLimitPrestrafe(other);
 
 		Action result = Plugin_Continue;
 		Call_StartForward(gH_Forwards_LeaveZone);
@@ -4238,7 +4232,7 @@ public void TouchPost(int entity, int other)
 			Shavit_SetStageTimer(other, false);
 			Shavit_StartTimer(other, track);
 
-			if(ShittyLimitPrestrafe(other, entityzone, true, false))
+			if(ShittyLimitPrestrafe(other, entityzone, false, true))
 			{
 				SendLimitMessage(other);
 			}
@@ -4272,7 +4266,7 @@ public void TouchPost(int entity, int other)
 					return;
 				}
 
-				if(ShittyLimitPrestrafe(other, entityzone, false, true))
+				if(ShittyLimitPrestrafe(other, entityzone, true, true))
 				{
 					SendLimitMessage(other);
 				}
@@ -4497,7 +4491,7 @@ void DumbSetVelocity(int client, float fSpeed[3])
 	SetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed); // m_vecBaseVelocity+m_vecVelocity
 }
 
-bool ShittyLimitPrestrafe(int client, int id, bool inStart, bool inStage)
+bool ShittyLimitPrestrafe(int client, int id, bool inStage, bool inZone)
 {
 	if(Shavit_IsTeleporting(client) || !IsValidClient(client, true))
 	{
@@ -4526,7 +4520,7 @@ bool ShittyLimitPrestrafe(int client, int id, bool inStart, bool inStage)
 			GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
 			float fSpeedXY = SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0));
 
-			if(!gB_InStart[client] || !gB_InStage[client]) // limit those one that enter zone by outsiding zone
+			if(!gB_InZone[client]) // limit those one that enter zone by outsiding zone
 			{
 				if(gA_ZoneCache[id].fLimitSpeed <= 0.0)
 				{
@@ -4571,50 +4565,15 @@ bool ShittyLimitPrestrafe(int client, int id, bool inStart, bool inStage)
 		}
 	}
 
-	gB_InStart[client] = inStart;
-	gB_InStage[client] = inStage;
+	gB_InZone[client] = inZone;
 
 	return bLimited;
 }
 
-public void Frame_ClearShittyLimitPrestrafe(DataPack dp)
-{
-	dp.Reset();
-
-	int client = GetClientFromSerial(dp.ReadCell());
-	int type = dp.ReadCell();
-	int id = dp.ReadCell();
-
-	delete dp;
-
-	ClearShittyLimitPrestrafe(client, type, id);
-}
-
 // clear them when leave zone
-void ClearShittyLimitPrestrafe(int client, int type, int id)
+void ClearShittyLimitPrestrafe(int client)
 {
-	switch(type)
-	{
-		case Zone_Start:
-		{
-			if(ShittyLimitPrestrafe(client, id, true, false))
-			{
-				SendLimitMessage(client);
-			}
-
-			gB_InStart[client] = false;
-		}
-
-		case Zone_Stage:
-		{
-			if(ShittyLimitPrestrafe(client, id, false, true))
-			{
-				SendLimitMessage(client);
-			}
-
-			gB_InStage[client] = false;
-		}
-	}
+	gB_InZone[client] = false;
 
 	switch(gI_Jumps[client])
 	{
