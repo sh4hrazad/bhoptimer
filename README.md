@@ -22,8 +22,8 @@
   - 用于显示空气墙.
 * [Stripper](http://www.bailopan.net/stripper/snapshots/1.2/)
   * 用于修复地图(下载git129或更高版本)
-* [Boostfix](https://github.com/Ciallo-Ani/boostfix)
-  * 防止客户端卡bug加速
+* [Crouchboostfix](https://github.com/t5mat/crouchboostfix)
+  * 防止客户端卡按蹲bug加速
 * [sm_closestpos](https://github.com/rtldg/sm_closestpos)
   * 获得动态时间差和速度差，用c++编写的扩展，比sourcepawn快得多。
 * [NoclipSpeed](https://github.com/GAMMACASE/NoclipSpeed)
