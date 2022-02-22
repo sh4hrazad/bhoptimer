@@ -23,9 +23,10 @@
 #include <sdkhooks>
 #include <regex>
 #include <convar_class>
+#include <shavit>
+#include <shavit/rankings>
 
 #undef REQUIRE_PLUGIN
-#include <shavit>
 #include <adminmenu>
 
 #undef REQUIRE_EXTENSIONS

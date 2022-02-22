@@ -25,7 +25,8 @@
 #include <shavit/wr>
 #include <shavit/stats>
 
-
+#undef REQUIRE_PLUGIN
+#include <shavit/rankings>
 
 #undef REQUIRE_EXTENSIONS
 #include <cstrike>

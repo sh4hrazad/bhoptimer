@@ -24,6 +24,9 @@
 
 #include <shavit>
 #include <shavit/wr>
+
+#undef REQUIRE_PLUGIN
+#include <shavit/rankings>
 #include <shavit/stats>
 
 #undef REQUIRE_PLUGIN
@@ -46,6 +49,8 @@ public Plugin myinfo =
 
 
 bool gB_Late = false;
+
+// modules
 bool gB_Rankings = false;
 bool gB_Stats = false;
 

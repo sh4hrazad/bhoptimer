@@ -4,6 +4,7 @@
 
 #undef REQUIRE_PLUGIN
 #include <shavit>
+#include <shavit/rankings>
 #include <mapchooser> // for MapChange type
 
 #undef REQUIRE_EXTENSIONS

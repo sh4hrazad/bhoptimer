@@ -28,6 +28,7 @@
 #undef REQUIRE_PLUGIN
 #define USES_CHAT_COLORS
 #include <shavit>
+#include <shavit/rankings>
 #include <rtler>
 
 #undef REQUIRE_EXTENSIONS

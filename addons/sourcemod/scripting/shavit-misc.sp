@@ -25,9 +25,12 @@
 #include <convar_class>
 #include <dhooks>
 #include <shavit>
+
+#undef REQUIRE_PLUGIN
 #include <shavit/misc>
-#include <shavit/wr>
+#include <shavit/rankings>
 #include <shavit/replay-playback>
+#include <shavit/wr>
 
 #undef REQUIRE_EXTENSIONS
 #include <SteamWorks>
