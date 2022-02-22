@@ -23,6 +23,7 @@
 #include <convar_class>
 #include <dhooks>
 #include <shavit>
+#include <shavit/sounds>
 #include <shavit/wr>
 
 

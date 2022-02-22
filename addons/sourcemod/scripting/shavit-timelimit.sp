@@ -24,6 +24,7 @@
 #include <convar_class>
 #include <dhooks>
 #include <shavit>
+#include <shavit/timelimit>
 #include <shavit/wr>
 
 

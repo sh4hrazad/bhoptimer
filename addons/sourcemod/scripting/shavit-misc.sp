@@ -468,25 +468,6 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 	return Plugin_Continue;
 }
 
-public Action Hook_GunTouch(int entity, int client)
-{
-	if (1 <= client <= MaxClients)
-	{
-		char classname[64];
-		GetEntityClassname(entity, classname, sizeof(classname));
-
-		if (StrEqual(classname, "weapon_glock"))
-		{
-			if (!IsValidClient(client) || !IsFakeClient(client))
-			{
-				SetEntProp(entity, Prop_Send, "m_bBurstMode", 1);
-			}
-		}
-	}
-
-	return Plugin_Continue;
-}
-
 public void OnEntityCreated(int entity, const char[] classname)
 {
 	OnEntityCreated_HookTrigger(entity, classname);

@@ -24,6 +24,7 @@
 
 #include <shavit>
 #include <shavit/wr>
+#include <shavit/stats>
 
 #undef REQUIRE_PLUGIN
 #include <adminmenu>
