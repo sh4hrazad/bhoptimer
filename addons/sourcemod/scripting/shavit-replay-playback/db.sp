@@ -2,14 +2,13 @@
 
 void SQL_DBConnect()
 {
-	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
 	gH_SQL = GetTimerDatabaseHandle2();
 }
 
 void DB_GetUserName(int steamid, DataPack dp)
 {
 	char sQuery[192];
-	FormatEx(sQuery, 192, "SELECT name FROM %susers WHERE auth = %d;", gS_MySQLPrefix, steamid);
+	FormatEx(sQuery, 192, "SELECT name FROM `users` WHERE auth = %d;", steamid);
 
 	gH_SQL.Query(SQL_GetUserName_Callback, sQuery, dp, DBPrio_High);
 }
@@ -37,7 +36,7 @@ public void SQL_GetUserName_Callback(Database db, DBResultSet results, const cha
 void DB_GetStageUserName(int steamid, DataPack dp)
 {
 	char sQuery[192];
-	FormatEx(sQuery, 192, "SELECT name FROM %susers WHERE auth = %d;", gS_MySQLPrefix, steamid);
+	FormatEx(sQuery, 192, "SELECT name FROM `users` WHERE auth = %d;", steamid);
 
 	gH_SQL.Query(SQL_GetStageUserName_Callback, sQuery, dp, DBPrio_High);
 }

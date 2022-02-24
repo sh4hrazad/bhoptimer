@@ -145,7 +145,6 @@ TopMenuObject gH_TimerCommands = INVALID_TOPMENUOBJECT;
 
 // database related things
 Database2 gH_SQL = null;
-char gS_MySQLPrefix[32];
 
 // module
 bool gB_ClosestPos;

@@ -52,7 +52,6 @@ bool gB_Rankings = false;
 
 // database handle
 Database2 gH_SQL = null;
-char gS_MySQLPrefix[32];
 
 // cache
 bool gB_CanOpenMenu[MAXPLAYERS+1];

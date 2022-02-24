@@ -137,24 +137,22 @@ void ShowMaps(int client)
 
 	char sQuery[512];
 
-	if(gI_MapType[client] == MAPSDONE)
+	switch(gI_MapType[client])
 	{
-		FormatEx(sQuery, 512, mysql_show_mapsdone, gI_TargetSteamID[client], gI_Style[client], gI_Track[client], (gB_Rankings)? "points DESC":"map");
-	}
-	else
-	{
-		if(gB_Rankings)
+		case MAPSDONE:
 		{
-			FormatEx(sQuery, 512,
-				"SELECT DISTINCT m.map, t.tier FROM %smapzones m LEFT JOIN %smaptiers t ON m.map = t.map WHERE m.type = 0 AND m.track = %d AND m.map NOT IN (SELECT DISTINCT map FROM %splayertimes WHERE auth = %d AND style = %d AND track = %d) ORDER BY m.map;",
-				gS_MySQLPrefix, gS_MySQLPrefix, gI_Track[client], gS_MySQLPrefix, gI_TargetSteamID[client], gI_Style[client], gI_Track[client]);
+			FormatEx(sQuery, 512, mysql_show_mapsdone, gI_TargetSteamID[client], gI_Style[client], gI_Track[client], (gB_Rankings)? "points DESC":"map");
 		}
-
-		else
+		case MAPSLEFT:
 		{
-			FormatEx(sQuery, 512,
-				"SELECT DISTINCT map FROM %smapzones WHERE type = 0 AND track = %d AND map NOT IN (SELECT DISTINCT map FROM %splayertimes WHERE auth = %d AND style = %d AND track = %d) ORDER BY map;",
-				gS_MySQLPrefix, gI_Track[client], gS_MySQLPrefix, gI_TargetSteamID[client], gI_Style[client], gI_Track[client]);
+			if(gB_Rankings)
+			{
+				FormatEx(sQuery, 512, mysql_show_mapsleft_have_rankings, gI_Track[client], gI_TargetSteamID[client], gI_Style[client], gI_Track[client]);
+			}
+			else
+			{
+				FormatEx(sQuery, 512, mysql_show_mapsleft_no_rankings, gI_Track[client], gI_TargetSteamID[client], gI_Style[client], gI_Track[client]);
+			}
 		}
 	}
 
@@ -285,7 +283,7 @@ public int MenuHandler_ShowMaps(Menu menu, MenuAction action, int param1, int pa
 		}
 
 		char sQuery[512];
-		FormatEx(sQuery, 512, "SELECT u.name, p.time, p.jumps, p.style, u.auth, p.date, p.map, p.strafes, p.sync, p.points FROM %splayertimes p JOIN %susers u ON p.auth = u.auth WHERE p.id = '%s' LIMIT 1;", gS_MySQLPrefix, gS_MySQLPrefix, sInfo);
+		FormatEx(sQuery, 512, mysql_showmaps_details, sInfo);
 
 		gH_SQL.Query(SQL_SubMenu_Callback, sQuery, GetClientSerial(param1));
 	}

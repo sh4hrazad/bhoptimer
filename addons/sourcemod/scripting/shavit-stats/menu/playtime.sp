@@ -6,11 +6,7 @@ public Action Command_Playtime(int client, int args)
 	}
 
 	char sQuery[512];
-	FormatEx(sQuery, sizeof(sQuery),
-		"(SELECT auth, name, playtime, -1 as ownrank FROM %susers WHERE playtime > 0 ORDER BY playtime DESC LIMIT 100) " ...
-		"UNION " ...
-		"(SELECT -1, '', u2.playtime, COUNT(*) as ownrank FROM %susers u1 JOIN (SELECT playtime FROM %susers WHERE auth = %d) u2 WHERE u1.playtime >= u2.playtime);",
-		gS_MySQLPrefix, gS_MySQLPrefix, gS_MySQLPrefix, GetSteamAccountID(client));
+	FormatEx(sQuery, sizeof(sQuery), mysql_top_playtime, GetSteamAccountID(client));
 	gH_SQL.Query(SQL_TopPlaytime_Callback, sQuery, GetClientSerial(client), DBPrio_Normal);
 
 	return Plugin_Handled;

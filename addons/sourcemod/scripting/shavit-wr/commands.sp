@@ -65,8 +65,8 @@ public Action Command_Junk(int client, int args)
 {
 	char sQuery[512];
 	FormatEx(sQuery, sizeof(sQuery),
-		"INSERT INTO %splayertimes (auth, map, time, jumps, date, style, strafes, sync) VALUES (%d, '%s', %f, %d, %d, 0, %d, %.02f);",
-		gS_MySQLPrefix, GetSteamAccountID(client), gS_Map, GetRandomFloat(10.0, 20.0), GetRandomInt(5, 15), GetTime(), GetRandomInt(5, 15), GetRandomFloat(50.0, 99.99));
+		"INSERT INTO `playertimes` (auth, map, time, jumps, date, style, strafes, sync) VALUES (%d, '%s', %f, %d, %d, 0, %d, %.02f);",
+		GetSteamAccountID(client), gS_Map, GetRandomFloat(10.0, 20.0), GetRandomInt(5, 15), GetTime(), GetRandomInt(5, 15), GetRandomFloat(50.0, 99.99));
 
 	SQL_LockDatabase(gH_SQL);
 	SQL_FastQuery(gH_SQL, sQuery);
