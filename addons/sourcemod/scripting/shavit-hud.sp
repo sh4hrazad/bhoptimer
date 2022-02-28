@@ -28,12 +28,8 @@
 #include <shavit/wr>
 #include <shavit/replay-playback>
 
-
-
 #pragma newdecls required
 #pragma semicolon 1
-
-
 
 // HUD2 - these settings will *disable* elements for the main hud
 #define HUD2_NONE				0
@@ -1114,8 +1110,8 @@ int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 				char sTime[32];
 				FormatSeconds(data.fTime, sTime, 32, false);
 
-				char sPlayerName[10]; // shouldn't too long
-				Shavit_GetReplayName(data.iStyle, data.iTrack, sPlayerName, 10, data.iStage);
+				char sPlayerName[16]; // shouldn't too long bytes.
+				Shavit_GetReplayName(data.iStyle, data.iTrack, sPlayerName, sizeof(sPlayerName), data.iStage);
 
 				FormatEx(sLine, 128, "%s: <span color='#FFFF00'>%s</span> (%s)", sTransTime, sTime, sPlayerName);
 				AddHUDLine(buffer, maxlen, sLine, iLines);

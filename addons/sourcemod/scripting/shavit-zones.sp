@@ -4450,16 +4450,15 @@ void DrawZoneToSingleClient(int client, float points[8][3], int color[4], float 
 
 void DoTeleport(int client, int zone)
 {
-	if(!EmptyVector(gV_CustomDestinations[client][zone]))
+	if(!EmptyVector(gV_CustomDestinations[client][zone]) && 
+		(Shavit_IsStageTimer(client) || gA_ZoneCache[zone].iZoneType == Zone_Start))
 	{
 		TeleportEntity(client, gV_CustomDestinations[client][zone], gV_CustomDestinationsAngle[client][zone], view_as<float>({0.0, 0.0, 0.0}));
 	}
-
 	else if(!EmptyVector(gV_Destinations[zone]))
 	{
 		TeleportEntity(client, gV_Destinations[zone], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
 	}
-
 	else
 	{
 		TeleportEntity(client, gV_ZoneCenter[zone], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));

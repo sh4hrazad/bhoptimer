@@ -1345,12 +1345,12 @@ public int Native_CanPause(Handle handler, int numParams)
 		iFlags |= CPR_NoTimer;
 	}
 
-	if (Shavit_InsideZone(client, Zone_Start, gA_Timers[client].iTimerTrack))
+	if (Shavit_InsideZone(client, Zone_Start, gA_Timers[client].iTimerTrack) && !gA_Timers[client].bClientPaused)
 	{
 		iFlags |= CPR_InStartZone;
 	}
 
-	if (Shavit_InsideZone(client, Zone_End, gA_Timers[client].iTimerTrack))
+	if (Shavit_InsideZone(client, Zone_End, gA_Timers[client].iTimerTrack) && !gA_Timers[client].bClientPaused)
 	{
 		iFlags |= CPR_InEndZone;
 	}
