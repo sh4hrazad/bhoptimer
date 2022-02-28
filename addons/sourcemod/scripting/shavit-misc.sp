@@ -27,6 +27,8 @@
 #include <shavit>
 
 #undef REQUIRE_PLUGIN
+#include <shavit/chat>
+#include <shavit/checkpoints>
 #include <shavit/misc>
 #include <shavit/rankings>
 #include <shavit/replay-playback>

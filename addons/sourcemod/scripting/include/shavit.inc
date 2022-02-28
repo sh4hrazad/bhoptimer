@@ -318,57 +318,6 @@ methodmap Transaction2 < Transaction
 	}
 }
 
-#if defined USES_CHAT_COLORS
-// hardcoded colors
-char gS_GlobalColorNames[][] =
-{
-	"{default}",
-	"{team}",
-	"{green}"
-};
-
-char gS_GlobalColors[][] =
-{
-	"\x01",
-	"\x03",
-	"\x04"
-};
-
-char gS_CSGOColorNames[][] =
-{
-	"{blue}",
-	"{bluegrey}",
-	"{darkblue}",
-	"{darkred}",
-	"{gold}",
-	"{grey}",
-	"{grey2}",
-	"{lightgreen}",
-	"{lightred}",
-	"{lime}",
-	"{orchid}",
-	"{yellow}",
-	"{palered}"
-};
-
-char gS_CSGOColors[][] =
-{
-	"\x0B",
-	"\x0A",
-	"\x0C",
-	"\x02",
-	"\x10",
-	"\x08",
-	"\x0D",
-	"\x05",
-	"\x0F",
-	"\x06",
-	"\x0E",
-	"\x09",
-	"\x07"
-};
-#endif
-
 // connects synchronously to the bhoptimer database
 // calls errors if needed
 stock Database GetTimerDatabaseHandle(bool reuse_persistent_connection=true)
@@ -1136,34 +1085,6 @@ forward void Shavit_OnChatConfigLoaded();
 forward void Shavit_OnWRCP(int client, int stage, int style, int steamid, int records, float oldtime, float time, float leavespeed, const char[] mapname);
 
 /**
- * Called when a player teleports with checkpoints.
- *
- * @param client					Client index.
- * @param index						Checkpoint that was teleported to.
- * @return							Plugin_Continue to allow teleporting, anything else to prevent.
- */
-forward Action Shavit_OnTeleport(int client, int index);
-
-/**
- * Called when a player saves a checkpoint.
- *
- * @param client					Client index.
- * @param index						Checkpoint that was saved to.
- * @param overflow					Does this checkpoint shift the rest.
- * @return							Plugin_Continue to allow saving, anything else to prevent.
- */
-forward Action Shavit_OnSave(int client, int index, bool overflow);
-
-/**
- * Called when a player deletes a checkpoint.
- *
- * @param client					Client index.
- * @param index						Checkpoint that will be deleted.
- * @return							Plugin_Continue to continue deletion, anything else to prevent.
- */
-forward Action Shavit_OnDelete(int client, int index);
-
-/**
  * Called when a player enters a zone.
  *
  * @param client					Client index.
@@ -1351,28 +1272,6 @@ forward void Shavit_OnTimeOffsetCalculated(int client, int zonetype, float offse
  * @noreturn
  */
 forward void Shavit_OnTimescaleChanged(int client, float oldtimescale, float newtimescale);
-
-/**
- * Called after the checkpoint menu has been made and before it's sent to the client.
- *
- * @param client					Client index.
- * @param segmented					If the menu was a segmented menu
- * @return							Plugin_Handled or Plugin_Stop to stop the menu.
- */
-forward Action Shavit_OnCheckPointMenuMade(int client, bool segmented);
-
-/**
- * Called before a selection is processed in the main checkpoint menu.
- *
- * @param client					Client index.
- * @param param2					Second parameter in the callback, usually the item selected.
- * @param info						reference copy of the info string used in the callback
- * @param maxlength					length of the info buffer
- * @param currentCheckpoint			Clients current checkpoint
- * @param maxCPs					Max checkpoints the client can use
- * @return							Plugin_Continue to continue the callback.
- */
-forward Action Shavit_OnCheckpointMenuSelect(int client, int param2, char[] info, int maxlength, int currentCheckpoint, int maxCPs);
 
 /**
  * Called before the server & timer handle the ProcessMovement method.
@@ -2315,69 +2214,6 @@ native void Shavit_SetLeaveStageTime(int client, float time);
 native bool Shavit_IsTeleporting(int client);
 
 /**
- * Gets the total number of CPs that a client has saved
- *
- * @param client					Client index
- *
- * @return							Total number of checkpoints
- */
-native int Shavit_GetTotalCheckpoints(int client);
-
-/**
- * Gets CP data for a client at specified index
- *
- * @param client					Client index
- * @param index						Index of CP to get
- * @param cpcache					Buffer to store cp data in sizeof(cp_cache_t)
- * @param size						Size of the cpcache buffer, e.g sizeof(cp_cache_t)
- *
- * @noreturn
- */
-native bool Shavit_GetCheckpoint(int client, int index, any[] cpcache, int size = sizeof(cp_cache_t));
-
-/**
- * Sets checkpoint data at the given index for the given client
- *
- * @param client					Client index
- * @param index						Index of CP to set, or -1 to push cp as last
- * @param cpcache					Buffer to store cp data in sizeof(cp_cache_t)
- * @param size						Size of the cpcache buffer, e.g sizeof(cp_cache_t)
- * @param cpcache					Buffer with cp data
- *
- * @noreturn
- */
-native void Shavit_SetCheckpoint(int client, int index, any[] cpcache, int size = sizeof(cp_cache_t));
-
-/**
- * Teleports client to the checkpoint at given index
- *
- * @param client					Client index
- * @param index						Index of CP to teleport to
- * @param suppress					Supress checkpoint message
- *
- * @noreturn
- */
-native void Shavit_TeleportToCheckpoint(int client, int index, bool suppress = false);
-
-/**
- * Clears all saved checkpoints for the specified client
- *
- * @param client					Client index
- *
- * @noreturn
- */
-native void Shavit_ClearCheckpoints(int client);
-
-/**
- * Opens checkpoint menu for a client
- *
- * @param client					Client index
- *
- * @noreturn
- */
-native void Shavit_OpenCheckpointMenu(int client);
-
-/**
  * Sets the clients dynamic timescale. -1.0 to use the timescale of the client's style.
  * Note: Values above 1.0 won't scale into the replay bot.
  *
@@ -2406,63 +2242,6 @@ native float Shavit_GetClientTimescale(int client);
  * @noreturn
  */
 native void Shavit_UpdateLaggedMovement(int client, bool user_timescale=true);
-
-/**
- * Saves a new checkpoint and returns the new checkpoint index
- *
- * @param client					Client index
- *
- * @return							The new current checkpoint
- */
-native int Shavit_SaveCheckpoint(int client);
-
-/**
- * Gets the current checkpoint index.
- *
- * @param client					Client index
- *
- * @return							The current checkpoint
- */
-native int Shavit_GetCurrentCheckpoint(int client);
-
-/**
- * Sets the current checkpoint index.
- *
- * @param client					Client index
- * @param index						New index to use
- *
- * @noreturn
- */
-native void Shavit_SetCurrentCheckpoint(int client, int index);
-
-/**
- * Gets how many times the client has teleported to checkpoints.
- *
- * @param client					Client index
- *
- * @return							The number of times the client has teleported to checkpoints.
- */
-native int Shavit_GetTimesTeleported(int client);
-
-/**
- * Checks whether the client has savestate data.
- *
- * @param client                    Client index
- *
- * @return                          Whether a savestate or rejoin-savestate data exists for the client.
- */
-native bool Shavit_HasSavestate(int client);
-
-/**
- * Retrieves the player's chatrank trimmed and without colors.
- *
- * @param client					Client index
- * @param buf						Buffer to put the put the chatrank into
- * @param buflen					Size of buf
- * @param includename				Include {name} in result.
- * @noreturn
- */
-native void Shavit_GetPlainChatrank(int client, char[] buf, int buflen, bool includename=false);
 
 /**
  * Reload WRStages.
@@ -2594,12 +2373,6 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_StopTimer");
 	MarkNativeAsOptional("Shavit_ZoneExists");
 	MarkNativeAsOptional("Shavit_Zones_DeleteMap");
-	MarkNativeAsOptional("Shavit_GetTotalCheckpoints");
-	MarkNativeAsOptional("Shavit_GetCheckpoint");
-	MarkNativeAsOptional("Shavit_SetCheckpoint");
-	MarkNativeAsOptional("Shavit_TeleportToCheckpoint");
-	MarkNativeAsOptional("Shavit_ClearCheckpoints");
-	MarkNativeAsOptional("Shavit_OpenCheckpointMenu");
 	MarkNativeAsOptional("Shavit_GetClientTimescale");
 	MarkNativeAsOptional("Shavit_SetClientTimescale");
 	MarkNativeAsOptional("Shavit_GetAvgVelocity");
@@ -2620,16 +2393,10 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetLeaveStageTime");
 	MarkNativeAsOptional("Shavit_SetLeaveStageTime");
 	MarkNativeAsOptional("Shavit_IsTeleporting");
-	MarkNativeAsOptional("Shavit_SaveCheckpoint");
-	MarkNativeAsOptional("Shavit_GetCurrentCheckpoint");
-	MarkNativeAsOptional("Shavit_SetCurrentCheckpoint");
-	MarkNativeAsOptional("Shavit_GetTimesTeleported");
-	MarkNativeAsOptional("Shavit_HasSavestate");
 	MarkNativeAsOptional("Shavit_SetStyleSetting");
 	MarkNativeAsOptional("Shavit_SetStyleSettingFloat");
 	MarkNativeAsOptional("Shavit_SetStyleSettingBool");
 	MarkNativeAsOptional("Shavit_SetStyleSettingInt");
-	MarkNativeAsOptional("Shavit_GetPlainChatrank");
 	MarkNativeAsOptional("Shavit_GetMapBonuses");
 	MarkNativeAsOptional("Shavit_GetMapStages");
 	MarkNativeAsOptional("Shavit_GetMapCheckpoints");

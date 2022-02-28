@@ -25,9 +25,9 @@
 #include <clientprefs>
 #include <convar_class>
 #include <dhooks>
+#include <shavit/colors>
 
 #undef REQUIRE_PLUGIN
-#define USES_CHAT_COLORS
 #include <shavit>
 
 #pragma newdecls required
