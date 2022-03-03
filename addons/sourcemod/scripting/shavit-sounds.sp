@@ -26,7 +26,8 @@
 #include <shavit/sounds>
 #include <shavit/wr>
 
-
+#undef REQUIRE_PLUGIN
+#include <shavit/hud>
 
 #pragma newdecls required
 #pragma semicolon 1
