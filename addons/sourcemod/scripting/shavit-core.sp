@@ -2622,23 +2622,6 @@ public Action Command_StyleChange(int client, int args)
 	return Plugin_Continue;
 }
 
-void ReplaceColors(char[] string, int size)
-{
-	for(int x = 0; x < sizeof(gS_GlobalColorNames); x++)
-	{
-		ReplaceString(string, size, gS_GlobalColorNames[x], gS_GlobalColors[x]);
-	}
-
-	for(int x = 0; x < sizeof(gS_CSGOColorNames); x++)
-	{
-		ReplaceString(string, size, gS_CSGOColorNames[x], gS_CSGOColors[x]);
-	}
-
-	ReplaceString(string, size, "{RGB}", "\x07");
-	ReplaceString(string, size, "{RGBA}", "\x08");
-	ReplaceString(string, size, "{rand}", gS_CSGOColors[GetRandomInt(0, sizeof(gS_CSGOColors) - 1)]);
-}
-
 bool LoadMessages()
 {
 	char sPath[PLATFORM_MAX_PATH];
@@ -3055,16 +3038,13 @@ void CreateUsersTable()
 
 	if(gB_MySQL)
 	{
-		FormatEx(sQuery, 512,
-			"CREATE TABLE IF NOT EXISTS `%susers` (`auth` INT NOT NULL, `name` VARCHAR(32) COLLATE 'utf8mb4_general_ci', `ip` INT, `lastlogin` INT NOT NULL DEFAULT -1, `points` FLOAT NOT NULL DEFAULT 0, `playtime` FLOAT NOT NULL DEFAULT 0, PRIMARY KEY (`auth`), INDEX `points` (`points`), INDEX `lastlogin` (`lastlogin`)) ENGINE=INNODB;",
-			gS_MySQLPrefix);
+		FormatEx(sQuery, sizeof(sQuery),
+			"CREATE TABLE IF NOT EXISTS `users` (`auth` INT NOT NULL, `name` VARCHAR(32) COLLATE 'utf8mb4_general_ci', `ip` INT, `lastlogin` INT NOT NULL DEFAULT -1, `points` FLOAT NOT NULL DEFAULT 0, `playtime` FLOAT NOT NULL DEFAULT 0, PRIMARY KEY (`auth`), INDEX `points` (`points`), INDEX `lastlogin` (`lastlogin`)) ENGINE=INNODB;");
 	}
-
 	else
 	{
-		FormatEx(sQuery, 512,
-			"CREATE TABLE IF NOT EXISTS `%susers` (`auth` INT NOT NULL PRIMARY KEY, `name` VARCHAR(32), `ip` INT, `lastlogin` INTEGER NOT NULL DEFAULT -1, `points` FLOAT NOT NULL DEFAULT 0, `playtime` FLOAT NOT NULL DEFAULT 0);",
-			gS_MySQLPrefix);
+		FormatEx(sQuery, sizeof(sQuery),
+			"CREATE TABLE IF NOT EXISTS `users` (`auth` INT NOT NULL PRIMARY KEY, `name` VARCHAR(32), `ip` INT, `lastlogin` INTEGER NOT NULL DEFAULT -1, `points` FLOAT NOT NULL DEFAULT 0, `playtime` FLOAT NOT NULL DEFAULT 0);");
 	}
 
 	gH_SQL.Query(SQL_CreateUsersTable_Callback, sQuery, 0, DBPrio_High);

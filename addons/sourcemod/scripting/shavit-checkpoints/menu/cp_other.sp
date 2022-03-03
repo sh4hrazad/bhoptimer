@@ -126,6 +126,13 @@ void TeleportToOtherCheckpoint(int client, int other, int index, bool suppressMe
 		return;
 	}
 
+	if(!IsValidClient(other)) /* the other may leaved the game */
+	{
+		gB_UsingOtherCheckpoint[client] = false;
+		TeleportToCheckpoint(client, gI_CurrentCheckpoint[client], true);
+		return;
+	}
+
 	gB_UsingOtherCheckpoint[client] = true;
 
 	if(index > gA_Checkpoints[other].Length)

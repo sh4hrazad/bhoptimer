@@ -1797,16 +1797,6 @@ native float Shavit_GetZoneOffset(int client, int zonetype);
 native float Shavit_GetDistanceOffset(int client, int zonetype);
 
 /**
- * Force an HUD update for a player. Requires shavit-hud.
- *
- * @param client					Client index.
- * @param spectators                Should also update it for the player's spectators?
- * @error                           Error code 200 if client isn't valid.
- * @return                          Amount of players that had their HUD updated (client + spectators) or -1 on error.
- */
-native int Shavit_ForceHUDUpdate(int client, bool spectators);
-
-/**
  * Gets a value from the style config for the given style
  * e.g. Shavit_GetStyleSetting(Shavit_GetBhopStyle(client), "TAS", sBuffer, 2);
  *
@@ -1954,15 +1944,6 @@ native int Shavit_GetChatStrings(int stringtype, char[] ChatStrings, int size);
  * @return                          SP_ERROR_NONE on success, anything else on failure.
  */
 native int Shavit_GetChatStringsStruct(any[] strings, int size = sizeof(chatstrings_t));
-
-/**
- * Gets the HUD settings of a player.
- * See the HUD_* defines for information.
- *
- * @param client					Client index.
- * @return                          HUD settings.
- */
-native int Shavit_GetHUDSettings(int client);
 
 /**
  * Sets practice mode on a client.
@@ -2324,7 +2305,6 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_CanPause");
 	MarkNativeAsOptional("Shavit_ChangeClientStyle");
 	MarkNativeAsOptional("Shavit_FinishMap");
-	MarkNativeAsOptional("Shavit_ForceHUDUpdate");
 	MarkNativeAsOptional("Shavit_FormatChat");
 	MarkNativeAsOptional("Shavit_GetBhopStyle");
 	MarkNativeAsOptional("Shavit_GetChatStrings");
@@ -2333,7 +2313,6 @@ public void __pl_shavit_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetClientTime");
 	MarkNativeAsOptional("Shavit_GetClientTrack");
 	MarkNativeAsOptional("Shavit_GetDatabase");
-	MarkNativeAsOptional("Shavit_GetHUDSettings");
 	MarkNativeAsOptional("Shavit_GetOrderedStyles");
 	MarkNativeAsOptional("Shavit_GetStrafeCount");
 	MarkNativeAsOptional("Shavit_GetStyleCount");

@@ -7,7 +7,6 @@
 void SQL_DBConnect()
 {
 	gH_SQL = GetTimerDatabaseHandle2(false);
-	gB_MySQL = IsMySQLDatabase(gH_SQL);
 
-	DB_CreateTables();
+	DB_CreateTables(IsMySQLDatabase(gH_SQL));
 }

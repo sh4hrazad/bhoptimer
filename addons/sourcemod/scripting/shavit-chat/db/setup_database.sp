@@ -7,11 +7,6 @@
 void SQL_DBConnect()
 {
 	gH_SQL = GetTimerDatabaseHandle2(false);
-	if(!IsMySQLDatabase(gH_SQL))
-	{
-		SetFailState("shavit-chat module only support for mysql.");
-		return;
-	}
 
-	DB_CreateTables();
+	DB_CreateTables(IsMySQLDatabase(gH_SQL));
 }

@@ -4,9 +4,16 @@
 
 
 
-void DB_CreateTables()
+void DB_CreateTables(bool mysql)
 {
-	gH_SQL.Query(SQL_CreateTable_Callback, mysql_create_table_chat);
+	if(mysql)
+	{
+		gH_SQL.Query(SQL_CreateTable_Callback, mysql_create_table_chat);
+	}
+	else
+	{
+		gH_SQL.Query(SQL_CreateTable_Callback, sqlite_create_table_chat);
+	}
 }
 
 public void SQL_CreateTable_Callback(Database db, DBResultSet results, const char[] error, any data)

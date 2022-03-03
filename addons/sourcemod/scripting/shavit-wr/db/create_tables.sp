@@ -4,11 +4,11 @@
 
 
 
-void DB_CreateTables()
+void DB_CreateTables(bool mysql)
 {
 	Transaction2 hTransaction = new Transaction2();
 
-	if(gB_MySQL)
+	if(mysql)
 	{
 		hTransaction.AddQuery(mysql_playertimes_create);
 		hTransaction.AddQuery(mysql_wrs_min_create);
@@ -16,9 +16,9 @@ void DB_CreateTables()
 	}
 	else
 	{
-		SetFailState("shavit-wr only support mysql database.");
-		delete hTransaction;
-		return;
+		hTransaction.AddQuery(sqlite_playertimes_create);
+		hTransaction.AddQuery(sqlite_wrs_min_create);
+		hTransaction.AddQuery(sqlite_wrs_create);
 	}
 
 	gH_SQL.Execute(hTransaction, Trans_CreateTable_Success, Trans_CreateTable_Error, 0, DBPrio_High);

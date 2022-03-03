@@ -58,7 +58,6 @@ bool gB_Stats = false;
 // database handle
 Database2 gH_SQL = null;
 bool gB_Connected = false;
-bool gB_MySQL = false;
 
 // cache
 wrcache_t gA_WRCache[MAXPLAYERS+1];

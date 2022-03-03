@@ -5,11 +5,6 @@ void RegisterCommands_Teleport()
 	RegConsoleCmd("sm_goto", Command_Teleport, "Teleport to another player. Usage: sm_goto [target]");
 }
 
-
-
-
-
-
 public Action Command_Teleport(int client, int args)
 {
 	if(!IsValidClient(client))
@@ -38,7 +33,6 @@ public Action Command_Teleport(int client, int args)
 
 		Teleport(client, GetClientSerial(iTarget));
 	}
-
 	else
 	{
 		Menu menu = new Menu(MenuHandler_Teleport);
