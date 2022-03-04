@@ -1,52 +1,22 @@
-static ClosestPos gH_ClosestPos[TRACKS_SIZE][STYLE_LIMIT];
-
-
-
-// ======[ PUBLIC ]======
-
-void DropClosestPos(int style, int track)
+void OnPlayerRunCmd_ClosestPos(int client)
 {
-    delete gH_ClosestPos[track][style];
-}
-
-void OnDefaultLoadReplay_ClosestPos(frame_cache_t cache, int style, int track)
-{
-    if (gB_ClosestPos)
+	if (!gCV_EnableDynamicTimeDifference.BoolValue)
 	{
-		delete gH_ClosestPos[track][style];
-		gH_ClosestPos[track][style] = new ClosestPos(cache.aFrames);
+		return;
 	}
-}
 
-void Shavit_OnReplaySaved_ClosestPos(int style, int track)
-{
-    if (gB_ClosestPos)
+	if(Shavit_InsideZone(client, Zone_Start, -1))
 	{
-		delete gH_ClosestPos[track][style];
-		gH_ClosestPos[track][style] = new ClosestPos(gA_FrameCache[style][track].aFrames);
+		gF_VelocityDifference2D[client] = 0.0;
+		gF_VelocityDifference3D[client] = 0.0;
+
+		return;
 	}
-}
 
-Action OnPlayerRunCmd_ClosestPos(int client)
-{
-    if (!gCV_EnableDynamicTimeDifference.BoolValue)
-    {
-        return Plugin_Continue;
-    }
-
-    if(Shavit_InsideZone(client, Zone_Start, -1))
-    {
-        gF_VelocityDifference2D[client] = 0.0;
-        gF_VelocityDifference3D[client] = 0.0;
-        return Plugin_Continue;
-    }
-
-    if ((GetGameTickCount() % gCV_DynamicTimeTick.IntValue) == 0)
-    {
-        gF_TimeDifference[client] = GetClosestReplayTime(client);
-    }
-
-    return Plugin_Continue;
+	if ((GetGameTickCount() % gCV_DynamicTimeTick.IntValue) == 0)
+	{
+		gF_TimeDifference[client] = GetClosestReplayTime(client);
+	}
 }
 
 // also calculates gF_VelocityDifference2D & gF_VelocityDifference3D

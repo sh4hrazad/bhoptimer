@@ -2,7 +2,9 @@ static GlobalForward H_ShouldSaveReplayCopy = null;
 static GlobalForward H_OnReplaySaved = null;
 static GlobalForward H_OnStageReplaySaved = null;
 
-// =====[ NATIVES ]=====
+
+
+// ======[ NATIVE ]======
 
 void CreateNatives()
 {
@@ -50,36 +52,27 @@ public int Native_HijackAngles(Handle handler, int numParams)
 	return ticks;
 }
 
-public int Native_GetPlayerPreFrames(Handle handler, int numParams)
-{
-	return gI_PlayerPrerunFrames[GetNativeCell(1)];
-}
-
-public int Native_SetPlayerPreFrames(Handle handler, int numParams)
+public int Native_GetReplayData(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
-	int preframes = GetNativeCell(2);
+	bool cheapCloneHandle = view_as<bool>(GetNativeCell(2));
+	Handle cloned = null;
 
-	gI_PlayerPrerunFrames[client] = preframes;
+	if(gA_PlayerFrames[client] != null)
+	{
+		ArrayList frames = cheapCloneHandle ? gA_PlayerFrames[client] : gA_PlayerFrames[client].Clone();
+		frames.Resize(gI_PlayerFrames[client]);
+		cloned = CloneHandle(frames, plugin); // set the calling plugin as the handle owner
 
-	return 0;
+		if (!cheapCloneHandle)
+		{
+			// Only hit for .Clone()'d handles. .Clone() != CloneHandle()
+			CloseHandle(frames);
+		}
+	}
+
+	return view_as<int>(cloned);
 }
-
-public int Native_GetPlayerStagePreFrames(Handle handler, int numParams)
-{
-	return gI_PlayerPrerunFrames_Stage[GetNativeCell(1)];
-}
-
-public int Native_SetPlayerStagePreFrames(Handle handler, int numParams)
-{
-	int client = GetNativeCell(1);
-	int preframes = GetNativeCell(2);
-
-	gI_PlayerPrerunFrames_Stage[client] = preframes;
-
-	return 0;
-}
-
 
 public int Native_SetReplayData(Handle handler, int numParams)
 {
@@ -113,29 +106,39 @@ public int Native_SetReplayData(Handle handler, int numParams)
 	return 0;
 }
 
-public int Native_GetReplayData(Handle plugin, int numParams)
+public int Native_GetPlayerPreFrames(Handle handler, int numParams)
 {
-	int client = GetNativeCell(1);
-	bool cheapCloneHandle = view_as<bool>(GetNativeCell(2));
-	Handle cloned = null;
-
-	if(gA_PlayerFrames[client] != null)
-	{
-		ArrayList frames = cheapCloneHandle ? gA_PlayerFrames[client] : gA_PlayerFrames[client].Clone();
-		frames.Resize(gI_PlayerFrames[client]);
-		cloned = CloneHandle(frames, plugin); // set the calling plugin as the handle owner
-
-		if (!cheapCloneHandle)
-		{
-			// Only hit for .Clone()'d handles. .Clone() != CloneHandle()
-			CloseHandle(frames);
-		}
-	}
-
-	return view_as<int>(cloned);
+	return gI_PlayerPrerunFrames[GetNativeCell(1)];
 }
 
-// =====[ FORWARDS ]=====
+public int Native_SetPlayerPreFrames(Handle handler, int numParams)
+{
+	int client = GetNativeCell(1);
+	int preframes = GetNativeCell(2);
+
+	gI_PlayerPrerunFrames[client] = preframes;
+
+	return 0;
+}
+
+public int Native_GetPlayerStagePreFrames(Handle handler, int numParams)
+{
+	return gI_PlayerPrerunFrames_Stage[GetNativeCell(1)];
+}
+
+public int Native_SetPlayerStagePreFrames(Handle handler, int numParams)
+{
+	int client = GetNativeCell(1);
+	int preframes = GetNativeCell(2);
+
+	gI_PlayerPrerunFrames_Stage[client] = preframes;
+
+	return 0;
+}
+
+
+
+// ======[ FORWARDS ]======
 
 void CreateGlobalForwards()
 {
@@ -188,7 +191,7 @@ void Call_OnReplaySaved(int client, int style, float time, int jumps, int strafe
 	Call_Finish();
 }
 
-void Call_OnStageReplaySaved(int client, int stage, int style, float time, int steamid, ArrayList frames, int preframes, int size, const char[] name)
+void Call_OnStageReplaySaved(int client, int stage, int style, float time, int steamid, ArrayList frames, int preframes, int iSize, const char[] name)
 {
 	Call_StartForward(H_OnStageReplaySaved);
 	Call_PushCell(client);
@@ -198,7 +201,7 @@ void Call_OnStageReplaySaved(int client, int stage, int style, float time, int s
 	Call_PushCell(steamid);
 	Call_PushCell(frames);
 	Call_PushCell(preframes);
-	Call_PushCell(size);
+	Call_PushCell(iSize);
 	Call_PushString(name);
 	Call_Finish();
 }

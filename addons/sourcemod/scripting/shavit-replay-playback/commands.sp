@@ -1,19 +1,12 @@
-// ======[ PUBLIC ]======
-
 void RegisterCommands()
 {
 	// to disable replay client updates until next map so the server doesn't crash :)
 	AddCommandListener(CommandListener_changelevel, "changelevel");
 	AddCommandListener(CommandListener_changelevel, "changelevel2");
 
+	// commands
 	RegAdminCmd("sm_deletereplay", Command_DeleteReplay, ADMFLAG_RCON, "Open replay deletion menu.");
 	RegConsoleCmd("sm_replay", Command_Replay, "Opens the central bot menu. For admins: 'sm_replay stop' to stop the playback.");
-}
-
-public Action CommandListener_changelevel(int client, const char[] command, int args)
-{
-	gB_CanUpdateReplayClient = false;
-	return Plugin_Continue;
 }
 
 public Action Command_DeleteReplay(int client, int args)
@@ -24,6 +17,7 @@ public Action Command_DeleteReplay(int client, int args)
 	}
 
 	OpenDeleteReplayMenu(client);
+
 	return Plugin_Handled;
 }
 
@@ -40,5 +34,12 @@ public Action Command_Replay(int client, int args)
 	}
 
 	OpenReplayMenu(client);
+
 	return Plugin_Handled;
+}
+
+public Action CommandListener_changelevel(int client, const char[] command, int args)
+{
+	gB_CanUpdateReplayClient = false;
+	return Plugin_Continue;
 }

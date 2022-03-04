@@ -8,25 +8,13 @@
 // 0x07: fixed iFrameCount because postframes were included in the value when they shouldn't be
 // 0x08: added zone-offsets to header
 
-// =====[ CONSTANTS ]=====
 #define REPLAY_FORMAT_V2 "{SHAVITREPLAYFORMAT}{V2}"
 #define REPLAY_FORMAT_FINAL "{SHAVITREPLAYFORMAT}{FINAL}"
 #define REPLAY_FORMAT_SUBVERSION 0x08
 #define REPLAY_FORMAT_CURRENT_USED_CELLS 8
 #define FRAMES_PER_WRITE 100 // amounts of frames to write per read/write call
 
-
-
-// =====[ STOCKS ]=====
-
-stock void GetReplayFilePath(int style, int track, const char[] mapname, char sPath[PLATFORM_MAX_PATH])
-{
-	char sTrack[4];
-	FormatEx(sTrack, 4, "_%d", track);
-	FormatEx(sPath, PLATFORM_MAX_PATH, "%s/%d/%s%s.replay", gS_ReplayFolder, style, mapname, (track > 0)? sTrack:"");
-}
-
-stock bool LoadReplay(frame_cache_t cache, int style, int track, const char[] path, const char[] mapname)
+bool LoadReplay(frame_cache_t cache, int style, int track, const char[] path, const char[] mapname)
 {
 	bool success = false;
 	replay_header_t header;
@@ -49,7 +37,7 @@ stock bool LoadReplay(frame_cache_t cache, int style, int track, const char[] pa
 	return success;
 }
 
-stock bool ReadReplayFrames(File file, replay_header_t header, frame_cache_t cache)
+bool ReadReplayFrames(File file, replay_header_t header, frame_cache_t cache)
 {
 	int total_cells = 6;
 	int used_cells = 6;
@@ -129,11 +117,7 @@ stock bool ReadReplayFrames(File file, replay_header_t header, frame_cache_t cac
 
 		if (StrEqual(header.sReplayFormat, REPLAY_FORMAT_FINAL))
 		{
-			DataPack hPack = new DataPack();
-			hPack.WriteCell(header.iStyle);
-			hPack.WriteCell(header.iTrack);
-
-			DB_GetUserName(header.iSteamID, hPack);
+			DB_GetUserName(header.iStyle, header.iTrack, header.iSteamID);
 		}
 	}
 
@@ -149,7 +133,7 @@ stock bool ReadReplayFrames(File file, replay_header_t header, frame_cache_t cac
 	return true;
 }
 
-stock File ReadReplayHeader(const char[] path, replay_header_t header, int style, int track)
+File ReadReplayHeader(const char[] path, replay_header_t header, int style, int track)
 {
 	replay_header_t empty_header;
 	header = empty_header;
@@ -279,73 +263,7 @@ stock File ReadReplayHeader(const char[] path, replay_header_t header, int style
 	return file;
 }
 
-stock bool DeleteReplay(int style, int track, int accountid, const char[] mapname)
-{
-	char sPath[PLATFORM_MAX_PATH];
-	GetReplayFilePath(style, track, mapname, sPath);
-
-	if(!FileExists(sPath))
-	{
-		return false;
-	}
-
-	if(accountid != 0)
-	{
-		replay_header_t header;
-		File file = ReadReplayHeader(sPath, header, style, track);
-
-		if (file == null)
-		{
-			return false;
-		}
-
-		delete file;
-
-		if (accountid != header.iSteamID)
-		{
-			return false;
-		}
-	}
-
-	if(!DeleteFile(sPath))
-	{
-		return false;
-	}
-
-	if(StrEqual(mapname, gS_Map, false))
-	{
-		UnloadReplay(style, track, false, false);
-	}
-
-	return true;
-}
-
-stock void DeleteAllReplays(const char[] map)
-{
-	for(int i = 0; i < gI_Styles; i++)
-	{
-		if(!ReplayEnabled(i))
-		{
-			continue;
-		}
-
-		for(int j = 0; j < TRACKS_SIZE; j++)
-		{
-			char sTrack[4];
-			FormatEx(sTrack, 4, "_%d", j);
-
-			char sPath[PLATFORM_MAX_PATH];
-			FormatEx(sPath, PLATFORM_MAX_PATH, "%s/%d/%s%s.replay", gS_ReplayFolder, i, map, (j > 0)? sTrack:"");
-
-			if(FileExists(sPath))
-			{
-				DeleteFile(sPath);
-			}
-		}
-	}
-}
-
-stock bool LoadStageReplay(frame_cache_t cache, int style, int stage)
+bool LoadStageReplay(frame_cache_t cache, int style, int stage)
 {
 	char sPath[PLATFORM_MAX_PATH];
 	FormatEx(sPath, PLATFORM_MAX_PATH, "%s/%d/%s_stage_%d.replay", gS_ReplayFolder, style, gS_Map, stage);
@@ -406,161 +324,75 @@ stock bool LoadStageReplay(frame_cache_t cache, int style, int stage)
 	cache.iPostFrames = header.iPostFrames;
 	cache.fTickrate = header.fTickrate;
 
-	DataPack hPack = new DataPack();
-	hPack.WriteCell(header.iStyle);
-	hPack.WriteCell(header.iStage);
-
-	DB_GetStageUserName(header.iSteamID, hPack);
+	DB_GetStageUserName(header.iStyle, header.iStage, header.iSteamID);
 
 	delete fFile;
 
 	return true;
 }
 
-stock void WriteReplayHeader(File fFile, int style, int track, float time, int steamid, int preframes, int postframes, float fZoneOffset[2], int iSize)
-{
-	fFile.WriteLine("%d:" ... REPLAY_FORMAT_FINAL, REPLAY_FORMAT_SUBVERSION);
-
-	fFile.WriteString(gS_Map, true);
-	fFile.WriteInt8(style);
-	fFile.WriteInt8(track);
-	fFile.WriteInt32(preframes);
-
-	fFile.WriteInt32(iSize - preframes - postframes);
-	fFile.WriteInt32(view_as<int>(time));
-	fFile.WriteInt32(steamid);
-
-	fFile.WriteInt32(postframes);
-	fFile.WriteInt32(view_as<int>(gF_Tickrate));
-
-	fFile.WriteInt32(view_as<int>(fZoneOffset[0]));
-	fFile.WriteInt32(view_as<int>(fZoneOffset[1]));
-}
-
-stock void SaveReplay(int style, int track, float time, int steamid, int preframes, ArrayList playerrecording, int iSize, int postframes, int timestamp, float fZoneOffset[2], bool saveCopy, bool saveReplay, char[] sPath, int sPathLen)
-{
-	char sTrack[4];
-	FormatEx(sTrack, 4, "_%d", track);
-
-	File fWR = null;
-	File fCopy = null;
-
-	if (saveReplay)
-	{
-		FormatEx(sPath, sPathLen, "%s/%d/%s%s.replay", gS_ReplayFolder, style, gS_Map, (track > 0)? sTrack:"");
-		DeleteFile(sPath);
-		fWR = OpenFile(sPath, "wb");
-	}
-
-	if (saveCopy)
-	{
-		FormatEx(sPath, sPathLen, "%s/copy/%d_%d_%s.replay", gS_ReplayFolder, timestamp, steamid, gS_Map);
-		DeleteFile(sPath);
-		fCopy = OpenFile(sPath, "wb");
-	}
-
-	if (saveReplay)
-	{
-		WriteReplayHeader(fWR, style, track, time, steamid, preframes, postframes, fZoneOffset, iSize);
-	}
-
-	if (saveCopy)
-	{
-		WriteReplayHeader(fCopy, style, track, time, steamid, preframes, postframes, fZoneOffset, iSize);
-	}
-
-	any aFrameData[sizeof(frame_t)];
-	any aWriteData[sizeof(frame_t) * FRAMES_PER_WRITE];
-	int iFramesWritten = 0;
-
-	for(int i = 0; i < iSize; i++)
-	{
-		playerrecording.GetArray(i, aFrameData, sizeof(frame_t));
-
-		for(int j = 0; j < sizeof(frame_t); j++)
-		{
-			aWriteData[(sizeof(frame_t) * iFramesWritten) + j] = aFrameData[j];
-		}
-
-		if(++iFramesWritten == FRAMES_PER_WRITE || i == iSize - 1)
-		{
-			if (saveReplay)
-			{
-				fWR.Write(aWriteData, sizeof(frame_t) * iFramesWritten, 4);
-			}
-
-			if (saveCopy)
-			{
-				fCopy.Write(aWriteData, sizeof(frame_t) * iFramesWritten, 4);
-			}
-
-			iFramesWritten = 0;
-		}
-	}
-
-	delete fWR;
-	delete fCopy;
-}
-
-stock void SaveStageReplay(int client, int stage, int style, float time, int steamid, int preframes, ArrayList playerrecording, int iSize)
+bool DeleteReplay(int style, int track, int accountid, const char[] mapname)
 {
 	char sPath[PLATFORM_MAX_PATH];
-	FormatEx(sPath, PLATFORM_MAX_PATH, "%s/%d/%s_stage_%d.replay", gS_ReplayFolder, style, gS_Map, stage);
-	if(FileExists(sPath))
+	GetReplayFilePath(style, track, mapname, sPath);
+
+	if(!FileExists(sPath))
 	{
-		DeleteFile(sPath);
+		return false;
 	}
 
-	File fFile = OpenFile(sPath, "wb");
-	fFile.WriteLine("%d:" ... REPLAY_FORMAT_FINAL, REPLAY_FORMAT_SUBVERSION);
-
-	fFile.WriteString(gS_Map, true);
-	fFile.WriteInt8(stage);
-	fFile.WriteInt8(style);
-	fFile.WriteInt32(iSize - preframes);
-	fFile.WriteInt32(view_as<int>(time));
-	fFile.WriteInt32(steamid);
-	fFile.WriteInt32(view_as<int>(gF_Tickrate));
-
-	any aFrameData[sizeof(frame_t)];
-	any aWriteData[sizeof(frame_t) * FRAMES_PER_WRITE];
-	int iFramesWritten = 0;
-
-	ArrayList stageFrames = new ArrayList(sizeof(frame_t));
-
-	for(int i = preframes; i < iSize; i++)
+	if(accountid != 0)
 	{
-		playerrecording.GetArray(i, aFrameData, sizeof(frame_t));
-		stageFrames.PushArray(aFrameData, sizeof(frame_t));
+		replay_header_t header;
+		File file = ReadReplayHeader(sPath, header, style, track);
 
-		for(int j = 0; j < sizeof(frame_t); j++)
+		if (file == null)
 		{
-			aWriteData[(sizeof(frame_t) * iFramesWritten) + j] = aFrameData[j];
+			return false;
 		}
 
-		if(++iFramesWritten == FRAMES_PER_WRITE || i == iSize - 1)
+		delete file;
+
+		if (accountid != header.iSteamID)
 		{
-			fFile.Write(aWriteData, sizeof(frame_t) * iFramesWritten, 4);
-			iFramesWritten = 0;
+			return false;
 		}
 	}
 
-	char sName[MAX_NAME_LENGTH];
-	GetClientName(client, sName, sizeof(sName));
+	if(!DeleteFile(sPath))
+	{
+		return false;
+	}
 
-	Call_OnStageReplaySaved(client, stage, style, time, steamid, stageFrames, preframes, stageFrames.Length, sName);
+	if(StrEqual(mapname, gS_Map, false))
+	{
+		UnloadReplay(style, track, false, false);
+	}
 
-	delete stageFrames;
-	delete fFile;
+	return true;
 }
 
-
-
-// =====[ PRIVATE ]=====
-
-// Can be used to unpack frame_t.mousexy and frame_t.vel
-static stock void UnpackSignedShorts(int x, int out[2])
+void DeleteAllReplays(const char[] map)
 {
-	out[0] =  ((x        & 0xFFFF) ^ 0x8000) - 0x8000;
-	out[1] = (((x >> 16) & 0xFFFF) ^ 0x8000) - 0x8000;
+	for(int i = 0; i < gI_Styles; i++)
+	{
+		if(!ReplayEnabled(i))
+		{
+			continue;
+		}
+
+		for(int j = 0; j < TRACKS_SIZE; j++)
+		{
+			char sTrack[4];
+			FormatEx(sTrack, 4, "_%d", j);
+
+			char sPath[PLATFORM_MAX_PATH];
+			FormatEx(sPath, PLATFORM_MAX_PATH, "%s/%d/%s%s.replay", gS_ReplayFolder, i, map, (j > 0)? sTrack:"");
+
+			if(FileExists(sPath))
+			{
+				DeleteFile(sPath);
+			}
+		}
+	}
 }

@@ -29,11 +29,6 @@
 
 
 
-#pragma newdecls required
-#pragma semicolon 1
-
-
-
 public Plugin myinfo =
 {
 	name = "[shavit] Replay Recorder",
@@ -42,6 +37,8 @@ public Plugin myinfo =
 	version = SHAVIT_VERSION,
 	url = "https://github.com/shavitush/bhoptimer"
 }
+
+
 
 bool gB_Late = false;
 char gS_Map[PLATFORM_MAX_PATH];
@@ -60,82 +57,52 @@ Convar gCV_StagePlaybackPostRunTime = null;
 Convar gCV_PreRunAlways = null;
 Convar gCV_TimeLimit = null;
 
-enum struct finished_run_info
-{
-	int iSteamID;
-	int style;
-	float time;
-	int jumps;
-	int strafes;
-	float sync;
-	int track;
-	float oldtime;
-	float avgvel;
-	float maxvel;
-	int timestamp;
-	float fZoneOffset[2];
-}
-
-enum struct wrcp_run_info
-{
-	int iStage;
-	int iStyle;
-	int iSteamid;
-	float fTime;
-}
-
-finished_run_info gA_FinishedRunInfo[MAXPLAYERS+1];
-wrcp_run_info gA_WRCPRunInfo[MAXPLAYERS+1];
-
-// we use gI_PlayerFrames instead of grabbing gA_PlayerFrames.Length 
-// because the ArrayList is resized to handle 2s worth of extra frames to reduce how often we have to resize it
-ArrayList gA_PlayerFrames[MAXPLAYERS+1];
-int gI_PlayerFrames[MAXPLAYERS+1];
-
-// stuff related to preframes
-int gI_PlayerPrerunFrames[MAXPLAYERS+1];
-int gI_PlayerPrerunFrames_Stage[MAXPLAYERS+1];
+bool gB_RecordingEnabled[MAXPLAYERS+1]; // just a simple thing to prevent plugin reloads from recording half-replays
 
 // stuff related to postframes
+finished_run_info gA_FinishedRunInfo[MAXPLAYERS+1];
+wrcp_run_info gA_WRCPRunInfo[MAXPLAYERS+1];
 bool gB_GrabbingPostFrames[MAXPLAYERS+1];
 bool gB_GrabbingPostFrames_Stage[MAXPLAYERS+1];
+Handle gH_PostFramesTimer[MAXPLAYERS+1];
+Handle gH_PostFramesTimer_Stage[MAXPLAYERS+1];
+int gI_PlayerFinishFrame[MAXPLAYERS+1];
+
+// we use gI_PlayerFrames instead of grabbing gA_PlayerFrames.Length because the ArrayList is resized to handle 2s worth of extra frames to reduce how often we have to resize it
+int gI_PlayerFrames[MAXPLAYERS+1];
+int gI_PlayerPrerunFrames[MAXPLAYERS+1];
+ArrayList gA_PlayerFrames[MAXPLAYERS+1];
+int gI_PlayerPrerunFrames_Stage[MAXPLAYERS+1];
+int gI_PlayerLastStageFrame[MAXPLAYERS+1];
+float gF_NextFrameTime[MAXPLAYERS+1];
 
 int gI_HijackFrames[MAXPLAYERS+1];
 float gF_HijackedAngles[MAXPLAYERS+1][2];
 bool gB_HijackFramesKeepOnStart[MAXPLAYERS+1];
 
-#include "shavit-replay-shared/file.sp"
-#include "shavit-replay-shared/stocks.sp"
+bool gB_ReplayPlayback = false;
+
+
 
 #include "shavit-replay-recorder/api.sp"
-#include "shavit-replay-recorder/recording.sp"
+#include "shavit-replay-recorder/file.sp"
+#include "shavit-replay-recorder/recording_stage.sp"
+#include "shavit-replay-recorder/recording_track.sp"
 
 
 
-// =====[ PLUGIN EVENTS ]=====
+// =====[ PLUGIN EVENT ]=====
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	CreateNatives();
-
-	if (!FileExists("cfg/sourcemod/plugin.shavit-replay-recorder.cfg") && FileExists("cfg/sourcemod/plugin.shavit-replay.cfg"))
+	if(GetEngineVersion() != Engine_CSGO)
 	{
-		File source = OpenFile("cfg/sourcemod/plugin.shavit-replay.cfg", "r");
-		File destination = OpenFile("cfg/sourcemod/plugin.shavit-replay-recorder.cfg", "w");
-
-		if (source && destination)
-		{
-			char line[512];
-
-			while (!source.EndOfFile() && source.ReadLine(line, sizeof(line)))
-			{
-				destination.WriteLine("%s", line);
-			}
-		}
-
-		delete destination;
-		delete source;
+		SetFailState("This plugin only support for CSGO!");
+		return APLRes_Failure;
 	}
+
+	CreateNatives();
+	BuildConfigs();
 
 	RegPluginLibrary("shavit-replay-recorder");
 
@@ -146,16 +113,12 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
-	if(GetEngineVersion() != Engine_CSGO)
-	{
-		SetFailState("This plugin only support for CSGO!");
-		return;
-	}
-
 	CreateGlobalForwards();
 	CreateConVars();
 
 	gF_Tickrate = (1.0 / GetTickInterval());
+
+	gB_ReplayPlayback = LibraryExists("shavit-replay-playback");
 
 	if(gB_Late)
 	{
@@ -166,6 +129,22 @@ public void OnPluginStart()
 				OnClientPutInServer(i);
 			}
 		}
+	}
+}
+
+public void OnLibraryAdded(const char[] name)
+{
+	if( StrEqual(name, "shavit-replay-playback"))
+	{
+		gB_ReplayPlayback = true;
+	}
+}
+
+public void OnLibraryRemoved(const char[] name)
+{
+	if (StrEqual(name, "shavit-replay-playback"))
+	{
+		gB_ReplayPlayback = false;
 	}
 }
 
@@ -193,17 +172,21 @@ public void Shavit_OnStyleConfigLoaded(int styles)
 
 public void OnClientPutInServer(int client)
 {
-	OnClientPutInServer_Recording(client);
+	gI_HijackFrames[client] = 0;
+	ClearFrames(client);
 }
 
 public void OnClientDisconnect(int client)
 {
-	OnClientDisconnect_StopRecording(client);
+	// stage recording must be stopped first
+	OnClientDisconnect_StopRecording_Stage(client);
+	OnClientDisconnect_StopRecording_Track(client);
 }
 
 public void OnClientDisconnect_Post(int client)
 {
-	OnClientDisconnect_Post_StopRecording(client);
+	// This runs after shavit-misc has cloned the handle
+	delete gA_PlayerFrames[client];
 }
 
 public Action Shavit_OnStart(int client)
@@ -220,7 +203,7 @@ public void Shavit_OnEnterStage(int client, int stage, int style, float enterspe
 
 public void Shavit_OnTeleportBackStagePost(int client, int stage, int style, bool stagetimer)
 {
-	Shavit_OnEnterStage_Recording(client, stage, style, stagetimer);
+	Shavit_OnTeleportBackStagePost_Recording(client, stage, style, stagetimer);
 }
 
 public void Shavit_OnLeaveStage(int client, int stage, int style, float leavespeed, float time, bool stagetimer)
@@ -228,24 +211,26 @@ public void Shavit_OnLeaveStage(int client, int stage, int style, float leavespe
 	Shavit_OnLeaveStage_Recording(client, style);
 }
 
+// TODO: THIS MAY BUG!
 public void Shavit_OnStop(int client)
 {
-	Shavit_OnTimerStop_Recording(client);
+	Shavit_OnStop_SaveRecording(client);
+	Shavit_OnStop_ClearFrames(client);
 }
 
 public void Shavit_OnFinish(int client, int style, float time, int jumps, int strafes, float sync, int track, float& oldtime, float avgvel, float maxvel, int timestamp)
 {
-	Shavit_OnFinish_Recording(client, style, time, jumps, strafes, sync, track, oldtime, avgvel, maxvel, timestamp);
+	Shavit_OnFinish_SaveRecording(client, style, time, jumps, strafes, sync, track, oldtime, avgvel, maxvel, timestamp);
 }
 
 public void Shavit_OnWRCP(int client, int stage, int style, int steamid, int records, float oldtime, float time, float leavespeed, const char[] mapname)
 {
-	Shavit_OnWRCP_Recording(client, stage, style, steamid, time);
+	Shavit_OnWRCP_SaveRecording(client, stage, style, time, steamid);
 }
 
 public void Shavit_OnTimescaleChanged(int client, float oldtimescale, float newtimescale)
 {
-	Shavit_OnTimescaleChanged_Recording(client);
+	gF_NextFrameTime[client] = 0.0;
 }
 
 public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float vel[3], const float angles[3], int weapon, int subtype, int cmdnum, int tickcount, int seed, const int mouse[2])
@@ -255,12 +240,60 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 		return;
 	}
 
+	if (!gA_PlayerFrames[client] || !gB_RecordingEnabled[client])
+	{
+		return;
+	}
+
 	OnPlayerRunCmdPost_Recording(client, buttons, vel, mouse);
 }
 
 
+// ======[ PUBLIC ]======
 
-// =====[ PRIVATE ]=====
+stock bool ReplayEnabled(any style)
+{
+	return !Shavit_GetStyleSettingBool(style, "unranked") && !Shavit_GetStyleSettingBool(style, "noreplay");
+}
+
+stock void ClearFrames(int client)
+{
+	delete gA_PlayerFrames[client];
+	gA_PlayerFrames[client] = new ArrayList(sizeof(frame_t));
+	gI_PlayerFrames[client] = 0;
+	gF_NextFrameTime[client] = 0.0;
+	gI_PlayerPrerunFrames[client] = 0;
+	gI_PlayerPrerunFrames_Stage[client] = 0;
+	gI_PlayerFinishFrame[client] = 0;
+	gI_HijackFrames[client] = 0;
+	gB_HijackFramesKeepOnStart[client] = false;
+}
+
+
+
+// =====[ PRIVATE ]======
+
+static void BuildConfigs()
+{
+	if (!FileExists("cfg/sourcemod/plugin.shavit-replay-recorder.cfg") && FileExists("cfg/sourcemod/plugin.shavit-replay.cfg"))
+	{
+		File source = OpenFile("cfg/sourcemod/plugin.shavit-replay.cfg", "r");
+		File destination = OpenFile("cfg/sourcemod/plugin.shavit-replay-recorder.cfg", "w");
+
+		if (source && destination)
+		{
+			char line[512];
+
+			while (!source.EndOfFile() && source.ReadLine(line, sizeof(line)))
+			{
+				destination.WriteLine("%s", line);
+			}
+		}
+
+		delete destination;
+		delete source;
+	}
+}
 
 static void CreateConVars()
 {
@@ -303,4 +336,45 @@ static bool LoadReplayConfig()
 	delete kv;
 
 	return true;
+}
+
+static void Replay_CreateDirectories(const char[] sReplayFolder, int styles)
+{
+	if (!DirExists(sReplayFolder) && !CreateDirectory(sReplayFolder, 511))
+	{
+		SetFailState("Failed to create replay folder (%s). Make sure you have file permissions", sReplayFolder);
+	}
+
+	char sPath[PLATFORM_MAX_PATH];
+	FormatEx(sPath, PLATFORM_MAX_PATH, "%s/copy", sReplayFolder);
+
+	if (!DirExists(sPath) && !CreateDirectory(sPath, 511))
+	{
+		SetFailState("Failed to create replay copy folder (%s). Make sure you have file permissions", sPath);
+	}
+
+	for(int i = 0; i < styles; i++)
+	{
+		if (!ReplayEnabled(i))
+		{
+			continue;
+		}
+
+		FormatEx(sPath, PLATFORM_MAX_PATH, "%s/%d", sReplayFolder, i);
+
+		if (!DirExists(sPath) && !CreateDirectory(sPath, 511))
+		{
+			SetFailState("Failed to create replay style folder (%s). Make sure you have file permissions", sPath);
+		}
+	}
+
+	// Test to see if replay file creation even works...
+	FormatEx(sPath, sizeof(sPath), "%s/0/faketestfile_69.replay", sReplayFolder);
+	File fTest = OpenFile(sPath, "wb+");
+	CloseHandle(fTest);
+
+	if (fTest == null)
+	{
+		SetFailState("Failed to write to replay folder (%s). Make sure you have file permissions.", sReplayFolder);
+	}
 }

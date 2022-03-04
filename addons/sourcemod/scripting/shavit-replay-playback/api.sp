@@ -1,10 +1,10 @@
-static GlobalForward H_OnReplayStart;
-static GlobalForward H_OnReplayEnd;
-static GlobalForward H_OnReplaysLoaded;
+static GlobalForward H_OnReplayStart = null;
+static GlobalForward H_OnReplayEnd = null;
+static GlobalForward H_OnReplaysLoaded = null;
 
 
 
-// =====[ NATIVES ]=====
+// ======[ NATIVES ]======
 
 void CreateNatives()
 {
@@ -58,14 +58,14 @@ public int Native_DeleteReplay(Handle handler, int numParams)
 	return DeleteReplay(iStyle, iTrack, iSteamID, sMap);
 }
 
-public int Native_GetReplayBotFirstFrameTime(Handle handler, int numParams)
-{
-	return view_as<int>(gA_BotInfo[GetNativeCell(1)].fFirstFrameTime);
-}
-
 public int Native_GetReplayBotCurrentFrame(Handle handler, int numParams)
 {
 	return gA_BotInfo[GetNativeCell(1)].iTick;
+}
+
+public int Native_GetReplayBotFirstFrameTime(Handle handler, int numParams)
+{
+	return view_as<int>(gA_BotInfo[GetNativeCell(1)].fFirstFrameTime);
 }
 
 public int Native_GetReplayBotIndex(Handle handler, int numParams)
@@ -97,113 +97,48 @@ public int Native_GetReplayBotIndex(Handle handler, int numParams)
 	return -1;
 }
 
-public int Native_IsReplayDataLoaded(Handle handler, int numParams)
+public int Native_GetReplayBotStage(Handle handler, int numParams)
 {
-	int style = GetNativeCell(1);
-	int track = GetNativeCell(2);
-	int stage = GetNativeCell(3);
-	return view_as<int>(ReplayEnabled(style) && (stage == 0)?gA_FrameCache[style][track].iFrameCount > 0:gA_FrameCache_Stage[style][stage].iFrameCount > 0);
+	return gA_BotInfo[GetNativeCell(1)].iStage;
 }
 
-public int Native_IsReplayEntity(Handle handler, int numParams)
+public int Native_GetReplayBotStyle(Handle handler, int numParams)
 {
-	int ent = GetNativeCell(1);
-	return (gA_BotInfo[ent].iEnt == ent);
+	return gA_BotInfo[GetNativeCell(1)].iStyle;
 }
 
-public int Native_StartReplay(Handle handler, int numParams)
+public int Native_GetReplayBotTrack(Handle handler, int numParams)
 {
-	int style = GetNativeCell(1);
-	int track = GetNativeCell(2);
-	float delay = GetNativeCell(3);
-	int client = GetNativeCell(4);
-	int bot = GetNativeCell(5);
-	int type = GetNativeCell(6);
-	bool ignorelimit = view_as<bool>(GetNativeCell(7));
-
-	frame_cache_t cache; // null cache
-	return CreateReplayEntity(track, style, delay, client, bot, type, ignorelimit, cache, 0);
+	return gA_BotInfo[GetNativeCell(1)].iTrack;
 }
 
-public int Native_StartReplayFromFrameCache(Handle handler, int numParams)
+public int Native_GetReplayBotType(Handle handler, int numParams)
 {
-	int style = GetNativeCell(1);
-	int track = GetNativeCell(2);
-	float delay = GetNativeCell(3);
-	int client = GetNativeCell(4);
-	int bot = GetNativeCell(5);
-	int type = GetNativeCell(6);
-	bool ignorelimit = view_as<bool>(GetNativeCell(7));
-
-	if(GetNativeCell(9) != sizeof(frame_cache_t))
-	{
-		return ThrowNativeError(200, "frame_cache_t does not match latest(got %i expected %i). Please update your includes and recompile your plugins",
-			GetNativeCell(9), sizeof(frame_cache_t));
-	}
-
-	frame_cache_t cache;
-	GetNativeArray(8, cache, sizeof(cache));
-
-	return CreateReplayEntity(track, style, delay, client, bot, type, ignorelimit, cache, 0);
+	return gA_BotInfo[GetNativeCell(1)].iType;
 }
 
-public int Native_StartReplayFromFile(Handle handler, int numParams)
+public int Native_GetReplayStarter(Handle handler, int numParams)
 {
-	int style = GetNativeCell(1);
-	int track = GetNativeCell(2);
-	float delay = GetNativeCell(3);
-	int client = GetNativeCell(4);
-	int bot = GetNativeCell(5);
-	int type = GetNativeCell(6);
-	bool ignorelimit = view_as<bool>(GetNativeCell(7));
+	int starter = gA_BotInfo[GetNativeCell(1)].iStarterSerial;
+	return (starter > 0) ? GetClientFromSerial(starter) : 0;
+}
 
-	char path[PLATFORM_MAX_PATH];
-	GetNativeString(8, path, sizeof(path));
+public int Native_GetReplayButtons(Handle handler, int numParams)
+{
+	int bot = GetNativeCell(1);
 
-	frame_cache_t cache; // null cache
-
-	if (!LoadReplay(cache, style, track, path, gS_Map))
+	if (gA_BotInfo[bot].iStatus != Replay_Running)
 	{
 		return 0;
 	}
 
-	return CreateReplayEntity(track, style, delay, client, bot, type, ignorelimit, cache, 0);
-}
+	frame_t aFrame;
+	gA_BotInfo[bot].aCache.aFrames.GetArray(gA_BotInfo[bot].iTick ? gA_BotInfo[bot].iTick-1 : 0, aFrame, 6);
+	float prevAngle = aFrame.ang[1];
+	gA_BotInfo[bot].aCache.aFrames.GetArray(gA_BotInfo[bot].iTick, aFrame, 6);
 
-public int Native_ReloadReplay(Handle handler, int numParams)
-{
-	int style = GetNativeCell(1);
-	int track = GetNativeCell(2);
-	bool restart = view_as<bool>(GetNativeCell(3));
-
-	char path[PLATFORM_MAX_PATH];
-	GetNativeString(4, path, PLATFORM_MAX_PATH);
-
-	return UnloadReplay(style, track, true, restart, path);
-}
-
-public int Native_ReloadReplays(Handle handler, int numParams)
-{
-	bool restart = view_as<bool>(GetNativeCell(1));
-	int loaded = 0;
-
-	for(int i = 0; i < gI_Styles; i++)
-	{
-		if(!ReplayEnabled(i))
-		{
-			continue;
-		}
-
-		for(int j = 0; j < TRACKS_SIZE; j++)
-		{
-			if(UnloadReplay(i, j, true, restart, ""))
-			{
-				loaded++;
-			}
-		}
-	}
-
-	return loaded;
+	SetNativeCellRef(2, GetAngleDiff(aFrame.ang[1], prevAngle));
+	return aFrame.buttons;
 }
 
 public int Native_GetReplayFrames(Handle plugin, int numParams)
@@ -318,48 +253,68 @@ public any Native_GetReplayTime(Handle handler, int numParams)
 	}
 }
 
-public int Native_GetReplayBotStage(Handle handler, int numParams)
+public int Native_IsReplayDataLoaded(Handle handler, int numParams)
 {
-	return gA_BotInfo[GetNativeCell(1)].iStage;
+	int style = GetNativeCell(1);
+	int track = GetNativeCell(2);
+	int stage = GetNativeCell(3);
+	return view_as<int>(ReplayEnabled(style) && (stage == 0)?gA_FrameCache[style][track].iFrameCount > 0:gA_FrameCache_Stage[style][stage].iFrameCount > 0);
 }
 
-public int Native_GetReplayBotStyle(Handle handler, int numParams)
+public int Native_IsReplayEntity(Handle handler, int numParams)
 {
-	return gA_BotInfo[GetNativeCell(1)].iStyle;
+	int ent = GetNativeCell(1);
+	return (gA_BotInfo[ent].iEnt == ent);
 }
 
-public int Native_GetReplayBotTrack(Handle handler, int numParams)
+public int Native_StartReplay(Handle handler, int numParams)
 {
-	return gA_BotInfo[GetNativeCell(1)].iTrack;
+	int style = GetNativeCell(1);
+	int track = GetNativeCell(2);
+	float delay = GetNativeCell(3);
+	int client = GetNativeCell(4);
+	int bot = GetNativeCell(5);
+	int type = GetNativeCell(6);
+	bool ignorelimit = view_as<bool>(GetNativeCell(7));
+
+	frame_cache_t cache; // null cache
+	return CreateReplayEntity(track, style, delay, client, bot, type, ignorelimit, cache, 0);
 }
 
-public int Native_GetReplayBotType(Handle handler, int numParams)
+public int Native_ReloadReplay(Handle handler, int numParams)
 {
-	return gA_BotInfo[GetNativeCell(1)].iType;
+	int style = GetNativeCell(1);
+	int track = GetNativeCell(2);
+	bool restart = view_as<bool>(GetNativeCell(3));
+
+	char path[PLATFORM_MAX_PATH];
+	GetNativeString(4, path, PLATFORM_MAX_PATH);
+
+	return UnloadReplay(style, track, true, restart, path);
 }
 
-public int Native_GetReplayStarter(Handle handler, int numParams)
+public int Native_ReloadReplays(Handle handler, int numParams)
 {
-	int starter = gA_BotInfo[GetNativeCell(1)].iStarterSerial;
-	return (starter > 0) ? GetClientFromSerial(starter) : 0;
-}
+	bool restart = view_as<bool>(GetNativeCell(1));
+	int loaded = 0;
 
-public int Native_GetReplayButtons(Handle handler, int numParams)
-{
-	int bot = GetNativeCell(1);
-
-	if (gA_BotInfo[bot].iStatus != Replay_Running)
+	for(int i = 0; i < gI_Styles; i++)
 	{
-		return 0;
+		if(!ReplayEnabled(i))
+		{
+			continue;
+		}
+
+		for(int j = 0; j < TRACKS_SIZE; j++)
+		{
+			if(UnloadReplay(i, j, true, restart, ""))
+			{
+				loaded++;
+			}
+		}
 	}
 
-	frame_t aFrame;
-	gA_BotInfo[bot].aCache.aFrames.GetArray(gA_BotInfo[bot].iTick ? gA_BotInfo[bot].iTick-1 : 0, aFrame, 6);
-	float prevAngle = aFrame.ang[1];
-	gA_BotInfo[bot].aCache.aFrames.GetArray(gA_BotInfo[bot].iTick, aFrame, 6);
-
-	SetNativeCellRef(2, GetAngleDiff(aFrame.ang[1], prevAngle));
-	return aFrame.buttons;
+	return loaded;
 }
 
 public int Native_Replay_DeleteMap(Handle handler, int numParams)
@@ -389,6 +344,18 @@ public int Native_GetClosestReplayTime(Handle plugin, int numParams)
 	return view_as<int>(gF_TimeDifference[client]);
 }
 
+public int Native_GetClosestReplayStyle(Handle plugin, int numParams)
+{
+	return gI_TimeDifferenceStyle[GetNativeCell(1)];
+}
+
+public int Native_SetClosestReplayStyle(Handle plugin, int numParams)
+{
+	gI_TimeDifferenceStyle[GetNativeCell(1)] = GetNativeCell(2);
+
+	return 0;
+}
+
 public int Native_GetClosestReplayVelocityDifference(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
@@ -403,16 +370,49 @@ public int Native_GetClosestReplayVelocityDifference(Handle plugin, int numParam
 	}
 }
 
-public int Native_GetClosestReplayStyle(Handle plugin, int numParams)
+public int Native_StartReplayFromFrameCache(Handle handler, int numParams)
 {
-	return gI_TimeDifferenceStyle[GetNativeCell(1)];
+	int style = GetNativeCell(1);
+	int track = GetNativeCell(2);
+	float delay = GetNativeCell(3);
+	int client = GetNativeCell(4);
+	int bot = GetNativeCell(5);
+	int type = GetNativeCell(6);
+	bool ignorelimit = view_as<bool>(GetNativeCell(7));
+
+	if(GetNativeCell(9) != sizeof(frame_cache_t))
+	{
+		return ThrowNativeError(200, "frame_cache_t does not match latest(got %i expected %i). Please update your includes and recompile your plugins",
+			GetNativeCell(9), sizeof(frame_cache_t));
+	}
+
+	frame_cache_t cache;
+	GetNativeArray(8, cache, sizeof(cache));
+
+	return CreateReplayEntity(track, style, delay, client, bot, type, ignorelimit, cache, 0);
 }
 
-public int Native_SetClosestReplayStyle(Handle plugin, int numParams)
+public int Native_StartReplayFromFile(Handle handler, int numParams)
 {
-	gI_TimeDifferenceStyle[GetNativeCell(1)] = GetNativeCell(2);
+	int style = GetNativeCell(1);
+	int track = GetNativeCell(2);
+	float delay = GetNativeCell(3);
+	int client = GetNativeCell(4);
+	int bot = GetNativeCell(5);
+	int type = GetNativeCell(6);
+	bool ignorelimit = view_as<bool>(GetNativeCell(7));
 
-	return 0;
+	char path[PLATFORM_MAX_PATH];
+	GetNativeString(8, path, sizeof(path));
+
+	frame_cache_t cache; // null cache
+
+	if (!LoadReplay(cache, style, track, path, gS_Map))
+	{
+		return 0;
+	}
+
+	return CreateReplayEntity(track, style, delay, client, bot, type, ignorelimit, cache, 0);
 }
 
 public int Native_SetReplayCacheName(Handle plugin, int numParams)
@@ -426,7 +426,9 @@ public int Native_SetReplayCacheName(Handle plugin, int numParams)
 	return 0;
 }
 
-// =====[ FORWARDS ]=====
+
+
+// ======[ FORWARDS ]======
 
 void CreateGlobalForwards()
 {

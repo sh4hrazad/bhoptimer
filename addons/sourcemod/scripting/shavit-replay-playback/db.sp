@@ -1,16 +1,18 @@
-// ======[ PUBLIC ]======
-
 void SQL_DBConnect()
 {
 	gH_SQL = GetTimerDatabaseHandle2();
 }
 
-void DB_GetUserName(int steamid, DataPack dp)
+void DB_GetUserName(int style, int track, int steamid)
 {
 	char sQuery[192];
 	FormatEx(sQuery, 192, "SELECT name FROM `users` WHERE auth = %d;", steamid);
 
-	gH_SQL.Query(SQL_GetUserName_Callback, sQuery, dp, DBPrio_High);
+	DataPack hPack = new DataPack();
+	hPack.WriteCell(style);
+	hPack.WriteCell(track);
+
+	gH_SQL.Query(SQL_GetUserName_Callback, sQuery, hPack, DBPrio_High);
 }
 
 public void SQL_GetUserName_Callback(Database db, DBResultSet results, const char[] error, DataPack data)
@@ -33,12 +35,16 @@ public void SQL_GetUserName_Callback(Database db, DBResultSet results, const cha
 	}
 }
 
-void DB_GetStageUserName(int steamid, DataPack dp)
+void DB_GetStageUserName(int style, int stage, int steamid)
 {
 	char sQuery[192];
 	FormatEx(sQuery, 192, "SELECT name FROM `users` WHERE auth = %d;", steamid);
 
-	gH_SQL.Query(SQL_GetStageUserName_Callback, sQuery, dp, DBPrio_High);
+	DataPack hPack = new DataPack();
+	hPack.WriteCell(style);
+	hPack.WriteCell(stage);
+
+	gH_SQL.Query(SQL_GetStageUserName_Callback, sQuery, hPack, DBPrio_High);
 }
 
 public void SQL_GetStageUserName_Callback(Database db, DBResultSet results, const char[] error, DataPack data)
