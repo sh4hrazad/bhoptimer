@@ -502,7 +502,7 @@ stock void SaveReplay(int style, int track, float time, int steamid, int prefram
 	delete fCopy;
 }
 
-stock void SaveStageReplay(int stage, int style, float time, int steamid, int preframes, ArrayList playerrecording, int iSize)
+stock void SaveStageReplay(int client, int stage, int style, float time, int steamid, int preframes, ArrayList playerrecording, int iSize)
 {
 	char sPath[PLATFORM_MAX_PATH];
 	FormatEx(sPath, PLATFORM_MAX_PATH, "%s/%d/%s_stage_%d.replay", gS_ReplayFolder, style, gS_Map, stage);
@@ -526,9 +526,12 @@ stock void SaveStageReplay(int stage, int style, float time, int steamid, int pr
 	any aWriteData[sizeof(frame_t) * FRAMES_PER_WRITE];
 	int iFramesWritten = 0;
 
+	ArrayList stageFrames = new ArrayList(sizeof(frame_t));
+
 	for(int i = preframes; i < iSize; i++)
 	{
 		playerrecording.GetArray(i, aFrameData, sizeof(frame_t));
+		stageFrames.PushArray(aFrameData, sizeof(frame_t));
 
 		for(int j = 0; j < sizeof(frame_t); j++)
 		{
@@ -542,6 +545,12 @@ stock void SaveStageReplay(int stage, int style, float time, int steamid, int pr
 		}
 	}
 
+	char sName[MAX_NAME_LENGTH];
+	GetClientName(client, sName, sizeof(sName));
+
+	Call_OnStageReplaySaved(client, stage, style, time, steamid, stageFrames, preframes, stageFrames.Length, sName);
+
+	delete stageFrames;
 	delete fFile;
 }
 

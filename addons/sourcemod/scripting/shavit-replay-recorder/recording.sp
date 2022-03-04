@@ -362,9 +362,7 @@ static void DoReplaySaverCallbacks(int iSteamID, int client, int style, float ti
 
 void DoStageReplaySaverCallbacks(int client, int stage, int style, float time, int steamid)
 {
-	SaveStageReplay(stage, style, time, steamid, gI_PlayerPrerunFrames_Stage[client], gA_PlayerFrames[client], gI_PlayerFrames[client]);
-
-	Call_OnStageReplaySaved(client, stage, style, time, steamid, gA_PlayerFrames[client], gI_PlayerPrerunFrames_Stage[client], gI_PlayerFrames[client]);
+	SaveStageReplay(client, stage, style, time, steamid, gI_PlayerPrerunFrames_Stage[client], gA_PlayerFrames[client], gI_PlayerFrames[client]);
 }
 
 public Action Timer_PostFrames(Handle timer, int client)

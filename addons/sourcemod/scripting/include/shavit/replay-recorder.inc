@@ -116,7 +116,7 @@ forward void Shavit_OnReplaySaved(int client, int style, float time, int jumps, 
  * TODO
  * @noreturn
  */
-forward void Shavit_OnStageReplaySaved(int client, int stage, int style, float time, int steamid, ArrayList frames, int preframes, int size);
+forward void Shavit_OnStageReplaySaved(int client, int stage, int style, float time, int steamid, ArrayList frames, int preframes, int iSize, const char[] name);
 
 
 

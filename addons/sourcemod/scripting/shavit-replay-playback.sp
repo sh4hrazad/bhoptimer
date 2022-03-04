@@ -660,9 +660,14 @@ public void Shavit_OnReplaySaved(int client, int style, float time, int jumps, i
 	Shavit_OnReplaySaved_ClosestPos(style, track);
 }
 
-public void Shavit_OnStageReplaySaved(int client, int stage, int style, float time, int steamid, ArrayList playerrecording, int preframes, int iSize)
+public void Shavit_OnStageReplaySaved(int client, int stage, int style, float time, int steamid, ArrayList frames, int preframes, int iSize, const char[] name)
 {
-	Shavit_OnStageReplaySaved_StartReplay(stage, style);
+	if(!Shavit_OnStageReplaySaved_CanBeCached(stage, style, time, frames, preframes, iSize, name))
+	{
+		return;
+	}
+
+	Shavit_OnStageReplaySaved_StartReplay(stage);
 }
 
 public void Shavit_OnWRDeleted(int style, int id, int track, int accountid, const char[] mapname)

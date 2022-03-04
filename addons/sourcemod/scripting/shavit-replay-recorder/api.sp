@@ -141,7 +141,7 @@ void CreateGlobalForwards()
 {
 	H_ShouldSaveReplayCopy = new GlobalForward("Shavit_ShouldSaveReplayCopy", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
 	H_OnReplaySaved = new GlobalForward("Shavit_OnReplaySaved", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_String, Param_Cell, Param_Cell, Param_Cell, Param_String);
-	H_OnStageReplaySaved = new GlobalForward("Shavit_OnStageReplaySaved", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
+	H_OnStageReplaySaved = new GlobalForward("Shavit_OnStageReplaySaved", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_String);
 }
 
 void Call_ShouldSaveReplayCopy(int client, int style, float time, int jumps, int strafes, float sync, int track, float oldtime, float avgvel, float maxvel, int timestamp, bool isbestreplay, bool istoolong, Action &result)
@@ -188,7 +188,7 @@ void Call_OnReplaySaved(int client, int style, float time, int jumps, int strafe
 	Call_Finish();
 }
 
-void Call_OnStageReplaySaved(int client, int stage, int style, float time, int steamid, ArrayList frames, int preframes, int size)
+void Call_OnStageReplaySaved(int client, int stage, int style, float time, int steamid, ArrayList frames, int preframes, int size, const char[] name)
 {
 	Call_StartForward(H_OnStageReplaySaved);
 	Call_PushCell(client);
@@ -199,5 +199,6 @@ void Call_OnStageReplaySaved(int client, int stage, int style, float time, int s
 	Call_PushCell(frames);
 	Call_PushCell(preframes);
 	Call_PushCell(size);
+	Call_PushString(name);
 	Call_Finish();
 }

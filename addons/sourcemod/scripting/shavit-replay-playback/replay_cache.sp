@@ -57,7 +57,7 @@ bool Shavit_OnReplaySaved_CanBeCached(int style, float time, int track, bool isb
 	gA_FrameCache[style][track].fTime = time;
 	gA_FrameCache[style][track].iReplayVersion = REPLAY_FORMAT_SUBVERSION;
 	gA_FrameCache[style][track].bNewFormat = true;
-	strcopy(gA_FrameCache[style][track].sReplayName, MAX_NAME_LENGTH, name);
+	strcopy(gA_FrameCache[style][track].sReplayName, sizeof(frame_cache_t::sReplayName), name);
 	gA_FrameCache[style][track].iPreFrames = preframes;
 	gA_FrameCache[style][track].iPostFrames = postframes;
 	gA_FrameCache[style][track].fTickrate = gF_Tickrate;
@@ -65,6 +65,30 @@ bool Shavit_OnReplaySaved_CanBeCached(int style, float time, int track, bool isb
 	return true;
 }
 
+bool Shavit_OnStageReplaySaved_CanBeCached(int stage, int style, float time, ArrayList frames, int preframes, int size, const char[] name)
+{
+	if(frames == null || frames.Length <= 10)
+	{
+		return false;
+	}
+
+	if(gA_FrameCache_Stage[style][stage].aFrames != null)
+	{
+		delete gA_FrameCache_Stage[style][stage].aFrames;
+	}
+
+	gA_FrameCache_Stage[style][stage].aFrames = view_as<ArrayList>(CloneHandle(frames));
+	gA_FrameCache_Stage[style][stage].iFrameCount = size;
+	gA_FrameCache_Stage[style][stage].fTime = time;
+	gA_FrameCache_Stage[style][stage].iReplayVersion = REPLAY_FORMAT_SUBVERSION;
+	gA_FrameCache_Stage[style][stage].bNewFormat = true;
+	strcopy(gA_FrameCache_Stage[style][stage].sReplayName, sizeof(frame_cache_t::sReplayName), name);
+	gA_FrameCache_Stage[style][stage].iPreFrames = preframes;
+	gA_FrameCache_Stage[style][stage].iPostFrames = 0;
+	gA_FrameCache_Stage[style][stage].fTickrate = gF_Tickrate;
+
+	return true;
+}
 
 
 

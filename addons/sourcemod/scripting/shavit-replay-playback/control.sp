@@ -27,14 +27,11 @@ void PlayerEvent_ControlReplay(int client)
 	}
 }
 
-void Shavit_OnStageReplaySaved_StartReplay(int stage, int style)
+void Shavit_OnStageReplaySaved_StartReplay(int stage)
 {
-	if(LoadStageReplay(gA_FrameCache_Stage[style][stage], style, stage))
+	if(gI_StageBot != -1 && gA_BotInfo[gI_StageBot].iStatus == Replay_Idle)
 	{
-		if(gI_StageBot != -1 && gA_BotInfo[gI_StageBot].iStatus == Replay_Idle)
-		{
-			StartReplay(gA_BotInfo[gI_StageBot], 0, 0, -1, gCV_ReplayDelay.FloatValue, stage);
-		}
+		StartReplay(gA_BotInfo[gI_StageBot], 0, 0, -1, gCV_ReplayDelay.FloatValue, stage);
 	}
 }
 
