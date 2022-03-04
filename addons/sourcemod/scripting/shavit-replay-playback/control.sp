@@ -27,8 +27,13 @@ void PlayerEvent_ControlReplay(int client)
 	}
 }
 
-void Shavit_OnStageReplaySaved_StartReplay(int stage)
+void Shavit_OnStageReplaySaved_StartReplay(int stage, int style)
 {
+	if(style != 0) /* only auto play normal replays */
+	{
+		return;
+	}
+
 	if(gI_StageBot != -1 && gA_BotInfo[gI_StageBot].iStatus == Replay_Idle)
 	{
 		StartReplay(gA_BotInfo[gI_StageBot], 0, 0, -1, gCV_ReplayDelay.FloatValue, stage);

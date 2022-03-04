@@ -667,7 +667,7 @@ public void Shavit_OnStageReplaySaved(int client, int stage, int style, float ti
 		return;
 	}
 
-	Shavit_OnStageReplaySaved_StartReplay(stage);
+	Shavit_OnStageReplaySaved_StartReplay(stage, style);
 }
 
 public void Shavit_OnWRDeleted(int style, int id, int track, int accountid, const char[] mapname)
