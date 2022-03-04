@@ -13,6 +13,30 @@
 
 // =====[ STRUCTS ]=====
 
+enum struct finished_run_info
+{
+	int iSteamID;
+	int style;
+	float time;
+	int jumps;
+	int strafes;
+	float sync;
+	int track;
+	float oldtime;
+	float avgvel;
+	float maxvel;
+	int timestamp;
+	float fZoneOffset[2];
+}
+
+enum struct wrcp_run_info
+{
+	int iStage;
+	int iStyle;
+	int iSteamid;
+	float fTime;
+}
+
 #if !defined _shavit_replay_playback_included_
 
 enum struct frame_t
