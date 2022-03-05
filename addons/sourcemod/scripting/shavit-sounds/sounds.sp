@@ -114,66 +114,60 @@ void OnMapStart_LoadSounds()
 	delete fFile;
 }
 
-void Shavit_OnFinish_PlaySounds(int client, float time, int track, float oldtime)
+void Shavit_OnFinish_Post_PlaySounds_Bonus(int client)
 {
-	if(track != Track_Main && gA_BonusSounds.Length != 0)
-	{
-		char sSound[PLATFORM_MAX_PATH];
-		gA_BonusSounds.GetString(GetRandomInt(0, gA_BonusSounds.Length - 1), sSound, PLATFORM_MAX_PATH);
+	char sSound[PLATFORM_MAX_PATH];
+	GetSound(gA_BonusSounds, sSound);
 
-		if(StrContains(sSound, ".") != -1)
-		{
-			PlayEventSound(client, true, sSound);
-		}
-	}
-	else if(oldtime != 0.0 && time > oldtime && gA_NoImprovementSounds.Length != 0)
+	if(StrContains(sSound, ".") != -1)
 	{
-		char sSound[PLATFORM_MAX_PATH];
-		gA_NoImprovementSounds.GetString(GetRandomInt(0, gA_NoImprovementSounds.Length - 1), sSound, PLATFORM_MAX_PATH);
-
 		PlayEventSound(client, true, sSound);
 	}
 }
 
-void Shavit_OnFinish_Post_PlaySounds(int client, int style, float time, int rank, int overwrite, int track)
+void Shavit_OnFinish_Post_PlaySounds_Main(int client, int style, int rank, int overwrite)
 {
-	float fOldTime = Shavit_GetClientPB(client, style, track);
-
 	char sSound[PLATFORM_MAX_PATH];
-	bool bEveryone = true;
 	bool bTop10 = rank >= 2 && rank <= 10;
 
-	if(gA_FirstSounds.Length != 0 && overwrite == 1)
+	if(Shavit_GetRecordAmount(style, Track_Main) <= 1)
 	{
-		gA_FirstSounds.GetString(GetRandomInt(0, gA_FirstSounds.Length - 1), sSound, PLATFORM_MAX_PATH);
+		GetSound(gA_FirstSounds, sSound);
 	}
-	else if(gA_WorldSounds.Length != 0 && rank == 1)
+	else if(rank == 1)
 	{
-		gA_WorldSounds.GetString(GetRandomInt(0, gA_WorldSounds.Length - 1), sSound, PLATFORM_MAX_PATH);
+		GetSound(gA_WorldSounds, sSound);
 	}
-	else if(bTop10)
+	else if(bTop10 && overwrite > 0)
 	{
-		char sRank[8];
-		IntToString(rank, sRank, 8);
-		gSM_RankSounds.GetString(sRank, sSound, PLATFORM_MAX_PATH);
+		if(gSM_RankSounds.Size != 0)
+		{
+			char sRank[8];
+			IntToString(rank, sRank, 8);
+			gSM_RankSounds.GetString(sRank, sSound, PLATFORM_MAX_PATH);
+		}
 	}
-	else if(gA_PersonalSounds.Length != 0 && (time < fOldTime || fOldTime == 0.0))
+	else if(overwrite > 0)
 	{
-		gA_PersonalSounds.GetString(GetRandomInt(0, gA_PersonalSounds.Length - 1), sSound, PLATFORM_MAX_PATH);
+		GetSound(gA_PersonalSounds, sSound);
+	}
+	else
+	{
+		GetSound(gA_NoImprovementSounds, sSound);
 	}
 
 	if(StrContains(sSound, ".") != -1) // file has an extension?
 	{
-		PlayEventSound(client, bEveryone, sSound);
+		PlayEventSound(client, true, sSound);
 	}
 }
 
 void Shavit_OnWorstRecord_PlaySounds(int client, int style, int track)
 {
-	if(gA_WorstSounds.Length != 0 && Shavit_GetRecordAmount(style, track) >= gCV_MinimumWorst.IntValue)
+	if(Shavit_GetRecordAmount(style, track) >= gCV_MinimumWorst.IntValue)
 	{
 		char sSound[PLATFORM_MAX_PATH];
-		gA_WorstSounds.GetString(GetRandomInt(0, gA_WorstSounds.Length - 1), sSound, PLATFORM_MAX_PATH);
+		GetSound(gA_WorstSounds, sSound);
 
 		if(StrContains(sSound, ".") != -1)
 		{
@@ -184,21 +178,26 @@ void Shavit_OnWorstRecord_PlaySounds(int client, int style, int track)
 
 void Shavit_OnWRCP_PlaySounds(int client)
 {
-	if(gA_WRCPSounds.Length != 0)
-	{
-		char sSound[PLATFORM_MAX_PATH];
-		gA_WRCPSounds.GetString(GetRandomInt(0, gA_WRCPSounds.Length - 1), sSound, PLATFORM_MAX_PATH);
+	char sSound[PLATFORM_MAX_PATH];
+	GetSound(gA_WRCPSounds, sSound);
 
-		if(StrContains(sSound, ".") != -1)
-		{
-			PlayEventSound(client, true, sSound);
-		}
+	if(StrContains(sSound, ".") != -1)
+	{
+		PlayEventSound(client, true, sSound);
 	}
 }
 
 
 
 // ======[ PRIVATE ]======
+
+static void GetSound(ArrayList aSounds, char path[PLATFORM_MAX_PATH])
+{
+	if(aSounds.Length != 0)
+	{
+		aSounds.GetString(GetRandomInt(0, aSounds.Length - 1), path, sizeof(path));
+	}
+}
 
 static void PlayEventSound(int client, bool everyone, char sound[PLATFORM_MAX_PATH])
 {

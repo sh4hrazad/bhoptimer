@@ -116,9 +116,9 @@ void DB_OnFinish(int client, int style, float time, int jumps, int strafes, floa
 		}
 
 		gH_SQL.Query(SQL_OnFinish_Callback, sQuery, GetClientSerial(client), DBPrio_High);
-
-		Call_OnFinish_Post(client, style, time, jumps, strafes, sync, iRank, iOverwrite, track, oldtime, avgvel, maxvel, timestamp);
 	}
+
+	Call_OnFinish_Post(client, style, time, jumps, strafes, sync, iRank, iOverwrite, track, oldtime, avgvel, maxvel, timestamp);
 
 	if(bIncrementCompletions)
 	{

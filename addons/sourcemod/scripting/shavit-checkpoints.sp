@@ -23,11 +23,9 @@
 #include <clientprefs>
 #include <convar_class>
 #include <shavit>
+#include <shavit/checkpoints>
 #include <shavit/replay-recorder>
 #include <shavit/replay-playback>
-
-#undef REQUIRE_PLUGIN
-#include <shavit/checkpoints>
 
 
 

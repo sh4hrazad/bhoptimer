@@ -106,24 +106,21 @@ public void OnMapStart()
 	OnMapStart_LoadSounds();
 }
 
-public void Shavit_OnFinish(int client, int style, float time, int jumps, int strafes, float sync, int track, float& oldtime)
+public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, int strafes, float sync, int rank, int overwrite, int track)
 {
 	if(!gCV_Enabled.BoolValue)
 	{
 		return;
 	}
 
-	Shavit_OnFinish_PlaySounds(client, time, track, oldtime);
-}
-
-public void Shavit_OnFinish_Post(int client, int style, float time, int jumps, int strafes, float sync, int rank, int overwrite, int track)
-{
-	if(!gCV_Enabled.BoolValue || track != Track_Main)
+	if(track == Track_Main)
 	{
-		return;
+		Shavit_OnFinish_Post_PlaySounds_Main(client, style, rank, overwrite);
 	}
-
-	Shavit_OnFinish_Post_PlaySounds(client, style, time, rank, overwrite, track);
+	else
+	{
+		Shavit_OnFinish_Post_PlaySounds_Bonus(client);
+	}
 }
 
 public void Shavit_OnWorstRecord(int client, int style, float time, int jumps, int strafes, float sync, int track)

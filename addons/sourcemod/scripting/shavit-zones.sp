@@ -28,6 +28,7 @@
 
 #undef REQUIRE_PLUGIN
 #include <adminmenu>
+#include <shavit/stage>
 
 #undef REQUIRE_EXTENSIONS
 #include <cstrike>
@@ -305,7 +306,7 @@ public void OnPluginStart()
 	gCV_EnforceTracks = new Convar("shavit_zones_enforcetracks", "1", "Enforce zone tracks upon entry?\n0 - allow every zone to affect users on every zone.\n1 - require the user's track to match the zone's track.", 0, true, 0.0, true, 1.0);
 	gCV_PreSpeed = new Convar("shavit_zones_prespeed", "1", "Stop prespeeding in the start zone?\n0 - Disabled, fully allow prespeeding.\n1 - SurfHeaven Limitspeed", 0, true, 0.0, true, 1.0);
 	gCV_EntrySpeedLimit = new Convar("shavit_zones_entryzonespeedlimit", "500.0", "Maximum speed at which entry into the start/stage zone will not be slowed down.\n(***Make sure shavit_misc_prespeed set to 1***)", 0, true, 260.0);
-	gCV_PreBuildZone = new Convar("shavit_zones_prebuild", "1", "Auto prebuild zones when current map have no zones.\n0 - Disabled.\n1 - Enabled", 0, true, 0.0, true, 1.0);
+	gCV_PreBuildZone = new Convar("shavit_zones_prebuild", "0", "Auto prebuild zones when current map have no zones.\n0 - Disabled.\n1 - Enabled", 0, true, 0.0, true, 1.0);
 
 	gCV_Interval.AddChangeHook(OnConVarChanged);
 	gCV_UseCustomSprite.AddChangeHook(OnConVarChanged);

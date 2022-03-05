@@ -26,9 +26,9 @@
 #include <dhooks>
 #include <shavit>
 #include <shavit/colors>
+#include <shavit/chat>
 
 #undef REQUIRE_PLUGIN
-#include <shavit/chat>
 #include <shavit/rankings>
 
 #undef REQUIRE_EXTENSIONS

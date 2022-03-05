@@ -125,6 +125,7 @@ bool SaveCheckpoint(int client)
 	}
 
 	gA_Checkpoints[client].PushArray(cpcache);
+	gB_UsingOtherCheckpoint[client] = false; /* stop using other's checkpoint if we saved points */
 	return true;
 }
 

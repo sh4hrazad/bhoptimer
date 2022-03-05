@@ -26,11 +26,11 @@
 #include <dhooks>
 #include <shavit>
 #include <shavit/colors>
+#include <shavit/hud>
 #include <shavit/wr>
+#include <shavit/stage>
 #include <shavit/replay-playback>
 
-#undef REQUIRE_PLUGIN
-#include <shavit/hud>
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -101,8 +101,8 @@ int gI_BotLastStage[MAXPLAYERS+1];
 #include "shavit-hud/commands.sp"
 #include "shavit-hud/cookie.sp"
 #include "shavit-hud/menu.sp"
-//#include "shavit-hud/messages.sp"
-
+#include "shavit-hud/messages.sp"
+#include "shavit-hud/stocks.sp"
 
 
 // ======[ PLUGIN EVENTS ]======
@@ -245,342 +245,57 @@ public Action Shavit_OnStage(int client, int stage)
 
 public void Shavit_OnStartTimer_Post(int client, int style, int track, float speed)
 {
-	if(gCV_PrestrafeMessage.IntValue != 1 || (gI_HUD2Settings[client] & HUD2_PRESTRAFE) != 0 || (gI_HUDSettings[client] & HUD_MASTER) == 0)
-	{
-		return;
-	}
-
-	FormatDiffPreStrafeSpeed(gS_PreStrafeDiff[client], speed, Shavit_GetPrestrafeForRank(style, 1, track));
-
-	char sPBDiff[64];
-	FormatDiffPreStrafeSpeed(sPBDiff, speed, Shavit_GetClientPrestrafe(client, style, track));
-
-	char sPrestrafe[256];
-	FormatEx(sPrestrafe, sizeof(sPrestrafe), "%T", "StartPrestrafe", client, RoundToFloor(speed), gS_PreStrafeDiff[client], sPBDiff);
-
-	Shavit_PrintToChat(client, sPrestrafe);
-	SendMessageToSpectator(client, sPrestrafe);
-
-	if(!Shavit_IsLinearMap() && track == Track_Main)
-	{
-		char sStageWRDiff[64];
-		FormatDiffPreStrafeSpeed(sStageWRDiff, speed, Shavit_GetWRStagePostspeed(1, style));
-
-		char sStagePBDiff[64];
-		stage_t pb;
-		Shavit_GetStagePB(client, style, 1, pb);
-		FormatDiffPreStrafeSpeed(sStagePBDiff, speed, pb.fPostspeed);
-
-		FormatEx(sPrestrafe, sizeof(sPrestrafe), "%T", "StagePrestrafe", client, 1, RoundToFloor(speed), sStageWRDiff, sStagePBDiff);
-
-		Shavit_PrintToChat(client, sPrestrafe);
-		SendMessageToSpectator(client, sPrestrafe);
-	}
+	Shavit_OnStartTimer_Post_Message(client, style, track, speed);
 }
 
 public void Shavit_OnStageTimer_Post(int client, int style, int stage, float speed)
 {
-	if(gCV_PrestrafeMessage.IntValue != 1 || (gI_HUD2Settings[client] & HUD2_PRESTRAFE) != 0 || (gI_HUDSettings[client] & HUD_MASTER) == 0)
-	{
-		return;
-	}
-
-	FormatDiffPreStrafeSpeed(gS_PreStrafeDiff[client], speed, Shavit_GetWRStagePostspeed(stage, style));
-
-	stage_t pb;
-	Shavit_GetStagePB(client, style, stage, pb);
-
-	char sPBDiff[64];
-	FormatDiffPreStrafeSpeed(sPBDiff, speed, pb.fPostspeed);
-
-	char sPrestrafe[256];
-	FormatEx(sPrestrafe, sizeof(sPrestrafe), "%T", "StagePrestrafe", client, stage, RoundToFloor(speed), gS_PreStrafeDiff[client], sPBDiff);
-	Shavit_PrintToChat(client, sPrestrafe);
-	SendMessageToSpectator(client, sPrestrafe);
+	Shavit_OnStageTimer_Post_Message(client, style, stage, speed);
 }
 
 public void Shavit_OnWRCP(int client, int stage, int style, int steamid, int records, float oldtime, float time, float leavespeed, const char[] mapname)
 {
-	char sTime[32];
-	FormatSeconds(time, sTime, sizeof(sTime));
-
-	char sDiffTime[32];
-	char sRank[32];
-
-	if(oldtime == -1.0)
-	{
-		FormatEx(sDiffTime, sizeof(sDiffTime), "N/A");
-		FormatEx(sRank, sizeof(sRank), "1/1");
-	}
-	else
-	{
-		FormatSeconds(time - oldtime, sDiffTime, sizeof(sDiffTime));
-		FormatEx(sRank, sizeof(sRank), "1/%d", records == 0 ? 1 : records);
-	}
-
-	Shavit_PrintToChatAll("%t", "OnWRCP", client, stage, gS_StyleStrings[style].sStyleName, sTime, sDiffTime, sRank);
+	Shavit_OnWRCP_Message(client, style, stage, records, time, oldtime);
 }
 
 public void Shavit_OnFinishStage_Post(int client, int stage, int style, float time, float diff, int overwrite, int records, int rank, bool wrcp, float leavespeed)
 {
-	float wrcpTime = Shavit_GetWRStageTime(stage, style);
-	float wrcpDiff = time - wrcpTime;
-
-	char sWRDifftime[32];
-	char sPBDifftime[32];
-
-	if(wrcpTime == -1.0)
-	{
-		FormatEx(sWRDifftime, sizeof(sWRDifftime), "N/A");
-	}
-	else
-	{
-		FormatSeconds(wrcpDiff, sWRDifftime, sizeof(sWRDifftime));
-
-		if(wrcpDiff > 0)
-		{
-			Format(sWRDifftime, sizeof(sWRDifftime), "+%s", sWRDifftime);
-		}
-	}
-
-	if(diff == time)
-	{
-		FormatEx(sPBDifftime, sizeof(sPBDifftime), "N/A");
-	}
-	else
-	{
-		FormatSeconds(diff, sPBDifftime, sizeof(sPBDifftime));
-
-		if(diff > 0)
-		{
-			Format(sPBDifftime, sizeof(sPBDifftime), "+%s", sPBDifftime);
-		}
-	}
-
-	char sMessage[255];
-
-	char sTime[32];
-	FormatSeconds(time, sTime, sizeof(sTime));
-
-	switch(overwrite)
-	{
-		case PB_Insert, PB_Update:
-		{
-			char sRank[32];
-			FormatEx(sRank, sizeof(sRank), "%d/%d", rank, overwrite == PB_Insert ? records + 1 : records);
-			FormatEx(sMessage, sizeof(sMessage), "%T", "ZoneStageTime-Improved", client, stage, sTime, sWRDifftime, sPBDifftime, sRank);
-		}
-		case PB_NoQuery:
-		{
-			FormatEx(sMessage, sizeof(sMessage), "%T", "ZoneStageTime-Noimproved", client, stage, sTime, sWRDifftime, sPBDifftime);
-		}
-		case PB_UnRanked:
-		{
-			FormatEx(sMessage, sizeof(sMessage), 
-				"{darkred}[未排名]{default} | {grey}关卡{default} [{orchid}%d{default}] | {grey2}%s{default} | {palered}WRCP{default} {yellow}%s{default} | {darkblue}PB{default} {yellow}%s{default}", 
-				stage, sTime, sWRDifftime, sPBDifftime);
-		}
-	}
-
-	Shavit_PrintToChat(client, sMessage);
-	SendMessageToSpectator(client, sMessage);
+	Shavit_OnFinishStage_Post_Message(client, stage, style, time, diff, overwrite, records, rank);
 }
 
 public void Shavit_OnFinishCheckpoint(int client, int cpnum, int style, float time, float wrdiff, float pbdiff, float prespeed)
 {
-	int cpmax = (Shavit_IsLinearMap()) ? Shavit_GetMapCheckpoints() : Shavit_GetMapStages();
-
-	if(cpnum > cpmax)
-	{
-		return;
-	}
-
-	char sTime[32];
-	FormatSeconds(time, sTime, sizeof(sTime));
-
-	char sWRDifftime[32];
-	if(Shavit_GetWRCPTime(cpnum, style) == -1.0)
-	{
-		FormatEx(sWRDifftime, sizeof(sWRDifftime), "N/A");
-		FormatEx(gS_DiffTime[client], sizeof(gS_DiffTime[]), "N/A");
-	}
-	else
-	{
-		FormatSeconds(wrdiff, sWRDifftime, sizeof(sWRDifftime));
-		FormatHUDSeconds(wrdiff, gS_DiffTime[client], sizeof(gS_DiffTime[]));
-
-		if(wrdiff > 0)
-		{
-			Format(sWRDifftime, sizeof(sWRDifftime), "+%s", sWRDifftime);
-			Format(gS_DiffTime[client], sizeof(gS_DiffTime[]), "+%s", gS_DiffTime[client]);
-		}
-	}
-
-	char sPBDifftime[32];
-	if(pbdiff == time)
-	{
-		FormatEx(sPBDifftime, sizeof(sPBDifftime), "N/A");
-	}
-	else
-	{
-		FormatSeconds(pbdiff, sPBDifftime, sizeof(sPBDifftime));
-
-		if(pbdiff > 0)
-		{
-			Format(sPBDifftime, sizeof(sPBDifftime), "+%s", sPBDifftime);
-		}
-	}
-
-	char sMessage[255];
-	FormatEx(sMessage, sizeof(sMessage), "%T", "ZoneCheckpointTime", client, cpnum, sTime, sWRDifftime, sPBDifftime);
-
-	DataPack dp = new DataPack();
-	dp.WriteCell(GetClientSerial(client));
-	dp.WriteString(sMessage);
-
-	// make sure cpmessage is after stagemessage, in order to print cp prestrafe and get a smoother sight
-	CreateTimer(0.1, Timer_CPTimeMessage, dp);
-}
-
-public Action Timer_CPTimeMessage(Handle timer, DataPack dp)
-{
-	dp.Reset();
-
-	int client = GetClientFromSerial(dp.ReadCell());
-	char sMessage[255];
-	dp.ReadString(sMessage, sizeof(sMessage));
-
-	delete dp;
-
-	Shavit_PrintToChat(client, sMessage);
-	SendMessageToSpectator(client, sMessage);
-
-	return Plugin_Stop;
+	Shavit_OnFinishCheckpoint_Message(client, cpnum, style, time, wrdiff, pbdiff);
 }
 
 public void Shavit_OnLeaveStage(int client, int stage, int style, float leavespeed, float time, bool stagetimer)
 {
-	if(stagetimer || Shavit_GetClientTime(client) == 0.0)
-	{
-		return;
-	}
-
-	FormatDiffPreStrafeSpeed(gS_PreStrafeDiff[client], leavespeed, Shavit_GetWRCPPostspeed(stage, style));
-
-	cp_t pb;
-	Shavit_GetCheckpointPB(client, style, stage, pb);
-
-	char sPBDiff[64];
-	FormatDiffPreStrafeSpeed(sPBDiff, leavespeed, pb.fPostspeed);
-
-	char sPrestrafe[256];
-	FormatEx(sPrestrafe, sizeof(sPrestrafe), "%T", "CPStagePrestrafe", client, stage, RoundToFloor(leavespeed), gS_PreStrafeDiff[client], sPBDiff);
-	Shavit_PrintToChat(client, sPrestrafe);
-	SendMessageToSpectator(client, sPrestrafe);
+	Shavit_OnLeaveStage_Message(client, stage, style, leavespeed, stagetimer);
 }
 
 public void Shavit_OnEnterCheckpoint(int client, int cp, int style, float enterspeed, float time)
 {
-	FormatDiffPreStrafeSpeed(gS_PreStrafeDiff[client], enterspeed, Shavit_GetWRCPPrespeed(cp, style));
-
-	cp_t pb;
-	Shavit_GetCheckpointPB(client, style, cp, pb);
-
-	char sPBDiff[64];
-	FormatDiffPreStrafeSpeed(sPBDiff, enterspeed, pb.fPrespeed);
-
-	char sPrestrafe[256];
-	FormatEx(sPrestrafe, sizeof(sPrestrafe), "%T", "CPLinearPrestrafe", client, cp, RoundToFloor(enterspeed), gS_PreStrafeDiff[client], sPBDiff);
-	Shavit_PrintToChat(client, sPrestrafe);
-	SendMessageToSpectator(client, sPrestrafe);
-}
-
-void FormatDiffPreStrafeSpeed(char[] buffer, float originSpeed, float wrSpeed)
-{
-	float diff = originSpeed - wrSpeed;
-
-	if(wrSpeed <= 0.0)
-	{
-		strcopy(buffer, 64, "N/A");
-	}
-	else
-	{
-		if(diff > 0.0)
-		{
-			FormatEx(buffer, 64, "%t", "PrestrafeIncrease", RoundToFloor(diff));
-		}
-		else if(diff == 0.0)
-		{
-			FormatEx(buffer, 64, "%t", "PrestrafeNochange", RoundToFloor(diff));
-		}
-		else
-		{
-			FormatEx(buffer, 64, "%t", "PrestrafeDecrease", RoundToFloor(diff));
-		}
-	}
+	Shavit_OnEnterCheckpoint_Message(client, cp, style, enterspeed);
 }
 
 public void Shavit_OnEnterStageZone_Bot(int bot, int stage)
 {
-	if(Shavit_GetReplayBotStage(bot) != 0)
-	{
-		return;
-	}
-
-	int style = Shavit_GetReplayBotStyle(bot);
-	if(style == -1 || Shavit_GetReplayBotTrack(bot) != Track_Main || gI_BotLastStage[bot] == stage) // invalid style or track or get into the same stage(dont print twice)
-	{
-		return;
-	}
-
-	gI_BotLastStage[bot] = stage;
-
-	char sTime[32];
-	float realtime = Shavit_GetWRCPRealTime(stage, style);
-	float time = Shavit_GetWRCPTime(stage, style);
-	int attemps = Shavit_GetWRCPAttemps(stage, style);
-	bool failed = (attemps > 1);
-	if(failed)
-	{
-		FormatHUDSeconds(realtime, sTime, 32);
-	}
-	else
-	{
-		FormatHUDSeconds(time, sTime, 32);
-	}
-
-	SendMessageToSpectator(bot, "%t", failed ? "EnterStageMessage_Bot_NoImproved" : "EnterStageMessage_Bot_Improved", stage, sTime, attemps, true);
+	Shavit_OnEnterStageZone_Bot_Message(bot, stage);
 }
 
 public void Shavit_OnLeaveStartZone_Bot(int bot, int track, float speed)
 {
-	if(Shavit_GetReplayBotTrack(bot) != track)
-	{
-		return;
-	}
-
-	SendMessageToSpectator(bot, "%t", "BotPrestrafe", RoundToFloor(speed), true);
+	Shavit_OnLeaveStartZone_Bot_Message(bot, track, speed);
 }
 
 public void Shavit_OnLeaveStageZone_Bot(int bot, int stage, float speed)
 {
-	if(Shavit_GetReplayBotTrack(bot) != Track_Main || 
-		(Shavit_GetReplayBotStage(bot) != 0 && Shavit_GetReplayBotStage(bot) != stage))
-	{
-		return;
-	}
-
-	SendMessageToSpectator(bot, "%t", "BotPrestrafe", RoundToFloor(speed), true);
+	Shavit_OnLeaveStageZone_Bot_Message(bot, stage, speed);
 }
 
 public void Shavit_OnLeaveCheckpointZone_Bot(int bot, int cp, float speed)
 {
-	if(Shavit_GetReplayBotTrack(bot) != Track_Main)
-	{
-		return;
-	}
-
-	SendMessageToSpectator(bot, "%t", "BotPrestrafe", RoundToFloor(speed), true);
+	Shavit_OnLeaveCheckpointZone_Bot_Message(bot, speed);
 }
 
 public void OnClientPutInServer(int client)
@@ -649,20 +364,6 @@ void Cron()
 		GetEntPropVector(GetSpectatorTarget(i, i), Prop_Data, "m_vecAbsVelocity", fSpeed);
 		gI_PreviousSpeed[i] = RoundToNearest(((gI_HUDSettings[i] & HUD_2DVEL) == 0)? GetVectorLength(fSpeed):(SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0))));
 	}
-}
-
-// =====[ PUBLIC ]=====
-
-void ResetPrestrafeDiff(int client)
-{
-	strcopy(gS_PreStrafeDiff[client], sizeof(gS_PreStrafeDiff[]), "None");
-}
-
-void MakeAngleDiff(int client, float newAngle)
-{
-	gF_PreviousAngle[client] = gF_Angle[client];
-	gF_Angle[client] = newAngle;
-	gF_AngleDiff[client] = GetAngleDiff(newAngle, gF_PreviousAngle[client]);
 }
 
 

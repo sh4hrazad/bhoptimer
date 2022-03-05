@@ -17,6 +17,36 @@
 
 #define CP_DEFAULT				(CP_ANGLES|CP_VELOCITY)
 
+
+
+// ======[ ENUM STRUCTS ]=======
+
+enum struct cp_cache_t
+{
+	float fPosition[3];
+	float fAngles[3];
+	float fVelocity[3];
+	MoveType iMoveType;
+	float fGravity;
+	float fSpeed;
+	float fStamina;
+	bool bDucked;
+	bool bDucking;
+	float fDucktime; // m_flDuckAmount in csgo
+	float fDuckSpeed; // m_flDuckSpeed in csgo; doesn't exist in css
+	int iFlags;
+	timer_snapshot_t aSnapshot;
+	char sTargetname[64];
+	char sClassname[64];
+	ArrayList aFrames;
+	int iPreFrames;
+	int iStagePreFrames;
+	bool bSegmented;
+	int iGroundEntity;
+	int iSteamID;
+	float vecLadderNormal[3];
+}
+
 enum struct persistent_data_t
 {
 	int iSteamID;

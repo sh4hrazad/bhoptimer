@@ -22,7 +22,7 @@ void UpdateSyncTextHud(int client)
 	huddata.fPB = Shavit_GetClientPB(target, huddata.iStyle, huddata.iTrack);
 	huddata.fWR = Shavit_GetWorldRecord(huddata.iStyle, huddata.iTrack);
 	huddata.iFinishNum = (huddata.iStyle == -1 || huddata.iTrack == -1) ? Shavit_GetRecordAmount(0, 0) : Shavit_GetRecordAmount(huddata.iStyle, huddata.iTrack);
-	huddata.iRank = (huddata.iFinishNum == 0) ? 0 : Shavit_GetRankForTime(huddata.iStyle, huddata.fPB, huddata.iTrack);
+	huddata.iRank = Shavit_GetRankForTime(huddata.iStyle, huddata.fPB, huddata.iTrack);
 
 	char sText[256];
 	AddTextToBuffer(client, huddata, sText, sizeof(sText));
@@ -50,6 +50,6 @@ stock void AddTextToBuffer(int client, huddata_t data, char[] buffer, int maxlen
 	}
 	else
 	{
-		FormatEx(buffer, maxlen, "SR: %s \t\t Rank: %d/%d", sPBTime, data.iRank, data.iFinishNum);
+		FormatEx(buffer, maxlen, "SR: %s \t\t Rank: %d/%d", sWRTime, data.iRank, data.iFinishNum);
 	}
 }

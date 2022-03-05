@@ -386,22 +386,36 @@ int GetRankForTime(int style, float time, int track)
 {
 	int iRecords = GetRecordAmount(style, track);
 
-	if(time <= gF_WRTime[style][track] || iRecords <= 0)
+	if(time == 0.0)
+	{
+		return 0;
+	}
+	else if(time <= gF_WRTime[style][track] || iRecords <= 0) /* should be the first record */
 	{
 		return 1;
 	}
 
-	if(gA_Leaderboard[style][track] != null && gA_Leaderboard[style][track].Length > 0)
-	{
-		for(int i = 0; i < iRecords; i++)
-		{
-			prcache_t pr;
-			gA_Leaderboard[style][track].GetArray(i, pr, sizeof(pr));
+	int i = 0;
 
-			if(time <= pr.fTime)
-			{
-				return ++i;
-			}
+	if (iRecords > 100)
+	{
+		int middle = iRecords/2;
+
+		if (gA_Leaderboard[style][track].Get(middle) < time)
+		{
+			i = middle;
+		}
+		else
+		{
+			iRecords = middle;
+		}
+	}
+
+	for (; i < iRecords; i++)
+	{
+		if (time <= gA_Leaderboard[style][track].Get(i))
+		{
+			return i+1;
 		}
 	}
 

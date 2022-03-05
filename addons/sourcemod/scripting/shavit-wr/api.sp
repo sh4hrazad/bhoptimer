@@ -76,7 +76,7 @@ public int Native_GetRankForTime(Handle handler, int numParams)
 
 	if(gA_Leaderboard[style][track] == null || gA_Leaderboard[style][track].Length == 0)
 	{
-		return 1;
+		return 0;
 	}
 
 	return GetRankForTime(style, GetNativeCell(2), track);

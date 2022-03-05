@@ -27,6 +27,7 @@
 #include <shavit>
 #include <shavit/replay-playback>
 #include <shavit/wr>
+#include <shavit/stage>
 
 #undef REQUIRE_PLUGIN
 #include <adminmenu>
