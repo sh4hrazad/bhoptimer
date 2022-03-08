@@ -238,6 +238,7 @@ public Action Shavit_OnLeaveZone(int client, int type, int track, int id, int en
 		case Zone_Start:
 		{
 			Shavit_SetLeaveStageTime(client, Shavit_GetClientTime(client));
+			gF_PostSpeed[client][1] = fPostspeed; // hackfix for -1 linear/staged map postspeed
 		}
 
 		case Zone_Stage:

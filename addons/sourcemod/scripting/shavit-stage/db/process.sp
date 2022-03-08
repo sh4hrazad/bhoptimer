@@ -27,9 +27,7 @@ void Shavit_OnFinish_Post_DBProcess(int client, int style, int track, int overwr
 		Transaction hTransaction = new Transaction();
 		char sQuery[512];
 
-		int cpnum = (bLinear)? 1 : 2;
-
-		for(int i = cpnum; i <= maxCPs; i++)
+		for(int i = 1; i <= maxCPs; i++)
 		{
 			float prespeed = gF_PreSpeed[client][i];
 			float postspeed = gF_PostSpeed[client][i];
