@@ -46,6 +46,8 @@
 #include <shavit/physicsuntouch>
 #include <shavit/weapon-stocks>
 
+#include <multicolors>
+
 #pragma newdecls required
 #pragma semicolon 1
 
