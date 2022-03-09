@@ -46,6 +46,8 @@
 #include <shavit/physicsuntouch>
 #include <shavit/weapon-stocks>
 
+#include <multicolors>
+
 #pragma newdecls required
 #pragma semicolon 1
 
@@ -143,6 +145,9 @@ bool gB_Chat = false;
 
 // timer settings
 stylestrings_t gS_StyleStrings[STYLE_LIMIT];
+
+// nctriggers
+bool gB_CanTouchTrigger[MAXPLAYERS+1];
 
 // chat settings
 chatstrings_t gS_ChatStrings;
@@ -243,6 +248,7 @@ public void OnPluginStart()
 	LoadTranslations("common.phrases");
 	LoadTranslations("shavit-common.phrases");
 	LoadTranslations("shavit-misc.phrases");
+	LoadTranslations("shavit-core.phrases");
 
 	// advertisements
 	gA_Advertisements = new ArrayList(300);
@@ -1357,6 +1363,8 @@ public void OnClientPutInServer(int client)
 		gI_Style[client] = Shavit_GetBhopStyle(client);
 		gB_Hide[client] = false;
 	}
+	
+	gB_CanTouchTrigger[client] = true;
 }
 
 public void OnClientDisconnect(int client)
@@ -1752,6 +1760,29 @@ bool Teleport(int client, int targetserial)
 	return true;
 }
 
+public void OnEntityCreated(int entity, const char[] classname)
+{
+	if(StrEqual(classname, "trigger_multiple") || StrEqual(classname, "trigger_once") || StrEqual(classname, "trigger_push") || StrEqual(classname, "trigger_teleport") || StrEqual(classname, "trigger_gravity"))
+	{
+		SDKHook(entity, SDKHook_StartTouch, HookTrigger);
+		SDKHook(entity, SDKHook_EndTouch, HookTrigger);
+		SDKHook(entity, SDKHook_Touch, HookTrigger);
+	}
+}
+
+public Action HookTrigger(int entity, int other)
+{
+    if(IsValidClient(other))
+    {
+		if(!gB_CanTouchTrigger[other] && GetEntityMoveType(other) & MOVETYPE_NOCLIP)
+		{
+			return Plugin_Handled;
+		}
+    }
+
+    return Plugin_Continue;
+}
+
 public Action Command_Weapon(int client, int args)
 {
 	if(!IsValidClient(client) || gEV_Type == Engine_TF2)
@@ -1963,27 +1994,40 @@ public Action Command_Noclip(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(GetEntityMoveType(client) != MOVETYPE_NOCLIP)
+	if (gCV_PauseMovement.BoolValue && Shavit_GetStyleSettingInt(Shavit_GetBhopStyle(client), "segments") == 0) // when shavit_core_pause_movement "1", pause timer
 	{
-		if (gCV_PauseMovement.BoolValue && Shavit_IsPaused(client))
+		if(Shavit_CanPause(client) == 0
+			 || Shavit_GetTimerStatus(client) != Timer_Running
+			 || Shavit_InsideZone(client, Zone_Start, -1)
+			 || Shavit_InsideZone(client, Zone_End, -1))
 		{
-			SetEntityMoveType(client, MOVETYPE_NOCLIP);
-			return Plugin_Handled;
-		}
-
-		if(!ShouldDisplayStopWarning(client))
-		{
-			Shavit_StopTimer(client);
-			SetEntityMoveType(client, MOVETYPE_NOCLIP);
+			UpdateByNoclipStatus(client, GetEntityMoveType(client) == MOVETYPE_WALK);
 		}
 		else
 		{
-			OpenStopWarningMenu(client, DoNoclip);
+			Shavit_PrintToChat(client, "You %scan't%s noclip when moving, crouching or in the air.", gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+
+			return Plugin_Handled;
 		}
 	}
-	else
+	else // when shavit_core_pause_movement "0" or segmented/tas style, stop timer
 	{
-		SetEntityMoveType(client, MOVETYPE_WALK);
+		if(GetEntityMoveType(client) != MOVETYPE_NOCLIP)
+		{
+			if(!ShouldDisplayStopWarning(client))
+			{
+				Shavit_StopTimer(client);
+				SetEntityMoveType(client, MOVETYPE_NOCLIP);
+			}
+			else
+			{
+				OpenStopWarningMenu(client, DoNoclip);
+			}
+		}
+		else
+		{
+			SetEntityMoveType(client, MOVETYPE_WALK);
+		}
 	}
 
 	return Plugin_Handled;
@@ -2002,25 +2046,67 @@ public Action CommandListener_Noclip(int client, const char[] command, int args)
 	}
 
 	gI_LastNoclipTick[client] = GetGameTickCount();
-
-	if((gCV_NoclipMe.IntValue == 1 || (gCV_NoclipMe.IntValue == 2 && CheckCommandAccess(client, "noclipme", ADMFLAG_CHEATS))) && command[0] == '+')
+	
+	if (gCV_PauseMovement.BoolValue && Shavit_GetStyleSettingInt(Shavit_GetBhopStyle(client), "segments") == 0) // when shavit_core_pause_movement "1", pause timer
 	{
-		if(!ShouldDisplayStopWarning(client))
+		if(Shavit_CanPause(client) == 0 || Shavit_GetTimerStatus(client) != Timer_Running)
 		{
-			Shavit_StopTimer(client);
-			SetEntityMoveType(client, MOVETYPE_NOCLIP);
-		}
-		else
-		{
-			OpenStopWarningMenu(client, DoNoclip);
+			UpdateByNoclipStatus(client, command[0] == '+');
 		}
 	}
-	else if(GetEntityMoveType(client) == MOVETYPE_NOCLIP)
+	else // when shavit_core_pause_movement "0", stop timer
 	{
-		SetEntityMoveType(client, MOVETYPE_WALK);
+		if((gCV_NoclipMe.IntValue == 1 || (gCV_NoclipMe.IntValue == 2 && CheckCommandAccess(client, "noclipme", ADMFLAG_CHEATS))) && command[0] == '+')
+		{
+			if(!ShouldDisplayStopWarning(client))
+			{
+				Shavit_StopTimer(client);
+				SetEntityMoveType(client, MOVETYPE_NOCLIP);
+			}
+			else
+			{
+				OpenStopWarningMenu(client, DoNoclip);
+			}
+		}
+		else if(GetEntityMoveType(client) == MOVETYPE_NOCLIP)
+		{
+			SetEntityMoveType(client, MOVETYPE_WALK);
+		}
 	}
 
 	return Plugin_Stop;
+}
+
+void UpdateByNoclipStatus(int client, bool walking)
+{
+	if(walking)
+	{
+		if(Shavit_GetTimerStatus(client) != Timer_Paused && Shavit_GetTimerStatus(client) != Timer_Stopped && !Shavit_IsPracticeMode(client) && !Shavit_InsideZone(client, Zone_Start, -1))
+		{
+			Shavit_PauseTimer(client);
+			Shavit_PrintToChat(client, "%t", "MessagePause", gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
+		}
+
+		Shavit_PrintToChat(client, "Noclip trigger is %s%s%s. (%s!nctrigger%s to toggle)", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"enabled":"disabled", gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
+		SetEntityMoveType(client, MOVETYPE_NOCLIP);
+	}
+	else
+	{
+		if(Shavit_GetTimerStatus(client) == Timer_Paused)
+		{
+			Shavit_PrintToChat(client, "Resume timer using %s%s%s.", gS_ChatStrings.sVariable, Shavit_GetClientTime(client) != 0.0 ? "!pause" : "!r", gS_ChatStrings.sText);
+		}
+
+		SetEntityMoveType(client, MOVETYPE_WALK);
+	}
+}
+
+public Action Command_NoclipIgnoreTrigger(int client, int args)
+{
+	gB_CanTouchTrigger[client] = !gB_CanTouchTrigger[client];
+	Shavit_PrintToChat(client, "Noclip trigger is %s%s%s. (%s!nctrigger%s to toggle)", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"enabled":"disabled", gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
+
+	return Plugin_Handled;
 }
 
 public Action CommandListener_funcommands_Noclip(int client, const char[] command, int args)
@@ -2214,11 +2300,13 @@ public void Shavit_OnWorldRecord(int client, int style, float time, int jumps, i
 	{
 		if(track == Track_Main)
 		{
-			Shavit_PrintToChatAll("%t", "WRNotice", gS_ChatStrings.sWarning, sUpperCase);
+			// Shavit_PrintToChatAll("%t", "WRNotice", gS_ChatStrings.sWarning, sUpperCase);
+			CPrintToChatAll("{red}!!! {lightblue}Nice Job NEW Main %s Server Record {fl4n}(๑•̀ㅂ•́)و✧ {red}!!!", sUpperCase);
 		}
 		else
 		{
-			Shavit_PrintToChatAll("%s[%s]%s %t", gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "WRNotice", gS_ChatStrings.sWarning, sUpperCase);
+			// Shavit_PrintToChatAll("%s[%s]%s %t", gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "WRNotice", gS_ChatStrings.sWarning, sUpperCase);
+			CPrintToChatAll("{red}!!! {lightblue}Nice Job NEW %s %s Server Record {fl4n}(๑•̀ㅂ•́)و✧ {red}!!!", sTrack, sUpperCase);
 		}
 	}
 }
