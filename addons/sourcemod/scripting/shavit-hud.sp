@@ -1323,11 +1323,13 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 
 			if((gI_HUD2Settings[client] & HUD2_RANK) == 0)
 			{
-				FormatEx(sLine, 128, "%T: %s%s (#%d)", "HudTimeText", client, sTime, sTimeDiff, data.iRank);
+				// FormatEx(sLine, 128, "%T: %s%s (#%d)", "HudTimeText", client, sTime, sTimeDiff, data.iRank);
+				FormatEx(sLine, 128, "T: %s%s (#%d)", sTime, sTimeDiff, data.iRank);
 			}
 			else
 			{
-				FormatEx(sLine, 128, "%T: %s%s", "HudTimeText", client, sTime, sTimeDiff);
+				// FormatEx(sLine, 128, "%T: %s%s", "HudTimeText", client, sTime, sTimeDiff);
+				FormatEx(sLine, 128, "T: %s%s", sTime, sTimeDiff);
 			}
 
 			AddHUDLine(buffer, maxlen, sLine, iLines);
@@ -1335,7 +1337,8 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 
 		if((gI_HUD2Settings[client] & HUD2_JUMPS) == 0)
 		{
-			FormatEx(sLine, 128, "%T: %d", "HudJumpsText", client, data.iJumps);
+			// FormatEx(sLine, 128, "%T: %d", "HudJumpsText", client, data.iJumps);
+			FormatEx(sLine, 128, "J: %d", data.iJumps);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 		}
 
@@ -1343,13 +1346,15 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 		{
 			if((gI_HUD2Settings[client] & HUD2_SYNC) == 0)
 			{
-				FormatEx(sLine, 128, "%T: %d (%.1f％)", "HudStrafeText", client, data.iStrafes, data.fSync);
+				// FormatEx(sLine, 128, "%T: %d (%.1f％)", "HudStrafeText", client, data.iStrafes, data.fSync);
+				FormatEx(sLine, 128, "Strf: %d (%.1f％)", data.iStrafes, data.fSync);
 			}
 			else
 			{
-				FormatEx(sLine, 128, "%T: %d", "HudStrafeText", client, data.iStrafes);
+				// FormatEx(sLine, 128, "%T: %d", "HudStrafeText", client, data.iStrafes);
+				FormatEx(sLine, 128, "Strf: %d", data.iStrafes);
 			}
-			//FormatEx(sLine, 128, "%T: %d", "HudStrafeText", client, data.iStrafes);
+			// FormatEx(sLine, 128, "%T: %d", "HudStrafeText", client, data.iStrafes);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 		}
 	}
@@ -1363,16 +1368,19 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 			if (data.fClosestReplayTime != -1.0 && (gI_HUD2Settings[client] & HUD2_VELOCITYDIFFERENCE) == 0)
 			{
 				float res = data.fClosestVelocityDifference;
-				FormatEx(sLine, 128, "%T: %d (%s%.0f)", "HudSpeedText", client, data.iSpeed, (res >= 0.0) ? "+":"", res);
+				// FormatEx(sLine, 128, "%T: %d (%s%.0f)", "HudSpeedText", client, data.iSpeed, (res >= 0.0) ? "+":"", res);
+				FormatEx(sLine, 128, "Spd: %d (%s%.0f)", data.iSpeed, (res >= 0.0) ? "+":"", res);
 			}
 			else
 			{
-				FormatEx(sLine, 128, "%T: %d", "HudSpeedText", client, data.iSpeed);
+				// FormatEx(sLine, 128, "%T: %d", "HudSpeedText", client, data.iSpeed);
+				FormatEx(sLine, 128, "Spd: %d", data.iSpeed);
 			}
 		}
 		else
 		{
-			IntToString(data.iSpeed, sLine, 128);
+			// IntToString(data.iSpeed, sLine, 128);
+			FormatEx(sLine, 128, "Spd: %d", data.iSpeed);
 		}
 
 		AddHUDLine(buffer, maxlen, sLine, iLines);
