@@ -32,7 +32,7 @@
 #define HUD_KEYOVERLAY          (1 << 5) // show a key overlay
 #define HUD_HIDEWEAPON          (1 << 6) // hide the player's weapon
 #define HUD_TOPLEFT             (1 << 7) // show top left white HUD with WR/PB times
-#define HUD_SYNC                (1 << 8) // shows sync at right side of the screen (css only)
+#define HUD_UNUSED              (1 << 8)
 #define HUD_TIMELEFT            (1 << 9) // shows time left at right tside of the screen (css only)
 #define HUD_2DVEL               (1 << 10) // shows 2d velocity
 #define HUD_NOSOUNDS            (1 << 11) // disables sounds on personal best, world record etc
@@ -60,7 +60,7 @@
 #define HUD2_GLOCKBURST         (1 << 15) // spawns glocks with burst
 #define HUD2_CENTERKEYS         (1 << 16) // CSGO option to toggle whether !keys is shown as center-text or in that panel thing.
 
-#define HUD_DEFAULT             (HUD_MASTER|HUD_CENTER|HUD_ZONEHUD|HUD_OBSERVE|HUD_TOPLEFT|HUD_SYNC|HUD_TIMELEFT|HUD_2DVEL|HUD_SPECTATORS)
+#define HUD_DEFAULT             (HUD_MASTER|HUD_CENTER|HUD_ZONEHUD|HUD_OBSERVE|HUD_TOPLEFT|HUD_UNUSED|HUD_TIMELEFT|HUD_2DVEL|HUD_SPECTATORS)
 #define HUD_DEFAULT2            (HUD2_PERFS)
 
 stock bool HUD1Enabled(int hudbits, int flag)

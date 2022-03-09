@@ -183,14 +183,14 @@ public void OnPluginStart()
 		..."HUD_KEYOVERLAY			32\n"
 		..."HUD_HIDEWEAPON			64\n"
 		..."HUD_TOPLEFT				128\n"
-		..."HUD_SYNC					256\n"
+		..."HUD_UNUSED					256\n"
 		..."HUD_TIMELEFT				512\n"
 		..."HUD_2DVEL				1024\n"
 		..."HUD_NOSOUNDS				2048\n"
 		..."HUD_NOPRACALERT			4096\n"
 		..."HUD_USP                  8192\n"
 		..."HUD_GLOCK                16384\n"
-	);
+	); // *HUD_UNUSED: HUD_SYNC 删了留空, 和HUD2_SYNC重复了. 
 
 	IntToString(HUD_DEFAULT2, defaultHUD, 8);
 	gCV_DefaultHUD2 = new Convar("shavit_hud2_default", defaultHUD, "Default HUD2 settings as a bitflag of what to remove\n"
@@ -544,7 +544,7 @@ void ToggleHUD(int client, int hud, bool chat)
 			case HUD_KEYOVERLAY: FormatEx(sHUDSetting, 64, "%T", "HudKeyOverlay", client);
 			case HUD_HIDEWEAPON: FormatEx(sHUDSetting, 64, "%T", "HudHideWeapon", client);
 			case HUD_TOPLEFT: FormatEx(sHUDSetting, 64, "%T", "HudTopLeft", client);
-			case HUD_SYNC: FormatEx(sHUDSetting, 64, "%T", "HudSync", client);
+			// case HUD_UNUSED:
 			case HUD_TIMELEFT: FormatEx(sHUDSetting, 64, "%T", "HudTimeLeft", client);
 			case HUD_2DVEL: FormatEx(sHUDSetting, 64, "%T", "Hud2dVel", client);
 			case HUD_NOSOUNDS: FormatEx(sHUDSetting, 64, "%T", "HudNoRecordSounds", client);
@@ -673,10 +673,6 @@ Action ShowHUDMenu(int client, int item)
 
 	if(IsSource2013(gEV_Type))
 	{
-		FormatEx(sInfo, 16, "!%d", HUD_SYNC);
-		FormatEx(sHudItem, 64, "%T", "HudSync", client);
-		menu.AddItem(sInfo, sHudItem);
-
 		FormatEx(sInfo, 16, "!%d", HUD_TIMELEFT);
 		FormatEx(sHudItem, 64, "%T", "HudTimeLeft", client);
 		menu.AddItem(sInfo, sHudItem);
@@ -1289,8 +1285,14 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 		{
 			FormatEx(sLine, 128, "%T ", "HudInEndZone", client, data.iSpeed);
 		}
-
 		AddHUDLine(buffer, maxlen, sLine, iLines);
+
+		if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
+		{
+			FormatEx(sLine, 128, "Spd: %d", data.iSpeed);
+			AddHUDLine(buffer, maxlen, sLine, iLines);
+		}
+
 		return iLines;
 	}
 
@@ -1323,12 +1325,10 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 
 			if((gI_HUD2Settings[client] & HUD2_RANK) == 0)
 			{
-				// FormatEx(sLine, 128, "%T: %s%s (#%d)", "HudTimeText", client, sTime, sTimeDiff, data.iRank);
 				FormatEx(sLine, 128, "T: %s%s (#%d)", sTime, sTimeDiff, data.iRank);
 			}
 			else
 			{
-				// FormatEx(sLine, 128, "%T: %s%s", "HudTimeText", client, sTime, sTimeDiff);
 				FormatEx(sLine, 128, "T: %s%s", sTime, sTimeDiff);
 			}
 
@@ -1337,7 +1337,6 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 
 		if((gI_HUD2Settings[client] & HUD2_JUMPS) == 0)
 		{
-			// FormatEx(sLine, 128, "%T: %d", "HudJumpsText", client, data.iJumps);
 			FormatEx(sLine, 128, "J: %d", data.iJumps);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 		}
@@ -1346,15 +1345,13 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 		{
 			if((gI_HUD2Settings[client] & HUD2_SYNC) == 0)
 			{
-				// FormatEx(sLine, 128, "%T: %d (%.1f％)", "HudStrafeText", client, data.iStrafes, data.fSync);
+				// TODO: when disabling strafe center hud, show sync on sidebar
 				FormatEx(sLine, 128, "Strf: %d (%.1f％)", data.iStrafes, data.fSync);
 			}
 			else
 			{
-				// FormatEx(sLine, 128, "%T: %d", "HudStrafeText", client, data.iStrafes);
 				FormatEx(sLine, 128, "Strf: %d", data.iStrafes);
 			}
-			// FormatEx(sLine, 128, "%T: %d", "HudStrafeText", client, data.iStrafes);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 		}
 	}
@@ -2197,7 +2194,7 @@ void UpdateTopLeftHUD(int client, bool wait)
 
 void UpdateKeyHint(int client)
 {
-	if ((gI_Cycle % 10) == 0 && ((gI_HUDSettings[client] & HUD_SYNC) > 0 || (gI_HUDSettings[client] & HUD_TIMELEFT) > 0 || !(gI_HUD2Settings[client] & HUD2_PERFS)))
+	if ((gI_HUDSettings[client] & HUD_TIMELEFT) > 0 || !(gI_HUD2Settings[client] & HUD2_PERFS))
 	{
 		char sMessage[256];
 		int iTimeLeft = -1;
@@ -2228,12 +2225,6 @@ void UpdateKeyHint(int client)
 			if (!bReplay && Shavit_GetTimerStatus(target) != Timer_Stopped)
 			{
 				bool perf_double_newline = true;
-
-				if ((gI_HUDSettings[client] & HUD_SYNC) > 0 && Shavit_GetStyleSettingBool(style, "sync"))
-				{
-					perf_double_newline = false;
-					Format(sMessage, 256, "%s%s%T: %.01f", sMessage, (strlen(sMessage) > 0)? "\n\n":"", "HudSync", client, Shavit_GetSync(target));
-				}
 
 				if (!Shavit_GetStyleSettingBool(style, "autobhop") && (gI_HUD2Settings[client] & HUD2_PERFS) == 0)
 				{
