@@ -83,12 +83,12 @@
 	"MiscCheckpointsSaved"
 	{
 		"#format"	"{1:d},{2:s},{3:s}"
-		"en"		"Checkpoint ({1}) {2}saved{3}."
+		"en"		"Checkpoint #{1} {2}saved{3}."
 	}
 	"MiscCheckpointsTeleported"
 	{
 		"#format"	"{1:d},{2:s},{3:s}"
-		"en"		"{2}Teleported{3} to checkpoint ({1})."
+		"en"		"{2}Teleported{3} to checkpoint #{1}."
 	}
 	"MiscCheckpointsEmpty"
 	{
@@ -107,27 +107,27 @@
 	// ---------- Menus ---------- //
 	"StopTimerWarning"
 	{
-		"en"		"Are you sure you want to stop your timer?"
+		"en"		"Stop timer?"
 	}
 	"StopTimerYes"
 	{
-		"en"		"Yes, stop my timer."
+		"en"		"Yes"
 	}
 	"StopTimerNo"
 	{
-		"en"		"No, keep my timer running."
+		"en"		"No"
 	}
 	"ClearCPWarning"
 	{
-		"en"		"Are you sure you want to clear your checkpoints?"
+		"en"		"Clear all checkpoints?"
 	}
 	"ClearCPYes"
 	{
-		"en"		"Yes, and I know this action cannot be reversed."
+		"en"		"Yes"
 	}
 	"ClearCPNo"
 	{
-		"en"		"No."
+		"en"		"No"
 	}
 	"TeleportMenuTitle"
 	{
@@ -144,21 +144,21 @@
 	}
 	"MiscCheckpointMenuSegmented"
 	{
-		"en"		"Segmented Checkpoints"
+		"en"		"Segmented CPs"
 	}
 	"MiscCheckpointWarning"
 	{
-		"en"		"WARNING: Teleporting will stop your timer!"
+		"en"		"*TIMER STOP WARNING!!*"
 	}
 	"MiscCheckpointSave"
 	{
 		"#format"	"{1:d}"
-		"en"		"Save checkpoint ({1})"
+		"en"		"Checkpoint #{1}"
 	}
 	"MiscCheckpointTeleport"
 	{
 		"#format"	"{1:d}"
-		"en"		"Teleport to checkpoint ({1})"
+		"en"		"Gocheck #{1}"
 	}
 	"MiscCheckpointPrevious"
 	{
@@ -170,11 +170,11 @@
 	}
 	"MiscCheckpointReset"
 	{
-		"en"		"Reset checkpoints"
+		"en"		"Reset"
 	}
 	"MiscCheckpointDeleteCurrent"
 	{
-		"en"		"Delete current checkpoint"
+		"en"		"Delete"
 	}
 	"MiscCheckpointPause"
 	{
@@ -182,11 +182,11 @@
 	}
 	"MiscCheckpointUseAngles"
 	{
-		"en"		"Use angles"
+		"en"		"Angles"
 	}
 	"MiscCheckpointUseVelocity"
 	{
-		"en"		"Use velocity"
+		"en"		"Velocity"
 	}
 	"TasSettings"
 	{
@@ -264,8 +264,8 @@
 	}
 	"WRNotice"
 	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"{1}NEW {2} WR!!!"
+		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s},{6:s}"
+		"en"		"{1}!!! {2}NEW {3} {4} WR {5}(๑•̀ㅂ•́)و✧ {6}!!!"
 	}
 	"AdvertisementsEnabled"
 	{
@@ -274,5 +274,20 @@
 	"AdvertisementsDisabled"
 	{
 		"en"		"Advertisements disabled"
+	}
+	"NoclipTriggerToggle"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s}"
+		"en"		"Noclip trigger is {1}{2}{3}. ({4}!nctrigger{5} to toggle)"
+	}
+	"NoclipResumeTimer"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"Resume timer using {1}!pause{2}."
+	}
+	"FailedToNoclip"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"You {1}can't{2} noclip when moving, crouching or in the air."
 	}
 }

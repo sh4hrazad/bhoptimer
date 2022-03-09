@@ -14,7 +14,7 @@
 	"HudInStartZone"
 	{
 		"#format"	"{1:d}"
-		"en"		"In Start Zone\n\n{1}"
+		"en"		"In Start Zone\nSpd: {1}"
 	}
 	"HudInStartZoneCSGO"
 	{
@@ -28,7 +28,7 @@
 	"HudInEndZone"
 	{
 		"#format"	"{1:d}"
-		"en"		"In End Zone\n\n{1}"
+		"en"		"In End Zone\nSpd: {1}"
 	}
 	"HudInEndZoneCSGO"
 	{
@@ -37,7 +37,7 @@
 	}
 	"HudPaused"
 	{
-		"en"		"[PAUSED]"
+		"en"		"[Paused]"
 	}
 	"HudTimeText"
 	{
@@ -45,7 +45,7 @@
 	}
 	"HudBestText"
 	{
-		"en"		"Best"
+		"en"		"PB"
 	}
 	"HudJumpsText"
 	{
@@ -65,7 +65,7 @@
 	}
 	"HudTimeLeft"
 	{
-		"en"		"Time left"
+		"en"		"Timeleft"
 	}
 	"HudSync"
 	{
@@ -73,23 +73,23 @@
 	}
 	"HudPerfs"
 	{
-		"en"		"Perfect jumps"
+		"en"		"Perf"
 	}
 	"HudDefaultPistol"
 	{
-		"en"		"Default Pistol: 1=USP 2=Glock"
+		"en"		"Pistol: 1=USP 2=Glock"
 	}
 	"HudUSPSilencer"
 	{
-		"en"		"Spawn USPs with a silencer attached"
+		"en"		"Silenced USPs"
 	}
 	"HudGlockBurst"
 	{
-		"en"		"Spawn Glocks with Burst"
+		"en"		"Burst fire Glocks"
 	}
 	"HudPracticeMode"
 	{
-		"en"		"[PRACTICE]"
+		"en"		"[Practice]"
 	}
 	"HudNoSpeedLimit"
 	{

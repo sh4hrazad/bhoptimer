@@ -46,8 +46,6 @@
 #include <shavit/physicsuntouch>
 #include <shavit/weapon-stocks>
 
-#include <multicolors>
-
 #pragma newdecls required
 #pragma semicolon 1
 
@@ -1994,7 +1992,9 @@ public Action Command_Noclip(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if (gCV_PauseMovement.BoolValue && Shavit_GetStyleSettingInt(Shavit_GetBhopStyle(client), "segments") == 0) // when shavit_core_pause_movement "1", pause timer
+	if (gCV_PauseMovement.BoolValue
+		 && Shavit_GetStyleSettingInt(Shavit_GetBhopStyle(client), "segments") == 0
+		 && !Shavit_IsPracticeMode(client)) // when shavit_core_pause_movement "1", pause timer
 	{
 		if(Shavit_CanPause(client) == 0
 			 || Shavit_GetTimerStatus(client) != Timer_Running
@@ -2005,7 +2005,7 @@ public Action Command_Noclip(int client, int args)
 		}
 		else
 		{
-			Shavit_PrintToChat(client, "You %scan't%s noclip when moving, crouching or in the air.", gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+			Shavit_PrintToChat(client, "%t", "FailedToNoclip", gS_ChatStrings.sWarning, gS_ChatStrings.sText);
 
 			return Plugin_Handled;
 		}
@@ -2017,6 +2017,7 @@ public Action Command_Noclip(int client, int args)
 			if(!ShouldDisplayStopWarning(client))
 			{
 				Shavit_StopTimer(client);
+				Shavit_PrintToChat(client, "%t", "NoclipTriggerToggle", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"enabled":"disabled", gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
 				SetEntityMoveType(client, MOVETYPE_NOCLIP);
 			}
 			else
@@ -2047,7 +2048,10 @@ public Action CommandListener_Noclip(int client, const char[] command, int args)
 
 	gI_LastNoclipTick[client] = GetGameTickCount();
 	
-	if (gCV_PauseMovement.BoolValue && Shavit_GetStyleSettingInt(Shavit_GetBhopStyle(client), "segments") == 0) // when shavit_core_pause_movement "1", pause timer
+	if (gCV_PauseMovement.BoolValue
+		 && Shavit_GetStyleSettingInt(Shavit_GetBhopStyle(client), "segments") == 0
+		 && !Shavit_IsPracticeMode(client)
+		 && (gCV_NoclipMe.IntValue == 1 || (gCV_NoclipMe.IntValue == 2 && CheckCommandAccess(client, "noclipme", ADMFLAG_CHEATS)))) // when shavit_core_pause_movement "1", pause timer
 	{
 		if(Shavit_CanPause(client) == 0 || Shavit_GetTimerStatus(client) != Timer_Running)
 		{
@@ -2061,6 +2065,7 @@ public Action CommandListener_Noclip(int client, const char[] command, int args)
 			if(!ShouldDisplayStopWarning(client))
 			{
 				Shavit_StopTimer(client);
+				Shavit_PrintToChat(client, "%t", "NoclipTriggerToggle", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"enabled":"disabled", gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
 				SetEntityMoveType(client, MOVETYPE_NOCLIP);
 			}
 			else
@@ -2081,20 +2086,21 @@ void UpdateByNoclipStatus(int client, bool walking)
 {
 	if(walking)
 	{
-		if(Shavit_GetTimerStatus(client) != Timer_Paused && Shavit_GetTimerStatus(client) != Timer_Stopped && !Shavit_IsPracticeMode(client) && !Shavit_InsideZone(client, Zone_Start, -1))
+		if(Shavit_GetTimerStatus(client) == Timer_Running
+			 && !Shavit_InsideZone(client, Zone_Start, -1))
 		{
 			Shavit_PauseTimer(client);
 			Shavit_PrintToChat(client, "%t", "MessagePause", gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
 		}
 
-		Shavit_PrintToChat(client, "Noclip trigger is %s%s%s. (%s!nctrigger%s to toggle)", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"enabled":"disabled", gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
+		Shavit_PrintToChat(client, "%t", "NoclipTriggerToggle", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"enabled":"disabled", gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
 		SetEntityMoveType(client, MOVETYPE_NOCLIP);
 	}
 	else
 	{
 		if(Shavit_GetTimerStatus(client) == Timer_Paused)
 		{
-			Shavit_PrintToChat(client, "Resume timer using %s%s%s.", gS_ChatStrings.sVariable, Shavit_GetClientTime(client) != 0.0 ? "!pause" : "!r", gS_ChatStrings.sText);
+			Shavit_PrintToChat(client, "%t", "NoclipResumeTimer", gS_ChatStrings.sVariable, gS_ChatStrings.sText);
 		}
 
 		SetEntityMoveType(client, MOVETYPE_WALK);
@@ -2104,7 +2110,7 @@ void UpdateByNoclipStatus(int client, bool walking)
 public Action Command_NoclipIgnoreTrigger(int client, int args)
 {
 	gB_CanTouchTrigger[client] = !gB_CanTouchTrigger[client];
-	Shavit_PrintToChat(client, "Noclip trigger is %s%s%s. (%s!nctrigger%s to toggle)", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"enabled":"disabled", gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
+	Shavit_PrintToChat(client, "%t", "NoclipTriggerToggle", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"enabled":"disabled", gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
 
 	return Plugin_Handled;
 }
@@ -2300,13 +2306,11 @@ public void Shavit_OnWorldRecord(int client, int style, float time, int jumps, i
 	{
 		if(track == Track_Main)
 		{
-			// Shavit_PrintToChatAll("%t", "WRNotice", gS_ChatStrings.sWarning, sUpperCase);
-			CPrintToChatAll("{red}!!! {lightblue}Nice Job NEW Main %s Server Record {fl4n}(๑•̀ㅂ•́)و✧ {red}!!!", sUpperCase);
+			Shavit_PrintToChatAll("%t", "WRNotice", gS_ChatStrings.sWarning, gS_ChatStrings.sText, "Main", sUpperCase, gS_ChatStrings.sVariable, gS_ChatStrings.sWarning);
 		}
 		else
 		{
-			// Shavit_PrintToChatAll("%s[%s]%s %t", gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "WRNotice", gS_ChatStrings.sWarning, sUpperCase);
-			CPrintToChatAll("{red}!!! {lightblue}Nice Job NEW %s %s Server Record {fl4n}(๑•̀ㅂ•́)و✧ {red}!!!", sTrack, sUpperCase);
+			Shavit_PrintToChatAll("%t", "WRNotice", gS_ChatStrings.sWarning, gS_ChatStrings.sText, sTrack, sUpperCase, gS_ChatStrings.sVariable, gS_ChatStrings.sWarning);
 		}
 	}
 }
