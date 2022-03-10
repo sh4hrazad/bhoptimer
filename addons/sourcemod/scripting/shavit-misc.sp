@@ -205,6 +205,8 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_knife", Command_Weapon, "Spawn a knife.");
 
 	// noclip
+	RegConsoleCmd("sm_nctrigger", Command_NoclipIgnoreTrigger, "Toggle noclip triggers.");
+	RegConsoleCmd("sm_nctriggers", Command_NoclipIgnoreTrigger, "Toggle noclip triggers.");
 	RegConsoleCmd("sm_prac", Command_Noclip, "Toggles noclip. (sm_nc alias)");
 	RegConsoleCmd("sm_practice", Command_Noclip, "Toggles noclip. (sm_nc alias)");
 	RegConsoleCmd("sm_nc", Command_Noclip, "Toggles noclip.");

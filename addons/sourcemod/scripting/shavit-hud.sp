@@ -2194,6 +2194,7 @@ void UpdateTopLeftHUD(int client, bool wait)
 
 void UpdateKeyHint(int client)
 {
+	// todo: refer to line 1348
 	if ((gI_HUDSettings[client] & HUD_TIMELEFT) > 0 || !(gI_HUD2Settings[client] & HUD2_PERFS))
 	{
 		char sMessage[256];
