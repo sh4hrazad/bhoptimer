@@ -1345,7 +1345,6 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 		{
 			if((gI_HUD2Settings[client] & HUD2_SYNC) == 0)
 			{
-				// TODO: when disabling strafe center hud, show sync on sidebar
 				FormatEx(sLine, 128, "Strf: %d (%.1f％)", data.iStrafes, data.fSync);
 			}
 			else
@@ -1353,6 +1352,14 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 				FormatEx(sLine, 128, "Strf: %d", data.iStrafes);
 			}
 			AddHUDLine(buffer, maxlen, sLine, iLines);
+		}
+		else
+		{
+			if((gI_HUD2Settings[client] & HUD2_SYNC ==0))
+			{
+				FormatEx(sLine, 128, "Snc: %.1f", data.fSync);
+				AddHUDLine(buffer, maxlen, sLine, iLines);
+			}
 		}
 	}
 
@@ -2194,7 +2201,6 @@ void UpdateTopLeftHUD(int client, bool wait)
 
 void UpdateKeyHint(int client)
 {
-	// todo: refer to line 1348
 	if ((gI_HUDSettings[client] & HUD_TIMELEFT) > 0 || !(gI_HUD2Settings[client] & HUD2_PERFS))
 	{
 		char sMessage[256];
