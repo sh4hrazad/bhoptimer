@@ -404,7 +404,9 @@ public Action Timer_PersistKZCPMenu(Handle timer)
 			OpenKZCPMenu(i);
 		}
 		// reopen repeatedly in case someone has bad internet and the menu disappears
-		else if (gB_InCheckpointMenu[i])
+		// fixed "feature disabled" pops out repeatedly when shavit_checkpoints_checkpoints is 0
+		// fys got fucked here XD
+		else if (gB_InCheckpointMenu[i] && gCV_Checkpoints.BoolValue)
 		{
 			OpenNormalCPMenu(i);
 		}
