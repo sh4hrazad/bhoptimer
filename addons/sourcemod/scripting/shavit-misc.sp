@@ -2055,7 +2055,9 @@ public Action CommandListener_Noclip(int client, const char[] command, int args)
 		 && !Shavit_IsPracticeMode(client)
 		 && (gCV_NoclipMe.IntValue == 1 || (gCV_NoclipMe.IntValue == 2 && CheckCommandAccess(client, "noclipme", ADMFLAG_CHEATS)))) // when shavit_core_pause_movement "1", pause timer
 	{
-		if(Shavit_CanPause(client) == 0 || Shavit_GetTimerStatus(client) != Timer_Running)
+		if(Shavit_CanPause(client) == 0
+		 || Shavit_GetTimerStatus(client) != Timer_Running
+		 || Shavit_InsideZone(client, Zone_Start, -1))
 		{
 			UpdateByNoclipStatus(client, command[0] == '+');
 		}
@@ -2140,6 +2142,7 @@ public Action CommandListener_Real_Noclip(int client, const char[] command, int 
 		if (ShouldDisplayStopWarning(client))
 		{
 			OpenStopWarningMenu(client, DoNoclip);
+			Shavit_PrintToChat(client, "%t", "NoclipTriggerToggle", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"enabled":"disabled", gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
 			return Plugin_Stop;
 		}
 
