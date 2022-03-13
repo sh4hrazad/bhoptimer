@@ -2056,8 +2056,8 @@ public Action CommandListener_Noclip(int client, const char[] command, int args)
 		 && (gCV_NoclipMe.IntValue == 1 || (gCV_NoclipMe.IntValue == 2 && CheckCommandAccess(client, "noclipme", ADMFLAG_CHEATS)))) // when shavit_core_pause_movement "1", pause timer
 	{
 		if(Shavit_CanPause(client) == 0
-		 || Shavit_GetTimerStatus(client) != Timer_Running
-		 || Shavit_InsideZone(client, Zone_Start, -1))
+			 || Shavit_GetTimerStatus(client) != Timer_Running
+			 || Shavit_InsideZone(client, Zone_Start, -1))
 		{
 			UpdateByNoclipStatus(client, command[0] == '+');
 		}

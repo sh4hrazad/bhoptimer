@@ -4223,7 +4223,7 @@ public void StartTouchPost(int entity, int other)
 
 		case Zone_Stop:
 		{
-			if(status != Timer_Stopped)
+			if(status == Timer_Running && !Shavit_InsideZone(other, Zone_Start, -1))
 			{
 				Shavit_StopTimer(other);
 				Shavit_PrintToChat(other, "%T", "ZoneStopEnter", other, gS_ChatStrings.sWarning, gS_ChatStrings.sVariable2, gS_ChatStrings.sWarning);
@@ -4359,7 +4359,7 @@ public void TouchPost(int entity, int other)
 
 		case Zone_Stop:
 		{
-			if(Shavit_GetTimerStatus(other) != Timer_Stopped)
+			if(Shavit_GetTimerStatus(other) == Timer_Running && !Shavit_InsideZone(other, Zone_Start, -1))
 			{
 				Shavit_StopTimer(other);
 				Shavit_PrintToChat(other, "%T", "ZoneStopEnter", other, gS_ChatStrings.sWarning, gS_ChatStrings.sVariable2, gS_ChatStrings.sWarning);
