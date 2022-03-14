@@ -1346,7 +1346,7 @@ public int MenuHandler_Checkpoints(Menu menu, MenuAction action, int param1, int
 void UseOthersCheckpoints(int client)
 {
 	Menu menu = new Menu(OthersCheckpointMenu_handler);
-	menu.SetTitle("Select a player:")
+	menu.SetTitle("Select a player:");
 	for(int i = 1; i < MaxClients + 1; i++)
 	{
 		if(IsValidClient(i) && !IsFakeClient(i) && i != client)
