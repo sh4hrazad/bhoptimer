@@ -1461,6 +1461,9 @@ public int MenuHandler_OthersCheckpoints(Menu menu, MenuAction action, int param
 		{
 			gI_OthersCurrentCheckpoint[param1]++;
 		}
+
+		// bug !!! 目标玩家退出去按菜单会报错，得改
+
 		if(StrEqual(sInfo, "refresh"))
 		{
 			// do nothing
