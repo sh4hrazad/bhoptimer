@@ -1412,6 +1412,8 @@ void OpenOthersCPMenu(int other, int client)
 
 	char sDisplay[64];
 
+	menu.AddItem("refresh", "Refresh");
+
 	if(gA_Checkpoints[other].Length > 0)
 	{
 		FormatEx(sDisplay, 64, "%T", "MiscCheckpointTeleport", client, gI_OthersCurrentCheckpoint[client]);
@@ -1455,7 +1457,15 @@ public int MenuHandler_OthersCheckpoints(Menu menu, MenuAction action, int param
 
 		int other = gI_OthersClientIndex[param1];
 
-		if(StrEqual(sInfo, "tele"))
+		if(gI_OthersCurrentCheckpoint[param1] == 0)
+		{
+			gI_OthersCurrentCheckpoint[param1]++;
+		}
+		if(StrEqual(sInfo, "refresh"))
+		{
+			// do nothing
+		}
+		else if(StrEqual(sInfo, "tele"))
 		{
 			TeleportToOthersCheckpoint(param1, other, gI_OthersCurrentCheckpoint[param1], true);
 		}
@@ -1471,9 +1481,35 @@ public int MenuHandler_OthersCheckpoints(Menu menu, MenuAction action, int param
 		{
 			UseOthersCheckpoints(param1);
 			gB_InCheckpointMenu[param1] = false;
+
+			return 0;
+		}
+		else if(!StrEqual(sInfo, "spacer"))
+		{
+			char sCookie[8];
+			gI_CheckpointsSettings[param1] ^= StringToInt(sInfo);
+			IntToString(gI_CheckpointsSettings[param1], sCookie, 16);
+
+			SetClientCookie(param1, gH_CheckpointsCookie, sCookie);
 		}
 
 		OpenOthersCPMenu(other, param1);
+	}
+	else if(action == MenuAction_DisplayItem)
+	{
+		char sInfo[16];
+		char sDisplay[64];
+		int style = 0;
+		menu.GetItem(param2, sInfo, 16, style, sDisplay, 64);
+
+		if(StringToInt(sInfo) == 0)
+		{
+			return 0;
+		}
+
+		Format(sDisplay, 64, "[%s] %s", ((gI_CheckpointsSettings[param1] & StringToInt(sInfo)) > 0)? "x":" ", sDisplay);
+
+		return RedrawMenuItem(sDisplay);
 	}
 	else if(action == MenuAction_End)
 	{
