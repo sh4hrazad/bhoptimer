@@ -1,3 +1,4 @@
+![](https://img.shields.io/badge/has%20fl4n-yes-ff6a6a)
 # !!! modified timer for my server !!!
 [![Discord server](https://discordapp.com/api/guilds/389675819959844865/widget.png?style=shield)](https://discord.gg/jyA9q5k)
 
