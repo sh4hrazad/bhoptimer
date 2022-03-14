@@ -414,10 +414,10 @@ public Action Timer_PersistKZCPMenu(Handle timer)
 		}
 		// reopen repeatedly in case someone has bad internet and the menu disappears
 		// fys got fucked here XD
-		//else if (gB_InCheckpointMenu[i] && gCV_Checkpoints.BoolValue)
-		//{
-		//	OpenNormalCPMenu(i);
-		//}
+		else if (gB_InCheckpointMenu[i] && gCV_Checkpoints.BoolValue)
+		{
+			OpenNormalCPMenu(i);
+		}
 	}
 
 	return Plugin_Continue;
@@ -1176,10 +1176,11 @@ void OpenNormalCPMenu(int client)
 	FormatEx(sDisplay, 64, "%T", "MiscCheckpointReset", client);
 	menu.AddItem("reset", sDisplay);
 
-	menu.AddItem("useothers", "Use others' CPs");
 
 	if(!bSegmented)
 	{
+		menu.AddItem("useothers", "Use others' CPs");
+
 		char sInfo[16];
 		IntToString(CP_ANGLES, sInfo, 16);
 		FormatEx(sDisplay, 64, "%T", "MiscCheckpointUseAngles", client);
@@ -1282,6 +1283,7 @@ public int MenuHandler_Checkpoints(Menu menu, MenuAction action, int param1, int
 		else if(StrEqual(sInfo, "useothers"))
 		{
 			UseOthersCheckpoints(param1);
+			gB_InCheckpointMenu[param1] = false;
 
 			return 0;
 		}
@@ -1427,6 +1429,17 @@ void OpenOthersCPMenu(int other, int client)
 	FormatEx(sDisplay, 64, "%T\n ", "MiscCheckpointNext", client);
 	menu.AddItem("next", sDisplay, (gI_OthersCurrentCheckpoint[client] < gA_Checkpoints[other].Length)? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
 
+	menu.AddItem("useothers", "Use others' CPs");
+
+	char sInfo[16];
+	IntToString(CP_ANGLES, sInfo, 16);
+	FormatEx(sDisplay, 64, "%T", "MiscCheckpointUseAngles", client);
+	menu.AddItem(sInfo, sDisplay);
+
+	IntToString(CP_VELOCITY, sInfo, 16);
+	FormatEx(sDisplay, 64, "%T", "MiscCheckpointUseVelocity", client);
+	menu.AddItem(sInfo, sDisplay);
+
 	menu.Pagination = MENU_NO_PAGINATION;
 	menu.ExitButton = true;
 
@@ -1453,6 +1466,11 @@ public int MenuHandler_OthersCheckpoints(Menu menu, MenuAction action, int param
 		else if(StrEqual(sInfo, "next"))
 		{
 			gI_OthersCurrentCheckpoint[param1]++;
+		}
+		else if(StrEqual(sInfo, "useothers"))
+		{
+			UseOthersCheckpoints(param1);
+			gB_InCheckpointMenu[param1] = false;
 		}
 
 		OpenOthersCPMenu(other, param1);

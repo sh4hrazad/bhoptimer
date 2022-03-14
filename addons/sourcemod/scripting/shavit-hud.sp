@@ -190,7 +190,7 @@ public void OnPluginStart()
 		..."HUD_NOPRACALERT			4096\n"
 		..."HUD_USP                  8192\n"
 		..."HUD_GLOCK                16384\n"
-	); // *HUD_UNUSED: HUD_SYNC 删了留空, 和HUD2_SYNC重复了. 
+	); // *HUD_UNUSED: HUD_SYNC was deleted bcuz it's a duplication of HUD2_SYNC.
 
 	IntToString(HUD_DEFAULT2, defaultHUD, 8);
 	gCV_DefaultHUD2 = new Convar("shavit_hud2_default", defaultHUD, "Default HUD2 settings as a bitflag of what to remove\n"
