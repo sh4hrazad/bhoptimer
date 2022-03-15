@@ -45,6 +45,7 @@
 #include <shavit/core>
 #include <shavit/rankings>
 #include <shavit/wr>
+#include <shavit/zones>
 
 #undef REQUIRE_PLUGIN
 
@@ -149,8 +150,8 @@ public void OnPluginStart()
 	gH_Forwards_OnTierAssigned = CreateGlobalForward("Shavit_OnTierAssigned", ET_Event, Param_String, Param_Cell);
 	gH_Forwards_OnRankAssigned = CreateGlobalForward("Shavit_OnRankAssigned", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
 
-	RegConsoleCmd("sm_tier", Command_Tier, "Prints the map's tier to chat.");
-	RegConsoleCmd("sm_maptier", Command_Tier, "Prints the map's tier to chat. (sm_tier alias)");
+	RegConsoleCmd("sm_mi", Command_MapInfo, "Prints the map's info to chat.");
+	RegConsoleCmd("sm_mapinfo", Command_MapInfo, "Prints the map's info to chat. (sm_mi alias)");
 
 	RegConsoleCmd("sm_rank", Command_Rank, "Show your or someone else's rank. Usage: sm_rank [name]");
 	RegConsoleCmd("sm_top", Command_Top, "Show the top 100 players.");
@@ -562,9 +563,11 @@ public void SQL_GetWRs_Callback(Database db, DBResultSet results, const char[] e
 	}
 }
 
-public Action Command_Tier(int client, int args)
+public Action Command_MapInfo(int client, int args)
 {
 	int tier = gI_Tier;
+	int bonus = Shavit_ZoneExists(Zone_Start, 1);
+	int staged = Shavit_ZoneExists(Zone_Stage, 0);
 
 	char sMap[PLATFORM_MAX_PATH];
 
@@ -584,7 +587,11 @@ public Action Command_Tier(int client, int args)
 		}
 	}
 
-	Shavit_PrintToChat(client, "%T", "CurrentTier", client, gS_ChatStrings.sVariable, sMap, gS_ChatStrings.sText, gS_ChatStrings.sVariable2, tier, gS_ChatStrings.sText);
+	Shavit_PrintToChat(client, "%s | Tier %s%i%s%s%s",
+		sMap, gS_ChatStrings.sVariable,
+		tier, gS_ChatStrings.sText,
+		bonus ? " | Bonus" : " | No Bonus",
+		staged ? " | Staged" : "");
 
 	return Plugin_Handled;
 }
