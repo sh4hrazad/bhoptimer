@@ -413,8 +413,7 @@ public Action Timer_PersistKZCPMenu(Handle timer)
 			OpenKZCPMenu(i);
 		}
 		// reopen repeatedly in case someone has bad internet and the menu disappears
-		// fys got fucked here XD
-		else if (gB_InCheckpointMenu[i] && gCV_Checkpoints.BoolValue)
+		else if (gB_InCheckpointMenu[i])
 		{
 			OpenNormalCPMenu(i);
 		}
