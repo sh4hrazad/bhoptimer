@@ -2031,8 +2031,7 @@ void UpdateByNoclipStatus(int client, bool walkingStatus)
         	 && !segments
 		     && !Shavit_IsPracticeMode(client)
              && Shavit_GetTimerStatus(client) == Timer_Running
-			 && !Shavit_InsideZone(client, Zone_Start, -1)
-			 && !Shavit_InsideZone(client, Zone_End, -1))
+			 && Shavit_GetClientTime(client) != 0.0)
         {
             if(Shavit_CanPause(client) == 0)
             {
