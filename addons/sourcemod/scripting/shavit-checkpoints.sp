@@ -99,11 +99,6 @@ bool gB_ReplayRecorder = false;
 DynamicHook gH_CommitSuicide = null;
 float gF_NextSuicide[MAXPLAYERS+1];
 
-// other clients' checkpoint
-int gI_OthersClientIndex[MAXPLAYERS+1];
-int gI_OthersCurrentCheckpoint[MAXPLAYERS+1];
-bool gB_UsingOthersCheckpoint[MAXPLAYERS+1];
-
 public Plugin myinfo =
 {
 	name = "[shavit] Checkpoints",
@@ -549,7 +544,6 @@ public Action Shavit_OnStart(int client)
 
 public void Shavit_OnRestart(int client, int track)
 {
-	gB_UsingOthersCheckpoint[client] = false;
 	if(!gB_ClosedKZCP[client] &&
 		Shavit_GetStyleSettingInt(gI_Style[client], "kzcheckpoints") &&
 		GetClientMenu(client, null) == MenuSource_None &&
@@ -872,7 +866,6 @@ public Action Command_Tele(int client, int args)
 	}
 
 	int index = gI_CurrentCheckpoint[client];
-	bool usingOthers = gB_UsingOthersCheckpoint[client];
 
 	if(args > 0)
 	{
@@ -883,25 +876,11 @@ public Action Command_Tele(int client, int args)
 
 		if(0 < parsed <= gCV_MaxCP.IntValue)
 		{
-			if(usingOthers)
-			{
-				gI_OthersCurrentCheckpoint[client] = parsed;
-			}
-			else
-			{
-				index = parsed;
-			}
+			index = parsed;
 		}
 	}
 
-	if(usingOthers)
-	{
-		TeleportToOthersCheckpoint(client, gI_OthersClientIndex[client], gI_OthersCurrentCheckpoint[client], true);
-	}
-	else
-	{
-		TeleportToCheckpoint(client, index, true);
-	}
+	TeleportToCheckpoint(client, index, true);
 
 	return Plugin_Handled;
 }
@@ -1116,7 +1095,6 @@ public int MenuHandler_KZCheckpoints(Menu menu, MenuAction action, int param1, i
 
 void OpenNormalCPMenu(int client)
 {
-	gB_UsingOthersCheckpoint[client] = false;
 	bool bSegmented = CanSegment(client);
 
 	if(!gCV_Checkpoints.BoolValue && !bSegmented)
@@ -1180,11 +1158,8 @@ void OpenNormalCPMenu(int client)
 	FormatEx(sDisplay, 64, "%T", "MiscCheckpointReset", client);
 	menu.AddItem("reset", sDisplay);
 
-
 	if(!bSegmented)
 	{
-		menu.AddItem("useothers", "Use others' CPs");
-
 		char sInfo[16];
 		IntToString(CP_ANGLES, sInfo, 16);
 		FormatEx(sDisplay, 64, "%T", "MiscCheckpointUseAngles", client);
@@ -1284,13 +1259,6 @@ public int MenuHandler_Checkpoints(Menu menu, MenuAction action, int param1, int
 
 			return 0;
 		}
-		else if(StrEqual(sInfo, "useothers"))
-		{
-			UseOthersCheckpoints(param1);
-			gB_InCheckpointMenu[param1] = false;
-
-			return 0;
-		}
 		else if (StrEqual(sInfo, "tsplus"))
 		{
 			if (Shavit_GetStyleSettingFloat(Shavit_GetBhopStyle(param1), "tas_timescale") == -1.0)
@@ -1346,247 +1314,6 @@ public int MenuHandler_Checkpoints(Menu menu, MenuAction action, int param1, int
 	}
 
 	return 0;
-}
-
-// feeling sorry to steal rose's code ><
-void UseOthersCheckpoints(int client)
-{
-	Menu menu = new Menu(OthersCheckpointMenu_handler);
-	menu.SetTitle("Select a player:");
-	for(int i = 1; i < MaxClients + 1; i++)
-	{
-		if(IsValidClient(i) && !IsFakeClient(i) && i != client)
-		{
-			char sName[MAX_NAME_LENGTH];
-			GetClientName(i, sName, sizeof(sName));
-
-			char sItem[4];
-			IntToString(i, sItem, 4);
-			menu.AddItem(sItem, sName);
-		}
-	}
-
-	menu.Display(client, -1);
-}
-
-public int OthersCheckpointMenu_handler(Menu menu, MenuAction action, int param1, int param2)
-{
-	if(action == MenuAction_Select)
-	{
-		char sInfo[4];
-		menu.GetItem(param2, sInfo, sizeof(sInfo));
-
-		int other = StringToInt(sInfo);
-
-		gI_OthersClientIndex[param1] = other;
-		gI_OthersCurrentCheckpoint[param1] = gI_CurrentCheckpoint[other];
-
-		OpenOthersCPMenu(other, param1);
-	}
-	else if(action == MenuAction_End)
-	{
-		delete menu;
-	}
-
-	return 0;
-}
-
-void OpenOthersCPMenu(int other, int client)
-{
-	bool bSegmented = CanSegment(other);
-
-	if(!gCV_Checkpoints.BoolValue && !bSegmented)
-	{
-		Shavit_PrintToChat(client, "%T", "FeatureDisabled", client);
-
-		return;
-	}
-
-	Menu menu = new Menu(MenuHandler_OthersCheckpoints, MENU_ACTIONS_DEFAULT|MenuAction_DisplayItem);
-
-	if(!bSegmented)
-	{
-		menu.SetTitle("%T\n%T\n ", "MiscCheckpointMenu", client, "MiscCheckpointWarning", client);
-	}
-
-	else
-	{
-		menu.SetTitle("%T\n ", "MiscCheckpointMenuSegmented", client);
-	}
-
-	char sDisplay[64];
-
-	menu.AddItem("refresh", "Refresh");
-
-	if(gA_Checkpoints[other].Length > 0)
-	{
-		FormatEx(sDisplay, 64, "%T", "MiscCheckpointTeleport", client, gI_OthersCurrentCheckpoint[client]);
-		menu.AddItem("tele", sDisplay, ITEMDRAW_DEFAULT);
-	}
-	else
-	{
-		Format(sDisplay, 64, "This guy has no checkpoints.");
-		menu.AddItem("", sDisplay, ITEMDRAW_DISABLED);
-	}
-
-	FormatEx(sDisplay, 64, "%T", "MiscCheckpointPrevious", client);
-	menu.AddItem("prev", sDisplay, (gI_OthersCurrentCheckpoint[client] > 1)? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
-
-	FormatEx(sDisplay, 64, "%T\n ", "MiscCheckpointNext", client);
-	menu.AddItem("next", sDisplay, (gI_OthersCurrentCheckpoint[client] < gA_Checkpoints[other].Length)? ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
-
-	menu.AddItem("useothers", "Use others' CPs");
-
-	char sInfo[16];
-	IntToString(CP_ANGLES, sInfo, 16);
-	FormatEx(sDisplay, 64, "%T", "MiscCheckpointUseAngles", client);
-	menu.AddItem(sInfo, sDisplay);
-
-	IntToString(CP_VELOCITY, sInfo, 16);
-	FormatEx(sDisplay, 64, "%T", "MiscCheckpointUseVelocity", client);
-	menu.AddItem(sInfo, sDisplay);
-
-	menu.Pagination = MENU_NO_PAGINATION;
-	menu.ExitButton = true;
-
-	menu.Display(client, MENU_TIME_FOREVER);
-}
-
-public int MenuHandler_OthersCheckpoints(Menu menu, MenuAction action, int param1, int param2)
-{
-	if(action == MenuAction_Select)
-	{
-		char sInfo[16];
-		menu.GetItem(param2, sInfo, 16);
-
-		int other = gI_OthersClientIndex[param1];
-
-		if(gI_OthersCurrentCheckpoint[param1] == 0)
-		{
-			gI_OthersCurrentCheckpoint[param1]++;
-		}
-
-		// bug !!! 目标玩家退出去按菜单会报错，得改
-
-		if(StrEqual(sInfo, "refresh"))
-		{
-			// do nothing
-		}
-		else if(StrEqual(sInfo, "tele"))
-		{
-			TeleportToOthersCheckpoint(param1, other, gI_OthersCurrentCheckpoint[param1], true);
-		}
-		else if(StrEqual(sInfo, "prev"))
-		{
-			gI_OthersCurrentCheckpoint[param1]--;
-		}
-		else if(StrEqual(sInfo, "next"))
-		{
-			gI_OthersCurrentCheckpoint[param1]++;
-		}
-		else if(StrEqual(sInfo, "useothers"))
-		{
-			UseOthersCheckpoints(param1);
-			gB_InCheckpointMenu[param1] = false;
-
-			return 0;
-		}
-		else if(!StrEqual(sInfo, "spacer"))
-		{
-			char sCookie[8];
-			gI_CheckpointsSettings[param1] ^= StringToInt(sInfo);
-			IntToString(gI_CheckpointsSettings[param1], sCookie, 16);
-
-			SetClientCookie(param1, gH_CheckpointsCookie, sCookie);
-		}
-
-		OpenOthersCPMenu(other, param1);
-	}
-	else if(action == MenuAction_DisplayItem)
-	{
-		char sInfo[16];
-		char sDisplay[64];
-		int style = 0;
-		menu.GetItem(param2, sInfo, 16, style, sDisplay, 64);
-
-		if(StringToInt(sInfo) == 0)
-		{
-			return 0;
-		}
-
-		Format(sDisplay, 64, "[%s] %s", ((gI_CheckpointsSettings[param1] & StringToInt(sInfo)) > 0)? "x":" ", sDisplay);
-
-		return RedrawMenuItem(sDisplay);
-	}
-	else if(action == MenuAction_End)
-	{
-		delete menu;
-	}
-
-	return 0;
-}
-
-void TeleportToOthersCheckpoint(int client, int other, int index, bool suppressMessage)
-{
-	if(index < 1 || index > gCV_MaxCP.IntValue || (!gCV_Checkpoints.BoolValue && !CanSegment(other)))
-	{
-		return;
-	}
-
-	if(!IsValidClient(other)) /* the other may leaved the game */
-	{
-		gB_UsingOthersCheckpoint[client] = false;
-		TeleportToCheckpoint(client, gI_CurrentCheckpoint[client], true);
-		return;
-	}
-
-	gB_UsingOthersCheckpoint[client] = true;
-
-	if(index > gA_Checkpoints[other].Length)
-	{
-		Shavit_PrintToChat(client, "%T", "MiscCheckpointsEmpty", client, index, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
-		return;
-	}
-
-	cp_cache_t cpcache;
-	gA_Checkpoints[other].GetArray(index - 1, cpcache, sizeof(cp_cache_t));
-
-	if(IsNullVector(cpcache.fPosition))
-	{
-		return;
-	}
-
-	if(!IsPlayerAlive(client))
-	{
-		Shavit_PrintToChat(client, "%T", "CommandAlive", client);
-
-		return;
-	}
-
-	gI_TimesTeleported[client]++;
-
-	if(Shavit_InsideZone(client, Zone_Start, -1))
-	{
-		Shavit_StopTimer(client);
-	}
-
-	LoadCheckpointCache(client, cpcache, false);
-	Shavit_ResumeTimer(client);
-
-	if(!suppressMessage)
-	{
-		Shavit_PrintToChat(client, "%T", "MiscCheckpointsTeleported", client, index);
-	}
-}
-
-public Action Shavit_OnFinishPre(int client, timer_snapshot_t snapshot)
-{
-	if(gB_UsingOthersCheckpoint[client])
-	{
-		return Plugin_Handled;
-	}
-
-	return Plugin_Continue;
 }
 
 void ConfirmCheckpointsDeleteMenu(int client)
