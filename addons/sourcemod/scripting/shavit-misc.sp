@@ -143,9 +143,6 @@ bool gB_Chat = false;
 // timer settings
 stylestrings_t gS_StyleStrings[STYLE_LIMIT];
 
-// nctriggers
-bool gB_CanTouchTrigger[MAXPLAYERS+1];
-
 // chat settings
 chatstrings_t gS_ChatStrings;
 
@@ -204,8 +201,6 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_knife", Command_Weapon, "Spawn a knife.");
 
 	// noclip
-	RegConsoleCmd("sm_nctrigger", Command_NoclipIgnoreTrigger, "Toggle noclip triggers.");
-	RegConsoleCmd("sm_nctriggers", Command_NoclipIgnoreTrigger, "Toggle noclip triggers.");
 	RegConsoleCmd("sm_prac", Command_Noclip, "Toggles noclip. (sm_nc alias)");
 	RegConsoleCmd("sm_practice", Command_Noclip, "Toggles noclip. (sm_nc alias)");
 	RegConsoleCmd("sm_nc", Command_Noclip, "Toggles noclip.");
@@ -1360,8 +1355,6 @@ public void OnClientPutInServer(int client)
 		gI_Style[client] = Shavit_GetBhopStyle(client);
 		gB_Hide[client] = false;
 	}
-	
-	gB_CanTouchTrigger[client] = true;
 }
 
 public void OnClientDisconnect(int client)
@@ -1757,29 +1750,6 @@ bool Teleport(int client, int targetserial)
 	return true;
 }
 
-public void OnEntityCreated(int entity, const char[] classname)
-{
-	if(StrEqual(classname, "trigger_multiple") || StrEqual(classname, "trigger_once") || StrEqual(classname, "trigger_push") || StrEqual(classname, "trigger_teleport") || StrEqual(classname, "trigger_gravity"))
-	{
-		SDKHook(entity, SDKHook_StartTouch, HookTrigger);
-		SDKHook(entity, SDKHook_EndTouch, HookTrigger);
-		SDKHook(entity, SDKHook_Touch, HookTrigger);
-	}
-}
-
-public Action HookTrigger(int entity, int other)
-{
-    if(IsValidClient(other))
-    {
-		if(!gB_CanTouchTrigger[other] && GetEntityMoveType(other) & MOVETYPE_NOCLIP)
-		{
-			return Plugin_Handled;
-		}
-    }
-
-    return Plugin_Continue;
-}
-
 public Action Command_Weapon(int client, int args)
 {
 	if(!IsValidClient(client) || gEV_Type == Engine_TF2)
@@ -2034,7 +2004,6 @@ void UpdateByNoclipStatus(int client, bool walkingStatus)
             {
 				Shavit_PauseTimer(client);
 				Shavit_PrintToChat(client, "%t", "MessagePause", gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
-				Shavit_PrintToChat(client, "%t", "NoclipTriggerToggle", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"enabled":"disabled", gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
 				SetEntityMoveType(client, MOVETYPE_NOCLIP);
 			}
             else
@@ -2047,7 +2016,6 @@ void UpdateByNoclipStatus(int client, bool walkingStatus)
             if(!ShouldDisplayStopWarning(client) || segments)
 			{
 				Shavit_StopTimer(client);
-				Shavit_PrintToChat(client, "%t", "NoclipTriggerToggle", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"enabled":"disabled", gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
 				SetEntityMoveType(client, MOVETYPE_NOCLIP);
 			}
 			else
@@ -2065,14 +2033,6 @@ void UpdateByNoclipStatus(int client, bool walkingStatus)
 
 		SetEntityMoveType(client, MOVETYPE_WALK);
     }
-}
-
-public Action Command_NoclipIgnoreTrigger(int client, int args)
-{
-	gB_CanTouchTrigger[client] = !gB_CanTouchTrigger[client];
-	Shavit_PrintToChat(client, "%t", "NoclipTriggerToggle", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"enabled":"disabled", gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
-
-	return Plugin_Handled;
 }
 
 public Action CommandListener_funcommands_Noclip(int client, const char[] command, int args)
@@ -2098,7 +2058,6 @@ public Action CommandListener_Real_Noclip(int client, const char[] command, int 
 		if (ShouldDisplayStopWarning(client))
 		{
 			OpenStopWarningMenu(client, DoNoclip);
-			Shavit_PrintToChat(client, "%t", "NoclipTriggerToggle", gS_ChatStrings.sVariable, (gB_CanTouchTrigger[client])?"enabled":"disabled", gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
 			return Plugin_Stop;
 		}
 
