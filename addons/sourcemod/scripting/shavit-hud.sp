@@ -1298,11 +1298,6 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 
 	if(data.iTimerStatus != Timer_Stopped)
 	{
-		if((gI_HUD2Settings[client] & HUD2_STYLE) == 0)
-		{
-			AddHUDLine(buffer, maxlen, gS_StyleStrings[data.iStyle].sStyleName, iLines);
-		}
-
 		if(data.bPractice || data.iTimerStatus == Timer_Paused)
 		{
 			FormatEx(sLine, 128, "%T", (data.iTimerStatus == Timer_Paused)? "HudPaused":"HudPracticeMode", client);
@@ -1325,11 +1320,15 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 
 			if((gI_HUD2Settings[client] & HUD2_RANK) == 0)
 			{
-				FormatEx(sLine, 128, "T: %s%s (#%d)", sTime, sTimeDiff, data.iRank);
+				FormatEx(sLine, 128, "%s: %s%s (#%d)",
+					gI_HUD2Settings[client] & HUD2_STYLE == 0 ? gS_StyleStrings[data.iStyle].sShortName : "T",
+					sTime, sTimeDiff, data.iRank);
 			}
 			else
 			{
-				FormatEx(sLine, 128, "T: %s%s", sTime, sTimeDiff);
+				FormatEx(sLine, 128, "%s: %s%s",
+					gI_HUD2Settings[client] & HUD2_STYLE == 0 ? gS_StyleStrings[data.iStyle].sShortName : "T",
+					sTime, sTimeDiff);
 			}
 
 			AddHUDLine(buffer, maxlen, sLine, iLines);
