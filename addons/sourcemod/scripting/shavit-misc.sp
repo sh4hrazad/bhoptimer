@@ -2190,30 +2190,25 @@ public Action Shavit_OnStart(int client)
 
 public void Shavit_OnWorldRecord(int client, int style, float time, int jumps, int strafes, float sync, int track)
 {
-	char sUpperCase[64];
-	strcopy(sUpperCase, 64, gS_StyleStrings[style].sStyleName);
-
-	for(int i = 0; i < strlen(sUpperCase); i++)
-	{
-		if(!IsCharUpper(sUpperCase[i]))
-		{
-			sUpperCase[i] = CharToUpper(sUpperCase[i]);
-		}
-	}
-
 	char sTrack[32];
 	GetTrackName(LANG_SERVER, track, sTrack, 32);
 
+	char sName[32];
+	GetClientName(client, sName, sizeof(sName));
+
 	for(int i = 1; i <= gCV_WRMessages.IntValue; i++)
 	{
-		if(track == Track_Main)
-		{
-			Shavit_PrintToChatAll("%t", "WRNotice", gS_ChatStrings.sWarning, gS_ChatStrings.sText, "Main", sUpperCase, gS_ChatStrings.sVariable, gS_ChatStrings.sWarning);
-		}
-		else
-		{
-			Shavit_PrintToChatAll("%t", "WRNotice", gS_ChatStrings.sWarning, gS_ChatStrings.sText, sTrack, sUpperCase, gS_ChatStrings.sVariable, gS_ChatStrings.sWarning);
-		}
+		Shavit_PrintToChatAll("%t", "WRNotice", 
+			gS_ChatStrings.sVariable, 
+			sTrack, 
+			sName, 
+			gS_ChatStrings.sText, 
+			gS_ChatStrings.sStyle,
+			gS_StyleStrings[style].sStyleName, 
+			gS_ChatStrings.sText, 
+			gS_ChatStrings.sVariable, 
+			gS_ChatStrings.sText,
+			Shavit_GetRecordAmount(style, track));
 	}
 }
 

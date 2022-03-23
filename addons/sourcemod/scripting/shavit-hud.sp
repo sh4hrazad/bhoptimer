@@ -1311,7 +1311,13 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 
 			char sTimeDiff[32];
 
-			if ((gI_HUD2Settings[client] & HUD2_TIMEDIFFERENCE) == 0 && data.fClosestReplayTime != -1.0)
+			char sTrack[32];
+			GetTrackName(client, data.iTrack, sTrack, 32);
+
+			if(gI_HUD2Settings[client] & HUD2_TRACK == 0 && data.iTrack != 0)
+				ReplaceString(sTrack, sizeof(sTrack), "onus ", "");
+
+			if((gI_HUD2Settings[client] & HUD2_TIMEDIFFERENCE) == 0 && data.fClosestReplayTime != -1.0)
 			{
 				float fDifference = data.fTime - data.fClosestReplayTime;
 				FormatSeconds(fDifference, sTimeDiff, 32, false, FloatAbs(fDifference) >= 60.0);
@@ -1320,13 +1326,15 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 
 			if((gI_HUD2Settings[client] & HUD2_RANK) == 0)
 			{
-				FormatEx(sLine, 128, "%s: %s%s (#%d)",
+				FormatEx(sLine, 128, "%s%s: %s%s (#%d)",
+					(gI_HUD2Settings[client] & HUD2_TRACK == 0 && data.iTrack != 0) ? sTrack : "",
 					gI_HUD2Settings[client] & HUD2_STYLE == 0 ? gS_StyleStrings[data.iStyle].sShortName : "T",
 					sTime, sTimeDiff, data.iRank);
 			}
 			else
 			{
-				FormatEx(sLine, 128, "%s: %s%s",
+				FormatEx(sLine, 128, "%s%s: %s%s",
+					(gI_HUD2Settings[client] & HUD2_TRACK == 0 && data.iTrack != 0) ? sTrack : "",
 					gI_HUD2Settings[client] & HUD2_STYLE == 0 ? gS_StyleStrings[data.iStyle].sShortName : "T",
 					sTime, sTimeDiff);
 			}
@@ -1364,25 +1372,20 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 
 	if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
 	{
-		// timer: Speed: %d
-		// no timer: straight up number
 		if(data.iTimerStatus != Timer_Stopped)
 		{
 			if (data.fClosestReplayTime != -1.0 && (gI_HUD2Settings[client] & HUD2_VELOCITYDIFFERENCE) == 0)
 			{
 				float res = data.fClosestVelocityDifference;
-				// FormatEx(sLine, 128, "%T: %d (%s%.0f)", "HudSpeedText", client, data.iSpeed, (res >= 0.0) ? "+":"", res);
 				FormatEx(sLine, 128, "Spd: %d (%s%.0f)", data.iSpeed, (res >= 0.0) ? "+":"", res);
 			}
 			else
 			{
-				// FormatEx(sLine, 128, "%T: %d", "HudSpeedText", client, data.iSpeed);
 				FormatEx(sLine, 128, "Spd: %d", data.iSpeed);
 			}
 		}
 		else
 		{
-			// IntToString(data.iSpeed, sLine, 128);
 			FormatEx(sLine, 128, "Spd: %d", data.iSpeed);
 		}
 
@@ -1404,7 +1407,7 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 		}
 	}
-
+	/*
 	if(data.iTimerStatus != Timer_Stopped && data.iTrack != Track_Main && (gI_HUD2Settings[client] & HUD2_TRACK) == 0)
 	{
 		char sTrack[32];
@@ -1412,6 +1415,7 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 
 		AddHUDLine(buffer, maxlen, sTrack, iLines);
 	}
+	*/
 
 	return iLines;
 }
