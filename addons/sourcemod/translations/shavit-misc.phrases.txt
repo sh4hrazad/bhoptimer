@@ -275,11 +275,6 @@
 	{
 		"en"		"Advertisements disabled"
 	}
-	"NoclipTriggerToggle"
-	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s}"
-		"en"		"Noclip trigger is {1}{2}{3}. ({4}!nctrigger{5} to toggle)"
-	}
 	"NoclipResumeTimer"
 	{
 		"#format"	"{1:s},{2:s}"
