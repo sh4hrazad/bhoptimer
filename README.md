@@ -1,5 +1,5 @@
 ![](https://img.shields.io/badge/neko%20fl4n-included-ff6a6a)
-# !!! (modified timer for my server) i wont write every comments & annotations in english bcuz nobody would take notice of this fork after all.
+# !!! (modified timer) i wont write every comments & annotations in english bcuz nobody would take notice of this fork after all.
 [![Discord server](https://discordapp.com/api/guilds/389675819959844865/widget.png?style=shield)](https://discord.gg/jyA9q5k)
 
 ### RECOMPILE ALL YOUR PLUGINS THAT USE `#include <shavit>` OR STUFF WILL BREAK
