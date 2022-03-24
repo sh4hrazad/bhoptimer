@@ -1,5 +1,5 @@
 ![](https://img.shields.io/badge/neko%20fl4n-included-ff6a6a)
-# !!! Modified timer. Do not use if you know what you are doing!
+# !!! Modified timer. Do not use unless you know what you are doing!
 [![Discord server](https://discordapp.com/api/guilds/389675819959844865/widget.png?style=shield)](https://discord.gg/jyA9q5k)
 
 ### RECOMPILE ALL YOUR PLUGINS THAT USE `#include <shavit>` OR STUFF WILL BREAK
