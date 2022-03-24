@@ -1410,15 +1410,6 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 		}
 	}
-	/*
-	if(data.iTimerStatus != Timer_Stopped && data.iTrack != Track_Main && (gI_HUD2Settings[client] & HUD2_TRACK) == 0)
-	{
-		char sTrack[32];
-		GetTrackName(client, data.iTrack, sTrack, 32);
-
-		AddHUDLine(buffer, maxlen, sTrack, iLines);
-	}
-	*/
 
 	return iLines;
 }

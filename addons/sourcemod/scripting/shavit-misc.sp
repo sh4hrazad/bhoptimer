@@ -2196,8 +2196,12 @@ public void Shavit_OnWorldRecord(int client, int style, float time, int jumps, i
 	char sName[32];
 	GetClientName(client, sName, sizeof(sName));
 
+	int iRecords = Shavit_GetRecordAmount(style, track);
+	if(Shavit_GetClientPB(client, style, track) == 0.0)
+		iRecords++;
+
 	for(int i = 1; i <= gCV_WRMessages.IntValue; i++)
-	{
+	{	
 		Shavit_PrintToChatAll("%t", "WRNotice", 
 			gS_ChatStrings.sVariable, 
 			sTrack, 
@@ -2208,7 +2212,7 @@ public void Shavit_OnWorldRecord(int client, int style, float time, int jumps, i
 			gS_ChatStrings.sText, 
 			gS_ChatStrings.sVariable, 
 			gS_ChatStrings.sText,
-			Shavit_GetRecordAmount(style, track));
+			iRecords);
 	}
 }
 
