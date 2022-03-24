@@ -79,7 +79,7 @@ public Plugin myinfo =
 	name = "[shavit] Dynamic Timelimits",
 	author = "shavit",
 	description = "Sets a dynamic value of mp_timelimit and mp_roundtime, based on average map times on the server.",
-	version = SHAVIT_VERSION,
+	version = SHAVIT_VERSION ... "-sfork",
 	url = "https://github.com/shavitush/bhoptimer"
 }
 

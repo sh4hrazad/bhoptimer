@@ -169,7 +169,7 @@ public Plugin myinfo =
 	name = "[shavit] Core",
 	author = "shavit",
 	description = "The core for shavit's bhop timer.",
-	version = SHAVIT_VERSION,
+	version = SHAVIT_VERSION ... "-sfork",
 	url = "https://github.com/shavitush/bhoptimer"
 }
 

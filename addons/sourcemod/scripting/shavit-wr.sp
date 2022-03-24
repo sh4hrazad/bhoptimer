@@ -118,7 +118,7 @@ public Plugin myinfo =
 	name = "[shavit] World Records",
 	author = "shavit",
 	description = "World records for shavit's bhop timer.",
-	version = SHAVIT_VERSION,
+	version = SHAVIT_VERSION ... "-sfork",
 	url = "https://github.com/shavitush/bhoptimer"
 }
 

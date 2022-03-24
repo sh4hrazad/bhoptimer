@@ -134,7 +134,7 @@ public Plugin myinfo =
 	name = "[shavit] MapChooser",
 	author = "SlidyBat, kidfearless, mbhound, lilac, rtldg",
 	description = "Automated Map Voting and nominating with Shavit's bhoptimer integration",
-	version = SHAVIT_VERSION,
+	version = SHAVIT_VERSION ... "-sfork",
 	url = "https://github.com/shavitush/bhoptimer"
 }
 

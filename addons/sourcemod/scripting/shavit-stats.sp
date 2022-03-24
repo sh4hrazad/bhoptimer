@@ -85,7 +85,7 @@ public Plugin myinfo =
 	name = "[shavit] Player Stats",
 	author = "shavit",
 	description = "Player stats for shavit's bhop timer.",
-	version = SHAVIT_VERSION,
+	version = SHAVIT_VERSION ... "-sfork",
 	url = "https://github.com/shavitush/bhoptimer"
 }
 

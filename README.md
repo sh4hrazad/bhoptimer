@@ -1,4 +1,4 @@
-![](https://img.shields.io/badge/neko%20fl4n-included-ff6a6a)
+![](https://img.shields.io/badge/neko%20fl4n-included-ff6a6a?style=flat-square) ![](https://img.shields.io/badge/neko%20sh4hrazad-included-6aa6ff?style=flat-square)
 # !!! Modified timer. Do not use unless you know what you are doing!
 [![Discord server](https://discordapp.com/api/guilds/389675819959844865/widget.png?style=shield)](https://discord.gg/jyA9q5k)
 

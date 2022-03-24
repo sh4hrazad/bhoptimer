@@ -119,7 +119,7 @@ public Plugin myinfo =
 	name = "[shavit] Rankings",
 	author = "shavit",
 	description = "A fair and competitive ranking system for shavit's bhoptimer.",
-	version = SHAVIT_VERSION,
+	version = SHAVIT_VERSION ... "-sfork",
 	url = "https://github.com/shavitush/bhoptimer"
 }
 

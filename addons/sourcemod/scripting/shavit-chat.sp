@@ -124,7 +124,7 @@ public Plugin myinfo =
 	name = "[shavit] Chat Processor",
 	author = "shavit",
 	description = "Custom chat privileges (custom name/message colors), chat processor, and rankings integration.",
-	version = SHAVIT_VERSION,
+	version = SHAVIT_VERSION ... "-sfork",
 	url = "https://github.com/shavitush/bhoptimer"
 }
 

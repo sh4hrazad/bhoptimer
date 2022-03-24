@@ -52,7 +52,7 @@ public Plugin myinfo =
 	name = "[shavit] Sounds",
 	author = "shavit",
 	description = "Play custom sounds when timer-related events happen.",
-	version = SHAVIT_VERSION,
+	version = SHAVIT_VERSION ... "-sfork",
 	url = "https://github.com/shavitush/bhoptimer"
 }
 

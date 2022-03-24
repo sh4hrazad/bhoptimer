@@ -71,7 +71,7 @@ public Plugin myinfo =
 	name = "[shavit] TAS",
 	author = "xutaxkamay, oblivious, KiD Fearless, rtldg",
 	description = "TAS module for shavit's bhop timer featuring xutaxkamay's autostrafer and oblivious's autogain.",
-	version = SHAVIT_VERSION,
+	version = SHAVIT_VERSION ... "-sfork",
 	url = "https://github.com/shavitush/bhoptimer"
 };
 

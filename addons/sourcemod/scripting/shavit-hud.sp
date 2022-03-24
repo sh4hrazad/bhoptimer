@@ -115,7 +115,7 @@ public Plugin myinfo =
 	name = "[shavit] HUD",
 	author = "shavit",
 	description = "HUD for shavit's bhop timer.",
-	version = SHAVIT_VERSION,
+	version = SHAVIT_VERSION ... "-sfork",
 	url = "https://github.com/shavitush/bhoptimer"
 }
 
@@ -1315,7 +1315,10 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 			GetTrackName(client, data.iTrack, sTrack, 32);
 
 			if(gI_HUD2Settings[client] & HUD2_TRACK == 0 && data.iTrack != 0)
+			{
 				ReplaceString(sTrack, sizeof(sTrack), "onus ", "");
+				ReplaceString(sTrack, sizeof(sTrack), "1", "");
+			}
 
 			if((gI_HUD2Settings[client] & HUD2_TIMEDIFFERENCE) == 0 && data.fClosestReplayTime != -1.0)
 			{
@@ -1327,15 +1330,15 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 			if((gI_HUD2Settings[client] & HUD2_RANK) == 0)
 			{
 				FormatEx(sLine, 128, "%s%s: %s%s (#%d)",
-					(gI_HUD2Settings[client] & HUD2_TRACK == 0 && data.iTrack != 0) ? sTrack : "",
-					gI_HUD2Settings[client] & HUD2_STYLE == 0 ? gS_StyleStrings[data.iStyle].sShortName : "T",
+					(gI_HUD2Settings[client] & HUD2_TRACK == 0 && data.iTrack != 0)? sTrack:"",
+					(gI_HUD2Settings[client] & HUD2_STYLE == 0)? gS_StyleStrings[data.iStyle].sShortName:"T",
 					sTime, sTimeDiff, data.iRank);
 			}
 			else
 			{
 				FormatEx(sLine, 128, "%s%s: %s%s",
-					(gI_HUD2Settings[client] & HUD2_TRACK == 0 && data.iTrack != 0) ? sTrack : "",
-					gI_HUD2Settings[client] & HUD2_STYLE == 0 ? gS_StyleStrings[data.iStyle].sShortName : "T",
+					(gI_HUD2Settings[client] & HUD2_TRACK == 0 && data.iTrack != 0)? sTrack:"",
+					(gI_HUD2Settings[client] & HUD2_STYLE == 0)? gS_StyleStrings[data.iStyle].sShortName:"T",
 					sTime, sTimeDiff);
 			}
 
