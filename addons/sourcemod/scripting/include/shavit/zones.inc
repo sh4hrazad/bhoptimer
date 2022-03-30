@@ -29,19 +29,19 @@
 enum
 {
 	Zone_Start, 			// starts timer
-	Zone_End, 			// stops timer
+	Zone_End, 				// stops timer
 	Zone_Respawn, 			// respawns the player
-	Zone_Stop,			// stops the player's timer
-	Zone_Slay,			// slays (kills) players which come to this zone
+	Zone_Stop,				// stops the player's timer
+	Zone_Slay,				// slays (kills) players which come to this zone
 	Zone_Freestyle,			// ignores style physics when at this zone. e.g. WASD when SWing
-	Zone_CustomSpeedLimit,		// overwrites velocity limit in the zone
+	Zone_CustomSpeedLimit,	// overwrites velocity limit in the zone
 	Zone_Teleport,			// teleports to a defined point
 	Zone_CustomSpawn,		// << unused
 	Zone_Easybhop,			// forces easybhop whether if the player is in non-easy styles or if the server has different settings
-	Zone_Slide,			// allows players to slide, in order to fix parts like the 5th stage of bhop_arcane
+	Zone_Slide,				// allows players to slide, in order to fix parts like the 5th stage of bhop_arcane
 	Zone_Airaccelerate,		// custom sv_airaccelerate inside this,
-	Zone_Stage,			// shows time when entering zone
-	Zone_NoTimerGravity,		// prevents the timer from setting gravity while inside this zone
+	Zone_Stage,				// shows time when entering zone
+	Zone_NoTimerGravity,	// prevents the timer from setting gravity while inside this zone
 	Zone_Gravity,			// lets you set a specific gravity while inside this zone
 	ZONETYPES_SIZE
 };
