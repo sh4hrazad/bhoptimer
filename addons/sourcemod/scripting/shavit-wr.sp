@@ -2756,9 +2756,11 @@ public void Shavit_OnFinish(int client, int style, float time, int jumps, int st
 	timer_snapshot_t aSnapshot;
 	Shavit_SaveSnapshot(client, aSnapshot);
 
-	if (!Shavit_GetStyleSettingBool(style, "autobhop"))// todo: maybe could show ssj & spj here?
+	FormatEx(sMessage2, sizeof(sMessage2), "%s[%s]%s %T", gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "CompletionExtraInfo", LANG_SERVER, gS_ChatStrings.sVariable, avgvel, gS_ChatStrings.sText, gS_ChatStrings.sVariable, maxvel, gS_ChatStrings.sText);
+
+	if (!Shavit_GetStyleSettingBool(style, "autobhop")) // TODO: maybe could show ssj & spj here?
 	{
-		FormatEx(sMessage2, sizeof(sMessage2), "%s[%s]%s %T", gS_ChatStrings.sVariable, sTrack, gS_ChatStrings.sText, "CompletionExtraInfo", LANG_SERVER, gS_ChatStrings.sVariable, avgvel, gS_ChatStrings.sText, gS_ChatStrings.sVariable, maxvel, gS_ChatStrings.sText, gS_ChatStrings.sVariable, perfs, gS_ChatStrings.sText);
+		FormatEx(sMessage2, sizeof(sMessage2), "%s %T", sMessage2, "CompletionExtraInfoPerf", LANG_SERVER, gS_ChatStrings.sVariable, perfs, gS_ChatStrings.sText);	
 	}
 
 	Action aResult = Plugin_Continue;
