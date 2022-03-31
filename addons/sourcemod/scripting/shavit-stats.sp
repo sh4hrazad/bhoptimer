@@ -1001,7 +1001,7 @@ public void OpenStatsMenuCallback(Database db, DBResultSet results, const char[]
 		}
 
 		Menu menu = new Menu(MenuHandler_ProfileHandler);
-		menu.SetTitle("%s's %T. [U:1:%d]\n%T: %s\n%s\n%s\n%T: %s\n",
+		menu.SetTitle("%s%T. [U:1:%d]\n%T: %s\n%s\n%s\n%T: %s\n",
 			gS_TargetName[client], "Profile", client, gI_TargetSteamID[client], "Country", client, sCountry, sLastLogin,
 			sRankingString, "Playtime", client, sPlaytime);
 

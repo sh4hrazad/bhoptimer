@@ -2205,7 +2205,7 @@ void UpdateKeyHint(int client)
 
 		if((gI_HUDSettings[client] & HUD_TIMELEFT) > 0 && GetMapTimeLeft(iTimeLeft) && iTimeLeft > 0)
 		{
-			FormatEx(sMessage, 256, (iTimeLeft > 60)? "%T: %d minutes":"%T: %d seconds", "HudTimeLeft", client, (iTimeLeft > 60) ? (iTimeLeft / 60)+1 : iTimeLeft);
+			FormatEx(sMessage, 256, (iTimeLeft > 60)? "%T: %d minutes":"Timeleft: %d seconds", client, (iTimeLeft > 60) ? (iTimeLeft / 60)+1 : iTimeLeft);
 		}
 
 		int target = GetSpectatorTarget(client, client);
@@ -2232,7 +2232,7 @@ void UpdateKeyHint(int client)
 
 				if (!Shavit_GetStyleSettingBool(style, "autobhop") && (gI_HUD2Settings[client] & HUD2_PERFS) == 0)
 				{
-					Format(sMessage, 256, "%s%s\n%T: %.1f", sMessage, perf_double_newline ? "\n":"", "HudPerfs", client, Shavit_GetPerfectJumps(target));
+					Format(sMessage, 256, "%s%s\nPerfs: %.1f", sMessage, perf_double_newline ? "\n":"", Shavit_GetPerfectJumps(target));
 				}
 			}
 

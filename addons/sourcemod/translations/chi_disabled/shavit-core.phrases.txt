@@ -1,0 +1,158 @@
+"Phrases"
+{
+	// ---------- Commands ---------- //
+	"AutobhopEnabled"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"自动跳跃已{1}启用{2}."
+	}
+	"AutobhopDisabled"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"自动跳跃{1}禁用{2}."
+	}
+	"CheatTimerStop"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"chi"		"{1}计时中止! {2}{3}"
+	}
+	"CommandDisabled"
+	{
+		"#format" 	"{1:s},{2:s},{3:s}"
+		"chi"		"指令 ({1}{2}{3}) 已禁用."
+	}
+	"StyleNoAccess"
+	{
+		"#format" 	"{1:s},{2:s}"
+		"chi"		"你没有{1}权限{2}游玩该模式."
+	}
+	"NoEditingTimescale"
+	{
+		"chi"        "该模式无法修改时延值."
+	}
+	// ---------- Errors ---------- //
+	"VerificationFailed"
+	{
+		"chi"		"无法验证你或服务器与Steam的连接."
+	}
+	"TimeUnderMinimumTime"
+	{
+		"#format"   "{1:f},{2:f},{3:s}"
+		"chi"        "你的通关时间 ({2}) 快于{3}最快通关时间设置 ({1}), 纪录不作数."
+	}
+	// ---------- Menus ---------- //
+	"StyleMenuTitle"
+	{
+		"chi"		"选择游戏模式:"
+	}
+	"StyleSelection"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"chi"		"游戏模式已更改为: {1}{2}{3}."
+	}
+	"StyleUnranked"
+	{
+		"chi"		"[无排名]"
+	}
+	// ---------- Misc ---------- //
+	"LeftRightCheat"
+	{
+		"chi"		"该模式下+left/right禁用."
+	}
+	"Inconsistencies"
+	{
+		"chi"		"检测到非法按键."
+	}
+	"UnrankedWarning"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"{1}注意: {2}该模式不记录排名. 通关后计时不会被记录且通关信息仅对自己显示!"
+	}
+	"PracticeModeAlert"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"{1}注意: {2}你现在处于练习模式. 通关后计时不会被记录且通关信息仅对自己显示!"
+	}
+	"SHSWCombination0"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"你当前的滑翔半侧跳按键组合: {1}W/A & S/D{2}."
+	}
+	"SHSWCombination1"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"你当前的滑翔半侧跳按键组合: {1}W/D & S/A{2}."
+	}
+	"NewAiraccelerate"
+	{
+		"#format"	"{1:d},{2:s},{3:d},{4:s}"
+		"chi"		"当前空速: {1} -> {2}{3}{4}."
+	}
+	// ---------- Pauses ---------- //
+	"MessagePause"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"chi"		"{1}计时已{2}暂停{3}."
+	}
+	"MessageUnpause"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"chi"		"{1}计时已{2}解除暂停{3}."
+	}
+	"PauseNotOnGround"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"空中{1}无法{2}暂停."
+	}
+	"PauseStartZone"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s}"
+		"chi"		"{4}起点{2}无法{3}暂停."
+	}
+	"PauseEndZone"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s}"
+		"chi"		"{4}终点{2}无法{3}暂停."
+	}
+	"PauseMoving"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"移动时{1}无法{2}暂停."
+	}
+	"PauseDuck"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"蹲下时{1}无法{2}暂停."
+	}
+	"TimerUnpaused"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"计时已解除{1}暂停{2}."
+	}
+	"TimerPaused"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"计时已{1}暂停{2}."
+	}
+	// ---------- Zones ---------- //
+	"StartZoneUndefined"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s}"
+		"chi"		"{1}无法{2}传送到起点, {3}{4}{5} 起点未设置."
+	}
+	"EndZoneUndefined"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"{1}无法传送{2}到终点, 该关卡终点未设置."
+	}
+	"DebugOffsets"
+	{
+		"#format"	"{1:f},{2:s}"
+		"chi"		"Your zone offset was {1}. The distance was {2} units."
+	}
+	"TrackChangeFromMain"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s},{6:s}"
+		"chi"		"使用{1}!m{2}/{3}!main{4}以回到Main. 或输入{5}!ihate!main{6}."
+	}
+}

@@ -1,0 +1,87 @@
+"Phrases"
+{
+	// ---------- Commands ---------- //
+	"ChatUpdated"
+	{
+		"chi"		"设置已更新."
+	}
+	"ChatCurrent"
+	{
+		"#format"	"{1:s}"
+		"chi"		"当前设置: {1}"
+	}
+	"NameOff"
+	{
+		"chi"		"自定义聊天昵称已禁用."
+	}
+	"MessageOff"
+	{
+		"chi"		"自定义聊天颜色已禁用."
+	}
+	"CheckConsole"
+	{
+		"chi"		"请查看控制台输出."
+	}
+	"CCAccessGrantedToPlayer"
+	{
+		"#format"   "{1:s},{2:s}"
+		"chi"        "自定义聊天样式可用! 输入{1}!cchelp{2}查看更多讯息."
+	}
+	"CCHelp_Intro"
+	{
+		"chi"		"- 你有权限设置自定义聊天样式.\n使用帮助:"
+	}
+	"CCHelp_Generic"
+	{
+		"chi"		"- !ccname - 更改自定义昵称.(输入\"!ccname off\"可恢复默认, 需要在!chatrank中将聊天样式改为自定义才能使用)\n- !ccmsg - 更改聊天讯息前缀或颜色.(输入\"!ccmsg off\"可恢复默认)\n以下是一些可用的自定义变量标签:"
+	}
+	"CCHelp_GenericVariables"
+	{
+		"chi"		"- {name} - 玩家昵称.\n- {clan} - 你的战队标签.\n- {rand} - 随机颜色.\n- {team} - 队伍主题色.\n- {green} - 绿色."
+	}
+	"CCHelp_CSS_1"
+	{
+		"chi"		"- 如需应用自定义颜色, 添加标签\"^RRGGBB\"(16进制HTML格式). 例如: ^FFFFFF - 白色, ^000000 - 黑色."
+	}
+	"CCHelp_CSS_2"
+	{
+		"chi"		"- 你也可以添加颜色标签\"&RRGGBBAA\"来设置字体透明度(16进制格式, AA为00时为全透明). 例如: &FFFFFF7F可将字体设置为50%透明度白色."
+	}
+	"CCHelp_CSGO_1"
+	{
+		"chi"		"- 你也可以使用这些颜色标签: {blue}, {bluegrey}, {darkblue}, {darkred}, {gold}, {grey}, {grey2}, {lightgreen}, {lightred}, {lime}, {orchid}, {yellow} and {palered}."
+	}
+	// ---------- Menu ---------- //
+	"SelectChatRank"
+	{
+		"chi"		"选择聊天样式:\n"
+	}
+	"SelectChatRankType"
+	{
+		"chi"        "选择要查看的聊天样式:\n"
+	}
+	"SelectChatRankUnlocked"
+	{
+		"chi"        "已解锁的聊天样式\n"
+	}
+	"SelectChatRankAll"
+	{
+		"chi"        "所有聊天样式一览\n"
+	}
+	"AutoAssign"
+	{
+		"chi"		"自动设定\n根据你的排行自动设置聊天样式."
+	}
+	"CustomChat"
+	{
+		"chi"		"自定义\n使用自定义聊天样式. 输入!cchelp查看帮助"
+	}
+	"ChatRanksMenu"
+	{
+		"chi"		"可获得的聊天样式:\n可选择一个样式预览.\n"
+	}
+	"ChatRanksMenu_SampleText"
+	{
+		"chi"		"Lorem ipsum是指一篇常用于排版设计领域的拉丁文文章，主要的目的为测试文章或文字在不同字型、版型下看起来的效果。"
+	}
+}

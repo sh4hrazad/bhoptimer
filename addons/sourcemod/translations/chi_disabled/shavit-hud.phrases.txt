@@ -1,0 +1,221 @@
+"Phrases"
+{
+	// ---------- HUD Components ---------- //
+	// DO NOT MAKE NAMES LONGER THAN DISPLAYED HERE //
+	"HudStartZone"
+	{
+		"chi"		"Start Zone"
+	}
+	"HudZoneTier"
+	{
+		"#format"	"{1:d}"
+		"chi"		"Tier {1}"
+	}
+	"HudInStartZone"
+	{
+		"#format"	"{1:d}"
+		"chi"		"In Start Zone"
+	}
+	"HudInStartZoneCSGO"
+	{
+		"#format"	"{1:d}"
+		"chi"		"In Start Zone"
+	}
+	"HudEndZone"
+	{
+		"chi"		"End Zone"
+	}
+	"HudInEndZone"
+	{
+		"#format"	"{1:d}"
+		"chi"		"In End Zone"
+	}
+	"HudInEndZoneCSGO"
+	{
+		"#format"	"{1:d}"
+		"chi"		"In End Zone"
+	}
+	"HudPaused"
+	{
+		"chi"		"[Paused]"
+	}
+	"HudTimeText"
+	{
+		"chi"		"时间"
+	}
+	"HudBestText"
+	{
+		"chi"		"PB"
+	}
+	"HudJumpsText"
+	{
+		"chi"		"起跳"
+	}
+	"HudStyleText"
+	{
+		"chi"		"模式"
+	}
+	"HudSpeedText"
+	{
+		"chi"		"速度"
+	}
+	"HudStrafeText"
+	{
+		"chi"		"加速"
+	}
+	"HudTimeLeft"
+	{
+		"chi"		"剩余时间"
+	}
+	"HudSync"
+	{
+		"chi"		"同步率"
+	}
+	"HudPerfs"
+	{
+		"chi"		"完美起跳率"
+	}
+	"HudDefaultPistol"
+	{
+		"chi"		"默认手枪: 1=USP 2=Glock"
+	}
+	"HudUSPSilencer"
+	{
+		"chi"		"USP自带消音器"
+	}
+	"HudGlockBurst"
+	{
+		"chi"		"Glock自带三连发模式"
+	} // 我寻思这三样不应该在Menu一栏吗
+	"HudPracticeMode"
+	{
+		"chi"		"[Practice]"
+	}
+	"HudNoSpeedLimit"
+	{
+		"chi"		"(No Speed Limit)"
+	}
+	"HudCustomSpeedLimit"
+	{
+		"#format"	"{1:d}"
+		"chi"		"(Speed Limit: {1})"
+	}
+	"HudCenterKeys"
+	{
+		"chi"        "!keys 显示在中央"
+	} // 这个也是
+	// ---------- Menus ---------- //
+	"HUDMenuTitle"
+	{
+		"chi"		"HUD 设置:"
+	}
+	"HudMaster"
+	{
+		"chi"		"总开关"
+	}
+	"HudCenter"
+	{
+		"chi"		"提示框内容"
+	}
+	"HudZoneHud"
+	{
+		"chi"		"起/终区域内HUD"
+	}
+	"HudObserve"
+	{
+		"chi"		"观察者HUD"
+	}
+	"HudSpectators"
+	{
+		"chi"		"观察者列表"
+	}
+	"HudKeyOverlay"
+	{
+		"chi"		"显示按键"
+	}
+	"HudHideWeapon"
+	{
+		"chi"		"隐藏武器"
+	}
+	"HudTopLeft"
+	{
+		"chi"		"左上角HUD (WR/PB)"
+	}
+	"Hud2dVel"
+	{
+		"chi"		"2D速度显示"
+	}
+	"HudNoRecordSounds"
+	{
+		"chi"		"无通关音效"
+	}
+	"HudPracticeModeAlert"
+	{
+		"chi"		"无练习模式提示"
+	}
+	"HudRankText"
+	{
+		"chi"		"预估排名"
+	}
+	"HudTrackText"
+	{
+		"chi"		"关卡"
+	}
+	"HudSplitPbText"
+	{
+		"chi"		"区分PB"
+	}
+	"HudMapTierText"
+	{
+		"chi"		"地图难度"
+	}
+	"HudTimeDifference"
+	{
+		"chi"		"时间差"
+	}
+	"HudTopLeftRankText"
+	{
+		"chi"		"左上角排名"
+	}
+	"HudVelocityDifference"
+	{
+		"chi"		"速度差"
+	}
+	"HudDebugTargetname"
+	{
+		"chi"        "Debug targetname"
+	}
+	// ---------- Record Bots ---------- //
+	"ReplayText"
+	{
+		"chi"		"Replay"
+	}
+	"NoReplayData"
+	{
+		"chi"		"No replay data loaded\nPress USE or beat #1 to play"
+	}
+	"NoReplayDataTF2"
+	{
+		"chi"		"No replay data loaded\n!replay or beat #1 to play"
+	}
+	// ---------- Panels ---------- //
+	"SpectatorPersonal"
+	{
+		"chi"		"Spectators"
+	}
+	"SpectatorWatching"
+	{
+		"chi"		"Other Spectators"
+	}
+	// ---------- Commands ---------- //
+	"HudEnabledComponent"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s}"
+		"chi"		"HUD设置项[{1}{2}{3}]已{4}启用{5}."
+	}
+	"HudDisabledComponent"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s}"
+		"chi"		"HUD设置项[{1}{2}{3}]已{4}禁用{5}."
+	}
+}

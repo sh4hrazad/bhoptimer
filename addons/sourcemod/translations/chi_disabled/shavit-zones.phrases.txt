@@ -1,0 +1,478 @@
+"Phrases"
+{
+	// ---------- Admin Menu ---------- //
+	"AddMapZone"
+	{
+		"chi"		"添加地图区域"
+	}
+	"DeleteAllMapZone"
+	{
+		"chi"		"批量删除区域"
+	}
+	"DeleteMapZone"
+	{
+		"chi"		"删除单个区域"
+	}
+	// --------- Set Start --------- //
+	"SetStart"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"自定义起始位置{1}已设置{2}."
+	}
+	"SetStartCommandAlive"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"你必须{1}活着{2}才能设置自定义起始区域."
+	}
+	"SetStartNotInStartZone"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"chi"		"你必须在{3}起点{4}内才能设置自定义起始区域."
+	}
+	"DeleteSetStart"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"自定义起始区域已{1}删除{2}."
+	}
+	// ---------- Commands ---------- //
+	"StageCommandAlive"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"你必须{1}活着{2}才能使用该指令."
+	}
+	"ModifierCommandNoArgs"
+	{
+		"chi"		"用途: sm_modifier <数值>"
+	}
+	"ModifierTooLow"
+	{
+		"chi"		"微调数值必须大于 0."
+	}
+	"ModifierSet"
+	{
+		"chi"		"微调数值已修改为"
+	}
+	"ZonesCommand"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"你必须{1}活着{2}才能设置区域."
+	}
+	"ZoneCustomSpawnMenuTitle"
+	{
+		"chi"		"选择要添加自定义起始位置的关卡:"
+	}
+	"ZoneCustomSpawnMenuDeleteTitle"
+	{
+		"chi"		"选择要删除自定义起始位置的关卡:"
+	}
+	"ZoneCustomSpawnExists"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"chi"		"{1}{2}{3} 的自定义起始位置已存在. 请输入!delspawn删除该位置后重试."
+	}
+	"ZoneCustomSpawnMissing"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"chi"		"{1}{2}{3} 的自定义起始位置不存在."
+	}
+	"ZoneCustomSpawnDelete"
+	{
+		"chi"		"已删除自定义起始位置."
+	}
+	"ZoneDead"
+	{
+		"chi"		"你必须活着才能设置自定义起始位置."
+	}
+	// ---------- Panel Text ---------- //
+	"AbortZoneCreation"
+	{
+		"chi"		"中止新建区域"
+	}
+	"GridSnapPlus"
+	{
+		"#format"	"{1:d}"
+		"chi"		"方格大小 + (x{1})"
+	}
+	"GridSnapMinus"
+	{
+		"chi"		"方格大小 -"
+	}
+	"WallSnap"
+	{
+		"#format"	"{1:T}"
+		"chi"		"贴住墙体: {1}"
+	}
+	"CursorZone"
+	{
+		"#format"	"{1:T}"
+		"chi"		"使用指针定位: {1}"
+	}
+	// ---------- Zone Menu ---------- //
+	"ZoneAdjustCancel"
+	{
+		"chi"		"取消"
+	}
+	"ZoneAdjustDone"
+	{
+		"chi"		"完成"
+	}
+	"ZoneAdjustPosition"
+	{
+		"chi"		"调整区域位置.\n输入'!modifier <数值>'来修改微调数值."
+	}
+	"ZoneAxis"
+	{
+		"chi"		"轴"
+	}
+	"ZoneCustomSpawnSuccess"
+	{
+		"chi"		"已设置自定义起始位置."
+	}
+	"ZoneDecreased"
+	{
+		"chi"		"decreased"
+	} // 没用, 不翻
+	"ZoneEditConfirm"
+	{
+		"chi"		"确认设置该区域?"
+	}
+	"ZoneDeleteSuccessful"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"chi"		"已删除区域 - {1}{2}{3}."
+	}
+	"ZoneDeleteAllSuccessful"
+	{
+		"chi"		"已删除该地图的所有区域."
+	}
+	"ZoneFirst"
+	{
+		"chi"		"第一个"
+	}
+	"ZoneIncreased"
+	{
+		"chi"		"increased"
+	} // 没用, 不翻
+	"ZoneMenuDeleteTitle"
+	{
+		"chi"		"删除一个区域:\n一旦选择将立即删除, 该操作不可撤销!"
+	}
+	"ZoneMenuDeleteALLTitle"
+	{
+		"chi"		"删除该地图中所有的区域?(包括Bonus的区域)\n此操作不可恢复!"
+	}
+	"ZoneMenuNo"
+	{
+		"chi"		"否"
+	}
+	"ZonesMenuNoneFound"
+	{
+		"chi"		"未找到区域."
+	}
+	"ZoneMenuStage"
+	{
+		"chi"		"选择一个检查点:"
+	}
+	"ZoneMenuTrack"
+	{
+		"chi"		"选择一个关卡:"
+	}
+	"ZoneMenuTitle"
+	{
+		"#format"	"{1:s}"
+		"chi"		"[{1}] 选择区域类型:"
+	}
+	"ZoneMenuYes"
+	{
+		"chi"		"是"
+	}
+	"ZonePlaceText"
+	{
+		"#format"	"{1:s}"
+		"chi"		"点按'使用键'确认{1}定点的位置"
+	}
+	"ZonePlaceTextTF2"
+	{
+		"#format"	"{1:s}"
+		"chi"		"Press ATTACK2 (default 'right click') to set the {1} corner in your current position."
+	} // 不玩TF2, 不翻(有TF2的bhop服吗)
+	"ZonePoint"
+	{
+		"#format"	"{1:d},{2:c}"
+		"chi"		"定点 #{1} | {2} 轴"
+	}
+	"ZoneSecond"
+	{
+		"chi"		"第二个"
+	}
+	"ZoneSetAdjust"
+	{
+		"chi"		"调整位置"
+	}
+	"ZoneForceRender"
+	{
+		"#format"	"{1:s}"
+		"chi"		"[{1}] 强制绘制区域"
+	}
+	"ZoneSetAiraccelerate"
+	{
+		"#format"	"{1:d}"
+		"chi"		"空速数值: {1}"
+	}
+	"ZoneSetSpeedLimit"
+	{
+		"#format"	"{1:d}"
+		"chi"		"限速数值: {1}"
+	}
+	"ZoneSetSpeedLimitUnlimited"
+	{
+		"#format"	"{1:d}"
+		"chi"		"限速: {1} (无限制)"
+	}
+	"ZoneSetStage"
+	{
+		"#format"	"{1:d}"
+		"chi"		"检查点编号: {1}"
+	}
+	"ZoneSetGravity"
+	{
+		"#format"   "{1:f}"
+		"chi"        "重力倍率: {1}"
+	}
+	"ZoneEnterDataChat"
+	{
+		"chi"		"请在聊天框中输入数值."
+	}
+	"ZoneSetNo"
+	{
+		"chi"		"取消"
+	}
+	"ZoneSetTP"
+	{
+		"chi"		"*未设置传送目的地*"
+	}
+	"ZoneSetTPZone"
+	{
+		"chi"		"设定传送目的地"
+	}
+	"ZoneSetYes"
+	{
+		"chi"		"完成"
+	}
+	"ZoneSizeIncrease"
+	{
+		"#format"	"{1:s},{2:c},{3:s},{4:d},{5:s},{6:.01f},{7:s}"
+		"chi"		"{1}{2} 轴{3} (顶点 #{4}) 已增加 {5}{6}{7} 单位."
+	}
+	"ZoneSizeDecrease"
+	{
+		"#format"	"{1:s},{2:c},{3:s},{4:d},{5:s},{6:.01f},{7:s}"
+		"chi"		"{1}{2} 轴{3} (顶点 #{4}) 已减少 {5}{6}{7} 单位."
+	}
+	"ZoneTeleportUpdated"
+	{
+		"chi"		"已更新传送目的地."
+	}
+	"ZoneTeleportInsideZone"
+	{
+		"chi"		"你不能把传送目的地设置在起点内."
+	}
+	"ZoneEditTrack"
+	{
+		"#format"	"{1:s}"
+		"chi"		"所属关卡: {1}"
+	}
+	"ZoneEdit"
+	{
+		"chi"		"编辑区域"
+	}
+	"ZoneEditTitle"
+	{
+		"chi"		"选择要编辑的区域:"
+	}
+	"ZoneInside"
+	{
+		"chi"		"(所在区域)"
+	}
+	"ZoneEditRefresh"
+	{
+		"chi"		"刷新菜单"
+	}
+	"TpToZone"
+	{
+		"chi"        "传送至区域"
+	}
+	// ---------- Custom Zone ---------- //
+	"CustomZone_MainMenuTitle"
+	{
+		"chi"		"选择需要自定义的区域"
+	}
+	"CustomZone_SubMenuTitle"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"自定义区域设置 [{1} - {2}]"
+	}
+	"CustomZone_DisplayType"
+	{
+		"chi"		"显示类型"
+	}
+	"CustomZone_Color"
+	{
+		"chi"		"区域颜色"
+	}
+	"CustomZone_Width"
+	{
+		"chi"		"区域宽度"
+	}
+	"CustomZone_Default"
+	{
+		"chi"		"默认"
+	}
+	
+	"CustomZone_DisplayType_None"
+	{
+		"chi"		"隐藏"
+	}
+	"CustomZone_DisplayType_Box"
+	{
+		"chi"		"盒状"
+	}
+	"CustomZone_DisplayType_Flat"
+	{
+		"chi"		"仅地面"
+	}
+	
+	"CustomZone_Color_White"
+	{
+		"chi"		"白色"
+	}
+	"CustomZone_Color_Red"
+	{
+		"chi"		"红色"
+	}
+	"CustomZone_Color_Orange"
+	{
+		"chi"		"橘色"
+	}
+	"CustomZone_Color_Yellow"
+	{
+		"chi"		"黄色"
+	}
+	"CustomZone_Color_Green"
+	{
+		"chi"		"绿色"
+	}
+	"CustomZone_Color_Cyan"
+	{
+		"chi"		"青色"
+	}
+	"CustomZone_Color_Blue"
+	{
+		"chi"		"蓝色"
+	}
+	"CustomZone_Color_Purple"
+	{
+		"chi"		"紫色"
+	}
+	"CustomZone_Color_Pink"
+	{
+		"chi"		"粉色"
+	}
+
+	"CustomZone_Width_UltraThin"
+	{
+		"chi"		"极细"
+	}
+	"CustomZone_Width_Thin"
+	{
+		"chi"		"细"
+	}
+	"CustomZone_Width_Normal"
+	{
+		"chi"		"普通"
+	}
+	"CustomZone_Width_Thick"
+	{
+		"chi"		"宽"
+	}
+	// ---------- Messages ---------- //
+	"ZoneSlayEnter"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"chi"		"{1}你因进入{2}BUG区域{3}而被处死."
+	}
+	"ZoneStopEnter"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"chi"		"{1}你的计时因进入{2}BUG区域{3}而被中止."
+	}
+	"ZoneStageEnter"
+	{
+		"#format"	"{1:s},{2:s},{3:d},{4:s},{5:s},{6:s}{7:s}"
+		"chi"		"{1}检查点[{2}{3}{4}] | 用时: {5}{6}{7}"
+	}
+	"Zone_Start"
+	{
+		"chi"		"起点"
+	}
+	"Zone_End"
+	{
+		"chi"		"终点"
+	}
+	"Zone_Respawn"
+	{
+		"chi"		"防BUG区域 (回到起点)"
+	}
+	"Zone_Stop"
+	{
+		"chi"		"防BUG区域 (停止计时)"
+	}
+	"Zone_Slay"
+	{
+		"chi"		"防BUG区域 (处死玩家)"
+	}
+	"Zone_Freestyle"
+	{
+		"chi"		"无限制/标记区域"
+	}
+	"Zone_CustomSpeedLimit"
+	{
+		"chi"		"自定义限速区域"
+	}
+	"Zone_Teleport"
+	{
+		"chi"		"传送区域"
+	}
+	"Zone_CustomSpawn"
+	{
+		"chi"		"复活点区域"
+	}
+	"Zone_Easybhop"
+	{
+		"chi"		"EzBhop 区域"
+	}
+	"Zone_Slide"
+	{
+		"chi"		"滑地板区域"
+	}
+	"Zone_Airaccelerate"
+	{
+		"chi"		"自定义空速区域"
+	}
+	"Zone_Stage"
+	{
+		"chi"		"检查点区域"
+	}
+	"Zone_NoTimerGravity"
+	{
+		"chi"		"默认重力区域"
+	}
+	"Zone_Gravity"
+	{
+		"chi"		"自定义重力区域"
+	}
+	"Zone_Unknown"
+	{
+		"chi"		"未知区域"
+	}
+}

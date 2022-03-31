@@ -4,126 +4,126 @@
 	"StatsMenuFailure"
 	{
 		"#format"	"{1:s},{2:s}"
-		"en"		"{1}ERROR: {2}Could not open the stats menu."
+		"chi"		"{1}错误: {2}无法打开统计菜单."
 	}
 	// ---------- Map Completions ---------- //
 	"SelectTrack"
 	{
-		"en"		"Select timer track:"
+		"chi"		"选择一个关卡:"
 	}
 	"MapsDone"
 	{
-		"en"		"Maps done"
+		"chi"		"已完成的地图"
 	}
 	"MapsDoneFor"
 	{
 		"#format"	"{1:s},{2:s},{3:d}"
-		"en"		"[{1}] Maps done for {2}: ({3})"
+		"chi"		"[{1}] {2}已完成的地图: ({3})"
 	}
 	"MapsDoneOnStyle"
 	{
 		"#format"	"{1:s}"
-		"en"		"Maps done for {1} on style:"
+		"chi"		"[{1}] 选择一个模式以查看已完成的地图:"
 	}
 	"MapsLeft"
 	{
-		"en"		"Maps left"
+		"chi"		"未完成的地图"
 	}
 	"MapsLeftFor"
 	{
 		"#format"	"{1:s},{2:s},{3:d}"
-		"en"		"[{1}] Maps left for {2}: ({3})"
+		"chi"		"[{1}] {2}未完成的地图: ({3})"
 	}
 	"MapsLeftOnStyle"
 	{
 		"#format"	"{1:s}"
-		"en"		"Maps left for {1} on style:"
+		"chi"		"[{1}] 选择一个模式以查看未完成的地图:"
 	}
 	"MapsMenu"
 	{
 		"#format"	"{1:s}"
-		"en"		"[{1}] Stats:"
+		"chi"		"[{1}] 完成统计:"
 	}
 	"MapsPoints"
 	{
-		"en"		"points"
+		"chi"		"points"
 	}
 	"MapsJumps"
 	{
-		"en"		"jumps"
+		"chi"		"jumps"
 	}
 	"Nope"
 	{
-		"en"		"nope"
+		"chi"		"nope"
 	}
 	"NoResults"
 	{
-		"en"		"No results."
+		"chi"		"暂无结果."
 	}
 	// ---------- Player Profiles ---------- //
 	"Country"
 	{
-		"en"		"Country"
+		"chi"		"国家或地区"
 	}
 	"LastLogin"
 	{
-		"en"		"Last Login"
+		"chi"		"最近登录"
 	}
 	"MapCompletions"
 	{
-		"en"		"Map completions"
+		"chi"		"已完成地图"
 	}
 	"NoRecords"
 	{
-		"en"		"Nothing."
+		"chi"		"暂无."
 	}
 	"Rank"
 	{
-		"en"		"Rank"
+		"chi"		"当前排名"
 	}
 	"Playtime"
 	{
-		"en"		"Play time"
+		"chi"		"游玩时间"
 	}
 	"YourPlaytime"
 	{
-		"en"		"Yours"
+		"chi"		"你的时间"
 	}
 	"Points"
 	{
-		"en"		"Points"
+		"chi"		"获得点数"
 	}
 	"PointsUnranked"
 	{
-		"en"		"Unranked"
+		"chi"		"未排名"
 	}
 	"Profile"
 	{
-		"en"		"'s profile"
+		"chi"		"的个人信息"
 	}
 	"WorldRecords"
 	{
-		"en"		"World records"
+		"chi"		"纪录数目"
 	}
 	// ---------- Record Data ---------- //
 	"Date"
 	{
-		"en"		"Date"
+		"chi"		"完成日期"
 	}
 	"Jumps"
 	{
-		"en"		"Jumps"
+		"chi"		"起跳次数"
 	}
 	"Strafes"
 	{
-		"en"		"Strafes"
+		"chi"		"加速次数"
 	}
 	"Style"
 	{
-		"en"		"Style"
+		"chi"		"游玩模式"
 	}
 	"Time"
 	{
-		"en"		"Time"
+		"chi"		"通关时间"
 	}
 }

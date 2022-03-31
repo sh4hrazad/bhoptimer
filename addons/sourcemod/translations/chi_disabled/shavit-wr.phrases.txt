@@ -1,0 +1,231 @@
+"Phrases"
+{
+	// ---------- Commands ---------- //
+	"DeletionAborted"
+	{
+		"chi"		"已中止删除纪录."
+	}
+	"DeletedRecord"
+	{
+		"chi"		"已删除纪录."
+	}
+	"DeletedRecordsMap"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"chi"		"已删除所有{1}{2}{3}的纪录."
+	}
+	"DeletedRecordsStyle"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"chi"		"已删除所有{1}{2}{3}的纪录."
+	}
+	// ---------- Client Menus ---------- //
+	"ListClientRecords"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"{1}的纪录列表:\n({2})"
+	}
+	"ListPersonalBest"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"{1}的个人最佳纪录列表 - {2}"
+	}
+	// ---------- Completion Messages ---------- //
+	"FirstCompletion"
+	{
+		"#format"	"{1:s},{2:N},{3:s},{4:s},{5:s},{6:s},{7:s},{8:s},{9:s},{10:s},{11:d},{12:s},{13:d},{14:d},{15:s},{16:s}"
+		"chi"		"{1}{2}{3} 完成地图 ({4}{5}{6}), 用时 {7}{8}{9} ({10}#{11}{12}), {13} 次起跳, {14} 次加速{15}{16}."
+	}
+	"NotFirstCompletion"
+	{
+		"#format"	"{1:s},{2:N},{3:s},{4:s},{5:s},{6:s},{7:s},{8:s},{9:s},{10:s},{11:d},{12:s},{13:d},{14:d},{15:s},{16:s},{17:s},{18:s}"
+		"chi"		"{1}{2}{3} 完成地图 ({4}{5}{6}), 用时 {7}{8}{9} ({10}#{11}{12}), {13} 次起跳, {14} 次加速{15}{16}. {17}(-{18})"
+	}
+	"NotFirstCompletionWorse"
+	{
+		"#format"	"{1:s},{2:N},{3:s},{4:s},{5:s},{6:s},{7:s},{8:s},{9:s},{10:s},{11:d},{12:s},{13:d},{14:d},{15:s},{16:s},{17:s}"
+		"chi"		"{1}{2}{3} 完成地图 ({4}{5}{6}), 用时 {7}{8}{9} ({10}#{11}{12}), {13} 次起跳, {14} 次加速{15}{16}. (+{17})"
+	}
+	"WorseTime"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s},{6:s},{7:d},{8:d},{9:s},{10:s},{11:s}"
+		"chi"		"完成地图 ({1}{2}{3}), 用时 {4}{5}{6}, {7} 次起跳, {8} 次加速{9}{10}. (+{11})"
+	}
+	"UnrankedTime"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s},{6:s},{7:d},{8:d},{9:s},{10:s}"
+		"chi"		"完成地图 ({1}{2}{3}), 用时 {4}{5}{6}, {7} 次起跳, {8} 次加速{9}{10}."
+	}
+	"CompletionExtraInfo"
+	{
+		"#format"   "{1:s},{2:.2f},{3:s},{4:s},{5:.2f},{6:s}"
+		"chi"        "平均/最大速度: {1}{2}{3}/{4}{5}{6}."
+	}
+	"CompletionExtraInfoPerf"
+	{
+		"#format"   "{1:s},{2:.1f},{3:s}"
+		"chi"        "完美起跳率: {1}{2}{3}%%."
+	}
+	// ---------- Deletion Menus ---------- //
+	"DeleteAllRecords"
+	{
+		"chi"		"批量删除地图纪录"
+	}
+	"DeleteAllRecordsMenuTitle"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"chi"		"删除所有'{1}'的服务器纪录? (关卡: {2} | 模式: {3})"
+	}
+	"DeleteConfirm"
+	{
+		"chi"		"是否删除该纪录?"
+	}
+	"DeleteMenuTitle"
+	{
+		"chi"		"选择要删除的纪录的模式:"
+	}
+	"DeleteSingleRecord"
+	{
+		"chi"		"删除单个纪录"
+	}
+	"MenuResponseNo"
+	{
+		"chi"		"否"
+	}
+	"MenuResponseYesSingle"
+	{
+		"chi"		"是"
+	}
+	"MenuResponseYes"
+	{
+		"chi"		"是(该操作不可撤销!)"
+	}
+	"DeleteStyleRecordsRecordsMenuTitle"
+	{
+		"#format"	"{1:s}"
+		"chi"		"[{1}] 选择要批量删除纪录的模式:"
+	}
+	"DeleteConfirmStyle"
+	{
+		"#format"	"{1:s}"
+		"chi"		"Are you sure you want to delete ALL THE RECORDS for {1}?"
+	} // 插件暂时没用该条, 故不翻译
+	"MenuResponseYesStyle"
+	{
+		"#format"	"{1:s}"
+		"chi"		"YES!!! DELETE THE RECORDS FOR {1}!!! THIS ACTION IS IRREVERSIBLE!"
+	} // 插件暂时没用该条, 故不翻译
+	"DeleteTrackSingle"
+	{
+		"chi"		"选择要删除的纪录的关卡:"
+	}
+	"DeleteTrackAll"
+	{
+		"chi"		"选择要批量删除的纪录的关卡:"
+	}
+	"DeleteTrackAllStyle"
+	{
+		"#format"	"{1:s}"
+		"chi"		"[{1}] 选择要批量删除的纪录的模式:"
+	}
+	// ---------- Errors ---------- //
+	"DatabaseError"
+	{
+		"chi"		"数据库错误"
+	}
+	"Error"
+	{
+		"chi"		"错误"
+	}
+	"NoStyles"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"{1}!!! {2}没有模式可供游玩?! 请联系管理员修复."
+	}
+	"NoPB"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s},{6:s}"
+		"chi"		"{1}{2}{3} 在 {4}{5}{6} 中暂无纪录."
+	}
+	// ---------- WR Menu ---------- //
+	"RecentRecords"
+	{
+		"#format"	"{1:d}"
+		"chi"		"近期的 {1} 个服务器纪录"
+	}
+	"WRDate"
+	{
+		"chi"		"完成日期"
+	}
+	"WRJump"
+	{
+		"chi"		"jump"
+	} // 插件暂时没用该条, 故不翻译(虽然就一个单词)
+	"WRJumps"
+	{
+		"chi"		"起跳次数"
+	}
+	"WRMap"
+	{
+		"#format"	"{1:s}"
+		"chi"		"{1} 的纪录列表"
+	}
+	"WRMapNoRecords"
+	{
+		"chi"		"暂无纪录"
+	}
+	"WRMenuTitle"
+	{
+		"chi"		"选择模式:"
+	}
+	"WRPoints"
+	{
+		"chi"		"points"
+	} // 插件暂时没用该条, 故不翻译(虽然就一个单词)
+	"WRPlayerStats"
+	{
+		"chi"		"玩家信息"
+	}
+	"WRDeleteRecord"
+	{
+		"chi"		"删除纪录"
+	}
+	"WRPointsCap"
+	{
+		"chi"		"获得点数"
+	}
+	"WRRecord"
+	{
+		"chi"		"纪录数"
+	}
+	"WRRecordFor"
+	{
+		"chi"		"纪录列表 -"
+	}
+	"WRStrafes"
+	{
+		"chi"		"加速次数"
+	}
+	"WRCompletions"
+	{
+		"chi"		"完成次数"
+	}
+	"WRStyle"
+	{
+		"chi"		"游玩模式"
+	}
+	"WRStyleNothing"
+	{
+		"chi"		"暂无."
+	}
+	"WRTime"
+	{
+		"chi"		"完成时间"
+	}
+	// ---------- Messages ---------- //
+	"WRStageTime"
+	{
+		"#format"	"{1:s},{2:s},{3:d},{4:s},{5:s},{6:s},{7:s},{8:s},{9:s},{10:s}"
+		"chi"		"{1}检查点[{2}{3}{4}] | 用时: {5}{6}{7} (WR {8}{9}{10})"
+	}
+}

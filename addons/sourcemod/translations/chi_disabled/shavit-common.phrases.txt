@@ -1,0 +1,63 @@
+"Phrases"
+{
+	// ---------- Tracks ---------- //
+	"Track"
+	{
+		"chi"		"关卡"
+	}
+	"Track_Unknown"
+	{
+		"chi"		"未知关卡"
+	}
+	"Track_Main"
+	{
+		"chi"		"Main"
+	}
+	"Track_Bonus"
+	{
+		"#format"	"{1:d}"
+		"chi"		"Bonus {1}"
+	}
+	// ---------- Commands ---------- //
+	"NoCommandAccess"
+	{
+		"chi"		"你无权使用此指令."
+	}
+	"NoConsole"
+	{
+		"chi"		"Run this command from inside the game."
+	}
+	"ArgumentsMissing"
+	{
+		"#format"	"{1:s}"
+		"chi"		"用法: {1}"
+	}
+	"TimerCommands"
+	{
+		"chi"		"计时器指令"
+	}
+	// ---------- Timelimit ---------- //
+	"Minutes"
+	{
+		"#format"	"{1:s}"
+		"chi"		"剩余 {1} 分钟."
+	}
+	"Seconds"
+	{
+		"#format"	"{1:s}"
+		"chi"		"剩余 {1} 秒."
+	}
+	// ----------- Random ----------- //
+	"TimerLoading"
+	{
+		"chi"        "加载中.."
+	}
+	"Timescale"
+	{
+		"chi"        "时延"
+	}
+	"CurrentTimescale"
+	{
+		"chi"        "当前时延"
+	}
+}

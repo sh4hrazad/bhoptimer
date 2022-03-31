@@ -1,0 +1,119 @@
+"Phrases"
+{
+	// ---------- Menus ---------- //
+	"DeleteReplayAdminMenu"
+	{
+		"chi"		"删除纪录回放"
+	}
+	"DeleteReplayMenuTitle"
+	{
+		"chi"		"选择要删除的纪录回放:"
+	}
+	"MenuResponseNo"
+	{
+		"chi"		"否"
+	}
+	"MenuResponseYes"
+	{
+		"chi"		"是"
+	}
+	"ReplayDeletionConfirmation"
+	{
+		"#format"	"{1:s}"
+		"chi"		"删除{1}的纪录回放?"
+	}
+	"ReplaysUnavailable"
+	{
+		"chi"		"暂无回放."
+	}
+	// ---------- Replay Deletion ---------- //
+	"ReplayDeleted"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"chi"		"已删除{1}{2}{3}的纪录回放."
+	}
+	"ReplayDeleteFailure"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"chi"		"无法删除{1}{2}{3}的纪录回放."
+	}
+	// ---------- Central Replay Menu ---------- //
+	"CentralReplayTitle"
+	{
+		"chi"		"选择要播放的回放的模式:"
+	}
+	"CentralReplayPlaying"
+	{
+		"chi"		"回放Bot暂忙, 请稍后再试."
+	}
+	"CentralReplayStop"
+	{
+		"chi"		"中止回放."
+	}
+	"CentralReplayStopped"
+	{
+		"chi"		"已中止当前回放."
+	}
+	"CentralReplayTrack"
+	{
+		"chi"		"选择回放关卡:"
+	}
+	"Replay_Central"
+	{
+		"chi"		"!replay"
+	}
+	"Replay_Dynamic"
+	{
+		"chi"		"Dynamic"
+	}
+	"Replay_Looping"
+	{
+		"chi"		"Looping"
+	}
+	"Menu_ReplayBotType"
+	{
+		"chi"		"选择回放Bot类型:"
+	}
+	"Menu_Replay_Central"
+	{
+		"chi"		"主回放Bot(!replay)"
+	}
+	"Menu_Replay_Dynamic"
+	{
+		"chi"		"动态添加回放Bot"
+	}
+	"Menu_Replay_Prop"
+	{
+		"chi"		"生成物理道具"
+	}
+	"TooManyDynamicBots"
+	{
+		"chi"		"当前已存在过多的动态回放Bot, 暂时无法添加."
+	}
+	"FailedToCreateReplay"
+	{
+		"chi"		"无法启用回放Bot."
+	}
+	"Menu_Replay"
+	{
+		"chi"		"回放控制菜单"
+	}
+	"Menu_SpawnReplay"
+	{
+		"chi"		"生成回放Bot"
+	}
+	"Menu_Replay2X"
+	{
+		"#format"	"{1:s}"
+		"chi"		"[{1}] 2倍速播放"
+	}
+	"Menu_PlaybackSpeed"
+	{
+		"#format"   "{1:.1f}"
+		"chi"        "回放速率: {1}x"
+	}
+	"Menu_RefreshReplay"
+	{
+		"chi"		"刷新"
+	}
+}
