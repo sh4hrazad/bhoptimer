@@ -13,13 +13,13 @@
 	}
 	"HudInStartZone"
 	{
-		"#format"	"{1:d}"
-		"en"		"In Start Zone"
+		"#format"	"{1:s}"
+		"en"		"In {1} Start Zone"
 	}
 	"HudInStartZoneCSGO"
 	{
 		"#format"	"{1:d}"
-		"en"		"In Start Zone"
+		"en"		"In Start Zone\n{1}"
 	}
 	"HudEndZone"
 	{
@@ -27,13 +27,13 @@
 	}
 	"HudInEndZone"
 	{
-		"#format"	"{1:d}"
-		"en"		"In End Zone"
+		"#format"	"{1:s}"
+		"en"		"In {1} End Zone"
 	}
 	"HudInEndZoneCSGO"
 	{
 		"#format"	"{1:d}"
-		"en"		"In End Zone"
+		"en"		"In End Zone\n{1}"
 	}
 	"HudPaused"
 	{

@@ -1278,6 +1278,9 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 
 	if((gI_HUDSettings[client] & HUD_ZONEHUD) > 0 && data.iZoneHUD != ZoneHUD_None)
 	{
+		char sTrack[32];
+		GetTrackName(client, data.iTrack, sTrack, 32);
+
 		if(gB_Rankings && (gI_HUD2Settings[client] & HUD2_MAPTIER) == 0)
 		{
 			FormatEx(sLine, 128, "%T", "HudZoneTier", client, data.iMapTier);
@@ -1286,11 +1289,11 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 
 		if(data.iZoneHUD == ZoneHUD_Start)
 		{
-			FormatEx(sLine, 128, "%T ", "HudInStartZone", client, data.iSpeed);
+			FormatEx(sLine, 128, "%T", "HudInStartZone", client, sTrack);
 		}
 		else
 		{
-			FormatEx(sLine, 128, "%T ", "HudInEndZone", client, data.iSpeed);
+			FormatEx(sLine, 128, "%T", "HudInEndZone", client, sTrack);
 		}
 		AddHUDLine(buffer, maxlen, sLine, iLines);
 
