@@ -87,6 +87,7 @@ int gI_ScrollCount[MAXPLAYERS+1];
 int gI_Buttons[MAXPLAYERS+1];
 float gF_ConnectTime[MAXPLAYERS+1];
 bool gB_FirstPrint[MAXPLAYERS+1];
+bool gB_BlockSidebarHUD[MAXPLAYERS + 1];
 int gI_PreviousSpeed[MAXPLAYERS+1];
 int gI_ZoneSpeedLimit[MAXPLAYERS+1];
 float gF_Angle[MAXPLAYERS+1];
@@ -135,6 +136,9 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_ForceHUDUpdate", Native_ForceHUDUpdate);
 	CreateNative("Shavit_GetHUDSettings", Native_GetHUDSettings);
 	CreateNative("Shavit_GetHUD2Settings", Native_GetHUD2Settings);
+	
+	// sfork natives
+	CreateNative("sFork_ToggleBlockSidebarHUD", Native_ToggleBlockSidebarHUD);
 
 	// registers library, check "bool LibraryExists(const char[] name)" in order to use with other plugins
 	RegPluginLibrary("shavit-hud");
@@ -815,19 +819,19 @@ public int MenuHandler_HUD(Menu menu, MenuAction action, int param1, int param2)
 
 		int iSelection = StringToInt(sCookie);
 
-		if(type == 1)
+		if(type == 1)		// "!": saves in other hud cookie
 		{
 			gI_HUDSettings[param1] ^= iSelection;
 			IntToString(gI_HUDSettings[param1], sCookie, 16);
 			SetClientCookie(param1, gH_HUDCookie, sCookie);
 		}
-		else if (type == 2)
+		else if (type == 2)	// "@": saves in hinttext(center) hud cookie
 		{
 			gI_HUD2Settings[param1] ^= iSelection;
 			IntToString(gI_HUD2Settings[param1], sCookie, 16);
 			SetClientCookie(param1, gH_HUDCookieMain, sCookie);
 		}
-		else if (type == 3) // special trinary ones :)
+		else if (type == 3)	// "#": have three choices
 		{
 			int mask = (iSelection | (iSelection << 1));
 
@@ -1118,7 +1122,7 @@ void TriggerHUDUpdate(int client, bool keysonly = false) // keysonly because CS:
 
 	if(IsSource2013(gEV_Type))
 	{
-		if(!keysonly)
+		if(!keysonly && !gB_BlockSidebarHUD[client])
 		{
 			UpdateKeyHint(client);
 		}
@@ -2378,6 +2382,15 @@ public int Native_GetHUD2Settings(Handle handler, int numParams)
 {
 	int client = GetNativeCell(1);
 	return gI_HUD2Settings[client];
+}
+
+public int Native_ToggleBlockSidebarHUD(Handle handler, int numParams)
+{
+	int client = GetNativeCell(1);
+
+	gB_BlockSidebarHUD[client] = GetNativeCell(2);
+
+	return gB_BlockSidebarHUD[client];
 }
 
 void UnreliablePrintCenterText(int client, const char[] str)
