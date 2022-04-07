@@ -288,7 +288,8 @@ native bool Shavit_LoadCheckpointCache(int client, any[] cache, int index, int s
 native void Shavit_SaveCheckpointCache(int saver, int target, any[] cache, int index, int size = sizeof(cp_cache_t));
 
 /**
- * Toggle whether to block a player's sidebar hud.(usually used to prevent hud conflict for plugins)
+ * Toggle whether to block a player's sidebar hud.(usually used to prevent hud conflict for plugins like ljstats)
+ *
  * @param client                    The client to operate.
  * @param toggle                    Switch whether to block.
  *

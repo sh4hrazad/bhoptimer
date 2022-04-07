@@ -1663,7 +1663,7 @@ bool LoadCheckpointCache(int client, cp_cache_t cpcache, int index, bool force =
 		cpcache.aSnapshot.bPracticeMode = true;
 
 		// Do this here to trigger practice mode alert
-		Shavit_SetPracticeMode(client, true, true);
+		Shavit_SetPracticeMode(client, true, !Shavit_InsideZone(client, Zone_Start, -1));
 	}
 
 	Shavit_LoadSnapshot(client, cpcache.aSnapshot, sizeof(timer_snapshot_t), force);
