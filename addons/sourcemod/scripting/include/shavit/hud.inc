@@ -194,6 +194,16 @@ native int Shavit_GetHUDSettings(int client);
  */
 native int Shavit_GetHUD2Settings(int client);
 
+/**
+ * Toggle whether to block a player's sidebar hud.(usually used to prevent hud conflict for plugins like ljstats)
+ *
+ * @param client                    The client to operate.
+ * @param toggle                    Switch whether to block.
+ *
+ * @return                          Block status. Should be the same as 'toggle'.
+ */
+native bool sFork_ToggleBlockSidebarHUD(int client, bool toggle);
+
 public SharedPlugin __pl_shavit_hud =
 {
 	name = "shavit-hud",
