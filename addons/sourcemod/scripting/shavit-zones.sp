@@ -103,6 +103,7 @@ bool gB_InsideZoneID[MAXPLAYERS+1][MAX_ZONES];
 zone_settings_t gA_ZoneSettings[ZONETYPES_SIZE][TRACKS_SIZE];
 zone_cache_t gA_ZoneCache[MAX_ZONES]; // Vectors will not be inside this array.
 int gI_MapZones = 0;
+int gI_Bonuses;
 float gV_MapZones[MAX_ZONES][2][3];
 float gV_MapZones_Visual[MAX_ZONES][8][3];
 float gV_Destinations[MAX_ZONES][3];
@@ -217,6 +218,9 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("Shavit_GetZoneTrack", Native_GetZoneTrack);
 	CreateNative("Shavit_GetZoneType", Native_GetZoneType);
 	CreateNative("Shavit_GetZoneID", Native_GetZoneID);
+
+	// sFork natives
+	CreateNative("sFork_GetBonusCount", Native_GetBonusCount);
 
 	// registers library, check "bool LibraryExists(const char[] name)" in order to use with other plugins
 	RegPluginLibrary("shavit-zones");
@@ -692,9 +696,14 @@ public int Native_GetStageZone(Handle handler, int numParams)
 	return gI_StageZoneID[iTrack][iStageNumber];
 }
 
-public int Native_GetStageCount(Handle handler, int numParas)
+public int Native_GetStageCount(Handle handler, int numParams)
 {
 	return gI_HighestStage[GetNativeCell(1)];
+}
+
+public int Native_GetBonusCount(Handle handler, int numParams)
+{
+	return gI_Bonuses;
 }
 
 public int Native_Zones_DeleteMap(Handle handler, int numParams)
@@ -1429,6 +1438,8 @@ void RefreshZones()
 		(gB_MySQL)? "id":"rowid", gS_MySQLPrefix, gS_Map);
 
 	gH_SQL.Query2(SQL_RefreshZones_Callback, sQuery, 0, DBPrio_High);
+
+	GetBonusCount();
 }
 
 public void SQL_RefreshZones_Callback(Database db, DBResultSet results, const char[] error, any data)
@@ -1501,6 +1512,29 @@ public void SQL_RefreshZones_Callback(Database db, DBResultSet results, const ch
 	}
 
 	CreateZoneEntities(false);
+}
+
+void GetBonusCount()
+{
+	gI_Bonuses = 0;
+
+	char sQuery[256];
+	FormatEx(sQuery, 256, "SELECT track FROM mapzones WHERE map = '%s' ORDER BY track DESC LIMIT 1;", gS_Map);
+	gH_SQL.Query(SQL_GetBonusCount_Callback, sQuery, 0, DBPrio_High);
+}
+
+public void SQL_GetBonusCount_Callback(Database db, DBResultSet results, const char[] error, any data)
+{
+	if(results == null)
+	{
+		LogError("Timer (zones GetBonusCount) SQL query failed. Reason: %s", error);
+		return;
+	}
+
+	if(results.FetchRow())
+	{
+		gI_Bonuses = results.FetchInt(0);
+	}
 }
 
 public void AddZoneToCache(int type, float corner1_x, float corner1_y, float corner1_z, float corner2_x, float corner2_y, float corner2_z, float destination_x, float destination_y, float destination_z, int track, int id, int flags, int data, bool prebuilt)

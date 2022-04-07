@@ -311,6 +311,21 @@ native void Shavit_SetStart(int client, int track, bool anglesonly);
  */
 native void Shavit_DeleteSetStart(int client, int track);
 
+/**
+ * Get count of stage zones for a track.
+ *
+ * @param track                     Timer track.
+ * @return                          Count of stage zones for the track.
+ */
+native int Shavit_GetStageCount(int track);
+
+/**
+ * Get count of bonuses for a map.
+ *
+ * @return                          Count of bonuses for the map.
+ */
+native int sFork_GetBonusCount();
+
 #if 0
 native void Shavit_RemoveAllZones();
 

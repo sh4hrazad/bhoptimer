@@ -566,8 +566,10 @@ public void SQL_GetWRs_Callback(Database db, DBResultSet results, const char[] e
 public Action Command_MapInfo(int client, int args)
 {
 	int tier = gI_Tier;
-	int bonus = Shavit_ZoneExists(Zone_Start, 1);
-	int staged = Shavit_ZoneExists(Zone_Stage, 0);
+	int bonuses = sFork_GetBonusCount();
+
+	// usually it's only in main track that has stage zones
+	int stages = Shavit_GetStageCount(Track_Main);
 
 	char sMap[PLATFORM_MAX_PATH];
 
@@ -583,15 +585,37 @@ public Action Command_MapInfo(int client, int args)
 		if(!GuessBestMapName(gA_ValidMaps, sMap, sMap) || !gA_MapTiers.GetValue(sMap, tier))
 		{
 			Shavit_PrintToChat(client, "%t", "Map was not found", sMap);
+
 			return Plugin_Handled;
 		}
 	}
 
-	Shavit_PrintToChat(client, "%s | Tier %s%i%s%s%s",
-		sMap, gS_ChatStrings.sVariable,
-		tier, gS_ChatStrings.sText,
-		bonus ? " | Bonus" : " | No Bonus",
-		staged ? " | Staged" : "");
+	char sInfo[128];
+	FormatEx(sInfo, sizeof(sInfo), "%s | Tier: %s%i%s",
+		sMap, gS_ChatStrings.sVariable, tier, gS_ChatStrings.sText);
+	
+	if(bonuses)
+	{
+		FormatEx(sInfo, sizeof(sInfo), "%s | Bonuses: %s%i%s", sInfo,
+			gS_ChatStrings.sVariable, bonuses, gS_ChatStrings.sText);
+	}
+	else
+	{
+		FormatEx(sInfo, sizeof(sInfo), "%s | No Bonus", sInfo);
+
+	}
+
+	if(stages)
+	{
+		FormatEx(sInfo, sizeof(sInfo), "%s | Stages: %s%d", sInfo,
+			gS_ChatStrings.sVariable, stages);
+	}
+	else
+	{
+		FormatEx(sInfo, sizeof(sInfo), "%s | Linear", sInfo);
+	}
+
+	Shavit_PrintToChat(client, sInfo);
 
 	return Plugin_Handled;
 }
