@@ -591,13 +591,13 @@ public Action Command_MapInfo(int client, int args)
 	}
 
 	char sInfo[128];
-	FormatEx(sInfo, sizeof(sInfo), "%s | Tier: %s%i%s",
+	FormatEx(sInfo, sizeof(sInfo), "%s | Tier: %s%i",
 		sMap, gS_ChatStrings.sVariable, tier, gS_ChatStrings.sText);
 	
-	if(bonuses)
+	if(bonuses && args == 0)
 	{
-		FormatEx(sInfo, sizeof(sInfo), "%s | Bonuses: %s%i%s", sInfo,
-			gS_ChatStrings.sVariable, bonuses, gS_ChatStrings.sText);
+		FormatEx(sInfo, sizeof(sInfo), "%s%s | Bonuses: %s%i%s", sInfo,
+			gS_ChatStrings.sText, gS_ChatStrings.sVariable, bonuses, gS_ChatStrings.sText);
 	}
 	else
 	{
@@ -605,7 +605,7 @@ public Action Command_MapInfo(int client, int args)
 
 	}
 
-	if(stages)
+	if(stages && args == 0)
 	{
 		FormatEx(sInfo, sizeof(sInfo), "%s | Stages: %s%d", sInfo,
 			gS_ChatStrings.sVariable, stages);
