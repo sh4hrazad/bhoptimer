@@ -16,11 +16,6 @@
 		"#format"	"{1:s}"
 		"en"		"In {1} Start Zone"
 	}
-	"HudInStartZoneCSGO"
-	{
-		"#format"	"{1:d}"
-		"en"		"In Start Zone\n{1}"
-	}
 	"HudEndZone"
 	{
 		"en"		"End Zone"
@@ -29,11 +24,6 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"In {1} End Zone"
-	}
-	"HudInEndZoneCSGO"
-	{
-		"#format"	"{1:d}"
-		"en"		"In End Zone\n{1}"
 	}
 	"HudPaused"
 	{
@@ -193,10 +183,6 @@
 	"NoReplayData"
 	{
 		"en"		"No replay data loaded\nPress USE or beat #1 to play"
-	}
-	"NoReplayDataTF2"
-	{
-		"en"		"No replay data loaded\n!replay or beat #1 to play"
 	}
 	// ---------- Panels ---------- //
 	"SpectatorPersonal"

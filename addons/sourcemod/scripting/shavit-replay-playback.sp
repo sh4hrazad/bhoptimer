@@ -40,8 +40,6 @@
 
 #undef REQUIRE_EXTENSIONS
 #include <cstrike>
-#include <tf2>
-#include <tf2_stocks>
 #include <closestpos>
 
 //#include <TickRateControl>
@@ -104,24 +102,6 @@ enum
 	CSS_ANIM_FIRE_GUN_SECONDARY,
 	CSS_ANIM_THROW_GRENADE,
 	CSS_ANIM_JUMP
-}
-
-enum
-{
-	TF2_ANIM_JUMP = 6
-}
-
-enum
-{
-	CSGO_ANIM_FIRE_GUN_PRIMARY,
-	CSGO_ANIM_FIRE_GUN_PRIMARY_OPT,
-	CSGO_ANIM_FIRE_GUN_PRIMARY__SPECIAL,
-	CSGO_ANIM_FIRE_GUN_PRIMARY_OPT_SPECIAL,
-	CSGO_ANIM_FIRE_GUN_SECONDARY,
-	CSGO_ANIM_FIRE_GUN_SECONDARY_SPECIAL,
-	CSGO_ANIM_GRENADE_PULL_PIN,
-	CSGO_ANIM_THROW_GRENADE,
-	CSGO_ANIM_JUMP
 }
 
 // custom cvar settings
@@ -347,26 +327,16 @@ public void OnPluginStart()
 
 	// game specific
 	gEV_Type = GetEngineVersion();
+
+	if (gEV_Type != Engine_CSS)
+	{
+		SetFailState("The fork of timer is only supported for CS:S. If you wanna use in CS:GO or TF2, please use original one.");
+	}
+
 	gF_Tickrate = (1.0 / GetTickInterval());
 
-	switch (gEV_Type)
-	{
-		case Engine_TF2:
-		{
-			gF_EyeOffset = 75.0; // maybe should be a gamedata thing...
-			gF_EyeOffsetDuck = 45.0;
-		}
-		case Engine_CSGO:
-		{
-			gF_EyeOffset = 64.0;
-			gF_EyeOffsetDuck = 46.0;
-		}
-		case Engine_CSS:
-		{
-			gF_EyeOffset = 64.0;
-			gF_EyeOffsetDuck = 47.0;
-		}
-	}
+	gF_EyeOffset = 64.0;
+	gF_EyeOffsetDuck = 47.0;
 
 	ConVar bot_stop = FindConVar("bot_stop");
 
@@ -375,7 +345,7 @@ public void OnPluginStart()
 		bot_stop.Flags &= ~FCVAR_CHEAT;
 	}
 
-	bot_join_after_player = FindConVar(gEV_Type == Engine_TF2 ? "tf_bot_join_after_player" : "bot_join_after_player");
+	bot_join_after_player = FindConVar("bot_join_after_player");
 
 	mp_randomspawn = FindConVar("mp_randomspawn");
 
@@ -485,49 +455,28 @@ void LoadDHooks()
 
 	gB_Linux = (gamedata.GetOffset("OS") == 2);
 
-	if (gEV_Type == Engine_TF2)
+	StartPrepSDKCall(gB_Linux ? SDKCall_Raw : SDKCall_Static);
+
+	if (!PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CCSBotManager::BotAddCommand"))
 	{
-		StartPrepSDKCall(SDKCall_Static);
-
-		if (!PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "NextBotCreatePlayerBot<CTFBot>"))
-		{
-			SetFailState("Failed to get NextBotCreatePlayerBot<CTFBot>");
-		}
-
-		PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);       // const char *name
-		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);   // bool bReportFakeClient
-		PrepSDKCall_SetReturnInfo(SDKType_CBasePlayer, SDKPass_Pointer); // CTFBot*
-
-		if (!(gH_BotAddCommand = EndPrepSDKCall()))
-		{
-			SetFailState("Unable to prepare SDKCall for NextBotCreatePlayerBot<CTFBot>");
-		}
+		SetFailState("Failed to get CCSBotManager::BotAddCommand");
 	}
-	else
+
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // int team
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // bool isFromConsole
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // const char *profileName
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // CSWeaponType weaponType
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // BotDifficultyType difficulty
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // bool
+
+	if (!(gH_BotAddCommand = EndPrepSDKCall()))
 	{
-		StartPrepSDKCall(gB_Linux ? SDKCall_Raw : SDKCall_Static);
+		SetFailState("Unable to prepare SDKCall for CCSBotManager::BotAddCommand");
+	}
 
-		if (!PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CCSBotManager::BotAddCommand"))
-		{
-			SetFailState("Failed to get CCSBotManager::BotAddCommand");
-		}
-
-		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // int team
-		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // bool isFromConsole
-		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // const char *profileName
-		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // CSWeaponType weaponType
-		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // BotDifficultyType difficulty
-		PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // bool
-
-		if (!(gH_BotAddCommand = EndPrepSDKCall()))
-		{
-			SetFailState("Unable to prepare SDKCall for CCSBotManager::BotAddCommand");
-		}
-
-		if ((gI_WEAPONTYPE_UNKNOWN = gamedata.GetOffset("WEAPONTYPE_UNKNOWN")) == -1)
-		{
-			SetFailState("Failed to get WEAPONTYPE_UNKNOWN");
-		}
+	if ((gI_WEAPONTYPE_UNKNOWN = gamedata.GetOffset("WEAPONTYPE_UNKNOWN")) == -1)
+	{
+		SetFailState("Failed to get WEAPONTYPE_UNKNOWN");
 	}
 
 	if (!(gH_MaintainBotQuota = DHookCreateDetour(Address_Null, CallConv_THISCALL, ReturnType_Void, ThisPointer_Address)))
@@ -542,19 +491,16 @@ void LoadDHooks()
 
 	gH_MaintainBotQuota.Enable(Hook_Pre, Detour_MaintainBotQuota);
 
-	if (gEV_Type == Engine_CSS)
+	if (!(gH_TeamFull = DHookCreateDetour(Address_Null, CallConv_THISCALL, ReturnType_Bool, ThisPointer_Address)))
 	{
-		if (!(gH_TeamFull = DHookCreateDetour(Address_Null, CallConv_THISCALL, ReturnType_Bool, ThisPointer_Address)))
-		{
-			SetFailState("Failed to create detour for CCSGameRules::TeamFull");
-		}
+		SetFailState("Failed to create detour for CCSGameRules::TeamFull");
+	}
 
-		gH_TeamFull.AddParam(HookParamType_Int); // Team ID
+	gH_TeamFull.AddParam(HookParamType_Int); // Team ID
 
-		if (!gH_TeamFull.SetFromConf(gamedata, SDKConf_Signature, "CCSGameRules::TeamFull"))
-		{
-			SetFailState("Failed to get address for CCSGameRules::TeamFull");
-		}
+	if (!gH_TeamFull.SetFromConf(gamedata, SDKConf_Signature, "CCSGameRules::TeamFull"))
+	{
+		SetFailState("Failed to get address for CCSGameRules::TeamFull");
 	}
 
 	StartPrepSDKCall(gB_Linux ? SDKCall_Static : SDKCall_Player);
@@ -1566,7 +1512,7 @@ public void OnMapStart()
 		ServerCommand("nav_load");
 	}
 
-	PrecacheModel((gEV_Type == Engine_TF2)? "models/error.mdl":"models/props/cs_office/vending_machine.mdl");
+	PrecacheModel("models/props/cs_office/vending_machine.mdl");
 
 	RequestFrame(LoadDefaultReplays);
 
@@ -1678,63 +1624,44 @@ int InternalCreateReplayBot()
 {
 	gI_LatestClient = -1;
 
-	if (gEV_Type == Engine_TF2)
-	{
-		int bot = SDKCall(
-			gH_BotAddCommand,
-			"replaybot", // name
-			true // bReportFakeClient
-		);
+	int mp_randomspawn_orig;
 
-		if (IsValidClient(bot))
-		{
-			TF2_ChangeClientTeam(bot, TFTeam_Red);
-			TF2_SetPlayerClass(bot, TFClass_Sniper);
-			SetFakeClientConVar(bot, "name", "replaybot");
-		}
+	if (mp_randomspawn != null)
+	{
+		mp_randomspawn_orig = mp_randomspawn.IntValue;
+		mp_randomspawn.IntValue = gCV_DefaultTeam.IntValue;
+	}
+
+	if (gB_Linux)
+	{
+		/*int ret =*/ SDKCall(
+			gH_BotAddCommand,
+			0x10000,                   // thisptr           // unused (sourcemod needs > 0xFFFF though)
+			gCV_DefaultTeam.IntValue,  // team
+			false,                     // isFromConsole
+			0,                         // profileName       // unused
+			gI_WEAPONTYPE_UNKNOWN,     // CSWeaponType      // WEAPONTYPE_UNKNOWN
+			0                          // BotDifficultyType // unused
+		);
 	}
 	else
 	{
-		// Do all this mp_randomspawn stuff on CSGO since it's easier than updating the signature for CCSGameRules::TeamFull.
-		int mp_randomspawn_orig;
-
-		if (mp_randomspawn != null)
-		{
-			mp_randomspawn_orig = mp_randomspawn.IntValue;
-			mp_randomspawn.IntValue = gCV_DefaultTeam.IntValue;
-		}
-
-		if (gB_Linux)
-		{
-			/*int ret =*/ SDKCall(
-				gH_BotAddCommand,
-				0x10000,                   // thisptr           // unused (sourcemod needs > 0xFFFF though)
-				gCV_DefaultTeam.IntValue,  // team
-				false,                     // isFromConsole
-				0,                         // profileName       // unused
-				gI_WEAPONTYPE_UNKNOWN,     // CSWeaponType      // WEAPONTYPE_UNKNOWN
-				0                          // BotDifficultyType // unused
-			);
-		}
-		else
-		{
-			/*int ret =*/ SDKCall(
-				gH_BotAddCommand,
-				gCV_DefaultTeam.IntValue,  // team
-				false,                     // isFromConsole
-				0,                         // profileName       // unused
-				gI_WEAPONTYPE_UNKNOWN,     // CSWeaponType      // WEAPONTYPE_UNKNOWN
-				0                          // BotDifficultyType // unused
-			);
-		}
-
-		if (mp_randomspawn != null)
-		{
-			mp_randomspawn.IntValue = mp_randomspawn_orig;
-		}
-
-		//bool success = (0xFF & ret) != 0;
+		/*int ret =*/ SDKCall(
+			gH_BotAddCommand,
+			gCV_DefaultTeam.IntValue,  // team
+			false,                     // isFromConsole
+			0,                         // profileName       // unused
+			gI_WEAPONTYPE_UNKNOWN,     // CSWeaponType      // WEAPONTYPE_UNKNOWN
+			0                          // BotDifficultyType // unused
+		);
 	}
+
+	if (mp_randomspawn != null)
+	{
+		mp_randomspawn.IntValue = mp_randomspawn_orig;
+	}
+
+	//bool success = (0xFF & ret) != 0;
 
 	return gI_LatestClient;
 }
@@ -2084,12 +2011,9 @@ void UpdateBotScoreboard(bot_info_t info)
 	bool central = (info.iType == Replay_Central);
 	bool idle = (info.iStatus == Replay_Idle);
 
-	if (gEV_Type != Engine_TF2)
-	{
-		char sTag[MAX_NAME_LENGTH];
-		FormatStyle(gS_ReplayStrings.sClanTag, info.iStyle, central, info.iTrack, sTag, idle, info.aCache, info.iType);
-		CS_SetClientClanTag(client, sTag);
-	}
+	char sTag[MAX_NAME_LENGTH];
+	FormatStyle(gS_ReplayStrings.sClanTag, info.iStyle, central, info.iTrack, sTag, idle, info.aCache, info.iType);
+	CS_SetClientClanTag(client, sTag);
 
 	int sv_duplicate_playernames_ok_original;
 	if (sv_duplicate_playernames_ok != null)
@@ -2112,14 +2036,7 @@ void UpdateBotScoreboard(bot_info_t info)
 
 	int iScore = (info.aCache.iFrameCount > 0 || central) ? 1337 : -1337;
 
-	if(gEV_Type == Engine_CSGO)
-	{
-		CS_SetClientContributionScore(client, iScore);
-	}
-	else if(gEV_Type == Engine_CSS)
-	{
-		SetEntProp(client, Prop_Data, "m_iFrags", iScore);
-	}
+	SetEntProp(client, Prop_Data, "m_iFrags", iScore);
 
 	SetEntProp(client, Prop_Data, "m_iDeaths", 0);
 }
@@ -2176,26 +2093,12 @@ void UpdateReplayClient(int client)
 
 	if(GetClientTeam(client) != gCV_DefaultTeam.IntValue)
 	{
-		if(gEV_Type == Engine_TF2)
-		{
-			ChangeClientTeam(client, gCV_DefaultTeam.IntValue);
-		}
-		else
-		{
-			CS_SwitchTeam(client, gCV_DefaultTeam.IntValue);
-		}
+		CS_SwitchTeam(client, gCV_DefaultTeam.IntValue);
 	}
 
 	if(!IsPlayerAlive(client))
 	{
-		if(gEV_Type == Engine_TF2)
-		{
-			TF2_RespawnPlayer(client);
-		}
-		else
-		{
-			CS_RespawnPlayer(client);
-		}
+		CS_RespawnPlayer(client);
 	}
 
 	int iFlags = GetEntityFlags(client);
@@ -2208,7 +2111,7 @@ void UpdateReplayClient(int client)
 	char sWeapon[32];
 	gCV_BotWeapon.GetString(sWeapon, 32);
 
-	if(gEV_Type != Engine_TF2 && strlen(sWeapon) > 0)
+	if(strlen(sWeapon) > 0)
 	{
 		if(StrEqual(sWeapon, "none"))
 		{
@@ -2224,19 +2127,6 @@ void UpdateReplayClient(int client)
 				GetEntityClassname(iWeapon, sClassname, 32);
 
 				bool same_thing = false;
-
-				// special case for csgo stuff because the usp classname becomes weapon_hkp2000
-				if (gEV_Type == Engine_CSGO)
-				{
-					if (StrEqual(sWeapon, "weapon_usp_silencer") || StrEqual(sWeapon, "weapon_usp"))
-					{
-						same_thing = (61 == GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"));
-					}
-					else if (StrEqual(sWeapon, "weapon_hkp2000"))
-					{
-						same_thing = (32 == GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"));
-					}
-				}
 
 				if (!same_thing && !StrEqual(sWeapon, sClassname))
 				{
@@ -2459,8 +2349,7 @@ Action ReplayOnPlayerRunCmd(bot_info_t info, int &buttons, int &impulse, float v
 
 					if((gI_LastReplayFlags[info.iEnt] & FL_ONGROUND) && !(iReplayFlags & FL_ONGROUND) && gH_DoAnimationEvent != INVALID_HANDLE)
 					{
-						int jumpAnim = (gEV_Type == Engine_CSS) ?
-							CSS_ANIM_JUMP : ((gEV_Type == Engine_TF2) ? TF2_ANIM_JUMP : CSGO_ANIM_JUMP);
+						int jumpAnim = CSS_ANIM_JUMP;
 
 						if(gB_Linux)
 						{
@@ -2888,7 +2777,7 @@ int CreateReplayProp(int client)
 		return -1;
 	}
 
-	SetEntityModel(ent, (gEV_Type == Engine_TF2)? "models/error.mdl":"models/props/cs_office/vending_machine.mdl");
+	SetEntityModel(ent, "models/props/cs_office/vending_machine.mdl");
 
 	DispatchSpawn(ent);
 
@@ -2924,14 +2813,7 @@ public Action Command_Replay(int client, int args)
 
 	if(GetClientTeam(client) > 1)
 	{
-		if(gEV_Type == Engine_TF2)
-		{
-			TF2_ChangeClientTeam(client, TFTeam_Spectator);
-		}
-		else
-		{
-			ChangeClientTeam(client, CS_TEAM_SPECTATOR);
-		}
+		ChangeClientTeam(client, CS_TEAM_SPECTATOR);
 	}
 
 	OpenReplayMenu(client);

@@ -1,6 +1,6 @@
 ![](https://img.shields.io/badge/neko%20fl4n-included-ff6a6a?style=flat-square) ![](https://img.shields.io/badge/neko%20brz-included-6aa6ff?style=flat-square)
 # !!! Modified timer. Do not use unless you know what you are doing!
-# Note: I may delete csgo/tf2 code for this fork to concentrate on my cs:s bhop server.
+# Note: csgo/tf2 code for this fork has been deleted to concentrate on my cs:s bhop server.
 [![Discord server](https://discordapp.com/api/guilds/389675819959844865/widget.png?style=shield)](https://discord.gg/jyA9q5k)
 
 ### RECOMPILE ALL YOUR PLUGINS THAT USE `#include <shavit>` OR STUFF WILL BREAK

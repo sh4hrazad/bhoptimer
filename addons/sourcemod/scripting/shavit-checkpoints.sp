@@ -163,6 +163,11 @@ public void OnPluginStart()
 
 	gEV_Type = GetEngineVersion();
 
+	if (gEV_Type != Engine_CSS)
+	{
+		SetFailState("The fork of timer is only supported for CS:S. If you wanna use in CS:GO or TF2, please use original one.");
+	}
+
 	RegConsoleCmd("sm_cpmenu", Command_Checkpoints, "Opens the checkpoints menu.");
 	RegConsoleCmd("sm_cp", Command_Checkpoints, "Opens the checkpoints menu. Alias for sm_cpmenu.");
 	RegConsoleCmd("sm_checkpoint", Command_Checkpoints, "Opens the checkpoints menu. Alias for sm_cpmenu.");
@@ -223,18 +228,7 @@ void LoadDHooks()
 
 	int iOffset;
 
-	if (gEV_Type == Engine_CSS)
-	{
-		hGameData = LoadGameConfigFile("sdktools.games/game.cstrike");
-	}
-	else if (gEV_Type == Engine_CSGO)
-	{
-		hGameData = LoadGameConfigFile("sdktools.games/engine.csgo");
-	}
-	else if (gEV_Type == Engine_TF2)
-	{
-		hGameData = LoadGameConfigFile("sdktools.games/game.tf");
-	}
+	hGameData = LoadGameConfigFile("sdktools.games/game.cstrike");
 
 	if ((iOffset = GameConfGetOffset(hGameData, "CommitSuicide")) == -1)
 	{
@@ -1405,22 +1399,11 @@ void SaveCheckpointCache(int saver, int target, cp_cache_t cpcache, int index, H
 
 	cpcache.iFlags = GetEntityFlags(target) & ~(FL_ATCONTROLS|FL_FAKECLIENT);
 
-	if(gEV_Type != Engine_TF2)
-	{
-		cpcache.fStamina = GetEntPropFloat(target, Prop_Send, "m_flStamina");
-		cpcache.bDucked = view_as<bool>(GetEntProp(target, Prop_Send, "m_bDucked"));
-		cpcache.bDucking = view_as<bool>(GetEntProp(target, Prop_Send, "m_bDucking"));
-	}
+	cpcache.fStamina = GetEntPropFloat(target, Prop_Send, "m_flStamina");
+	cpcache.bDucked = view_as<bool>(GetEntProp(target, Prop_Send, "m_bDucked"));
+	cpcache.bDucking = view_as<bool>(GetEntProp(target, Prop_Send, "m_bDucking"));
 
-	if(gEV_Type == Engine_CSS)
-	{
-		cpcache.fDucktime = GetEntPropFloat(target, Prop_Send, "m_flDucktime");
-	}
-	else if(gEV_Type == Engine_CSGO)
-	{
-		cpcache.fDucktime = GetEntPropFloat(target, Prop_Send, "m_flDuckAmount");
-		cpcache.fDuckSpeed = GetEntPropFloat(target, Prop_Send, "m_flDuckSpeed");
-	}
+	cpcache.fDucktime = GetEntPropFloat(target, Prop_Send, "m_flDucktime");
 
 	timer_snapshot_t snapshot;
 
@@ -1626,23 +1609,12 @@ bool LoadCheckpointCache(int client, cp_cache_t cpcache, int index, bool force =
 	int ground = (cpcache.iGroundEntity != -1) ? EntRefToEntIndex(cpcache.iGroundEntity) : -1;
 	SetEntPropEnt(client, Prop_Data, "m_hGroundEntity", ground);
 
-	if(gEV_Type != Engine_TF2)
-	{
-		SetEntPropVector(client, Prop_Data, "m_vecLadderNormal", cpcache.vecLadderNormal);
-		SetEntPropFloat(client, Prop_Send, "m_flStamina", cpcache.fStamina);
-		SetEntProp(client, Prop_Send, "m_bDucked", cpcache.bDucked);
-		SetEntProp(client, Prop_Send, "m_bDucking", cpcache.bDucking);
-	}
+	SetEntPropVector(client, Prop_Data, "m_vecLadderNormal", cpcache.vecLadderNormal);
+	SetEntPropFloat(client, Prop_Send, "m_flStamina", cpcache.fStamina);
+	SetEntProp(client, Prop_Send, "m_bDucked", cpcache.bDucked);
+	SetEntProp(client, Prop_Send, "m_bDucking", cpcache.bDucking);
 
-	if(gEV_Type == Engine_CSS)
-	{
-		SetEntPropFloat(client, Prop_Send, "m_flDucktime", cpcache.fDucktime);
-	}
-	else if(gEV_Type == Engine_CSGO)
-	{
-		SetEntPropFloat(client, Prop_Send, "m_flDuckAmount", cpcache.fDucktime);
-		SetEntPropFloat(client, Prop_Send, "m_flDuckSpeed", cpcache.fDuckSpeed);
-	}
+	SetEntPropFloat(client, Prop_Send, "m_flDucktime", cpcache.fDucktime);
 
 	// this is basically the same as normal checkpoints except much less data is used
 	if(!isPersistentData && Shavit_GetStyleSettingInt(gI_Style[client], "kzcheckpoints"))

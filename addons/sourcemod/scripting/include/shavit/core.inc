@@ -486,12 +486,6 @@ stock void SanerGetClientName(int client, char[] name)
 
 	GetClientName(client, name, 32+1);
 
-	// CSGO doesn't have this problem because `MAX_PLAYER_NAME_LENGTH` is 128...
-	if (ev == Engine_CSGO)
-	{
-		return;
-	}
-
 	TrimTrailingInvalidUnicode(name);
 }
 

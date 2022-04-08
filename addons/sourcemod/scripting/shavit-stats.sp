@@ -102,6 +102,11 @@ public void OnPluginStart()
 {
 	gEV_Type = GetEngineVersion();
 
+	if (gEV_Type != Engine_CSS)
+	{
+		SetFailState("The fork of timer is only supported for CS:S. If you wanna use in CS:GO or TF2, please use original one.");
+	}
+
 	// player commands
 	RegConsoleCmd("sm_p", Command_Profile, "Show the player's profile. Usage: sm_p [target]");
 	RegConsoleCmd("sm_profile", Command_Profile, "Show the player's profile. Usage: sm_profile [target]");
@@ -569,7 +574,7 @@ public void SQL_TopPlaytime_Callback(Database db, DBResultSet results, const cha
 
 	menu.SetTitle("%T\n%T (#%d): %s", "Playtime", client, "YourPlaytime", client, own_rank, sOwnPlaytime);
 
-	if (menu.ItemCount <= ((gEV_Type == Engine_CSS) ? 9 : 8))
+	if (menu.ItemCount <= 9)
 	{
 		menu.Pagination = MENU_NO_PAGINATION;
 	}

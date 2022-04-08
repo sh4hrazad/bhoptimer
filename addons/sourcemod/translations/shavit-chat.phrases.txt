@@ -47,10 +47,6 @@
 	{
 		"en"		"- You can also use a set alpha (opacity in HEX, where FF is 255). &RRGGBBAA. For example, &FFFFFF7F is 127 alpha, so all text after the color will have 50% opacity."
 	}
-	"CCHelp_CSGO_1"
-	{
-		"en"		"- The following colors are also available: {blue}, {bluegrey}, {darkblue}, {darkred}, {gold}, {grey}, {grey2}, {lightgreen}, {lightred}, {lime}, {orchid}, {yellow} and {palered}."
-	}
 	// ---------- Menu ---------- //
 	"SelectChatRank"
 	{

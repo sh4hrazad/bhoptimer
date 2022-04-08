@@ -48,7 +48,7 @@
 #pragma newdecls required
 #pragma semicolon 1
 
-// game type (CS:S/CS:GO/TF2)
+// game type
 EngineVersion gEV_Type = Engine_Unknown;
 bool gB_Protobuf = false;
 
@@ -264,17 +264,13 @@ public void OnPluginStart()
 
 	// game types
 	gEV_Type = GetEngineVersion();
-	gB_Protobuf = (GetUserMessageType() == UM_Protobuf);
 
-	if(gEV_Type == Engine_CSGO)
+	if (gEV_Type != Engine_CSS)
 	{
-		sv_autobunnyhopping = FindConVar("sv_autobunnyhopping");
-		sv_autobunnyhopping.BoolValue = false;
+		SetFailState("The fork of timer is only supported for CS:S. If you wanna use in CS:GO or TF2, please use original one.");
 	}
-	else if(gEV_Type != Engine_CSS && gEV_Type != Engine_TF2)
-	{
-		SetFailState("This plugin was meant to be used in CS:S, CS:GO and TF2 *only*.");
-	}
+
+	gB_Protobuf = (GetUserMessageType() == UM_Protobuf);
 
 	LoadDHooks();
 
@@ -472,18 +468,7 @@ void LoadDHooks()
 
 	GameData AcceptInputGameData;
 
-	if (gEV_Type == Engine_CSS)
-	{
-		AcceptInputGameData = new GameData("sdktools.games/game.cstrike");
-	}
-	else if (gEV_Type == Engine_TF2)
-	{
-		AcceptInputGameData = new GameData("sdktools.games/game.tf");
-	}
-	else if (gEV_Type == Engine_CSGO)
-	{
-		AcceptInputGameData = new GameData("sdktools.games/engine.csgo");
-	}
+	AcceptInputGameData = new GameData("sdktools.games/game.cstrike");
 
 	// Stolen from dhooks-test.sp
 	offset = AcceptInputGameData.GetOffset("AcceptInput");
@@ -1298,7 +1283,7 @@ public Action Command_Style(int client, int args)
 	{
 		menu.AddItem("-1", "Nothing");
 	}
-	else if(menu.ItemCount <= ((gEV_Type == Engine_CSS)? 9:8))
+	else if(menu.ItemCount <= 9)
 	{
 		menu.Pagination = MENU_NO_PAGINATION;
 	}
@@ -1511,8 +1496,7 @@ void DoJump(int client)
 		gA_Timers[client].bJumped = true;
 	}
 
-	// TF2 doesn't use stamina
-	if (gEV_Type != Engine_TF2 && (GetStyleSettingBool(gA_Timers[client].bsStyle, "easybhop")) || Shavit_InsideZone(client, Zone_Easybhop, gA_Timers[client].iTimerTrack))
+	if ((GetStyleSettingBool(gA_Timers[client].bsStyle, "easybhop")) || Shavit_InsideZone(client, Zone_Easybhop, gA_Timers[client].iTimerTrack))
 	{
 		SetEntPropFloat(client, Prop_Send, "m_flStamina", 0.0);
 	}
@@ -1719,21 +1703,10 @@ public int Native_CanPause(Handle handler, int numParams)
 	bool bDucked, bDucking;
 	float fDucktime, fDuckSpeed = CS_PLAYER_DUCK_SPEED_IDEAL;
 
-	if(gEV_Type != Engine_TF2)
-	{
-		bDucked = view_as<bool>(GetEntProp(client, Prop_Send, "m_bDucked"));
-		bDucking = view_as<bool>(GetEntProp(client, Prop_Send, "m_bDucking"));
+	bDucked = view_as<bool>(GetEntProp(client, Prop_Send, "m_bDucked"));
+	bDucking = view_as<bool>(GetEntProp(client, Prop_Send, "m_bDucking"));
 
-		if(gEV_Type == Engine_CSS)
-		{
-			fDucktime = GetEntPropFloat(client, Prop_Send, "m_flDucktime");
-		}
-		else if(gEV_Type == Engine_CSGO)
-		{
-			fDucktime = GetEntPropFloat(client, Prop_Send, "m_flDuckAmount");
-			fDuckSpeed = GetEntPropFloat(client, Prop_Send, "m_flDuckSpeed");
-		}
-	}
+	fDucktime = GetEntPropFloat(client, Prop_Send, "m_flDucktime");
 
 	if (bDucked || bDucking || fDucktime > 0.0 || fDuckSpeed < CS_PLAYER_DUCK_SPEED_IDEAL || GetClientButtons(client) & IN_DUCK)
 	{
@@ -2625,11 +2598,6 @@ void ReplaceColors(char[] string, int size)
 		ReplaceString(string, size, gS_GlobalColorNames[x], gS_GlobalColors[x]);
 	}
 
-	for(int x = 0; x < sizeof(gS_CSGOColorNames); x++)
-	{
-		ReplaceString(string, size, gS_CSGOColorNames[x], gS_CSGOColors[x]);
-	}
-
 	ReplaceString(string, size, "{RGB}", "\x07");
 	ReplaceString(string, size, "{RGBA}", "\x08");
 }
@@ -2648,7 +2616,7 @@ bool LoadMessages()
 		return false;
 	}
 
-	kv.JumpToKey((IsSource2013(gEV_Type))? "CS:S":"CS:GO");
+	kv.JumpToKey("CS:S");
 
 	kv.GetString("prefix", gS_ChatStrings.sPrefix, sizeof(chatstrings_t::sPrefix), "\x075e70d0[Timer]");
 	kv.GetString("text", gS_ChatStrings.sText, sizeof(chatstrings_t::sText), "\x07ffffff");
@@ -3268,16 +3236,6 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 	bool bInWater = (GetEntProp(client, Prop_Send, "m_nWaterLevel") >= 2);
 
-	// enable duck-jumping/bhop in tf2
-	if (gEV_Type == Engine_TF2 && GetStyleSettingBool(gA_Timers[client].bsStyle, "bunnyhopping") && (buttons & IN_JUMP) > 0 && iGroundEntity != -1)
-	{
-		float fSpeed[3];
-		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
-
-		fSpeed[2] = 289.0;
-		SetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
-	}
-
 	if (GetStyleSettingBool(gA_Timers[client].bsStyle, "autobhop") && gB_Auto[client] && (buttons & IN_JUMP) > 0 && mtMoveType == MOVETYPE_WALK && !bInWater)
 	{
 		int iOldButtons = GetEntProp(client, Prop_Data, "m_nOldButtons");
@@ -3294,7 +3252,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		gA_Timers[client].iLandingTick = tickcount;
 		gI_FirstTouchedGround[client] = tickcount;
 
-		if (gEV_Type != Engine_TF2 && GetStyleSettingBool(gA_Timers[client].bsStyle, "easybhop"))
+		if (GetStyleSettingBool(gA_Timers[client].bsStyle, "easybhop"))
 		{
 			SetEntPropFloat(client, Prop_Send, "m_flStamina", 0.0);
 		}

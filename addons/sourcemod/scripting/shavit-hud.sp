@@ -53,7 +53,7 @@ enum struct color_t
 	int b;
 }
 
-// game type (CS:S/CS:GO/TF2)
+// game type
 EngineVersion gEV_Type = Engine_Unknown;
 
 UserMsg gI_HintText = view_as<UserMsg>(-1);
@@ -67,7 +67,6 @@ Handle gH_Forwards_PreOnDrawKeysHUD = null;
 
 // modules
 bool gB_ReplayPlayback = false;
-bool gB_Zones = false;
 bool gB_Sounds = false;
 bool gB_Rankings = false;
 bool gB_DynamicChannels = false;
@@ -100,13 +99,11 @@ bool gB_AlternateCenterKeys[MAXPLAYERS+1]; // use for css linux gamers
 
 // hud handle
 Handle gH_HUDTopleft = null;
-Handle gH_HUDCenter = null;
 
 // plugin cvars
 Convar gCV_GradientStepSize = null;
 Convar gCV_TicksPerUpdate = null;
 Convar gCV_SpectatorList = null;
-Convar gCV_UseHUDFix = null;
 Convar gCV_SpecNameSymbolLength = null;
 Convar gCV_DefaultHUD = null;
 Convar gCV_DefaultHUD2 = null;
@@ -156,31 +153,26 @@ public void OnPluginStart()
 	// game-specific
 	gEV_Type = GetEngineVersion();
 
+	if (gEV_Type != Engine_CSS)
+	{
+		SetFailState("The fork of timer is only supported for CS:S. If you wanna use in CS:GO or TF2, please use original one.");
+	}
+
 	gI_HintText = GetUserMessageId("HintText");
 	gI_TextMsg = GetUserMessageId("TextMsg");
 
-	if(gEV_Type == Engine_TF2)
-	{
-		HookEvent("player_changeclass", Player_ChangeClass);
-		HookEvent("player_team", Player_ChangeClass);
-		HookEvent("teamplay_round_start", Teamplay_Round_Start);
-	}
-
 	gB_ReplayPlayback = LibraryExists("shavit-replay-playback");
-	gB_Zones = LibraryExists("shavit-zones");
 	gB_Sounds = LibraryExists("shavit-sounds");
 	gB_Rankings = LibraryExists("shavit-rankings");
 	gB_DynamicChannels = LibraryExists("DynamicChannels");
 
 	// HUD handle
 	gH_HUDTopleft = CreateHudSynchronizer();
-	gH_HUDCenter = CreateHudSynchronizer();
 
 	// plugin convars
 	gCV_GradientStepSize = new Convar("shavit_hud_gradientstepsize", "15", "How fast should the start/end HUD gradient be?\nThe number is the amount of color change per 0.1 seconds.\nThe higher the number the faster the gradient.", 0, true, 1.0, true, 255.0);
 	gCV_TicksPerUpdate = new Convar("shavit_hud_ticksperupdate", "5", "How often (in ticks) should the HUD update?\nPlay around with this value until you find the best for your server.\nThe maximum value is your tickrate.", 0, true, 1.0, true, (1.0 / GetTickInterval()));
 	gCV_SpectatorList = new Convar("shavit_hud_speclist", "1", "Who to show in the specators list?\n0 - everyone\n1 - all admins (admin_speclisthide override to bypass)\n2 - players you can target", 0, true, 0.0, true, 2.0);
-	gCV_UseHUDFix = new Convar("shavit_hud_csgofix", "1", "Apply the csgo color fix to the center hud?\nThis will add a dollar sign and block sourcemod hooks to hint message", 0, true, 0.0, true, 1.0);
 	gCV_SpecNameSymbolLength = new Convar("shavit_hud_specnamesymbollength", "32", "Maximum player name length that should be displayed in spectators panel", 0, true, 0.0, true, float(MAX_NAME_LENGTH));
 
 	char defaultHUD[8];
@@ -292,10 +284,6 @@ public void OnLibraryAdded(const char[] name)
 	{
 		gB_ReplayPlayback = true;
 	}
-	else if(StrEqual(name, "shavit-zones"))
-	{
-		gB_Zones = true;
-	}
 	else if(StrEqual(name, "shavit-sounds"))
 	{
 		gB_Sounds = true;
@@ -315,10 +303,6 @@ public void OnLibraryRemoved(const char[] name)
 	if(StrEqual(name, "shavit-replay-playback"))
 	{
 		gB_ReplayPlayback = false;
-	}
-	else if(StrEqual(name, "shavit-zones"))
-	{
-		gB_Zones = false;
 	}
 	else if(StrEqual(name, "shavit-sounds"))
 	{
@@ -395,10 +379,7 @@ public void OnClientPutInServer(int client)
 	}
 	else
 	{
-		if (gEV_Type != Engine_CSGO)
-		{
-			CreateTimer(5.0, Timer_QueryWindowsCvar, GetClientSerial(client), TIMER_FLAG_NO_MAPCHANGE);
-		}
+		CreateTimer(5.0, Timer_QueryWindowsCvar, GetClientSerial(client), TIMER_FLAG_NO_MAPCHANGE);
 	}
 }
 
@@ -476,7 +457,7 @@ public void OnClientCookiesCached(int client)
 		gI_HUD2Settings[client] = StringToInt(sHUDSettings);
 	}
 
-	if (gEV_Type != Engine_TF2 && IsValidClient(client, true) && GetClientTeam(client) > 1)
+	if (IsValidClient(client, true) && GetClientTeam(client) > 1)
 	{
 		GivePlayerDefaultGun(client);
 	}
@@ -682,12 +663,9 @@ Action ShowHUDMenu(int client, int item)
 	FormatEx(sHudItem, 64, "%T", "HudTopLeft", client);
 	menu.AddItem(sInfo, sHudItem);
 
-	if(IsSource2013(gEV_Type))
-	{
-		FormatEx(sInfo, 16, "!%d", HUD_TIMELEFT);
-		FormatEx(sHudItem, 64, "%T", "HudTimeLeft", client);
-		menu.AddItem(sInfo, sHudItem);
-	}
+	FormatEx(sInfo, 16, "!%d", HUD_TIMELEFT);
+	FormatEx(sHudItem, 64, "%T", "HudTimeLeft", client);
+	menu.AddItem(sInfo, sHudItem);
 
 	FormatEx(sInfo, 16, "!%d", HUD_2DVEL);
 	FormatEx(sHudItem, 64, "%T", "Hud2dVel", client);
@@ -704,12 +682,9 @@ Action ShowHUDMenu(int client, int item)
 	FormatEx(sHudItem, 64, "%T", "HudPracticeModeAlert", client);
 	menu.AddItem(sInfo, sHudItem);
 
-	if (gEV_Type != Engine_TF2)
-	{
-		FormatEx(sInfo, 16, "#%d", HUD_USP);
-		FormatEx(sHudItem, 64, "%T", "HudDefaultPistol", client);
-		menu.AddItem(sInfo, sHudItem);
-	}
+	FormatEx(sInfo, 16, "#%d", HUD_USP);
+	FormatEx(sHudItem, 64, "%T", "HudDefaultPistol", client);
+	menu.AddItem(sInfo, sHudItem);
 
 	if (CheckCommandAccess(client, "shavit_admin", ADMFLAG_BAN))
 	{
@@ -781,23 +756,13 @@ Action ShowHUDMenu(int client, int item)
 		menu.AddItem(sInfo, sHudItem);
 	}
 
-	if (gEV_Type != Engine_TF2)
-	{
-		FormatEx(sInfo, 16, "@%d", HUD2_GLOCKBURST);
-		FormatEx(sHudItem, 64, "%T", "HudGlockBurst", client);
-		menu.AddItem(sInfo, sHudItem);
+	FormatEx(sInfo, 16, "@%d", HUD2_GLOCKBURST);
+	FormatEx(sHudItem, 64, "%T", "HudGlockBurst", client);
+	menu.AddItem(sInfo, sHudItem);
 
-		FormatEx(sInfo, 16, "@%d", HUD2_USPSILENCER);
-		FormatEx(sHudItem, 64, "%T", "HudUSPSilencer", client);
-		menu.AddItem(sInfo, sHudItem);
-	}
-
-	if (gEV_Type == Engine_CSGO)
-	{
-		FormatEx(sInfo, 16, "@%d", HUD2_CENTERKEYS);
-		FormatEx(sHudItem, 64, "%T", "HudCenterKeys", client);
-		menu.AddItem(sInfo, sHudItem);
-	}
+	FormatEx(sInfo, 16, "@%d", HUD2_USPSILENCER);
+	FormatEx(sHudItem, 64, "%T", "HudUSPSilencer", client);
+	menu.AddItem(sInfo, sHudItem);
 
 	menu.ExitButton = true;
 	menu.DisplayAt(client, item, MENU_TIME_FOREVER);
@@ -852,11 +817,6 @@ public int MenuHandler_HUD(Menu menu, MenuAction action, int param1, int param2)
 			SetClientCookie(param1, gH_HUDCookie, sCookie);
 		}
 
-		if(gEV_Type == Engine_TF2 && iSelection == HUD_CENTER && (gI_HUDSettings[param1] & HUD_MASTER) > 0)
-		{
-			FillerHintText(param1);
-		}
-
 		ShowHUDMenu(param1, GetMenuSelectionPosition());
 	}
 	else if(action == MenuAction_DisplayItem)
@@ -898,16 +858,9 @@ public int MenuHandler_HUD(Menu menu, MenuAction action, int param1, int param2)
 	return 0;
 }
 
-bool is_usp(int entity, const char[] classname)
+bool is_usp(const char[] classname)
 {
-	if (gEV_Type == Engine_CSGO)
-	{
-		return (61 == GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex"));
-	}
-	else
-	{
-		return StrEqual(classname, "weapon_usp");
-	}
+	return StrEqual(classname, "weapon_usp");
 }
 
 public void OnEntityCreated(int entity, const char[] classname)
@@ -935,14 +888,14 @@ public Action Hook_GunTouch(int entity, int client)
 				SetEntProp(entity, Prop_Send, "m_bBurstMode", 1);
 			}
 		}
-		else if (is_usp(entity, classname))
+		else if (is_usp(classname))
 		{
-			if (!(gI_HUD2Settings[client] & HUD2_USPSILENCER) != (gEV_Type == Engine_CSS))
+			if (gI_HUD2Settings[client] & HUD2_USPSILENCER)
 			{
 				return Plugin_Continue;
 			}
 
-			int state = (gEV_Type == Engine_CSS) ? 1 : 0;
+			int state = 1;
 			SetEntProp(entity, Prop_Send, "m_bSilencerOn", state);
 			SetEntProp(entity, Prop_Send, "m_weaponMode", state);
 			SetEntPropFloat(entity, Prop_Send, "m_flDoneSwitchingSilencer", GetGameTime());
@@ -965,7 +918,7 @@ void GivePlayerDefaultGun(int client)
 
 	if (gI_HUDSettings[client] & HUD_USP)
 	{
-		strcopy(sWeapon, 32, (gEV_Type == Engine_CSS) ? "weapon_usp" : "weapon_usp_silencer");
+		strcopy(sWeapon, 32, "weapon_usp");
 	}
 	else
 	{
@@ -978,7 +931,7 @@ void GivePlayerDefaultGun(int client)
 		AcceptEntityInput(iWeapon, "Kill");
 	}
 
-	iWeapon = (gEV_Type == Engine_CSGO) ? GiveSkinnedWeapon(client, sWeapon) : GivePlayerItem(client, sWeapon);
+	iWeapon = GivePlayerItem(client, sWeapon);
 	FakeClientCommand(client, "use %s", sWeapon);
 }
 
@@ -988,10 +941,7 @@ public void Player_Spawn(Event event, const char[] name, bool dontBroadcast)
 
 	if (!IsFakeClient(client))
 	{
-		if (gEV_Type != Engine_TF2)
-		{
-			GivePlayerDefaultGun(client);
-		}
+		GivePlayerDefaultGun(client);
 	}
 }
 
@@ -1113,42 +1063,15 @@ void TriggerHUDUpdate(int client, bool keysonly = false) // keysonly because CS:
 	}
 
 	bool draw_keys = HUD1Enabled(gI_HUDSettings[client], HUD_KEYOVERLAY);
-	bool center_keys = HUD2Enabled(gI_HUD2Settings[client], HUD2_CENTERKEYS);
 
-	if (draw_keys && center_keys)
+	if (draw_keys)
 	{
 		UpdateCenterKeys(client);
 	}
 
-	if(IsSource2013(gEV_Type))
+	if(!keysonly && !gB_BlockSidebarHUD[client])
 	{
-		if(!keysonly && !gB_BlockSidebarHUD[client])
-		{
-			UpdateKeyHint(client);
-		}
-	}
-	else if (((gI_HUDSettings[client] & HUD_SPECTATORS) > 0 || (draw_keys && !center_keys))
-	      && (!gB_Zones || !Shavit_IsClientCreatingZone(client))
-	      && (GetClientMenu(client, null) == MenuSource_None || GetClientMenu(client, null) == MenuSource_RawPanel)
-	)
-	{
-		bool bShouldDraw = false;
-		Panel pHUD = new Panel();
-
-		if (!center_keys)
-		{
-			UpdateKeyOverlay(client, pHUD, bShouldDraw);
-			pHUD.DrawItem("", ITEMDRAW_RAWLINE);
-		}
-
-		UpdateSpectatorList(client, pHUD, bShouldDraw);
-
-		if(bShouldDraw)
-		{
-			pHUD.Send(client, PanelHandler_Nothing, 1);
-		}
-
-		delete pHUD;
+		UpdateKeyHint(client);
 	}
 }
 
@@ -1162,34 +1085,6 @@ void AddHUDLine(char[] buffer, int maxlen, const char[] line, int& lines)
 	{
 		StrCat(buffer, maxlen, line);
 	}
-}
-
-void GetRGB(int color, color_t arr)
-{
-	arr.r = ((color >> 16) & 0xFF);
-	arr.g = ((color >> 8) & 0xFF);
-	arr.b = (color & 0xFF);
-}
-
-int GetHex(color_t color)
-{
-	return (((color.r & 0xFF) << 16) + ((color.g & 0xFF) << 8) + (color.b & 0xFF));
-}
-
-int GetGradient(int start, int end, int steps)
-{
-	color_t aColorStart;
-	GetRGB(start, aColorStart);
-
-	color_t aColorEnd;
-	GetRGB(end, aColorEnd);
-
-	color_t aColorGradient;
-	aColorGradient.r = (aColorStart.r + RoundToZero((aColorEnd.r - aColorStart.r) * steps / 100.0));
-	aColorGradient.g = (aColorStart.g + RoundToZero((aColorEnd.g - aColorStart.g) * steps / 100.0));
-	aColorGradient.b = (aColorStart.b + RoundToZero((aColorEnd.b - aColorStart.b) * steps / 100.0));
-
-	return GetHex(aColorGradient);
 }
 
 public void Shavit_OnEnterZone(int client, int type, int track, int id, int entity)
@@ -1273,7 +1168,7 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 		}
 		else
 		{
-			FormatEx(sLine, 128, "%T", (gEV_Type == Engine_TF2)? "NoReplayDataTF2":"NoReplayData", client);
+			FormatEx(sLine, 128, "%T", "NoReplayData", client);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 		}
 
@@ -1428,238 +1323,6 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 	return iLines;
 }
 
-int AddHUDToBuffer_CSGO(int client, huddata_t data, char[] buffer, int maxlen)
-{
-	int iLines = 0;
-	char sLine[128];
-
-	StrCat(buffer, maxlen, "<span class='fontSize-l'>");
-
-	if (gI_HUDSettings[client] & HUD_DEBUGTARGETNAME)
-	{
-		char targetname[64], classname[64];
-		GetEntPropString(data.iTarget, Prop_Data, "m_iName", targetname, sizeof(targetname));
-		GetEntityClassname(data.iTarget, classname, sizeof(classname));
-
-		char speedmod[33];
-
-		if (IsValidClient(data.iTarget) && !IsFakeClient(data.iTarget))
-		{
-			timer_snapshot_t snapshot;
-			Shavit_SaveSnapshot(data.iTarget, snapshot, sizeof(snapshot));
-			FormatEx(speedmod, sizeof(speedmod), " sm=%.2f lm=%.2f", snapshot.fplayer_speedmod, GetEntPropFloat((data.iTarget), Prop_Send, "m_flLaggedMovementValue"));
-		}
-
-		FormatEx(sLine, sizeof(sLine), "t='%s' c='%s'%s", targetname, classname, speedmod);
-		AddHUDLine(buffer, maxlen, sLine, iLines);
-	}
-
-	if(data.bReplay)
-	{
-		StrCat(buffer, maxlen, "<pre>");
-
-		if(data.iStyle != -1 && Shavit_GetReplayStatus(data.iTarget) != Replay_Idle && Shavit_GetReplayCacheFrameCount(data.iTarget) > 0)
-		{
-			char sPlayerName[MAX_NAME_LENGTH];
-			Shavit_GetReplayCacheName(data.iTarget, sPlayerName, sizeof(sPlayerName));
-
-			char sTrack[32];
-
-			if(data.iTrack != Track_Main && (gI_HUD2Settings[client] & HUD2_TRACK) == 0)
-			{
-				GetTrackName(client, data.iTrack, sTrack, 32);
-				Format(sTrack, 32, "(%s) ", sTrack);
-			}
-
-			FormatEx(sLine, 128, "<u><span color='#%s'>%s %s%T</span></u> <span color='#DB88C2'>%s</span>", gS_StyleStrings[data.iStyle].sHTMLColor, gS_StyleStrings[data.iStyle].sStyleName, sTrack, "ReplayText", client, sPlayerName);
-			AddHUDLine(buffer, maxlen, sLine, iLines);
-
-			if((gI_HUD2Settings[client] & HUD2_TIME) == 0)
-			{
-				char sTime[32];
-				FormatSeconds(data.fTime, sTime, 32, false);
-
-				char sWR[32];
-				FormatSeconds(data.fWR, sWR, 32, false);
-
-				FormatEx(sLine, 128, "%s / %s (%.1f％)", sTime, sWR, ((data.fTime / data.fWR) * 100));
-				AddHUDLine(buffer, maxlen, sLine, iLines);
-			}
-
-			if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
-			{
-				FormatEx(sLine, 128, "%d u/s", data.iSpeed);
-				AddHUDLine(buffer, maxlen, sLine, iLines);
-			}
-		}
-		else
-		{
-			FormatEx(sLine, 128, "%T", "NoReplayData", client);
-			AddHUDLine(buffer, maxlen, sLine, iLines);
-		}
-
-		StrCat(buffer, maxlen, "</pre></span>");
-
-		return iLines;
-	}
-
-	char sFirstThing[32];
-
-	if (data.iTrack == Track_Main)
-	{
-		if (gB_Rankings && (gI_HUD2Settings[client] & HUD2_MAPTIER) == 0)
-		{
-			FormatEx(sFirstThing, sizeof(sFirstThing), "%T", "HudZoneTier", client, data.iMapTier);
-		}
-	}
-	else
-	{
-		if ((gI_HUD2Settings[client] & HUD2_TRACK) == 0)
-		{
-			GetTrackName(client, data.iTrack, sFirstThing, sizeof(sFirstThing));
-		}
-	}
-
-	StrCat(buffer, maxlen, sFirstThing);
-
-	if ((gI_HUD2Settings[client] & HUD2_STYLE) == 0)
-	{
-		FormatEx(sLine, 128, "%s<span color='#%s'>%s</span>", (sFirstThing[0]) ? " | " : "", gS_StyleStrings[data.iStyle].sHTMLColor, gS_StyleStrings[data.iStyle].sStyleName);
-		StrCat(buffer, maxlen, sLine);
-		//AddHUDLine(buffer, maxlen, sLine, iLines);
-	}
-
-	StrCat(buffer, maxlen, "<pre>");
-
-	if (data.iZoneHUD != ZoneHUD_None)
-	{
-		if ((gI_HUDSettings[client] & HUD_ZONEHUD) > 0)
-		{
-			FormatEx(sLine, sizeof(sLine),
-				"<span color='#%06X'>%T</span>",
-				((gI_Gradient.r << 16) + (gI_Gradient.g << 8) + (gI_Gradient.b)),
-				(data.iZoneHUD == ZoneHUD_Start) ? "HudInStartZoneCSGO" : "HudInEndZoneCSGO",
-				client,
-				data.iSpeed
-			);
-
-			AddHUDLine(buffer, maxlen, sLine, iLines);
-		}
-	}
-	else if (data.iTimerStatus == Timer_Stopped)
-	{
-		StrCat(buffer, maxlen, "\n");
-	}
-	else
-	{
-		if(data.bPractice || data.iTimerStatus == Timer_Paused)
-		{
-			FormatEx(sLine, 128, "%T", (data.iTimerStatus == Timer_Paused)? "HudPaused":"HudPracticeMode", client);
-			AddHUDLine(buffer, maxlen, sLine, iLines);
-		}
-
-		if((gI_HUD2Settings[client] & HUD2_TIME) == 0)
-		{
-			int iColor = 0xFF0000; // red, worse than both pb and wr
-
-			if (false && data.iTimerStatus == Timer_Paused)
-			{
-				iColor = 0xA9C5E8; // blue sky
-			}
-			else if(data.fTime < data.fWR || data.fWR == 0.0)
-			{
-				iColor = GetGradient(0x00FF00, 0x96172C, RoundToZero((data.fTime / data.fWR) * 100));
-			}
-			else if(data.fPB != 0.0 && data.fTime < data.fPB)
-			{
-				iColor = 0xFFA500; // orange
-			}
-
-			char sTime[32];
-			FormatSeconds(data.fTime, sTime, 32, false);
-
-			char sTimeDiff[32];
-
-			if ((gI_HUD2Settings[client] & HUD2_TIMEDIFFERENCE) == 0 && data.fClosestReplayTime != -1.0)
-			{
-				float fDifference = data.fTime - data.fClosestReplayTime;
-				FormatSeconds(fDifference, sTimeDiff, 32, false, FloatAbs(fDifference) >= 60.0);
-				Format(sTimeDiff, 32, " (%s%s)", (fDifference >= 0.0)? "+":"", sTimeDiff);
-			}
-
-			if((gI_HUD2Settings[client] & HUD2_RANK) == 0)
-			{
-				FormatEx(sLine, 128, "<span color='#%06X'>%s%s</span> (#%d)", iColor, sTime, sTimeDiff, data.iRank);
-			}
-			else
-			{
-				FormatEx(sLine, 128, "<span color='#%06X'>%s%s</span>", iColor, sTime, sTimeDiff);
-			}
-
-			AddHUDLine(buffer, maxlen, sLine, iLines);
-		}
-	}
-
-	if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
-	{
-		int iColor = 0xA0FFFF;
-
-		if((data.iSpeed - data.iPreviousSpeed) < 0)
-		{
-			iColor = 0xFFC966;
-		}
-
-		char sVelDiff[32];
-
-		if (data.iZoneHUD == ZoneHUD_None && data.iTimerStatus != Timer_Stopped && data.fClosestReplayTime != -1.0 && (gI_HUD2Settings[client] & HUD2_VELOCITYDIFFERENCE) == 0)
-		{
-			float res = data.fClosestVelocityDifference;
-			FormatEx(sVelDiff, sizeof(sVelDiff), " (%s%.0f)", (res >= 0.0) ? "+":"", res);
-		}
-
-		FormatEx(sLine, 128, "<span color='#%06X'>%s%d u/s%s</span>",
-			iColor,
-			((data.iSpeed<10) ? "     " : (data.iSpeed<100 ? "   " : (data.iSpeed<1000 ? " " : ""))),
-			data.iSpeed,
-			sVelDiff
-		);
-
-		AddHUDLine(buffer, maxlen, sLine, iLines);
-	}
-
-	if (/*data.iZoneHUD == ZoneHUD_None &&*/ data.iTimerStatus != Timer_Stopped)
-	{
-		if((gI_HUD2Settings[client] & HUD2_JUMPS) == 0)
-		{
-			char prebuf[32];
-			FormatEx(prebuf, sizeof(prebuf), "%s", ((data.iJumps<10) ? "     " : (data.iJumps<100 ? "   " : (data.iJumps<1000 ? " " : ""))));
-			FormatEx(sLine, 128, "%s%d %T", prebuf, data.iJumps, "HudJumpsText", client);
-			AddHUDLine(buffer, maxlen, sLine, iLines);
-		}
-
-		if((gI_HUD2Settings[client] & HUD2_STRAFE) == 0)
-		{
-			char prebuf[32];
-			FormatEx(prebuf, sizeof(prebuf), "%s", ((data.iStrafes<10) ? "     " : (data.iStrafes<100 ? "   " : (data.iStrafes<1000 ? " " : ""))));
-
-			if((gI_HUD2Settings[client] & HUD2_SYNC) == 0)
-			{
-				FormatEx(sLine, 128, "%s%d %T (%.1f%%)", prebuf, data.iStrafes, "HudStrafeText", client, data.fSync);
-			}
-			else
-			{
-				FormatEx(sLine, 128, "%s%d %T", prebuf, data.iStrafes, "HudStrafeText", client);
-			}
-
-			AddHUDLine(buffer, maxlen, sLine, iLines);
-		}
-	}
-
-	StrCat(buffer, maxlen, "</pre></span>");
-
-	return iLines;
-}
-
 void UpdateMainHUD(int client)
 {
 	int target = GetSpectatorTarget(client, client);
@@ -1667,14 +1330,13 @@ void UpdateMainHUD(int client)
 
 	if((gI_HUDSettings[client] & HUD_CENTER) == 0 ||
 		((gI_HUDSettings[client] & HUD_OBSERVE) == 0 && client != target) ||
-		(!IsValidClient(target) && !bReplay) ||
-		(gEV_Type == Engine_TF2 && IsValidClient(target) && (!gB_FirstPrint[target] || GetEngineTime() - gF_ConnectTime[target] < 1.5))) // TF2 has weird handling for hint text
+		(!IsValidClient(target) && !bReplay))
 	{
 		return;
 	}
 
 	// Prevent flicker when scoreboard is open
-	if (IsSource2013(gEV_Type) && (GetClientButtons(client) & IN_SCORE) != 0)
+	if (GetClientButtons(client) & IN_SCORE != 0)
 	{
 		return;
 	}
@@ -1770,102 +1432,10 @@ void UpdateMainHUD(int client)
 
 	if (preresult == Plugin_Continue)
 	{
-		int lines = 0;
-
-		if (IsSource2013(gEV_Type))
-		{
-			lines = AddHUDToBuffer_Source2013(client, huddata, sBuffer, sizeof(sBuffer));
-		}
-		else
-		{
-			lines = AddHUDToBuffer_CSGO(client, huddata, sBuffer, sizeof(sBuffer));
-		}
-
-		if (lines < 1)
-		{
-			return;
-		}
+		AddHUDToBuffer_Source2013(client, huddata, sBuffer, sizeof(sBuffer));
 	}
 
-	if (IsSource2013(gEV_Type))
-	{
-		UnreliablePrintHintText(client, sBuffer);
-	}
-	else
-	{
-		if (gCV_UseHUDFix.BoolValue)
-		{
-			PrintCSGOHUDText(client, sBuffer);
-		}
-		else
-		{
-			PrintHintText(client, "%s", sBuffer);
-		}
-	}
-}
-
-void UpdateKeyOverlay(int client, Panel panel, bool &draw)
-{
-	if((gI_HUDSettings[client] & HUD_KEYOVERLAY) == 0)
-	{
-		return;
-	}
-
-	int target = GetSpectatorTarget(client, client);
-
-	if(((gI_HUDSettings[client] & HUD_OBSERVE) == 0 && client != target))
-	{
-		return;
-	}
-
-	if (IsValidClient(target))
-	{
-		if (IsClientObserver(target))
-		{
-			return;
-		}
-	}
-	else if (!(gB_ReplayPlayback && Shavit_IsReplayEntity(target)))
-	{
-		return;
-	}
-
-	float fAngleDiff;
-	int buttons;
-
-	if (IsValidClient(target))
-	{
-		fAngleDiff = gF_AngleDiff[target];
-		buttons = gI_Buttons[target];
-	}
-	else
-	{
-		buttons = Shavit_GetReplayButtons(target, fAngleDiff);
-	}
-
-	int style = (gB_ReplayPlayback && Shavit_IsReplayEntity(target))? Shavit_GetReplayBotStyle(target):Shavit_GetBhopStyle(target);
-
-	if(!(0 <= style < gI_Styles))
-	{
-		style = 0;
-	}
-
-	char sPanelLine[128];
-
-	if(!Shavit_GetStyleSettingBool(style, "autobhop"))
-	{
-		FormatEx(sPanelLine, 64, " %d%s%d\n", gI_ScrollCount[target], (gI_ScrollCount[target] > 9)? "   ":"     ", gI_LastScrollCount[target]);
-	}
-
-	Format(sPanelLine, 128, "%s［%s］　［%s］\n%s  %s  %s\n%s　 %s 　%s\n　%s　　%s", sPanelLine,
-		(buttons & IN_JUMP) > 0? "Ｊ":"ｰ", (buttons & IN_DUCK) > 0? "Ｃ":"ｰ",
-		(fAngleDiff > 0) ? "←":"   ", (buttons & IN_FORWARD) > 0 ? "Ｗ":"ｰ", (fAngleDiff < 0) ? "→":"",
-		(buttons & IN_MOVELEFT) > 0? "Ａ":"ｰ", (buttons & IN_BACK) > 0? "Ｓ":"ｰ", (buttons & IN_MOVERIGHT) > 0? "Ｄ":"ｰ",
-		(buttons & IN_LEFT) > 0? "Ｌ":" ", (buttons & IN_RIGHT) > 0? "Ｒ":" ");
-
-	panel.DrawItem(sPanelLine, ITEMDRAW_RAWLINE);
-
-	draw = true;
+	UnreliablePrintHintText(client, sBuffer);
 }
 
 public void Shavit_Bhopstats_OnTouchGround(int client)
@@ -1954,27 +1524,12 @@ void UpdateCenterKeys(int client)
 		FillCenterKeys(client, target, style, buttons, fAngleDiff, sCenterText, sizeof(sCenterText));
 	}
 
-	if (IsSource2013(gEV_Type))
-	{
-		UnreliablePrintCenterText(client, sCenterText);
-	}
-	else
-	{
-		PrintCSGOCenterText(client, sCenterText);
-	}
+	UnreliablePrintCenterText(client, sCenterText);
 }
 
 void FillCenterKeys(int client, int target, int style, int buttons, float fAngleDiff, char[] buffer, int buflen)
 {
-	if (gEV_Type == Engine_CSGO)
-	{
-		FormatEx(buffer, buflen, "%s   %s\n%s  %s  %s\n%s　 %s 　%s\n %s　　%s",
-			(buttons & IN_JUMP) > 0? "Ｊ":"ｰ", (buttons & IN_DUCK) > 0? "Ｃ":"ｰ",
-			(fAngleDiff > 0) ? "<":"ｰ", (buttons & IN_FORWARD) > 0 ? "Ｗ":"ｰ", (fAngleDiff < 0) ? ">":"ｰ",
-			(buttons & IN_MOVELEFT) > 0? "Ａ":"ｰ", (buttons & IN_BACK) > 0? "Ｓ":"ｰ", (buttons & IN_MOVERIGHT) > 0? "Ｄ":"ｰ",
-			(buttons & IN_LEFT) > 0? "Ｌ":" ", (buttons & IN_RIGHT) > 0? "Ｒ":" ");
-	}
-	else if (gB_AlternateCenterKeys[client])
+	if (gB_AlternateCenterKeys[client])
 	{
 		FormatEx(buffer, buflen, "　%s　　%s\n%s   %s   %s\n%s　 %s 　%s\n　%s　　%s",
 			(buttons & IN_JUMP) > 0? "J":"_", (buttons & IN_DUCK) > 0? "C":"_",
@@ -1994,91 +1549,6 @@ void FillCenterKeys(int client, int target, int style, int buttons, float fAngle
 	if(!Shavit_GetStyleSettingBool(style, "autobhop") && IsValidClient(target))
 	{
 		Format(buffer, buflen, "%s\n　　%s%d %s%s%d", buffer, gI_ScrollCount[target] < 10 ? " " : "", gI_ScrollCount[target], gI_ScrollCount[target] < 10 ? " " : "", gI_LastScrollCount[target] < 10 ? " " : "", gI_LastScrollCount[target]);
-	}
-}
-
-void PrintCSGOCenterText(int client, const char[] text)
-{
-	SetHudTextParams(
-		-1.0, 0.35,
-		0.1,
-		255, 255, 255, 255,
-		0,
-		0.0,
-		0.0,
-		0.0
-	);
-
-	if (gB_DynamicChannels)
-	{
-		ShowHudText(client, GetDynamicChannel(4), "%s", text);
-	}
-	else
-	{
-		ShowSyncHudText(client, gH_HUDCenter, "%s", text);
-	}
-}
-
-void UpdateSpectatorList(int client, Panel panel, bool &draw)
-{
-	if((gI_HUDSettings[client] & HUD_SPECTATORS) == 0)
-	{
-		return;
-	}
-
-	int target = GetSpectatorTarget(client, client);
-
-	if(((gI_HUDSettings[client] & HUD_OBSERVE) == 0 && client != target))
-	{
-		return;
-	}
-
-	int iSpectatorClients[MAXPLAYERS+1];
-	int iSpectators = 0;
-	bool bIsAdmin = CheckCommandAccess(client, "admin_speclisthide", ADMFLAG_KICK);
-
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(i == client || !IsValidClient(i) || IsFakeClient(i) || !IsClientObserver(i) || GetClientTeam(i) < 1 || GetSpectatorTarget(i, i) != target)
-		{
-			continue;
-		}
-
-		if((gCV_SpectatorList.IntValue == 1 && !bIsAdmin && CheckCommandAccess(i, "admin_speclisthide", ADMFLAG_KICK)) ||
-			(gCV_SpectatorList.IntValue == 2 && !CanUserTarget(client, i)))
-		{
-			continue;
-		}
-
-		iSpectatorClients[iSpectators++] = i;
-	}
-
-	if(iSpectators > 0)
-	{
-		char sName[MAX_NAME_LENGTH];
-		char sSpectators[32];
-		FormatEx(sSpectators, sizeof(sSpectators), "%T (%d):",
-			(client == target) ? "SpectatorPersonal" : "SpectatorWatching", client,
-			iSpectators);
-		panel.DrawItem(sSpectators, ITEMDRAW_RAWLINE);
-
-		for(int i = 0; i < iSpectators; i++)
-		{
-			if(i == 7)
-			{
-				panel.DrawItem("...", ITEMDRAW_RAWLINE);
-
-				break;
-			}
-
-			SanerGetClientName(iSpectatorClients[i], sName);
-			ReplaceString(sName, sizeof(sName), "#", "?");
-			TrimDisplayString(sName, sName, sizeof(sName), gCV_SpecNameSymbolLength.IntValue);
-
-			panel.DrawItem(sName, ITEMDRAW_RAWLINE);
-		}
-
-		draw = true;
 	}
 }
 
@@ -2419,25 +1889,5 @@ void UnreliablePrintHintText(int client, const char[] str)
 	// This makes the HUD update visually faster.
 	BfWrite msg = view_as<BfWrite>(StartMessageEx(gI_HintText, clients, 1, 0));
 	msg.WriteString(str);
-	EndMessage();
-}
-
-void PrintCSGOHUDText(int client, const char[] str)
-{
-	char buff[MAX_HINT_SIZE];
-	FormatEx(buff, sizeof(buff), "</font>%s%s", str, gS_HintPadding);
-
-	int clients[1];
-	clients[0] = client;
-
-	Protobuf pb = view_as<Protobuf>(StartMessageEx(gI_TextMsg, clients, 1, USERMSG_BLOCKHOOKS));
-	pb.SetInt("msg_dst", HUD_PRINTCENTER);
-	pb.AddString("params", "#SFUI_ContractKillStart");
-	pb.AddString("params", buff);
-	pb.AddString("params", NULL_STRING);
-	pb.AddString("params", NULL_STRING);
-	pb.AddString("params", NULL_STRING);
-	pb.AddString("params", NULL_STRING);
-
 	EndMessage();
 }

@@ -164,6 +164,11 @@ public void OnPluginStart()
 
 	gEV_Type = GetEngineVersion();
 
+	if (gEV_Type != Engine_CSS)
+	{
+		SetFailState("The fork of timer is only supported for CS:S. If you wanna use in CS:GO or TF2, please use original one.");
+	}
+
 	g_aMapList = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
 	g_aAllMapsList = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
 	g_aNominateList = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
@@ -609,7 +614,7 @@ void InitiateMapVote(MapChange when)
 	menu.Pagination = MENU_NO_PAGINATION;
 	menu.SetTitle("Vote Nextmap");
 
-	int maxPageItems = (gEV_Type == Engine_CSGO) ? 8 : 9;
+	int maxPageItems = 9;
 	int mapsToAdd = maxPageItems;
 	int mapsAdded = 0;
 

@@ -87,6 +87,11 @@ public void OnPluginStart()
 {
 	gEV_Type = GetEngineVersion();
 
+	if (gEV_Type != Engine_CSS)
+	{
+		SetFailState("The fork of timer is only supported for CS:S. If you wanna use in CS:GO or TF2, please use original one.");
+	}
+
 	gH_Forwards_OnCountdownStart = CreateGlobalForward("Shavit_OnCountdownStart", ET_Event);
 
 	LoadTranslations("shavit-common.phrases");
@@ -140,7 +145,7 @@ public void OnMapStart()
 
 public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	if(view_as<bool>(StringToInt(newValue)) && gEV_Type != Engine_TF2)
+	if(view_as<bool>(StringToInt(newValue)))
 	{
 		delete gH_Timer;
 		gH_Timer = CreateTimer(1.0, Timer_PrintToChat, 0, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
@@ -202,7 +207,7 @@ public void OnConfigsExecuted()
 		SetLimit(RoundToNearest(gCV_DefaultLimit.FloatValue));
 	}
 
-	if(gCV_ForceMapEnd.BoolValue && gH_Timer == null && gEV_Type != Engine_TF2)
+	if(gCV_ForceMapEnd.BoolValue && gH_Timer == null)
 	{
 		gH_Timer = CreateTimer(1.0, Timer_PrintToChat, 0, TIMER_REPEAT);
 	}
@@ -376,23 +381,13 @@ public Action Timer_PrintToChat(Handle timer)
 		{
 			Shavit_PrintToChatAll("2..");
 
-			if (gEV_Type != Engine_CSGO)
-			{
-				gB_BlockRoundEndEvent = true;
-				// needs to be when timeleft is under 0 otherwise the round will restart and the map won't change
-				CS_TerminateRound(0.0, CSRoundEnd_Draw, true);
-			}
+			gB_BlockRoundEndEvent = true;
+			// needs to be when timeleft is under 0 otherwise the round will restart and the map won't change
+			CS_TerminateRound(0.0, CSRoundEnd_Draw, true);
 		}
 		case -3:
 		{
 			Shavit_PrintToChatAll("1..");
-
-			if (gEV_Type == Engine_CSGO)
-			{
-				gB_BlockRoundEndEvent = true;
-				// needs to be when timeleft is under 0 otherwise the round will restart and the map won't change
-				CS_TerminateRound(0.0, CSRoundEnd_Draw, true);
-			}
 		}
 	}
 

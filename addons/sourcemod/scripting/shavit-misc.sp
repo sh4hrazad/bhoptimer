@@ -28,8 +28,6 @@
 #undef REQUIRE_EXTENSIONS
 #include <SteamWorks>
 #include <cstrike>
-#include <tf2>
-#include <tf2_stocks>
 
 #include <shavit/core>
 #include <shavit/misc>
@@ -126,7 +124,6 @@ Handle gH_Forwards_OnClanTagChangePost = null;
 // dhooks
 DynamicHook gH_GetPlayerMaxSpeed = null;
 DynamicHook gH_IsSpawnPointValid = null;
-DynamicDetour gH_CalcPlayerScore = null;
 
 // modules
 bool gB_Checkpoints = false;
@@ -167,6 +164,11 @@ public void OnPluginStart()
 
 	// cache
 	gEV_Type = GetEngineVersion();
+
+	if (gEV_Type != Engine_CSS)
+	{
+		SetFailState("The fork of timer is only supported for CS:S. If you wanna use in CS:GO or TF2, please use original one.");
+	}
 
 	sv_cheats = FindConVar("sv_cheats");
 	sv_disable_immunity_alpha = FindConVar("sv_disable_immunity_alpha");
@@ -230,7 +232,7 @@ public void OnPluginStart()
 	AddCommandListener(Command_Drop, "drop");
 	AddTempEntHook("EffectDispatch", EffectDispatch);
 	AddTempEntHook("World Decal", WorldDecal);
-	AddTempEntHook((gEV_Type != Engine_TF2)? "Shotgun Shot":"Fire Bullets", Shotgun_Shot);
+	AddTempEntHook("Shotgun Shot", Shotgun_Shot);
 	AddNormalSoundHook(NormalSound);
 
 	// phrases
@@ -284,7 +286,7 @@ public void OnPluginStart()
 	gCV_HideRadar.AddChangeHook(OnConVarChanged);
 	Convar.AutoExecConfig();
 
-	mp_humanteam = FindConVar((gEV_Type == Engine_TF2) ? "mp_humans_must_join_team" : "mp_humanteam");
+	mp_humanteam = FindConVar("mp_humanteam");
 	sv_disable_radar = FindConVar("sv_disable_radar");
 
 	// crons
@@ -292,10 +294,7 @@ public void OnPluginStart()
 
 	LoadDHooks();
 
-	if(gEV_Type != Engine_TF2)
-	{
-		CreateTimer(1.0, Timer_Scoreboard, 0, TIMER_REPEAT);
-	}
+	CreateTimer(1.0, Timer_Scoreboard, 0, TIMER_REPEAT);
 
 	// modules
 	gB_Checkpoints = LibraryExists("shavit-checkpoints");
@@ -321,33 +320,12 @@ void LoadDHooks()
 
 	int iOffset;
 
-	if (gEV_Type == Engine_TF2)
+	if ((iOffset = GameConfGetOffset(hGameData, "CCSPlayer::GetPlayerMaxSpeed")) == -1)
 	{
-		if (!(gH_CalcPlayerScore = DHookCreateDetour(Address_Null, CallConv_CDECL, ReturnType_Int, ThisPointer_Ignore)))
-		{
-			SetFailState("Failed to create detour for CTFGameRules::CalcPlayerScore");
-		}
-
-		if (DHookSetFromConf(gH_CalcPlayerScore, hGameData, SDKConf_Signature, "CTFGameRules::CalcPlayerScore"))
-		{
-			gH_CalcPlayerScore.AddParam(HookParamType_Int);
-			gH_CalcPlayerScore.AddParam(HookParamType_CBaseEntity);
-			gH_CalcPlayerScore.Enable(Hook_Pre, Detour_CalcPlayerScore);
-		}
-		else
-		{
-			LogError("Couldn't get the address for \"CTFGameRules::CalcPlayerScore\" - make sure your gamedata is updated!");
-		}
+		SetFailState("Couldn't get the offset for \"CCSPlayer::GetPlayerMaxSpeed\" - make sure your gamedata is updated!");
 	}
-	else
-	{
-		if ((iOffset = GameConfGetOffset(hGameData, "CCSPlayer::GetPlayerMaxSpeed")) == -1)
-		{
-			SetFailState("Couldn't get the offset for \"CCSPlayer::GetPlayerMaxSpeed\" - make sure your gamedata is updated!");
-		}
 
-		gH_GetPlayerMaxSpeed = DHookCreate(iOffset, HookType_Entity, ReturnType_Float, ThisPointer_CBaseEntity, CCSPlayer__GetPlayerMaxSpeed);
-	}
+	gH_GetPlayerMaxSpeed = DHookCreate(iOffset, HookType_Entity, ReturnType_Float, ThisPointer_CBaseEntity, CCSPlayer__GetPlayerMaxSpeed);
 
 	if ((iOffset = GameConfGetOffset(hGameData, "CGameRules::IsSpawnPointValid")) != -1)
 	{
@@ -380,21 +358,6 @@ public MRESReturn Hook_IsSpawnPointValid(Handle hReturn, Handle hParams)
 	}
 
 	return MRES_Ignored;
-}
-
-MRESReturn Detour_CalcPlayerScore(DHookReturn hReturn, DHookParam hParams)
-{
-	if (!gCV_Scoreboard.BoolValue)
-	{
-		return MRES_Ignored;
-	}
-
-	int client = hParams.Get(2);
-	float fPB = Shavit_GetClientPB(client, 0, Track_Main);
-	int iScore = (fPB != 0.0 && fPB < 2000)? -RoundToFloor(fPB):-2000;
-
-	hReturn.Value = iScore;
-	return MRES_Supercede;
 }
 
 public void OnClientCookiesCached(int client)
@@ -474,15 +437,10 @@ void LoadMapFixes()
 
 void CreateSpawnPoint(int iTeam, float fOrigin[3], float fAngles[3])
 {
-	int iSpawnPoint = CreateEntityByName((gEV_Type == Engine_TF2)? "info_player_teamspawn":((iTeam == 2)? "info_player_terrorist":"info_player_counterterrorist"));
+	int iSpawnPoint = CreateEntityByName(((iTeam == 2)? "info_player_terrorist":"info_player_counterterrorist"));
 
 	if (DispatchSpawn(iSpawnPoint))
 	{
-		if (gEV_Type == Engine_TF2)
-		{
-			SetEntProp(iSpawnPoint, Prop_Send, "m_iTeamNum", iTeam);
-		}
-
 		TeleportEntity(iSpawnPoint, fOrigin, fAngles, NULL_VECTOR);
 	}
 }
@@ -552,40 +510,14 @@ public void OnConfigsExecuted()
 			GetEntPropVector(iEntity, Prop_Send, "m_vecOrigin", fOrigin);
 			GetEntPropVector(iEntity, Prop_Data, "m_angAbsRotation", fAngles);
 
-			if (gEV_Type == Engine_TF2)
+			if (info_player_terrorist == -1)
 			{
-				int iSearch = -1;
-				bool haveRed = false;
-				bool haveBlu = false;
-
-				while ((iSearch = FindEntityByClassname(iSearch, "info_player_teamspawn")) != -1)
-				{
-					int team = GetEntProp(iSearch, Prop_Send, "m_iTeamNum");
-					haveRed = haveRed || team == 2;
-					haveBlu = haveBlu || team == 3;
-				}
-
-				if (!haveRed)
-				{
-					CreateSpawnPoint(2, fOrigin, fAngles);
-				}
-
-				if (!haveBlu)
-				{
-					CreateSpawnPoint(3, fOrigin, fAngles);
-				}
+				CreateSpawnPoint(2, fOrigin, fAngles);
 			}
-			else
-			{
-				if (info_player_terrorist == -1)
-				{
-					CreateSpawnPoint(2, fOrigin, fAngles);
-				}
 
-				if (info_player_counterterrorist == -1)
-				{
-					CreateSpawnPoint(3, fOrigin, fAngles);
-				}
+			if (info_player_counterterrorist == -1)
+			{
+				CreateSpawnPoint(3, fOrigin, fAngles);
 			}
 		}
 	}
@@ -725,16 +657,8 @@ public int ScoreboardSort(int index1, int index2, Handle array, Handle hndl)
 	int a_score;
 	int b_score;
 
-	if (gEV_Type == Engine_CSGO)
-	{
-		a_score = CS_GetClientContributionScore(a);
-		b_score = CS_GetClientContributionScore(b);
-	}
-	else
-	{
-		a_score = GetEntProp(a, Prop_Data, "m_iFrags");
-		b_score = GetEntProp(b, Prop_Data, "m_iFrags");
-	}
+	a_score = GetEntProp(a, Prop_Data, "m_iFrags");
+	b_score = GetEntProp(b, Prop_Data, "m_iFrags");
 
 	if (a_score != b_score)
 	{
@@ -845,15 +769,8 @@ public Action Command_Jointeam(int client, const char[] command, int args)
 
 	if(gCV_RespawnOnTeam.BoolValue && iTeam != 1)
 	{
-		if(gEV_Type == Engine_TF2)
-		{
-			TF2_RespawnPlayer(client);
-		}
-		else
-		{
-			RemoveAllWeapons(client); // so weapons are removed and we don't hit the edict limit
-			CS_RespawnPlayer(client);
-		}
+		RemoveAllWeapons(client); // so weapons are removed and we don't hit the edict limit
+		CS_RespawnPlayer(client);
 
 		return Plugin_Stop;
 	}
@@ -863,33 +780,15 @@ public Action Command_Jointeam(int client, const char[] command, int args)
 
 void CleanSwitchTeam(int client, int team)
 {
-	if (gEV_Type == Engine_CSGO && GetClientTeam(client) == team)
-	{
-		// Close the team menu when selecting your own team...
-		Event event = CreateEvent("player_team");
-		event.SetInt("userid", GetClientUserId(client));
-		event.SetInt("team", team);
-		event.SetBool("silent", true);
-		event.FireToClient(client);
-		event.Cancel();
-	}
-
-	if(gEV_Type == Engine_TF2)
-	{
-		TF2_ChangeClientTeam(client, view_as<TFTeam>(team));
-	}
-	else if(team != 1)
+	if(team != 1)
 	{
 		CS_SwitchTeam(client, team);
 	}
 	else
 	{
 		// Remove flashlight :)
-		if (gEV_Type == Engine_CSS)
-		{
-			int EF_DIMLIGHT = 4;
-			SetEntProp(client, Prop_Send, "m_fEffects", ~EF_DIMLIGHT & GetEntProp(client, Prop_Send, "m_fEffects"));
-		}
+		int EF_DIMLIGHT = 4;
+		SetEntProp(client, Prop_Send, "m_fEffects", ~EF_DIMLIGHT & GetEntProp(client, Prop_Send, "m_fEffects"));
 
 		ChangeClientTeam(client, team);
 	}
@@ -919,7 +818,7 @@ public MRESReturn CCSPlayer__GetPlayerMaxSpeed(int pThis, DHookReturn hReturn)
 
 public Action Timer_Cron(Handle timer)
 {
-	if(gCV_HideRadar.BoolValue && gEV_Type == Engine_CSS)
+	if(gCV_HideRadar.BoolValue)
 	{
 		float salt = GetURandomFloat();
 
@@ -1041,24 +940,11 @@ public Action Timer_Advertisement(Handle timer)
 
 void UpdateScoreboard(int client)
 {
-	// this doesn't work on tf2 probably because of CTFGameRules::CalcPlayerScore
-	if(gEV_Type == Engine_TF2)
-	{
-		return;
-	}
-
 	float fPB = Shavit_GetClientPB(client, 0, Track_Main);
 
 	int iScore = (fPB != 0.0 && fPB < 2000)? -RoundToFloor(fPB):-2000;
 
-	if(gEV_Type == Engine_CSGO)
-	{
-		CS_SetClientContributionScore(client, iScore);
-	}
-	else
-	{
-		SetEntProp(client, Prop_Data, "m_iFrags", iScore);
-	}
+	SetEntProp(client, Prop_Data, "m_iFrags", iScore);
 
 	if(gB_Rankings)
 	{
@@ -1068,11 +954,10 @@ void UpdateScoreboard(int client)
 
 void UpdateClanTag(int client)
 {
-	// no clan tags in tf2
 	char sCustomTag[32];
 	gCV_ClanTag.GetString(sCustomTag, 32);
 
-	if(gEV_Type == Engine_TF2 || StrEqual(sCustomTag, "0"))
+	if(StrEqual(sCustomTag, "0"))
 	{
 		return;
 	}
@@ -1328,16 +1213,9 @@ public void OnClientPutInServer(int client)
 		return;
 	}
 
-	if(gEV_Type == Engine_TF2)
+	if(gH_GetPlayerMaxSpeed != null)
 	{
-		SDKHook(client, SDKHook_PreThinkPost, TF2_OnPreThink);
-	}
-	else
-	{
-		if(gH_GetPlayerMaxSpeed != null)
-		{
-			DHookEntity(gH_GetPlayerMaxSpeed, true, client);
-		}
+		DHookEntity(gH_GetPlayerMaxSpeed, true, client);
 	}
 
 	if(!AreClientCookiesCached(client))
@@ -1362,17 +1240,8 @@ void ClearViewPunch(int victim)
 {
 	if (1 <= victim <= MaxClients)
 	{
-		if(gEV_Type == Engine_CSGO)
-		{
-			SetEntPropVector(victim, Prop_Send, "m_viewPunchAngle", NULL_VECTOR);
-			SetEntPropVector(victim, Prop_Send, "m_aimPunchAngle", NULL_VECTOR);
-			SetEntPropVector(victim, Prop_Send, "m_aimPunchAngleVel", NULL_VECTOR);
-		}
-		else
-		{
-			SetEntPropVector(victim, Prop_Send, "m_vecPunchAngle", NULL_VECTOR);
-			SetEntPropVector(victim, Prop_Send, "m_vecPunchAngleVel", NULL_VECTOR);
-		}
+		SetEntPropVector(victim, Prop_Send, "m_vecPunchAngle", NULL_VECTOR);
+		SetEntPropVector(victim, Prop_Send, "m_vecPunchAngleVel", NULL_VECTOR);
 	}
 }
 
@@ -1455,30 +1324,6 @@ public Action OnSetTransmit(int entity, int client)
 	}
 
 	return Plugin_Continue;
-}
-
-public void TF2_OnPreThink(int client)
-{
-	if(IsPlayerAlive(client))
-	{
-		float maxspeed;
-
-		if (GetEntityFlags(client) & FL_ONGROUND)
-		{
-			maxspeed = Shavit_GetStyleSettingFloat(gI_Style[client], "runspeed");
-		}
-		else
-		{
-			// This is used to stop CTFGameMovement::PreventBunnyJumping from destroying
-			// player velocity when doing uncrouch stuff. Kind of poopy.
-			float fSpeed[3];
-			GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
-			maxspeed = GetVectorLength(fSpeed);
-		}
-
-		// not the best method, but only one i found for tf2
-		SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", maxspeed);
-	}
 }
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
@@ -1742,7 +1587,7 @@ bool Teleport(int client, int targetserial)
 
 public Action Command_Weapon(int client, int args)
 {
-	if(!IsValidClient(client) || gEV_Type == Engine_TF2)
+	if(!IsValidClient(client))
 	{
 		return Plugin_Handled;
 	}
@@ -1776,7 +1621,7 @@ public Action Command_Weapon(int client, int args)
 
 	if(StrContains(sCommand, "usp", false) != -1)
 	{
-		strcopy(sWeapon, 32, (gEV_Type == Engine_CSS)? "weapon_usp":"weapon_usp_silencer");
+		strcopy(sWeapon, 32, "weapon_usp");
 	}
 	else if(StrContains(sCommand, "glock", false) != -1)
 	{
@@ -1796,7 +1641,7 @@ public Action Command_Weapon(int client, int args)
 		AcceptEntityInput(iWeapon, "Kill");
 	}
 
-	iWeapon = (gEV_Type == Engine_CSGO) ? GiveSkinnedWeapon(client, sWeapon) : GivePlayerItem(client, sWeapon);
+	iWeapon = GivePlayerItem(client, sWeapon);
 	FakeClientCommand(client, "use %s", sWeapon);
 
 	if(iSlot != CS_SLOT_KNIFE)
@@ -2182,10 +2027,7 @@ public void Shavit_OnWorldRecord(int client, int style, float time, int jumps, i
 
 public void Shavit_OnRestart(int client, int track)
 {
-	if(gEV_Type != Engine_TF2)
-	{
-		SetEntPropFloat(client, Prop_Send, "m_flStamina", 0.0);
-	}
+	SetEntPropFloat(client, Prop_Send, "m_flStamina", 0.0);
 }
 
 public Action Shavit_OnStyleCommandPre(int client, int oldstyle, int newstyle, int track)
@@ -2216,23 +2058,8 @@ public Action Shavit_OnRestartPre(int client, int track)
 {
 	if(gCV_RespawnOnRestart.BoolValue && !IsPlayerAlive(client))
 	{
-		if(gEV_Type == Engine_TF2)
-		{
-			TF2_ChangeClientTeam(client, view_as<TFTeam>(GetRandomInt(2, 3)));
-		}
-		else
-		{
-			CS_SwitchTeam(client, GetRandomInt(2, 3));
-		}
-
-		if(gEV_Type == Engine_TF2)
-		{
-			TF2_RespawnPlayer(client);
-		}
-		else
-		{
-			CS_RespawnPlayer(client);
-		}
+		CS_SwitchTeam(client, GetRandomInt(2, 3));
+		CS_RespawnPlayer(client);
 
 		return Plugin_Handled;
 	}
@@ -2253,14 +2080,7 @@ public Action Respawn(Handle timer, any data)
 
 	if(IsValidClient(client) && !IsPlayerAlive(client) && GetClientTeam(client) >= 2)
 	{
-		if(gEV_Type == Engine_TF2)
-		{
-			TF2_RespawnPlayer(client);
-		}
-		else
-		{
-			CS_RespawnPlayer(client);
-		}
+		CS_RespawnPlayer(client);
 
 		if(gCV_RespawnOnRestart.BoolValue)
 		{
@@ -2279,7 +2099,7 @@ public void Player_Spawn(Event event, const char[] name, bool dontBroadcast)
 	{
 		int serial = GetClientSerial(client);
 
-		if(gCV_HideRadar.BoolValue && gEV_Type == Engine_CSS)
+		if(gCV_HideRadar.BoolValue)
 		{
 			RequestFrame(Frame_RemoveRadar, serial);
 		}
@@ -2328,14 +2148,7 @@ public Action Player_Notifications(Event event, const char[] name, bool dontBroa
 {
 	if(gCV_HideTeamChanges.BoolValue)
 	{
-		if (StrEqual(name, "player_team") && gEV_Type == Engine_CSGO)
-		{
-			event.SetBool("silent", true);
-		}
-		else
-		{
-			event.BroadcastDisabled = true;
-		}
+		event.BroadcastDisabled = true;
 	}
 
 	int client = GetClientOfUserId(event.GetInt("userid"));
@@ -2426,27 +2239,9 @@ public Action Shotgun_Shot(const char[] te_name, const int[] Players, int numCli
 	TE_WriteNum("m_iSeed", TE_ReadNum("m_iSeed"));
 	TE_WriteNum("m_iPlayer", (client - 1));
 
-	if(gEV_Type == Engine_CSS)
-	{
-		TE_WriteNum("m_iWeaponID", TE_ReadNum("m_iWeaponID"));
-		TE_WriteFloat("m_fInaccuracy", TE_ReadFloat("m_fInaccuracy"));
-		TE_WriteFloat("m_fSpread", TE_ReadFloat("m_fSpread"));
-	}
-	else if(gEV_Type == Engine_CSGO)
-	{
-		TE_WriteNum("m_weapon", TE_ReadNum("m_weapon"));
-		TE_WriteFloat("m_fInaccuracy", TE_ReadFloat("m_fInaccuracy"));
-		TE_WriteFloat("m_flRecoilIndex", TE_ReadFloat("m_flRecoilIndex"));
-		TE_WriteFloat("m_fSpread", TE_ReadFloat("m_fSpread"));
-		TE_WriteNum("m_nItemDefIndex", TE_ReadNum("m_nItemDefIndex"));
-		TE_WriteNum("m_iSoundType", TE_ReadNum("m_iSoundType"));
-	}
-	else if(gEV_Type == Engine_TF2)
-	{
-		TE_WriteNum("m_iWeaponID", TE_ReadNum("m_iWeaponID"));
-		TE_WriteFloat("m_flSpread", TE_ReadFloat("m_flSpread"));
-		TE_WriteNum("m_bCritical", TE_ReadNum("m_bCritical"));
-	}
+	TE_WriteNum("m_iWeaponID", TE_ReadNum("m_iWeaponID"));
+	TE_WriteFloat("m_fInaccuracy", TE_ReadFloat("m_fInaccuracy"));
+	TE_WriteFloat("m_fSpread", TE_ReadFloat("m_fSpread"));
 
 	TE_Send(clients, count, delay);
 
@@ -2510,7 +2305,7 @@ public Action WorldDecal(const char[] te_name, const int[] Players, int numClien
 
 public Action NormalSound(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 {
-	if (gEV_Type != Engine_CSGO && IsValidClient(entity) && IsFakeClient(entity) && StrContains(sample, "footsteps/") != -1)
+	if (IsValidClient(entity) && IsFakeClient(entity) && StrContains(sample, "footsteps/") != -1)
 	{
 		numClients = 0;
 
@@ -2610,7 +2405,7 @@ public void Shavit_OnFinish(int client)
 
 public Action Command_Drop(int client, const char[] command, int argc)
 {
-	if(!gCV_DropAll.BoolValue || !IsValidClient(client) || gEV_Type == Engine_TF2)
+	if(!gCV_DropAll.BoolValue || !IsValidClient(client))
 	{
 		return Plugin_Continue;
 	}

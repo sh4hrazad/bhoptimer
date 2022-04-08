@@ -47,10 +47,6 @@
 	{
 		"chi"		"- 你也可以添加颜色标签\"&RRGGBBAA\"来设置字体透明度(16进制格式, AA为00时为全透明). 例如: &FFFFFF7F可将字体设置为50%透明度白色."
 	}
-	"CCHelp_CSGO_1"
-	{
-		"chi"		"- 你也可以使用这些颜色标签: {blue}, {bluegrey}, {darkblue}, {darkred}, {gold}, {grey}, {grey2}, {lightgreen}, {lightred}, {lime}, {orchid}, {yellow} and {palered}."
-	}
 	// ---------- Menu ---------- //
 	"SelectChatRank"
 	{

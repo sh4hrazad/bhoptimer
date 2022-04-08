@@ -35,7 +35,6 @@
 
 #undef REQUIRE_EXTENSIONS
 #include <cstrike>
-#include <tf2>
 #include <eventqueuefix>
 
 #pragma semicolon 1
@@ -238,6 +237,11 @@ public void OnPluginStart()
 	// game specific
 	gEV_Type = GetEngineVersion();
 
+	if (gEV_Type != Engine_CSS)
+	{
+		SetFailState("The fork of timer is only supported for CS:S. If you wanna use in CS:GO or TF2, please use original one.");
+	}
+
 	// menu
 	RegAdminCmd("sm_addzone", Command_Zones, ADMFLAG_RCON, "Opens the mapzones menu.");
 	RegAdminCmd("sm_zones", Command_Zones, ADMFLAG_RCON, "Opens the mapzones menu.");
@@ -294,15 +298,7 @@ public void OnPluginStart()
 	}
 
 	// events
-	if(gEV_Type == Engine_TF2)
-	{
-		HookEvent("teamplay_round_start", Round_Start);
-	}
-	else
-	{
-		HookEvent("round_start", Round_Start);
-	}
-
+	HookEvent("round_start", Round_Start);
 	HookEvent("player_spawn", Player_Spawn);
 
 	// forwards
@@ -401,24 +397,14 @@ void LoadDHooks()
 	
 	LoadPhysicsUntouch(hGameData);
 	
-	if (gEV_Type == Engine_CSGO)
-	{
-		StartPrepSDKCall(SDKCall_Entity);
-	}
-	else
-	{
-		StartPrepSDKCall(SDKCall_Static);
-	}
+	StartPrepSDKCall(SDKCall_Static);
 	
 	if (!PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "PhysicsRemoveTouchedList"))
 	{
 		SetFailState("Failed to find \"PhysicsRemoveTouchedList\" signature!");
 	}
 	
-	if (gEV_Type != Engine_CSGO)
-	{
-		PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	}
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
 	
 	gH_PhysicsRemoveTouchedList = EndPrepSDKCall();
 	
@@ -446,10 +432,6 @@ void LoadDHooks()
 	gH_TeleportDhook.AddParam(HookParamType_VectorPtr);
 	gH_TeleportDhook.AddParam(HookParamType_VectorPtr);
 	gH_TeleportDhook.AddParam(HookParamType_VectorPtr);
-	if (GetEngineVersion() == Engine_CSGO)
-	{
-		gH_TeleportDhook.AddParam(HookParamType_Bool);
-	}
 	
 	delete hGameData;
 }
@@ -928,16 +910,8 @@ void LoadZoneSettings()
 	int defaultHalo;
 	int customBeam;
 
-	if(IsSource2013(gEV_Type))
-	{
-		defaultBeam = PrecacheModel("sprites/laser.vmt", true);
-		defaultHalo = PrecacheModel("sprites/halo01.vmt", true);
-	}
-	else
-	{
-		defaultBeam = PrecacheModel("sprites/laserbeam.vmt", true);
-		defaultHalo = PrecacheModel("sprites/glow01.vmt", true);
-	}
+	defaultBeam = PrecacheModel("sprites/laser.vmt", true);
+	defaultHalo = PrecacheModel("sprites/halo01.vmt", true);
 
 	if(gCV_UseCustomSprite.BoolValue)
 	{
@@ -978,14 +952,7 @@ public void OnMapStart()
 		GetLowercaseMapName(gS_Map);
 		LoadZoneSettings();
 
-		if (gEV_Type == Engine_TF2)
-		{
-			PrecacheModel("models/error.mdl");
-		}
-		else
-		{
-			PrecacheModel("models/props/cs_office/vending_machine.mdl");
-		}
+		PrecacheModel("models/props/cs_office/vending_machine.mdl");
 
 		gB_PrecachedStuff = true;
 	}
@@ -2288,7 +2255,7 @@ Action OpenTpToZoneMenu(int client, int pagepos=0)
 	Menu menu = new Menu(MenuHandler_TpToEdit);
 	menu.SetTitle("%T\n ", "TpToZone", client);
 
-	int newPageInterval = (gEV_Type == Engine_CSGO) ? 6 : 7;
+	int newPageInterval = 7;
 	char sDisplay[64];
 	FormatEx(sDisplay, 64, "%T", "ZoneEditRefresh", client);
 	menu.AddItem("-2", sDisplay);
@@ -2388,7 +2355,7 @@ Action OpenEditMenu(int client, int pos = 0)
 	menu.SetTitle("%T\n ", "ZoneEditTitle", client);
 
 
-	int newPageInterval = (gEV_Type == Engine_CSGO) ? 6 : 7;
+	int newPageInterval = 7;
 	char sDisplay[64];
 	FormatEx(sDisplay, 64, "%T", "ZoneEditRefresh", client);
 	menu.AddItem("-2", sDisplay);
@@ -2706,7 +2673,7 @@ Action OpenDeleteMenu(int client, int pos = 0)
 	Menu menu = new Menu(MenuHandler_DeleteZone);
 	menu.SetTitle("%T\n ", "ZoneMenuDeleteTitle", client);
 
-	int newPageInterval = (gEV_Type == Engine_CSGO) ? 6 : 7;
+	int newPageInterval = 7;
 	char sDisplay[64];
 	FormatEx(sDisplay, 64, "%T", "ZoneEditRefresh", client);
 	menu.AddItem("-2", sDisplay);
@@ -2974,14 +2941,7 @@ void ShowPanel(int client, int step)
 	FormatEx(sFirst, 64, "%T", "ZoneFirst", client);
 	FormatEx(sSecond, 64, "%T", "ZoneSecond", client);
 
-	if(gEV_Type == Engine_TF2)
-	{
-		FormatEx(sPanelText, 128, "%T", "ZonePlaceTextTF2", client, (step == 1)? sFirst:sSecond);
-	}
-	else
-	{
-		FormatEx(sPanelText, 128, "%T", "ZonePlaceText", client, (step == 1)? sFirst:sSecond);
-	}
+	FormatEx(sPanelText, 128, "%T", "ZonePlaceText", client, (step == 1)? sFirst:sSecond);
 
 	pPanel.DrawItem(sPanelText, ITEMDRAW_RAWLINE);
 	char sPanelItem[64];
@@ -3230,7 +3190,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 {
 	if(gI_MapStep[client] > 0 && gI_MapStep[client] != 3)
 	{
-		int button = (gEV_Type == Engine_TF2)? IN_ATTACK2:IN_USE;
+		int button = IN_USE;
 
 		if((buttons & button) > 0)
 		{
@@ -4316,7 +4276,7 @@ public void CreateZoneEntities(bool only_create_dead_entities)
 		}
 
 		ActivateEntity(entity);
-		SetEntityModel(entity, (gEV_Type == Engine_TF2)? "models/error.mdl":"models/props/cs_office/vending_machine.mdl");
+		SetEntityModel(entity, "models/props/cs_office/vending_machine.mdl");
 		SetEntProp(entity, Prop_Send, "m_fEffects", 32);
 
 		TeleportEntity(entity, gV_ZoneCenter[i], NULL_VECTOR, NULL_VECTOR);
@@ -4325,7 +4285,7 @@ public void CreateZoneEntities(bool only_create_dead_entities)
 		float distance_y = Abs(gV_MapZones[i][0][1] - gV_MapZones[i][1][1]) / 2;
 		float distance_z = Abs(gV_MapZones[i][0][2] - gV_MapZones[i][1][2]) / 2;
 
-		float height = ((IsSource2013(gEV_Type))? 62.0:72.0) / 2;
+		float height = 62.0 / 2;
 
 		float min[3];
 		min[0] = -distance_x;

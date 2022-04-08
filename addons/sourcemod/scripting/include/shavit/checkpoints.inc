@@ -41,8 +41,7 @@ enum struct cp_cache_t
 	float fStamina;
 	bool bDucked;
 	bool bDucking;
-	float fDucktime; // m_flDuckAmount in csgo
-	float fDuckSpeed; // m_flDuckSpeed in csgo; doesn't exist in css
+	float fDucktime;
 	int iFlags;
 	timer_snapshot_t aSnapshot;
 	char sTargetname[64];

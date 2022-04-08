@@ -103,6 +103,12 @@ public void OnPluginStart()
 	LoadTranslations("shavit-misc.phrases");
 
 	gEV_Type = GetEngineVersion();
+
+	if (gEV_Type != Engine_CSS)
+	{
+		SetFailState("The fork of timer is only supported for CS:S. If you wanna use in CS:GO or TF2, please use original one.");
+	}
+
 	sv_airaccelerate = FindConVar("sv_airaccelerate");
 	sv_accelerate = FindConVar("sv_accelerate");
 	sv_friction = FindConVar("sv_friction");
@@ -117,24 +123,9 @@ public void OnPluginStart()
 
 	delete gamedata;
 
-	if (gEV_Type == Engine_CSGO)
+	if (g_iSurfaceFrictionOffset != -1)
 	{
-		g_fMaxMove = 450.0;
-		ConVar sv_air_max_wishspeed = FindConVar("sv_air_max_wishspeed");
-		sv_air_max_wishspeed.AddChangeHook(OnWishSpeedChanged);
-		g_flAirSpeedCap = sv_air_max_wishspeed.FloatValue;
-
-		if (g_iSurfaceFrictionOffset != -1)
-		{
-			g_iSurfaceFrictionOffset = FindSendPropInfo("CBasePlayer", "m_ubEFNoInterpParity") - g_iSurfaceFrictionOffset;
-		}
-	}
-	else
-	{
-		if (g_iSurfaceFrictionOffset != -1)
-		{
-			g_iSurfaceFrictionOffset += FindSendPropInfo("CBasePlayer", "m_szLastPlaceName");
-		}
+		g_iSurfaceFrictionOffset += FindSendPropInfo("CBasePlayer", "m_szLastPlaceName");
 	}
 
 	AddCommandListener(CommandListener_Toggler, "+autostrafer");
@@ -330,7 +321,7 @@ public Action Shavit_OnCheckpointMenuMade(int client, bool segmented, Menu menu)
 		menu.AddItem("tassettings", sDisplay);
 	}
 
-	menu.ExitButton = gEV_Type != Engine_CSGO;
+	menu.ExitButton = true;
 
 	return Plugin_Changed;
 }
@@ -596,43 +587,20 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 
 stock void FindNewFrictionOffset(int client, bool logOnly = false)
 {
-	if (gEV_Type == Engine_CSGO)
+	int startingOffset = FindSendPropInfo("CBasePlayer", "m_szLastPlaceName");
+	for (int i = 1; i <= 128; ++i)
 	{
-		int startingOffset = FindSendPropInfo("CBasePlayer", "m_ubEFNoInterpParity");
-		for (int i = 16; i >= -128; --i)
+		float friction = GetEntDataFloat(client, startingOffset + i);
+		if (friction == 0.25 || friction == 1.0)
 		{
-			float friction = GetEntDataFloat(client, startingOffset + i);
-			if (friction == 0.25 || friction == 1.0)
+			if(logOnly)
 			{
-				if (logOnly)
-				{
-					PrintToConsole(client, "Found offset canidate: %i", i * -1);
-				}
-				else
-				{
-					g_iSurfaceFrictionOffset = startingOffset - i;
-					LogError("[XUTAX] Current offset is out of date. Please update to new offset: %i", i * -1);
-				}
+				PrintToConsole(client, "Found offset canidate: %i", i);
 			}
-		}
-	}
-	else
-	{
-		int startingOffset = FindSendPropInfo("CBasePlayer", "m_szLastPlaceName");
-		for (int i = 1; i <= 128; ++i)
-		{
-			float friction = GetEntDataFloat(client, startingOffset + i);
-			if (friction == 0.25 || friction == 1.0)
+			else
 			{
-				if(logOnly)
-				{
-					PrintToConsole(client, "Found offset canidate: %i", i);
-				}
-				else
-				{
-					g_iSurfaceFrictionOffset = startingOffset + i;
-					LogError("[XUTAX] Current offset is out of date. Please update to new offset: %i", i);
-				}
+				g_iSurfaceFrictionOffset = startingOffset + i;
+				LogError("[XUTAX] Current offset is out of date. Please update to new offset: %i", i);
 			}
 		}
 	}

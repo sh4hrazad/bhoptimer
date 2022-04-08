@@ -147,6 +147,11 @@ public void OnPluginStart()
 {
 	gEV_Type = GetEngineVersion();
 
+	if (gEV_Type != Engine_CSS)
+	{
+		SetFailState("The fork of timer is only supported for CS:S. If you wanna use in CS:GO or TF2, please use original one.");
+	}
+
 	gH_Forwards_OnTierAssigned = CreateGlobalForward("Shavit_OnTierAssigned", ET_Event, Param_String, Param_Cell);
 	gH_Forwards_OnRankAssigned = CreateGlobalForward("Shavit_OnRankAssigned", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
 
@@ -188,10 +193,7 @@ public void OnPluginStart()
 		Shavit_OnDatabaseLoaded();
 	}
 
-	if (gEV_Type != Engine_TF2)
-	{
-		CreateTimer(1.0, Timer_MVPs, 0, TIMER_REPEAT);
-	}
+	CreateTimer(1.0, Timer_MVPs, 0, TIMER_REPEAT);
 }
 
 public void Shavit_OnChatConfigLoaded()
