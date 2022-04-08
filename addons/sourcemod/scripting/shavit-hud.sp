@@ -186,14 +186,14 @@ public void OnPluginStart()
 		..."HUD_KEYOVERLAY			32\n"
 		..."HUD_HIDEWEAPON			64\n"
 		..."HUD_TOPLEFT				128\n"
-		..."HUD_UNUSED					256\n"
+		..."HUD_UNUSED					256\n" // used to be "HUD_SYNC"
 		..."HUD_TIMELEFT				512\n"
 		..."HUD_2DVEL				1024\n"
 		..."HUD_NOSOUNDS				2048\n"
 		..."HUD_NOPRACALERT			4096\n"
 		..."HUD_USP                  8192\n"
 		..."HUD_GLOCK                16384\n"
-	); // *HUD_UNUSED: HUD_SYNC was deleted bcuz it's a duplication of HUD2_SYNC.
+	);
 
 	IntToString(HUD_DEFAULT2, defaultHUD, 8);
 	gCV_DefaultHUD2 = new Convar("shavit_hud2_default", defaultHUD, "Default HUD2 settings as a bitflag of what to remove\n"
