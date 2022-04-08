@@ -596,25 +596,28 @@ public Action Command_MapInfo(int client, int args)
 	FormatEx(sInfo, sizeof(sInfo), "%s | Tier: %s%i",
 		sMap, gS_ChatStrings.sVariable, tier);
 	
-	if(bonuses && args == 0)
+	if (args == 0)
 	{
-		FormatEx(sInfo, sizeof(sInfo), "%s%s | Bonuses: %s%i%s", sInfo,
-			gS_ChatStrings.sText, gS_ChatStrings.sVariable, bonuses, gS_ChatStrings.sText);
-	}
-	else
-	{
-		FormatEx(sInfo, sizeof(sInfo), "%s | No Bonus", sInfo);
+		if(bonuses)
+		{
+			FormatEx(sInfo, sizeof(sInfo), "%s%s | Bonuses: %s%i%s", sInfo,
+				gS_ChatStrings.sText, gS_ChatStrings.sVariable, bonuses, gS_ChatStrings.sText);
+		}
+		else
+		{
+			FormatEx(sInfo, sizeof(sInfo), "%s%s | No Bonus", gS_ChatStrings.sText, sInfo);
 
-	}
+		}
 
-	if(stages && args == 0)
-	{
-		FormatEx(sInfo, sizeof(sInfo), "%s | Stages: %s%d", sInfo,
-			gS_ChatStrings.sVariable, stages);
-	}
-	else
-	{
-		FormatEx(sInfo, sizeof(sInfo), "%s | Linear", sInfo);
+		if(stages)
+		{
+			FormatEx(sInfo, sizeof(sInfo), "%s%s | Stages: %s%d", sInfo,
+				gS_ChatStrings.sText, gS_ChatStrings.sVariable, stages);
+		}
+		else
+		{
+			FormatEx(sInfo, sizeof(sInfo), "%s%s | Linear", sInfo, gS_ChatStrings.sText);
+		}
 	}
 
 	Shavit_PrintToChat(client, sInfo);

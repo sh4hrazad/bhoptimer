@@ -1,3 +1,10 @@
+/**
+ * bhoptimer-sfork - Teleport Destination Finder
+ * Original plugin by: marcowmadeira
+ *
+ * https://github.com/surftimer/Surftimer-Official
+ */
+
 #include <sourcemod>
 #include <sdktools>
 #include <cstrike>
@@ -14,13 +21,14 @@ public Plugin myinfo =
 	name = "Teleport Destination Finder",
 	author = "marcowmadeira",
 	description = "Shows a list of info_teleport_destination entities.",
-	version = "1.0",
+	version = SHAVIT_VERSION ... "-sfork",
 	url = "http://marcowmadeira.com/"
 };
 
 public void OnPluginStart()
 {
 	EngineVersion eGame = GetEngineVersion();
+	
 	if(eGame != Engine_CSGO && eGame != Engine_CSS)
 	{
 		SetFailState("[TDF] This plugin is for CSGO/CSS only.");	
@@ -40,12 +48,11 @@ public void OnMapStart()
 	while ((iEnt = FindEntityByClassname(iEnt, "info_teleport_destination")) != -1)
 		PushArrayCell(g_hEntity, iEnt);
 
-	while ((iEnt = FindEntityByClassname(iEnt, "trigger_multiple")) != -1) {
-
+	while ((iEnt = FindEntityByClassname(iEnt, "trigger_multiple")) != -1)
+	{
 		char target_name[32];
 		GetEntPropString(iEnt, Prop_Data, "m_iName", target_name, sizeof(target_name));
 
-		
 		if (strlen(target_name) > 0 && StrContains(target_name, "sm_ckZone") == -1)
 			PushArrayCell(g_hTMEntity, iEnt);
 	}
@@ -69,7 +76,6 @@ public Action ShowTeleportDestinations(int client, int args)
 
 	for (int i = 0; i < GetArraySize(g_hEntity); i++) 
 	{
-
 		// Get entity
 		int entity = GetArrayCell(g_hEntity, i);
 
@@ -88,15 +94,17 @@ public Action ShowTeleportDestinations(int client, int args)
 
 public int TD_MenuHandler(Menu menu, MenuAction action, int param1, int param2)
 {
-	if (action == MenuAction_Select) {
-
+	if (action == MenuAction_Select)
+	{
 		int entity = GetArrayCell(g_hEntity, param2);
 
 		float position[3];
 		GetEntPropVector(entity, Prop_Send, "m_vecOrigin", position);
 
 		SafeTeleport(param1, position, NULL_VECTOR, NULL_VECTOR, true);
-	} else if (action == MenuAction_End) {
+	}
+	else if (action == MenuAction_End)
+	{
 		delete menu;
 	}
 
@@ -130,7 +138,8 @@ public Action ShowTriggersLocations(int client, int args)
 
 public int TM_MenuHandler(Menu menu, MenuAction action, int param1, int param2)
 {
-	if (action == MenuAction_Select) {
+	if (action == MenuAction_Select)
+	{
 
 		int entity = GetArrayCell(g_hTMEntity, param2);
 
@@ -138,7 +147,9 @@ public int TM_MenuHandler(Menu menu, MenuAction action, int param1, int param2)
 		GetEntPropVector(entity, Prop_Send, "m_vecOrigin", position);
 
 		SafeTeleport(param1, position, NULL_VECTOR, NULL_VECTOR, true);
-	} else if (action == MenuAction_End) {
+	}
+	else if (action == MenuAction_End)
+	{
 		delete menu;
 	}
 
