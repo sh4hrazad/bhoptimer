@@ -157,6 +157,7 @@ public void OnPluginStart()
 
 	RegConsoleCmd("sm_mi", Command_MapInfo, "Prints the map's info to chat.");
 	RegConsoleCmd("sm_mapinfo", Command_MapInfo, "Prints the map's info to chat. (sm_mi alias)");
+	RegConsoleCmd("sm_tier", Command_MapInfo, "Prints the map's info to chat. (sm_mi alias)");
 
 	RegConsoleCmd("sm_rank", Command_Rank, "Show your or someone else's rank. Usage: sm_rank [name]");
 	RegConsoleCmd("sm_top", Command_Top, "Show the top 100 players.");

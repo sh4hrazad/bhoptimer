@@ -169,6 +169,9 @@ Handle gH_PhysicsRemoveTouchedList = null;
 // dhooks
 DynamicHook gH_TeleportDhook = null;
 
+// update teleport destination
+Handle gH_Entity = null;
+
 // kz support
 float gF_ClimbButtonCache[MAXPLAYERS+1][TRACKS_SIZE][2][3]; // 0 - location, 1 - angles
 
@@ -979,6 +982,14 @@ public void OnMapStart()
 			GetStartPosition(i);
 		}
 	}
+
+	int iEnt;
+	gH_Entity = CreateArray(12);
+
+	while ((iEnt = FindEntityByClassname(iEnt, "info_teleport_destination")) != -1)
+	{
+		PushArrayCell(gH_Entity, iEnt);
+	}
 }
 
 public void OnMapEnd()
@@ -987,6 +998,7 @@ public void OnMapEnd()
 	gB_InsertedPrebuiltZones = false;
 	delete gH_DrawVisible;
 	delete gH_DrawAllZones;
+	delete gH_Entity;
 }
 
 public void OnClientPutInServer(int client)
@@ -3312,7 +3324,9 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 		}
 		else if(StrEqual(sInfo, "tpzone"))
 		{
-			UpdateTeleportZone(param1);
+			CreateUpdateTeleportZoneMenu(param1, 0);
+
+			return 0;
 		}
 		else if(StrEqual(sInfo, "datafromchat"))
 		{
@@ -3369,11 +3383,19 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 	return Plugin_Continue;
 }
 
-void UpdateTeleportZone(int client)
+void UpdateTeleportZone(int client, float position[3] = {-1.0, -1.0, -1.0})
 {
 	float vTeleport[3];
-	GetClientAbsOrigin(client, vTeleport);
-	vTeleport[2] += 2.0;
+
+	if(position[0] == -1.0 && position[1] == -1.0 && position[2] == -1.0)
+	{
+		GetClientAbsOrigin(client, vTeleport);
+		vTeleport[2] += 2.0;
+	}
+	else
+	{
+		vTeleport = position;
+	}
 
 	if(gI_ZoneType[client] == Zone_Stage)
 	{
@@ -3488,6 +3510,71 @@ void CreateEditMenu(int client)
 
 	menu.ExitButton = true;
 	menu.Display(client, 600);
+}
+
+// ❀ Teleport to info_teleport_destination ❀
+void CreateUpdateTeleportZoneMenu(int client, int page)
+{
+	Menu menu = new Menu(UpdateTeleportZoneMenu_Handler);
+	menu.SetTitle("Update Teleport Zone\nUse !itd to look for the zone you want to set\n");
+
+	menu.AddItem("tpzone", "Use current position\n ");
+
+	for (int i = 0; i < GetArraySize(gH_Entity); i++) 
+	{
+		// Get entity
+		int entity = GetArrayCell(gH_Entity, i);
+
+		// Get targetname
+		char target_name[32];
+		GetEntPropString(entity, Prop_Data, "m_iName", target_name, sizeof(target_name));
+
+		menu.AddItem(target_name, target_name);
+	}
+
+	menu.ExitButton = false;
+	menu.DisplayAt(client, page, MENU_TIME_FOREVER);
+}
+
+public int UpdateTeleportZoneMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
+{
+	if (action == MenuAction_Select)
+	{
+		char sInfo[16];
+		menu.GetItem(param2, sInfo, 16);
+
+		if(StrEqual(sInfo, "tpzone"))
+		{
+			UpdateTeleportZone(param1);
+		}
+		else
+		{
+			int entity = GetArrayCell(gH_Entity, param2 - 1);
+			float position[3];
+
+			GetEntPropVector(entity, Prop_Send, "m_vecOrigin", position);
+
+			UpdateTeleportZone(param1, position);
+		}
+
+		CreateEditMenu(param1);
+	}
+	else if (action == MenuAction_Cancel)
+	{
+		if (gI_ZoneID[param1] != -1)
+		{
+			// reenable original zone
+			gA_ZoneCache[gI_ZoneID[param1]].bZoneInitialized = true;
+		}
+
+		Reset(param1);
+	}
+	else if (action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
 }
 
 void CreateAdjustMenu(int client, int page)
