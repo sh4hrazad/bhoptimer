@@ -250,6 +250,14 @@
 	{
 		"chi"		"设定传送目的地"
 	}
+	"ZoneCurrentPosition"
+	{
+		"chi"		"使用当前位置"
+	}
+	"ZoneITD"
+	{
+		"chi"		"输入 !itd 可用于寻找需要传送到的实体"
+	}
 	"ZoneSetYes"
 	{
 		"chi"		"完成"
@@ -404,7 +412,7 @@
 	"ZoneStageEnter"
 	{
 		"#format"	"{1:s},{2:s},{3:d},{4:s},{5:s},{6:s}{7:s}"
-		"chi"		"{1}检查点[{2}{3}{4}] | 用时: {5}{6}"
+		"chi"		"{1}检查点 [{2}{3}{4}] | 用时: {5}{6}"
 	}
 	"Zone_Start"
 	{
@@ -416,15 +424,15 @@
 	}
 	"Zone_Respawn"
 	{
-		"chi"		"防BUG区域 (回到起点)"
+		"chi"		"防 BUG 区域 (回到起点)"
 	}
 	"Zone_Stop"
 	{
-		"chi"		"防BUG区域 (停止计时)"
+		"chi"		"防 BUG 区域 (停止计时)"
 	}
 	"Zone_Slay"
 	{
-		"chi"		"防BUG区域 (处死玩家)"
+		"chi"		"防 BUG 区域 (处死玩家)"
 	}
 	"Zone_Freestyle"
 	{

@@ -250,6 +250,14 @@
 	{
 		"en"		"Update teleport destination"
 	}
+	"ZoneCurrentPosition"
+	{
+		"en"		"Use current position"
+	}
+	"ZoneITD"
+	{
+		"en"		"Use !itd to look for the entity you want to set"
+	}
 	"ZoneSetYes"
 	{
 		"en"		"Yes"

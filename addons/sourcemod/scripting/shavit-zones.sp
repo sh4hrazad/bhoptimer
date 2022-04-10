@@ -3515,10 +3515,14 @@ void CreateEditMenu(int client)
 // ❀ Teleport to info_teleport_destination ❀
 void CreateUpdateTeleportZoneMenu(int client, int page)
 {
-	Menu menu = new Menu(UpdateTeleportZoneMenu_Handler);
-	menu.SetTitle("Update Teleport Zone\nUse !itd to look for the zone you want to set\n");
+	char sInfo[128];
 
-	menu.AddItem("tpzone", "Use current position\n ");
+	Menu menu = new Menu(UpdateTeleportZoneMenu_Handler);
+	FormatEx(sInfo, sizeof(sInfo), "%T\n%T", "ZoneSetTPZone", client, "ZoneITD", client);
+	menu.SetTitle(sInfo);
+
+	FormatEx(sInfo, sizeof(sInfo), "%T\n ", "ZoneCurrentPosition", client);
+	menu.AddItem("tpzone", sInfo);
 
 	for (int i = 0; i < GetArraySize(gH_Entity); i++) 
 	{
