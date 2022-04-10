@@ -1,9 +1,9 @@
-![](https://img.shields.io/badge/neko%20fl4n-included-ff6a6a?style=flat-square) ![](https://img.shields.io/badge/neko%20brz-included-6aa6ff?style=flat-square)
-# !!! Modified timer. Do not use unless you know what you are doing!
-# Note: csgo/tf2 code for this fork has been deleted.
-
+```
+!!! Modified timer. Do not use unless you know what you are doing !!!
+Note: csgo/tf2 support for this fork has been deleted.
+```
 # Requirements:
-* Steam version of Counter-Strike: Source, Counter-Strike: Global Offensive, or Team Fortress 2.
+* Steam version of Counter-Strike: Source.
 * [Metamod:Source](https://www.sourcemm.net/downloads.php?branch=stable) and [SourceMod 1.10 or above](https://www.sourcemod.net/downloads.php?branch=stable) installed.
 * A MySQL database (preferably locally hosted) if your database is likely to grow big, or if you want to use the rankings plugin. MySQL server version of 5.5.5 or above (MariaDB equivalent works too) is required.
 * [DHooks](https://github.com/peace-maker/DHooks2/releases)
