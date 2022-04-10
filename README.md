@@ -1,21 +1,6 @@
 ![](https://img.shields.io/badge/neko%20fl4n-included-ff6a6a?style=flat-square) ![](https://img.shields.io/badge/neko%20brz-included-6aa6ff?style=flat-square)
 # !!! Modified timer. Do not use unless you know what you are doing!
 # Note: csgo/tf2 code for this fork has been deleted.
-[![Discord server](https://discordapp.com/api/guilds/389675819959844865/widget.png?style=shield)](https://discord.gg/jyA9q5k)
-
-### RECOMPILE ALL YOUR PLUGINS THAT USE `#include <shavit>` OR STUFF WILL BREAK
-
-[AlliedModders thread](https://forums.alliedmods.net/showthread.php?t=265456)
-
-[Download](https://github.com/shavitush/bhoptimer/releases)
-
-# shavit's bhop timer
-
-This is nearly an all-in-one server plugin suite for Counter-Strike: Source, Counter-Strike: Global Offensive, and Team Fortress 2 that adds a timer system and many other utilities, so you can install it and run a proper bunnyhop server.
-
-Includes a records system, map zones (start/end marks etc), bonuses, HUD with useful information, chat processor, miscellaneous things such as weapon commands/spawn point generator, bots that replay the best records of the map, sounds, statistics, segmented running, a fair & competitive rankings system, and more!
-
-[Mapzones Setup Demonstration](https://youtu.be/OXFMGm40F6c)
 
 # Requirements:
 * Steam version of Counter-Strike: Source, Counter-Strike: Global Offensive, or Team Fortress 2.
@@ -33,7 +18,7 @@ Includes a records system, map zones (start/end marks etc), bonuses, HUD with us
 # Installation
 
 * [Build from source](https://github.com/shavitush/bhoptimer/wiki/1.-Installation)
-* [Download an existing release](https://github.com/shavitush/bhoptimer/releases) - installing is simply drag & drop into the  game server's directory.
+* [Download an existing release(original)](https://github.com/shavitush/bhoptimer/releases) - installing is simply drag & drop into the  game server's directory.
 
 # Configuration
 
@@ -284,9 +269,3 @@ Player commands:
   - C++ extension to efficiently find the closest replay position for calculating time-difference and velocity-difference.
 * [mpbhops_but_better](https://github.com/rtldg/mpbhops_but_working)
   - A cleaner and faster mpbhops/mpbh plugin that also makes door vertical-boosters consistent and frozen.
-
-### CS:GO
-* [NoViewPunch](https://github.com/hermansimensen/NoViewPunch)
-  - Removes the viewpunch from landing in CS:GO.
-* [CS:GO Movement unlocker](https://forums.alliedmods.net/showthread.php?t=255298)
-  - Enables prespeeding (no 240 velocity cap for runspeed anymore)
