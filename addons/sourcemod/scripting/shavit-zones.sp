@@ -771,16 +771,6 @@ void LoadZoneSettings()
 	}
 }
 
-/*
-L 04/11/2022 - 16:18:33: [SM] Exception reported: Property "m_iName" not found (entity 153/trigger_multiple)
-L 04/11/2022 - 16:18:33: [SM] Blaming: shavit-zones.smx
-L 04/11/2022 - 16:18:33: [SM] Call stack trace:
-L 04/11/2022 - 16:18:33: [SM]   [0] GetEntPropString
-L 04/11/2022 - 16:18:33: [SM]   [1] Line 785, D:\SteamCMD\steamapps\common\Counter-Strike Source Dedicated Server\cstrike\addons\sourcemod\scripting\shavit-zones.sp::FindTriggers
-L 04/11/2022 - 16:18:33: [SM]   [2] Line 871, D:\SteamCMD\steamapps\common\Counter-Strike Source Dedicated Server\cstrike\addons\sourcemod\scripting\shavit-zones.sp::OnMapStart
-L 04/11/2022 - 16:18:33: [SM]   [3] Line 3590, D:\SteamCMD\steamapps\common\Counter-Strike Source Dedicated Server\cstrike\addons\sourcemod\scripting\shavit-zones.sp::SQL_CreateTable_Callback
- */
-
 void FindTriggers()
 {
 	delete gA_Triggers;
@@ -3929,16 +3919,6 @@ bool CreateHookZone(int zone)
 
 	return false;
 }
-
-/*
-L 04/11/2022 - 16:19:21: [SM] Exception reported: Invalid Handle 0 (error: 4)
-L 04/11/2022 - 16:19:21: [SM] Blaming: shavit-zones.smx
-L 04/11/2022 - 16:19:21: [SM] Call stack trace:
-L 04/11/2022 - 16:19:21: [SM]   [0] ArrayList.Length.get
-L 04/11/2022 - 16:19:21: [SM]   [1] Line 3925, D:\SteamCMD\steamapps\common\Counter-Strike Source Dedicated Server\cstrike\addons\sourcemod\scripting\shavit-zones.sp::SetCenterByDestination
-L 04/11/2022 - 16:19:21: [SM]   [2] Line 3819, D:\SteamCMD\steamapps\common\Counter-Strike Source Dedicated Server\cstrike\addons\sourcemod\scripting\shavit-zones.sp::CreateZoneEntities
-L 04/11/2022 - 16:19:21: [SM]   [3] Line 1163, D:\SteamCMD\steamapps\common\Counter-Strike Source Dedicated Server\cstrike\addons\sourcemod\scripting\shavit-zones.sp::SQL_RefreshZones_Callback
- */
 
 void SetCenterByDestination(int zone)
 {
