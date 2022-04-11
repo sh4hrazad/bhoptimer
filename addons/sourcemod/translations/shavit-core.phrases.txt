@@ -3,35 +3,35 @@
 	// ---------- Commands ---------- //
 	"AutobhopEnabled"
 	{
-		"en"		"Autobhop {orchid}enabled{default}."
-		"chi"		"自动连跳 {orchid}已开启{default}."
+		"en"		"Autobhop {orchid}enabled{white}."
+		"chi"		"自动连跳 {orchid}已开启{white}."
 	}
 	"AutobhopDisabled"
 	{
-		"en"		"Autobhop {darkred}disabled{default}."
-		"chi"		"自动连跳 {darkred}已关闭{default}."
+		"en"		"Autobhop {red}disabled{white}."
+		"chi"		"自动连跳 {red}已关闭{white}."
 	}
 	"CheatTimerStop"
 	{
 		"#format"	"{1:s}"
-		"en"		"{darkred}Timer stopped! {default}{1}"
-		"chi"		"{darkred}计时器已停止! {default}{1}"
+		"en"		"{red}Timer stopped! {white}{1}"
+		"chi"		"{red}计时器已停止! {white}{1}"
 	}
 	"CommandDisabled"
 	{
 		"#format" 	"{1:s}"
-		"en"		"The command ({gold}{1}{default}) is disabled."
-		"chi"		"这条指令 ({gold}{1}{default}) 已禁止."
+		"en"		"The command ({gold}{1}{white}) is disabled."
+		"chi"		"这条指令 ({gold}{1}{white}) 已禁止."
 	}
 	"StyleNoAccess"
 	{
-		"en"		"You lack the {darkred}permissions{default} for this style."
-		"chi"		"你没有这个模式的{darkred}权限{default}."
+		"en"		"You lack the {red}permissions{white} for this style."
+		"chi"		"你没有这个模式的{red}权限{white}."
 	}
 	"BlockNoclipResume"
 	{
-		"en"		"You {darkred}can't{default} resume timer while {darkred}nocliping{default}"
-		"chi"		"你不能在{darkred}穿墙状态{default}下恢复计时"
+		"en"		"You {red}can't{white} resume timer while {red}nocliping{white}."
+		"chi"		"你不能在{red}穿墙状态{white}下恢复计时"
 	}
 	// ---------- Errors ---------- //
 	"VerificationFailed"
@@ -48,8 +48,8 @@
 	"StyleSelection"
 	{
 		"#format"	"{1:s}"
-		"en"		"You have chosen to play {grey}{1}{default}."
-		"chi"		"你已经选择了玩 {grey}{1}{default}."
+		"en"		"You have chosen to play {grey}{1}{white}."
+		"chi"		"你已经选择了玩 {grey}{1}{white}."
 	}
 	"StyleUnranked"
 	{
@@ -69,8 +69,8 @@
 	}
 	"UnrankedWarning"
 	{
-		"en"		"{darkred}WARNING: {default}This style is unranked. Your times WILL NOT be saved and will be only displayed to you!"
-		"chi"		"{darkred}警告：{default}此模式未排名。您的时间不会被保存，只会显示给你自己！"
+		"en"		"{red}WARNING: {white}This style is unranked. Your times WILL NOT be saved and will be only displayed to you!"
+		"chi"		"{red}警告：{white}此模式未排名。您的时间不会被保存，只会显示给你自己！"
 	}
 	"PracticeModeAlert"
 	{
@@ -80,60 +80,60 @@
 	}
 	"SHSWCombination0"
 	{
-		"en"		"Your SHSW combination is {gold}W/A & S/D{default}."
-		"chi"		"你的半侧滑按键组合为： {gold}W/A 和 S/D{default}."
+		"en"		"Your SHSW combination is {gold}W/A & S/D{white}."
+		"chi"		"你的半侧滑按键组合为： {gold}W/A 和 S/D{white}."
 	}
 	"SHSWCombination1"
 	{
-		"en"		"Your SHSW combination is {gold}W/D & S/A{default}."
-		"chi"		"你的半侧滑按键组合为：{gold}W/D 和 S/A{default}."
+		"en"		"Your SHSW combination is {gold}W/D & S/A{white}."
+		"chi"		"你的半侧滑按键组合为：{gold}W/D 和 S/A{white}."
 	}
 	"NewAiraccelerate"
 	{
 		"#format"	"{1:d},{2:s},{3:d},{4:s}"
 		"en"		"Your airacceleration has been changed from {1} to {2}{3}{4}."
-		"chi"		"您的aa值已从{1}更改为{2}{3}{4}."
+		"chi"		"您的aa值已从 {1} 更改为 {2}{3}{4}."
 	}
 	// ---------- Pauses ---------- //
 	"MessagePause"
 	{
-		"en"		"{default}Timer has been {darkred}paused{default}."
-		"chi"		"{default}计时器已{darkred}暂停{default}."
+		"en"		"{white}Timer has been {red}paused{white}."
+		"chi"		"{white}计时器已{red}暂停{white}."
 	}
 	"MessageUnpause"
 	{
-		"en"		"{default}Timer has been {darkred}resumed{default}."
-		"chi"		"{default}计时器已{darkred}恢复{default}."
+		"en"		"{white}Timer has been {red}resumed{white}."
+		"chi"		"{white}计时器已{red}恢复{white}."
 	}
 	"PauseNotOnGround"
 	{
-		"en"		"You {darkred}are not{default} allowed to pause when not on ground."
-		"chi"		"您{darkred}不允许{default}在空中暂停."
+		"en"		"You {red}are not{white} allowed to pause when not on ground."
+		"chi"		"您{red}不允许{white}在空中暂停."
 	}
 	"PauseStartZone"
 	{
-		"en"		"{default}You {darkred}cannot{default} pause in the {gold}start zone{default}."
-		"chi"		"{default}您{darkred}无法在{default}{gold}开始区域{default}中暂停."
+		"en"		"{white}You {red}cannot{white} pause in the {gold}start zone{white}."
+		"chi"		"{white}您{red}无法在{white}{gold}开始区域{white}中暂停."
 	}
 	"PauseEndZone"
 	{
-		"en"		"{default}You {darkred}cannot{default} pause in the {gold}end zone{default}."
-		"chi"		"{default}您{darkred}无法在{default}{gold}终点区域{default}中暂停."
+		"en"		"{white}You {red}cannot{white} pause in the {gold}end zone{white}."
+		"chi"		"{white}您{red}无法在{white}{gold}终点区域{white}中暂停."
 	}
 	"PauseMoving"
 	{
-		"en"		"You {darkred}are not{default} allowed to pause while moving."
-		"chi"		"您{darkred}不允许{default}在移动时暂停."
+		"en"		"You {red}are not{white} allowed to pause while moving."
+		"chi"		"您{red}不允许{white}在移动时暂停."
 	}
 	"PauseDuck"
 	{
-		"en"		"You {darkred}are not{default} allowed to pause while crouching."
-		"chi"		"您{darkred}不允许{default}在蹲下时暂停."
+		"en"		"You {red}are not{white} allowed to pause while crouching."
+		"chi"		"您{red}不允许{white}在蹲下时暂停."
 	}
 	// ---------- Zones ---------- //
 	"TrackChangeFromMain"
 	{
-		"en"		"Use {orchid}!m{default}/{orchid}!main{default} go to back to the main track."
-		"chi"		"输入 {orchid}!r{default}或者{orchid}!main{default} 回到主线."
+		"en"		"Use {orchid}!m{white}/{orchid}!main{white} go to back to the main track."
+		"chi"		"输入 {orchid}!r{white}或者{orchid}!main{white} 回到主线."
 	}
 }

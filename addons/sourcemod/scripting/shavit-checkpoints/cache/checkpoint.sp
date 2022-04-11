@@ -172,8 +172,8 @@ void SaveCheckpointCache(int target, cp_cache_t cpcache, bool actually_a_checkpo
 	cpcache.fStamina = GetEntPropFloat(target, Prop_Send, "m_flStamina");
 	cpcache.bDucked = view_as<bool>(GetEntProp(target, Prop_Send, "m_bDucked"));
 	cpcache.bDucking = view_as<bool>(GetEntProp(target, Prop_Send, "m_bDucking"));
-	cpcache.fDucktime = GetEntPropFloat(target, Prop_Send, "m_flDuckAmount");
-	cpcache.fDuckSpeed = GetEntPropFloat(target, Prop_Send, "m_flDuckSpeed");
+
+	cpcache.fDucktime = GetEntPropFloat(target, Prop_Send, "m_flDucktime");
 
 	timer_snapshot_t snapshot;
 
@@ -204,6 +204,8 @@ void SaveCheckpointCache(int target, cp_cache_t cpcache, bool actually_a_checkpo
 
 	cpcache.aSnapshot = snapshot;
 	cpcache.bSegmented = CanSegment(target);
+
+	// TODO: add eventqueue back because some maps may have triggers that need this
 
 	if (cpcache.bSegmented && gB_Replay && actually_a_checkpoint && cpcache.aFrames == null)
 	{
@@ -287,8 +289,7 @@ void LoadCheckpointCache(int client, cp_cache_t cpcache, bool isPersistentData)
 	SetEntProp(client, Prop_Send, "m_bDucked", cpcache.bDucked);
 	SetEntProp(client, Prop_Send, "m_bDucking", cpcache.bDucking);
 
-	SetEntPropFloat(client, Prop_Send, "m_flDuckAmount", cpcache.fDucktime);
-	SetEntPropFloat(client, Prop_Send, "m_flDuckSpeed", cpcache.fDuckSpeed);
+	SetEntPropFloat(client, Prop_Send, "m_flDucktime", cpcache.fDucktime);
 
 	Shavit_LoadSnapshot(client, cpcache.aSnapshot);
 

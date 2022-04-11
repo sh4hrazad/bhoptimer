@@ -109,9 +109,7 @@ static void SetWeaponAmmo(int client, int weapon, bool setClip1)
 	int iAmmo = GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType");
 	SetEntProp(client, Prop_Send, "m_iAmmo", 255, 4, iAmmo);
 
-	SetEntProp(weapon, Prop_Send, "m_iPrimaryReserveAmmoCount", 255);
-
-	if (gCV_WeaponCommands.IntValue >= 3 && setClip1)
+	if (setClip1)
 	{
 		int amount = GetEntProp(weapon, Prop_Send, "m_iClip1") + 1;
 

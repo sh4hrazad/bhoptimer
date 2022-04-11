@@ -45,11 +45,6 @@ public int Native_GetPlainChatrank(Handle handler, int numParams)
 		ReplaceString(buf, sizeof(buf), gS_GlobalColorNames[i], "");
 	}
 
-	for (int i = 0; i < sizeof(gS_CSGOColorNames); i++)
-	{
-		ReplaceString(buf, sizeof(buf), gS_CSGOColorNames[i], "");
-	}
-
 	RemoveFromString(buf, "^", 6);
 	RemoveFromString(buf, "{RGB}", 6);
 	RemoveFromString(buf, "&", 8);

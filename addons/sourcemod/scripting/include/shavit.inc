@@ -148,7 +148,9 @@ enum
 	sMessageText,
 	sMessageWarning,
 	sMessageTeam,
-	sMessageStyle
+	sMessageStyle,
+	sMessageGood,
+	sMessageBad
 };
 
 enum struct stylestrings_t
@@ -169,6 +171,8 @@ enum struct chatstrings_t
 	char sWarning[16];
 	char sTeam[16];
 	char sStyle[16];
+	char sGood[16]; // green
+	char sBad[16];	// red
 }
 
 enum struct timer_snapshot_t

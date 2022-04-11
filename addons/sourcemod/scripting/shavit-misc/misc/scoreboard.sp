@@ -51,7 +51,7 @@ static void UpdateScoreboard(int client)
 
 	int iScore = (fPB != 0.0 && fPB < 2000)? -RoundToFloor(fPB):-2000;
 
-	CS_SetClientContributionScore(client, iScore);
+	SetEntProp(client, Prop_Data, "m_iFrags", iScore);
 
 	if(gB_Rankings)
 	{

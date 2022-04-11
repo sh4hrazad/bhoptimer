@@ -16,6 +16,28 @@ public Action NormalSound(int clients[MAXPLAYERS], int &numClients, char sample[
 		return Plugin_Continue;
 	}
 
+	if (IsValidClient(entity) && IsFakeClient(entity) && StrContains(sample, "footsteps/") != -1)
+	{
+		numClients = 0;
+
+		if (gCV_BhopSounds.IntValue < 2)
+		{
+			// The server removes recipients that are in the PVS because CS:S generates the footsteps clientside.
+			// UpdateStepSound clientside bails because of MOVETYPE_NOCLIP though.
+			// So fuck it, add all the clients xd.
+			// Alternatively and preferably you'd patch out the RemoveRecipientsByPVS call in PlayStepSound.
+			for (int i = 1; i <= MaxClients; i++)
+			{
+				if (IsValidClient(i) && (!gB_Hide[i] || GetSpectatorTarget(i) == entity))
+				{
+					clients[numClients++] = i;
+				}
+			}
+		}
+
+		return Plugin_Changed;
+	}
+
 	if(StrContains(sample, "physics/") != -1 || StrContains(sample, "weapons/") != -1 || StrContains(sample, "player/") != -1 || StrContains(sample, "items/") != -1)
 	{
 		if(gCV_BhopSounds.IntValue == 2)

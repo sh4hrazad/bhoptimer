@@ -223,9 +223,9 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
-	if(GetEngineVersion() != Engine_CSGO)
+	if(GetEngineVersion() != Engine_CSS)
 	{
-		SetFailState("This plugin only support for CSGO!");
+		SetFailState("This plugin only support for CSS!");
 		return;
 	}
 
@@ -737,8 +737,8 @@ void LoadZoneSettings()
 		SetFailState("Cannot open \"configs/shavit-zones.cfg\". Make sure this file exists and that the server has read permissions to it.");
 	}
 
-	int defaultBeam = PrecacheModel("sprites/laserbeam.vmt", true);
-	int defaultHalo = PrecacheModel("sprites/glow01.vmt", true);
+	int defaultBeam = PrecacheModel("sprites/laser.vmt", true);
+	int defaultHalo = PrecacheModel("sprites/halo01.vmt", true);
 
 	int customBeam;
 
@@ -771,6 +771,16 @@ void LoadZoneSettings()
 	}
 }
 
+/*
+L 04/11/2022 - 16:18:33: [SM] Exception reported: Property "m_iName" not found (entity 153/trigger_multiple)
+L 04/11/2022 - 16:18:33: [SM] Blaming: shavit-zones.smx
+L 04/11/2022 - 16:18:33: [SM] Call stack trace:
+L 04/11/2022 - 16:18:33: [SM]   [0] GetEntPropString
+L 04/11/2022 - 16:18:33: [SM]   [1] Line 785, D:\SteamCMD\steamapps\common\Counter-Strike Source Dedicated Server\cstrike\addons\sourcemod\scripting\shavit-zones.sp::FindTriggers
+L 04/11/2022 - 16:18:33: [SM]   [2] Line 871, D:\SteamCMD\steamapps\common\Counter-Strike Source Dedicated Server\cstrike\addons\sourcemod\scripting\shavit-zones.sp::OnMapStart
+L 04/11/2022 - 16:18:33: [SM]   [3] Line 3590, D:\SteamCMD\steamapps\common\Counter-Strike Source Dedicated Server\cstrike\addons\sourcemod\scripting\shavit-zones.sp::SQL_CreateTable_Callback
+ */
+
 void FindTriggers()
 {
 	delete gA_Triggers;
@@ -782,7 +792,7 @@ void FindTriggers()
 	while((iEnt = FindEntityByClassname(iEnt, "trigger_multiple")) != -1)
 	{
 		char sBuffer[128];
-		GetEntPropString(iEnt, Prop_Send, "m_iName", sBuffer, 128, 0);
+		GetEntPropString(iEnt, Prop_Data, "m_iName", sBuffer, 128, 0);
 
 		if(strlen(sBuffer) == 0)
 		{
@@ -800,7 +810,7 @@ void FindTriggers()
 	while((iEnt = FindEntityByClassname(iEnt, "trigger_teleport")) != -1)
 	{
 		char sBuffer[128];
-		GetEntPropString(iEnt, Prop_Send, "m_iName", sBuffer, 128, 0);
+		GetEntPropString(iEnt, Prop_Data, "m_iName", sBuffer, 128, 0);
 
 		if(strlen(sBuffer) == 0)
 		{
@@ -818,7 +828,7 @@ void FindTriggers()
 	while((iEnt = FindEntityByClassname(iEnt, "trigger_push")) != -1)
 	{
 		char sBuffer[128];
-		GetEntPropString(iEnt, Prop_Send, "m_iName", sBuffer, 128, 0);
+		GetEntPropString(iEnt, Prop_Data, "m_iName", sBuffer, 128, 0);
 
 		if(strlen(sBuffer) == 0)
 		{
@@ -3920,6 +3930,16 @@ bool CreateHookZone(int zone)
 	return false;
 }
 
+/*
+L 04/11/2022 - 16:19:21: [SM] Exception reported: Invalid Handle 0 (error: 4)
+L 04/11/2022 - 16:19:21: [SM] Blaming: shavit-zones.smx
+L 04/11/2022 - 16:19:21: [SM] Call stack trace:
+L 04/11/2022 - 16:19:21: [SM]   [0] ArrayList.Length.get
+L 04/11/2022 - 16:19:21: [SM]   [1] Line 3925, D:\SteamCMD\steamapps\common\Counter-Strike Source Dedicated Server\cstrike\addons\sourcemod\scripting\shavit-zones.sp::SetCenterByDestination
+L 04/11/2022 - 16:19:21: [SM]   [2] Line 3819, D:\SteamCMD\steamapps\common\Counter-Strike Source Dedicated Server\cstrike\addons\sourcemod\scripting\shavit-zones.sp::CreateZoneEntities
+L 04/11/2022 - 16:19:21: [SM]   [3] Line 1163, D:\SteamCMD\steamapps\common\Counter-Strike Source Dedicated Server\cstrike\addons\sourcemod\scripting\shavit-zones.sp::SQL_RefreshZones_Callback
+ */
+
 void SetCenterByDestination(int zone)
 {
 	for(int i = 0; i < gA_TeleDestination.Length; i++)
@@ -4314,6 +4334,14 @@ bool PointInBox(float point[3], float bmin[3], float bmax[3])
 	       (bmin[2] <= point[2] <= bmax[2]);
 }
 
+/*
+L 04/11/2022 - 16:19:15: [SM] Exception reported: Handle 0 cannot be cloned because it is invalid (error 4)
+L 04/11/2022 - 16:19:15: [SM] Blaming: shavit-zones.smx
+L 04/11/2022 - 16:19:15: [SM] Call stack trace:
+L 04/11/2022 - 16:19:15: [SM]   [0] CloneHandle
+L 04/11/2022 - 16:19:15: [SM]   [1] Line 4324, D:\SteamCMD\steamapps\common\Counter-Strike Source Dedicated Server\cstrike\addons\sourcemod\scripting\shavit-zones.sp::TransmitTriggers
+L 04/11/2022 - 16:19:15: [SM]   [2] Line 1825, D:\SteamCMD\steamapps\common\Counter-Strike Source Dedicated Server\cstrike\addons\sourcemod\scripting\shavit-zones.sp::Command_ShowTriggers
+ */
 void TransmitTriggers(int client, bool btransmit, bool all = false)
 {
 	if(!IsValidClient(client))

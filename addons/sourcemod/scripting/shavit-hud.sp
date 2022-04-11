@@ -30,6 +30,7 @@
 #include <shavit/wr>
 #include <shavit/stage>
 #include <shavit/replay-playback>
+#include <DynamicChannels>
 
 
 #pragma newdecls required
@@ -47,11 +48,13 @@ public Plugin myinfo =
 
 
 #define MAX_HINT_SIZE 1024
+#define HUD_PRINTCENTER 4
 
 // modules
 bool gB_Replay = false;
 bool gB_Zones = false;
 bool gB_Sounds = false;
+bool gB_DynamicChannels = false;
 
 // cache
 int gI_Styles = 0;
@@ -77,11 +80,13 @@ Convar gCV_DefaultHUD = null;
 Convar gCV_DefaultHUD2 = null;
 
 // cookies
+int gI_Cycle = 0;
 Cookie gH_HUDCookie = null;
 Cookie gH_HUDCookieMain = null;
 
 // sync hud text
-Handle gH_SyncTextHud;
+Handle gH_TopLeftHud;
+UserMsg gI_TextMsg = view_as<UserMsg>(-1);
 
 // timer settings
 stylestrings_t gS_StyleStrings[STYLE_LIMIT];
@@ -109,9 +114,9 @@ int gI_BotLastStage[MAXPLAYERS+1];
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	if(GetEngineVersion() != Engine_CSGO)
+	if(GetEngineVersion() != Engine_CSS)
 	{
-		SetFailState("This plugin is only support for CS:GO");
+		SetFailState("This plugin is only support for CS:S");
 		return APLRes_Failure;
 	}
 
@@ -135,7 +140,8 @@ public void OnPluginStart()
 	InitHintSize();
 	InitCookies();
 
-	gH_SyncTextHud = CreateHudSynchronizer();
+	gH_TopLeftHud = CreateHudSynchronizer();
+	gI_TextMsg = GetUserMessageId("TextMsg");
 
 	if(gB_Late)
 	{
@@ -148,6 +154,7 @@ public void OnPluginStart()
 	gB_Replay = LibraryExists("shavit-replay-playback");
 	gB_Zones = LibraryExists("shavit-zones");
 	gB_Sounds = LibraryExists("shavit-sounds");
+	gB_DynamicChannels = LibraryExists("DynamicChannels");
 }
 
 public void OnMapStart()
@@ -169,6 +176,10 @@ public void OnLibraryAdded(const char[] name)
 	{
 		gB_Sounds = true;
 	}
+	else if(StrEqual(name, "DynamicChannels"))
+	{
+		gB_DynamicChannels = true;
+	}
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -184,6 +195,10 @@ public void OnLibraryRemoved(const char[] name)
 	else if(StrEqual(name, "shavit-sounds"))
 	{
 		gB_Sounds = false;
+	}
+	else if(StrEqual(name, "DynamicChannels"))
+	{
+		gB_DynamicChannels = false;
 	}
 }
 
@@ -216,8 +231,16 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 	{
 		if(i == client || (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
 		{
-			UpdatePanelHud(i);
-			UpdateSyncTextHud(i);
+			UpdateTopLeftHud(i, true);
+			UpdateKeyHint(i);
+			UpdateHintHud(i);
+
+			bool draw_keys = (gI_HUDSettings[i] & HUD_KEYOVERLAY) != 0;
+
+			if (draw_keys)
+			{
+				UpdateCenterKeys(i);
+			}
 		}
 	}
 
@@ -328,7 +351,7 @@ public void PostThinkPost(int client)
 		{
 			if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
 			{
-				UpdatePanelHud(i);
+				UpdateKeyHint(i);
 			}
 		}
 	}
@@ -350,6 +373,11 @@ public void OnGameFrame()
 
 void Cron()
 {
+	if(++gI_Cycle >= 65535)
+	{
+		gI_Cycle = 0;
+	}
+	
 	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(!IsValidClient(i) || IsFakeClient(i) || (gI_HUDSettings[i] & HUD_MASTER) == 0)
@@ -357,8 +385,21 @@ void Cron()
 			continue;
 		}
 
+		bool draw_keys = (gI_HUDSettings[i] & HUD_KEYOVERLAY) != 0;
+
+		if (draw_keys)
+		{
+			UpdateCenterKeys(i);
+		}
+
+		// center hud
 		UpdateHintHud(i);
-		UpdatePanelHud(i);
+
+		// sidebar hud
+		UpdateKeyHint(i);
+
+		// topleft hud
+		UpdateTopLeftHud(i, true);
 
 		float fSpeed[3];
 		GetEntPropVector(GetSpectatorTarget(i, i), Prop_Data, "m_vecAbsVelocity", fSpeed);

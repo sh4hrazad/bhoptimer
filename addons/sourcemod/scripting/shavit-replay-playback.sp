@@ -112,8 +112,10 @@ bot_info_t gA_BotInfo[MAXPLAYERS+1];
 
 // hooks and sdkcall stuff
 Handle gH_BotAddCommand = INVALID_HANDLE;
-Handle gH_DoAnimationEvent = INVALID_HANDLE ;
+Handle gH_DoAnimationEvent = INVALID_HANDLE;
+DynamicDetour gH_TeamFull = null;
 DynamicDetour gH_MaintainBotQuota = null;
+bool gB_TeamFullDetoured = false;
 int gI_WEAPONTYPE_UNKNOWN = 123123123;
 int gI_LatestClient = -1;
 bot_info_t gA_BotInfo_Temp; // cached when creating a bot so we can use an accurate name in player_connect
@@ -181,9 +183,9 @@ ClosestPos gH_ClosestPos[TRACKS_SIZE][STYLE_LIMIT];
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	if(GetEngineVersion() != Engine_CSGO)
+	if(GetEngineVersion() != Engine_CSS)
 	{
-		SetFailState("This plugin only support for CSGO!");
+		SetFailState("This plugin only support for CSS!");
 		return APLRes_Failure;
 	}
 
@@ -452,12 +454,35 @@ public void OnMapStart()
 
 	Call_OnReplaysLoaded();
 
+	if (gH_TeamFull != null && !gB_TeamFullDetoured)
+	{
+		gH_TeamFull.Enable(Hook_Post, Detour_TeamFull);
+		gB_TeamFullDetoured = true;
+	}
+
 	CreateTimer(3.0, Timer_Cron, 0, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public MRESReturn Detour_TeamFull(int pThis, DHookReturn hReturn, DHookParam hParams)
+{
+	if (!gCV_Enabled.BoolValue)
+	{
+		return MRES_Ignored;
+	}
+
+	hReturn.Value = false;
+	return MRES_Supercede;
 }
 
 public void OnMapEnd()
 {
 	gB_CanUpdateReplayClient = false;
+
+	if (gH_TeamFull != null && gB_TeamFullDetoured)
+	{
+		gB_TeamFullDetoured = false;
+		gH_TeamFull.Disable(Hook_Post, Detour_TeamFull);
+	}
 }
 
 public void Shavit_OnStyleConfigLoaded(int styles)
@@ -963,6 +988,18 @@ static void LoadDHooks()
 	}
 
 	gH_MaintainBotQuota.Enable(Hook_Pre, Detour_MaintainBotQuota);
+
+	if (!(gH_TeamFull = DHookCreateDetour(Address_Null, CallConv_THISCALL, ReturnType_Bool, ThisPointer_Address)))
+	{
+		SetFailState("Failed to create detour for CCSGameRules::TeamFull");
+	}
+
+	gH_TeamFull.AddParam(HookParamType_Int); // Team ID
+
+	if (!gH_TeamFull.SetFromConf(gamedata, SDKConf_Signature, "CCSGameRules::TeamFull"))
+	{
+		SetFailState("Failed to get address for CCSGameRules::TeamFull");
+	}
 
 	StartPrepSDKCall(gB_Linux ? SDKCall_Static : SDKCall_Player);
 

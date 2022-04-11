@@ -6,95 +6,95 @@
         "en"			"Voting for next map has started."
 		"chi"		    "下一幅地图投选已开始."
 	}
-    "Starting Runoff"
+	"Starting Runoff"
 	{
 		"#format"		"{1:.0f},{2:s},{3:.0f},{4:s},{5:.0f}"
 		"en"			"No map got over {1}%% votes ({2} [{3}%%] & {4} [{5}%%]), starting runoff vote"
         "chi"		    "无地图获得 {1}%% 以上票数 ({2} [{3}%%] & {4} [{5}%%]), 开始决胜轮投票"
 	}
-    "Current Map Extended"
+	"Current Map Extended"
 	{
 		"#format"		"{1:i},{2:i}"
 		"en"			"The current map has been extended. (Received {1}%% of {2} votes)"
         "chi"		    "当前地图已被延长! 投票显示! (得票 {1}%% 共 {2} 票)"
 	}
-    "Current Map Stays"
+	"Current Map Stays"
 	{
 		"#format"		"{1:i},{2:i}"
 		"en"			"Current map continues! The Vote has spoken! (Received {1}%% of {2} votes)"
         "chi"		    "当前地图仍在继续! 投票显示! (得票 {1}%% 共 {2} 票)"
 	}
-    "Nextmap Voting Finished"
+	"Nextmap Voting Finished"
 	{
 		"#format"		"{1:s},{2:i},{3:i}"
 		"en"			"Map voting has finished. The next map will be {1}. (Received {2}%% of {3} votes)"
         "chi"		    "地图投票已结束. 下一幅地图将为 {1}. ( 得票{2}%% , {3}票)"
 	}
-    "Extend Map"
+	"Extend Map"
 	{
 		"en"			"Extend Current Map"
         "chi"		    "延长当前地图"
 	}
-    "No Vote"
+	"No Vote"
 	{
 		"en"			"No Vote"
         "chi"		    "无投票"
 	}
-    "Dont Change"
+	"Dont Change"
 	{
 		"en"			"Don't Change"
         "chi"		    "请勿更换"
 	}
-    "Can't Nominate Current Map"
+	"Can't Nominate Current Map"
 	{
 		"en"			"The map you chose is the current map and cannot be nominated"
         "chi"		    "您所选的图正是当前地图, 无法预订"
 	}
-    "Recently Played"
+	"Recently Played"
 	{
 		"en"			"Recently Played"
         "chi"		    "最近玩过的地图"
 	}
-    "Map was not found"
+	"Map was not found"
 	{
 		"#format"		"{1:s}"
 		"en"			"Map {1} was not found."
         "chi"		    "地图 {1} 未找到."
 	}
-    "Changing map"
+	"Changing map"
 	{
 		"#format"		"{1:s}"
 		"en"			"Changing map to {1}..."
         "chi"		    "更换地图为 {1}..."
 	}
-    "Map Already Nominated"
+	"Map Already Nominated"
 	{
 		"en"			"The map you chose has already been nominated."
         "chi"		    "您所选的地图已被预订."
 	}
-    "Map Nominated"
+	"Map Nominated"
 	{
 		"#format"		"{1:s},{2:s}"
 		"en"			"{1} has nominated {2}."
         "chi"		    "{1} 预订了 {2}."
 	}
-    "RTV Not Allowed"
+	"RTV Not Allowed"
 	{
 		"en"			"Rock the Vote is not allowed yet."
         "chi"		    "当前无法启动RTV (滚动投票)."
 	}
-    "RTV Started"
+	"RTV Started"
 	{
 		"en"			"Rock the Vote has already started."
 		"chi"		    "RTV (滚动投票)已开始."
 	}
-    "RTV Requested"
+	"RTV Requested"
 	{
 		"#format"		"{1:s},{2:d},{3:d}"
 		"en"			"{1} wants to rock the vote. ({2} votes, {3} required)"
         "chi"		    "{1} 要滚动投票. ({2} 票同意, 至少需要 {3} 票)"
 	}
-    "Choose Map"
+	"Choose Map"
 	{
 		"en"			"Choose Map"
         "chi"		    "选择地图"

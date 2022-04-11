@@ -135,7 +135,7 @@ void UpdateBotScoreboard(bot_info_t info)
 
 	int iScore = (info.aCache.iFrameCount > 0 || central) ? 1337 : -1337;
 
-	CS_SetClientContributionScore(client, iScore);
+	SetEntProp(client, Prop_Data, "m_iFrags", iScore);
 
 	SetEntProp(client, Prop_Data, "m_iDeaths", 0);
 }

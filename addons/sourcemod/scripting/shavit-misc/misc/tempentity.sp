@@ -63,12 +63,9 @@ public Action Shotgun_Shot(const char[] te_name, const int[] Players, int numCli
 	TE_WriteNum("m_iSeed", TE_ReadNum("m_iSeed"));
 	TE_WriteNum("m_iPlayer", (client - 1));
 
-	TE_WriteNum("m_weapon", TE_ReadNum("m_weapon"));
+	TE_WriteNum("m_iWeaponID", TE_ReadNum("m_iWeaponID"));
 	TE_WriteFloat("m_fInaccuracy", TE_ReadFloat("m_fInaccuracy"));
-	TE_WriteFloat("m_flRecoilIndex", TE_ReadFloat("m_flRecoilIndex"));
 	TE_WriteFloat("m_fSpread", TE_ReadFloat("m_fSpread"));
-	TE_WriteNum("m_nItemDefIndex", TE_ReadNum("m_nItemDefIndex"));
-	TE_WriteNum("m_iSoundType", TE_ReadNum("m_iSoundType"));
 
 	TE_Send(clients, count, delay);
 

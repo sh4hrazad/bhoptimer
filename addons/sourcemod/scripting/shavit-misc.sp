@@ -88,8 +88,6 @@ Convar gCV_WRMessages = null;
 Convar gCV_BhopSounds = null;
 Convar gCV_BotFootsteps = null;
 Convar gCV_SpecScoreboardOrder = null;
-Convar gCV_CSGOUnlockMovement = null;
-Convar gCV_CSGOFixDuckTime = null;
 
 // external cvars
 ConVar sv_cheats = null;
@@ -124,12 +122,10 @@ stylestrings_t gS_StyleStrings[STYLE_LIMIT];
 #include "shavit-misc/misc/chatcolors.sp"
 #include "shavit-misc/misc/clearweapons.sp"
 #include "shavit-misc/misc/dropweapon.sp"
-#include "shavit-misc/misc/fixduck.sp"
 #include "shavit-misc/misc/fixspawnpoint.sp"
 #include "shavit-misc/misc/giveweapons.sp"
 #include "shavit-misc/misc/hide.sp"
 #include "shavit-misc/misc/mapfixes.sp"
-#include "shavit-misc/misc/movement.sp"
 #include "shavit-misc/misc/noclip.sp"
 #include "shavit-misc/misc/nodmg.sp"
 #include "shavit-misc/misc/radio.sp"
@@ -154,9 +150,9 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
-	if(GetEngineVersion() != Engine_CSGO)
+	if(GetEngineVersion() != Engine_CSS)
 	{
-		SetFailState("This plugin only support for CSGO!");
+		SetFailState("This plugin only support for CSS!");
 		return;
 	}
 
@@ -182,7 +178,6 @@ public void OnPluginStart()
 	CreateTimer(1.0, Timer_Scoreboard, 0, TIMER_REPEAT);
 
 	LoadDHooks();
-	UnlockMovement();
 
 	// modules
 	gB_Checkpoints = LibraryExists("shavit-checkpoints");
@@ -192,28 +187,11 @@ public void OnPluginStart()
 	gB_Chat = LibraryExists("shavit-chat");
 }
 
-public void OnPluginEnd()
-{
-	LockMovement();
-}
-
 public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	if (convar == gCV_HideRadar && sv_disable_radar != null)
 	{
 		sv_disable_radar.BoolValue = gCV_HideRadar.BoolValue;
-	}
-
-	else if (convar == gCV_CSGOUnlockMovement)
-	{
-		if(!gCV_CSGOUnlockMovement.BoolValue)
-		{
-			LockMovement();
-		}
-		else
-		{
-			UnlockMovement();
-		}
 	}
 }
 
@@ -382,15 +360,42 @@ public MRESReturn Hook_UpdateStepSound_Post(int pThis, DHookParam hParams)
 
 public Action Timer_Cron(Handle timer)
 {
+	if(gCV_HideRadar.BoolValue)
+	{
+		float salt = GetURandomFloat();
+
+		for(int i = 1; i <= MaxClients; i++)
+		{
+			if(IsValidClient(i))
+			{
+				RemoveRadar(i, salt);
+			}
+		}
+	}
+
 	Timer_ClearWeapons();
 
 	return Plugin_Continue;
 }
 
+void RemoveRadar(int client, float salt)
+{
+	if(client == 0 || !IsPlayerAlive(client))
+	{
+		return;
+	}
+
+	SetEntPropFloat(client, Prop_Send, "m_flFlashDuration", 20.0 + salt);
+	SetEntPropFloat(client, Prop_Send, "m_flFlashMaxAlpha", 0.5);
+}
+
+void Frame_RemoveRadar(any data)
+{
+	RemoveRadar(data, GetURandomFloat());
+}
+
 public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float vel[3], float angles[3], TimerStatus status, int track, int style)
 {
-	Shavit_OnUserCmdPre_FixDuck(client, buttons);
-
 	if(GetEntityMoveType(client) == MOVETYPE_NOCLIP && status == Timer_Running)
 	{
 		Shavit_StopTimer(client);
@@ -537,6 +542,11 @@ public void Player_Spawn(Event event, const char[] name, bool dontBroadcast)
 	{
 		OnPlayerSpawn_UpdateScoreBoard(client);
 
+		if(gCV_HideRadar.BoolValue)
+		{
+			RequestFrame(Frame_RemoveRadar, client);
+		}
+
 		if (gCV_StartOnSpawn.BoolValue && !(gB_Checkpoints && Shavit_HasSavestate(client)))
 		{
 			Shavit_RestartTimer(client, Shavit_GetClientTrack(client));
@@ -559,14 +569,7 @@ public Action Player_Notifications(Event event, const char[] name, bool dontBroa
 {
 	if(gCV_HideTeamChanges.BoolValue)
 	{
-		if (StrEqual(name, "player_team"))
-		{
-			event.SetBool("silent", true);
-		}
-		else
-		{
-			event.BroadcastDisabled = true;
-		}
+		event.BroadcastDisabled = true;
 	}
 
 	int client = GetClientOfUserId(event.GetInt("userid"));
@@ -633,11 +636,8 @@ static void CreateConVars()
 	gCV_BhopSounds = new Convar("shavit_misc_bhopsounds", "1", "Should bhop (landing and jumping) sounds be muted?\n0 - Disabled\n1 - Blocked while !hide is enabled\n2 - Always blocked", 0,  true, 0.0, true, 2.0);
 	gCV_BotFootsteps = new Convar("shavit_misc_botfootsteps", "1", "Enable footstep sounds for replay bots. Only works if shavit_misc_bhopsounds is less than 2.", 0, true, 0.0, true, 1.0);
 	gCV_SpecScoreboardOrder = new Convar("shavit_misc_spec_scoreboard_order", "1", "Use scoreboard ordering for players when changing target when spectating.", 0, true, 0.0, true, 1.0);
-	gCV_CSGOUnlockMovement = new Convar("shavit_misc_csgo_unlock_movement", "1", "Removes max speed limitation from players on the ground. Feels like CS:S.", 0, true, 0.0, true, 1.0);
-	gCV_CSGOFixDuckTime = new Convar("shavit_misc_csgo_fixduck", "1", "Fixing the broken duck. Feels like CS:S.", 0, true, 0.0, true, 1.0);
 
 	gCV_HideRadar.AddChangeHook(OnConVarChanged);
-	gCV_CSGOUnlockMovement.AddChangeHook(OnConVarChanged);
 	Convar.AutoExecConfig();
 }
 

@@ -307,95 +307,95 @@
 	"HudEnabledComponent"
 	{
 		"#format"	"{1:s}"
-		"en"		"{gold}{1} {default}HUD setting {orchid}enabled{default}."
-		"chi"		"{gold}{1} {default}HUD设置{orchid}已启用{default}."
+		"en"		"{gold}{1} {white}HUD setting {orchid}enabled{white}."
+		"chi"		"{gold}{1} {white}HUD设置{orchid}已启用{white}."
 	}
 	"HudDisabledComponent"
 	{
 		"#format"	"{1:s}"
-		"en"		"{gold}{1} {default}HUD setting {darkred}disabled{default}."
-		"chi"		"{gold}{1} {default}HUD设置{darkred}已禁用{default}."
+		"en"		"{gold}{1} {white}HUD setting {red}disabled{white}."
+		"chi"		"{gold}{1} {white}HUD设置{red}已禁用{white}."
 	}
 	// ---------- Misc ---------- //
 	"BotPrestrafe"
 	{
 		"#format"	"{1:d}"
-		"en"		"{grey}Speed: {grey2}{1} u/s{default}."
-		"chi"		"{grey}速度: {grey2}{1} u/s{default}."
+		"en"		"{grey}Speed: {grey2}{1} u/s{white}."
+		"chi"		"{grey}速度: {grey2}{1} u/s{white}."
 	}
 	"StartPrestrafe"
 	{
 		"#format"	"{1:d},{2:s},{3:s}"
-		"en"		"{grey}Start: {grey2}{1} u/s {default}| {gold}WR:{default} {2} | {darkblue}PB:{default} {3}"
-		"chi"		"{grey}起点 Prestrafe: {grey2}{1} u/s {default}| {gold}WR:{default} {2} | {darkblue}PB:{default} {3}"
+		"en"		"{grey}Start: {grey2}{1} u/s {white}| {gold}WR:{white} {2} | {lightblue}PB:{white} {3}"
+		"chi"		"{grey}起点 Prestrafe: {grey2}{1} u/s {white}| {gold}WR:{white} {2} | {lightblue}PB:{white} {3}"
 	}
 	"CPStagePrestrafe"
 	{
 		"#format"	"{1:d},{2:d},{3:s},{4:s}"
-		"en"		"{grey}CP{default} [{orchid}{1}{default}] | Prestrafe: {grey2}{2} u/s{default} | {gold}WR:{default} {3} | {darkblue}PB:{default} {4}."
-		"chi"		"{grey}检查点{default} [{orchid}{1}{default}] | Prestrafe: {grey2}{2} u/s{default} | {gold}WR:{default} {3} | {darkblue}PB:{default} {4}."
+		"en"		"{grey}CP{white} [{orchid}{1}{white}] | Prestrafe: {grey2}{2} u/s{white} | {gold}WR:{white} {3} | {lightblue}PB:{white} {4}."
+		"chi"		"{grey}检查点{white} [{orchid}{1}{white}] | Prestrafe: {grey2}{2} u/s{white} | {gold}WR:{white} {3} | {lightblue}PB:{white} {4}."
 	}
 	"CPLinearPrestrafe"
 	{
 		"#format"	"{1:d},{2:d},{3:s},{4:s}"
-		"en"		"{grey}CP{default} [{orchid}{1}{default}] | Speed: {grey2}{2} u/s{default} | {gold}WR:{default} {3} | {darkblue}PB:{default} {4}."
-		"chi"		"{grey}检查点{default} [{orchid}{1}{default}] | Speed: {grey2}{2} u/s{default} | {gold}WR:{default} {3} | {darkblue}PB:{default} {4}."
+		"en"		"{grey}CP{white} [{orchid}{1}{white}] | Speed: {grey2}{2} u/s{white} | {gold}WR:{white} {3} | {lightblue}PB:{white} {4}."
+		"chi"		"{grey}检查点{white} [{orchid}{1}{white}] | Speed: {grey2}{2} u/s{white} | {gold}WR:{white} {3} | {lightblue}PB:{white} {4}."
 	}
 	"StagePrestrafe"
 	{
 		"#format"	"{1:d},{2:d},{3:s},{4:s}"
-		"en"		"{grey}Stage {1}: {grey2}{2} u/s {default}| {gold}WRCP:{default} {3} | {darkblue}PB:{default} {4}"
-		"chi"		"{grey}关卡 [{1}] Prestrafe: {grey2}{2} u/s {default}| {gold}WRCP:{default} {3} | {darkblue}PB:{default} {4}"
+		"en"		"{grey}Stage {1}: {grey2}{2} u/s {white}| {gold}WRCP:{white} {3} | {lightblue}PB:{white} {4}"
+		"chi"		"{grey}关卡 [{1}] Prestrafe: {grey2}{2} u/s {white}| {gold}WRCP:{white} {3} | {lightblue}PB:{white} {4}"
 	}
 	"PrestrafeIncrease"
 	{
 		"#format"	"{1:d}"
-		"en"		"{green}+{1} u/s{default}"
+		"en"		"{lightgreen}+{1} u/s"
 	}
 	"PrestrafeNochange"
 	{
 		"#format"	"{1:d}"
-		"en"		"{orchid}{1} u/s{default}"
+		"en"		"{orchid}{1} u/s"
 	}
 	"PrestrafeDecrease"
 	{
 		"#format"	"{1:d}"
-		"en"		"{lightred}{1} u/s{default}"
+		"en"		"{lightred}{1} u/s"
 	}
 	"ZoneCheckpointTime"
 	{
 		"#format"	"{1:d},{2:s},{3:s},{4:s}"
-		"en"		"{grey}CP{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WR{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default}"
-		"chi"		"{grey}检查点{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WR{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default}"
+		"en"		"{grey}CP{white} [{orchid}{1}{white}] | {grey2}{2}{white} | {palered}WR{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}"
+		"chi"		"{grey}检查点{white} [{orchid}{1}{white}] | {grey2}{2}{white} | {palered}WR{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}"
 	}
 	"ZoneStageTime-Improved"
 	{
 		"#format"	"{1:d},{2:s},{3:s},{4:s},{5:s}"
-		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WRCP{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default} | {gold}Rank{default}: {blue}{5}{default}"
-		"chi"		"{grey}关卡{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WRCP{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default} | {gold}排名{default}: {blue}{5}{default}"
+		"en"		"{grey}Stage{white} [{orchid}{1}{white}] | {grey2}{2}{white} | {palered}WRCP{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}{white} | {gold}Rank{white}: {blue}{5}"
+		"chi"		"{grey}关卡{white} [{orchid}{1}{white}] | {grey2}{2}{white} | {palered}WRCP{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}{white} | {gold}排名{white}: {blue}{5}"
 	}
 	"ZoneStageTime-Noimproved"
 	{
 		"#format"	"{1:d},{2:s},{3:s},{4:s}"
-		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WRCP{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default}"
-		"chi"		"{grey}关卡{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WRCP{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default}"
+		"en"		"{grey}Stage{white} [{orchid}{1}{white}] | {grey2}{2}{white} | {palered}WRCP{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}"
+		"chi"		"{grey}关卡{white} [{orchid}{1}{white}] | {grey2}{2}{white} | {palered}WRCP{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}"
 	}
 	"EnterStageMessage_Bot_Improved"
 	{
 		"#format"	"{1:d},{2:s},{3:d}"
-		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {grey}Time:{default} {green}{2}{default} | {grey}Attemps:{default} {gold}{3}{default}"
-		"chi"		"{grey}关卡{default} [{orchid}{1}{default}] | {grey}到达时间:{default} {green}{2}{default} | {grey}尝试次数:{default} {gold}{3}{default}"
+		"en"		"{grey}Stage{white} [{orchid}{1}{white}] | {grey}Time:{white} {lightgreen}{2}{white} | {grey}Attemps:{white} {gold}{3}"
+		"chi"		"{grey}关卡{white} [{orchid}{1}{white}] | {grey}到达时间:{white} {lightgreen}{2}{white} | {grey}尝试次数:{white} {gold}{3}"
 	}
 	"EnterStageMessage_Bot_NoImproved"
 	{
 		"#format"	"{1:d},{2:s},{3:d}"
-		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {grey}Time:{default} {darkred}{2}{default} | {grey}Attemps:{default} {gold}{3}{default}"
-		"chi"		"{grey}关卡{default} [{orchid}{1}{default}] | {grey}到达时间:{default} {darkred}{2}{default} | {grey}尝试次数:{default} {gold}{3}{default}"
+		"en"		"{grey}Stage{white} [{orchid}{1}{white}] | {grey}Time:{white} {red}{2}{white} | {grey}Attemps:{white} {gold}{3}"
+		"chi"		"{grey}关卡{white} [{orchid}{1}{white}] | {grey}到达时间:{white} {red}{2}{white} | {grey}尝试次数:{white} {gold}{3}"
 	}
 	"OnWRCP"
 	{
 		"#format"	"{1:N},{2:d},{3:s},{4:s},{5:s},{6:s}"
-		"en"		"{gold}{1}{default} beat {palered}[Stage {2}]{default} record! Mode: {blue}{3}{default} Time: {orchid}{4}{default} ({green}WR {5}{default}) Rank: {bluegrey}{6}{default}."
-		"chi"		"{gold}{1}{default} 打破了 {palered}[关卡 {2}]{default} 记录! 模式: {blue}{3}{default} 时间: {orchid}{4}{default} ({green}WR {5}{default}) 排名: {bluegrey}{6}{default}."
+		"en"		"{gold}{1}{white} beat {palered}[Stage {2}]{white} record! Mode: {blue}{3}{white} Time: {orchid}{4}{white} ({lightgreen}WR {5}{white}) Rank: {bluegrey}{6}{white}."
+		"chi"		"{gold}{1}{white} 打破了 {palered}[关卡 {2}]{white} 记录! 模式: {blue}{3}{white} 时间: {orchid}{4}{white} ({lightgreen}WR {5}{white}) 排名: {bluegrey}{6}{white}."
 	}
 }

@@ -30,7 +30,9 @@ public Action Command_CCHelp(int client, int args)
 		"CCHelp_Generic", client,
 		"CCHelp_GenericVariables", client);
 
-	PrintToConsole(client, "%T", "CCHelp_CSGO_1", client);
+	PrintToConsole(client, "%T\n\n%T",
+			"CCHelp_CSS_1", client,
+			"CCHelp_CSS_2", client);
 
 	return Plugin_Handled;
 }

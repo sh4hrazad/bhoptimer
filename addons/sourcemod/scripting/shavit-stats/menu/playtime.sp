@@ -62,7 +62,7 @@ public void SQL_TopPlaytime_Callback(Database db, DBResultSet results, const cha
 
 	menu.SetTitle("%T\n%T (#%d): %s", "Playtime", client, "YourPlaytime", client, own_rank, sOwnPlaytime);
 
-	if (menu.ItemCount <= 8)
+	if (menu.ItemCount <= 9)
 	{
 		menu.Pagination = MENU_NO_PAGINATION;
 	}

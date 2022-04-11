@@ -91,9 +91,9 @@ Handle gH_Timer = null;
 
 public void OnPluginStart()
 {
-	if(GetEngineVersion() != Engine_CSGO)
+	if(GetEngineVersion() != Engine_CSS)
 	{
-		SetFailState("This plugin only support for CSGO!");
+		SetFailState("This plugin only support for CSS!");
 		return;
 	}
 

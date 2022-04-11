@@ -38,6 +38,8 @@ void ShowHUDMenu(int client, int item)
 	FormatEx(sHudItem, 64, "%T", "Hud2dVel", client);
 	menu.AddItem(sInfo, sHudItem);
 
+	// TODO: Top Left HUD, Sync, Timeleft, Map & tier, etc.
+
 	if(gB_Sounds)
 	{
 		FormatEx(sInfo, 16, "!%d", HUD_NOSOUNDS);

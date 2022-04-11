@@ -82,12 +82,12 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"{1} minutes remaining."
-		"chi"		"剩余{1}分钟."
+		"chi"		"剩余 {1} 分钟."
 	}	
 	"Seconds"
 	{
 		"#format"	"{1:s}"
 		"en"		"{1} seconds remaining."
-		"chi"		"剩余{1}秒"
+		"chi"		"剩余 {1} 秒"
 	}
 }

@@ -14,8 +14,8 @@
 	"DeletedRecordsMap"
 	{
 		"#format"	"{1:s}"
-		"en"		"Deleted ALL records for {gold}{1}{default}."
-		"chi"		"已删除{gold}{1}{default}的所有记录."
+		"en"		"Deleted ALL records for {gold}{1}{white}."
+		"chi"		"已删除{gold}{1}{white}的所有记录."
 	}
 	"DeletedRecordsStyle"
 	{
@@ -34,62 +34,62 @@
 	"FirstCompletion-Normal"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:d},{5:d}"
-		"en"		"{orchid}{1}{default} finished ({grey}{2}{default}) in {orchid}{3}{default} ({gold}#{5}{default})."
-		"chi"		"{team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} 排名: {blue}{4}/{5}{default}."
+		"en"		"{orchid}{1}{white} finished ({grey}{2}{white}) in {orchid}{3}{white} ({gold}#{5}{white})."
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} 排名: {blue}{4}/{5}{white}."
 	}
 	"FirstCompletion-Other"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:d},{6:d}"
-		"en"		"{orchid}{1}{default} finished ({grey}{2}{default}) in {orchid}{3}{default} ({gold}#{5}{default})."
-		"chi"		"{team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} 模式: {grey}{4}{default} 排名: {blue}{5}/{6}{default}."
+		"en"		"{orchid}{1}{white} finished ({grey}{2}{white}) in {orchid}{3}{white} ({gold}#{5}{white})."
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} 模式: {grey}{4}{white} 排名: {blue}{5}/{6}{white}."
 	}
 	"NotFirstCompletion-Normal"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:d},{5:d},{6:s}"
-		"en"		"{orchid}{1}{default} finished ({grey}{2}{default}) in {orchid}{3}{default} ({gold}#{4}{default}) (#{5})"
-		"chi"		"{team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} ({green}-{6}{default}) 排名: {blue}{4}/{5}{default}."
+		"en"		"{orchid}{1}{white} finished ({grey}{2}{white}) in {orchid}{3}{white} ({gold}#{4}{white}) (#{5})"
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} ({lightgreen}-{6}{white}) 排名: {blue}{4}/{5}{white}."
 	}
 	"NotFirstCompletion-Other"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:d},{6:d},{7:s}"
-		"en"		"{orchid}{1}{default} finished ({grey}{2}{default}) in {orchid}{3}{default} ({gold}#{4}{default}) (#{5})"
-		"chi"		"{team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} ({green}-{7}{default}) 模式: {grey}{4}{default} 排名: {blue}{5}/{6}{default}."
+		"en"		"{orchid}{1}{white} finished ({grey}{2}{white}) in {orchid}{3}{white} ({gold}#{4}{white}) (#{5})"
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} ({lightgreen}-{7}{white}) 模式: {grey}{4}{white} 排名: {blue}{5}/{6}{white}."
 	}
 	"NotFirstCompletionWorse-Normal"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:d},{5:d},{6:s}"
-		"en"		"{orchid}{1}{default} finished ({grey}{2}{default}) in {orchid}{3}{default} ({gold}#{4}{default}) (+{5})"
-		"chi"		"{team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} ({darkred}+{6}{default}) 排名: {blue}{4}/{5}{default}."
+		"en"		"{orchid}{1}{white} finished ({grey}{2}{white}) in {orchid}{3}{white} ({gold}#{4}{white}) (+{5})"
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} ({lightred}+{6}{white}) 排名: {blue}{4}/{5}{white}."
 	}
 	"NotFirstCompletionWorse-Other"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:d},{6:d},{7:s}"
-		"en"		"{orchid}{1}{default} finished ({grey}{2}{default}) in {orchid}{3}{default} ({gold}#{4}{default}) (+{5})"
-		"chi"		"{team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} ({darkred}+{7}{default}) 模式: {grey}{4}{default} 排名: {blue}{5}/{6}{default}."
+		"en"		"{orchid}{1}{white} finished ({grey}{2}{white}) in {orchid}{3}{white} ({gold}#{4}{white}) (+{5})"
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} ({lightred}+{7}{white}) 模式: {grey}{4}{white} 排名: {blue}{5}/{6}{white}."
 	}
 	"WorseTime-Normal"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s}"
-		"en"		"{1} have finished ({grey}{2}{default}) in {orchid}{3}{default} ({4})(+{5})"
-		"chi"		"{team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} ({darkred}+{4}{default})."
+		"en"		"{1} have finished ({grey}{2}{white}) in {orchid}{3}{white} ({4})(+{5})"
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} ({lightred}+{4}{white})."
 	}
 	"WorseTime-Other"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:s}"
-		"en"		"{1} have finished ({grey}{2}{default}) in {orchid}{3}{default} ({4})(+{5})"
-		"chi"		"{team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} ({darkred}+{5}{default}) 模式: {grey}{4}{default}."
+		"en"		"{1} have finished ({grey}{2}{white}) in {orchid}{3}{white} ({4})(+{5})"
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} ({lightred}+{5}{white}) 模式: {grey}{4}{white}."
 	}
 	"UnrankedTime-Normal"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s}"
-		"en"		"{1} have finished ({grey}{2}{default}) in {orchid}{3}{default}."
-		"chi"		"{darkred}{4}{default} {team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default}."
+		"en"		"{1} have finished ({grey}{2}{white}) in {orchid}{3}{white}."
+		"chi"		"{lightred}{4}{white} {team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white}."
 	}
 	"UnrankedTime-Other"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:s}"
-		"en"		"{1} have finished ({grey}{2}{default}) in {orchid}{3}{default}."
-		"chi"		"{darkred}{5}{default} {team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} 模式: {grey}{4}{default}."
+		"en"		"{1} have finished ({grey}{2}{white}) in {orchid}{3}{white}."
+		"chi"		"{lightred}{5}{white} {team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} 模式: {grey}{4}{white}."
 	}
 	// ---------- Deletion Menus ---------- //
 	"DeleteAllRecords"
@@ -180,8 +180,8 @@
 	}
 	"NoStyles"
 	{
-		"en"		"{darkred}FATAL ERROR: {default}No styles are available. Contact the server owner immediately!"
-		"chi"		"{darkred}致命错误ERROR：{default}没有可用的模式。请立即联系服务器OP!"
+		"en"		"{lightred}FATAL ERROR: {white}No styles are available. Contact the server owner immediately!"
+		"chi"		"{lightred}致命错误ERROR：{white}没有可用的模式。请立即联系服务器OP!"
 	}
 	// ---------- WR Menu ---------- //
 	"RecentRecords"

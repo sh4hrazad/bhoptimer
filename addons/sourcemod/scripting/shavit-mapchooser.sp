@@ -138,9 +138,9 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
-	if(GetEngineVersion() != Engine_CSGO)
+	if(GetEngineVersion() != Engine_CSS)
 	{
-		SetFailState("This plugin only support for CSGO!");
+		SetFailState("This plugin only support for CSS!");
 		return;
 	}
 
@@ -571,7 +571,7 @@ void InitiateMapVote(MapChange when)
 	menu.Pagination = MENU_NO_PAGINATION;
 	menu.SetTitle("Vote Nextmap");
 
-	int maxPageItems = 8;
+	int maxPageItems = 9;
 	int mapsToAdd = maxPageItems;
 	int mapsAdded = 0;
 

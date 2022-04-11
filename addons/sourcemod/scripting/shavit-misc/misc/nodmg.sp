@@ -60,8 +60,7 @@ void ClearViewPunch(int victim)
 {
 	if (1 <= victim <= MaxClients)
 	{
-		SetEntPropVector(victim, Prop_Send, "m_viewPunchAngle", NULL_VECTOR);
-		SetEntPropVector(victim, Prop_Send, "m_aimPunchAngle", NULL_VECTOR);
-		SetEntPropVector(victim, Prop_Send, "m_aimPunchAngleVel", NULL_VECTOR);
+		SetEntPropVector(victim, Prop_Send, "m_vecPunchAngle", NULL_VECTOR);
+		SetEntPropVector(victim, Prop_Send, "m_vecPunchAngleVel", NULL_VECTOR);
 	}
 }

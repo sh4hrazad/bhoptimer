@@ -121,14 +121,14 @@ Action Timer_PrintToChat_Timelimit()
 		case -2:
 		{
 			Shavit_PrintToChatAll("2..");
+			
+			gB_BlockRoundEndEvent = true;
+			// needs to be when timeleft is under 0 otherwise the round will restart and the map won't change
+			CS_TerminateRound(0.0, CSRoundEnd_Draw, true);
 		}
 		case -3:
 		{
 			Shavit_PrintToChatAll("1..");
-
-			gB_BlockRoundEndEvent = true;
-			// needs to be when timeleft is under 0 otherwise the round will restart and the map won't change
-			CS_TerminateRound(0.0, CSRoundEnd_Draw, true);
 		}
 	}
 

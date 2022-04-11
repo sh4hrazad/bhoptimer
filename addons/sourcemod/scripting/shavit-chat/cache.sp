@@ -239,11 +239,6 @@ void FormatColors(char[] buffer, int size, bool colors, bool escape)
 			ReplaceString(buffer, size, gS_GlobalColorNames[i], gS_GlobalColors[i]);
 		}
 
-		for(int i = 0; i < sizeof(gS_CSGOColorNames); i++)
-		{
-			ReplaceString(buffer, size, gS_CSGOColorNames[i], gS_CSGOColors[i]);
-		}
-
 		ReplaceString(buffer, size, "^", "\x07");
 		ReplaceString(buffer, size, "{RGB}", "\x07");
 		ReplaceString(buffer, size, "&", "\x08");
@@ -262,7 +257,7 @@ void FormatRandom(char[] buffer, int size)
 
 	do
 	{
-		strcopy(temp, 8, gS_CSGOColors[GetRandomInt(0, sizeof(gS_CSGOColors) - 1)]);
+		FormatEx(temp, 8, "\x07%06X", GetRandomInt(0, 0xFFFFFF));
 	}
 
 	while(ReplaceStringEx(buffer, size, "{rand}", temp) > 0);

@@ -93,7 +93,7 @@ Action OnPlayerRunCmd_Replay(bot_info_t info, int &buttons, int &impulse, float 
 
 			if((gI_LastReplayFlags[info.iEnt] & FL_ONGROUND) && !(iReplayFlags & FL_ONGROUND) && gH_DoAnimationEvent != INVALID_HANDLE)
 			{
-				int jumpAnim = CSGO_ANIM_JUMP;
+				int jumpAnim = CSS_ANIM_JUMP;
 
 				if(gB_Linux)
 				{

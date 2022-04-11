@@ -86,16 +86,15 @@ static void UpdateMainHUD(int client)
 
 	char sBuffer[512];
 	
-	StrCat(sBuffer, sizeof(sBuffer), "<pre>");
 	int iLines = AddHUDToBuffer(client, huddata, sBuffer, sizeof(sBuffer));
-	StrCat(sBuffer, sizeof(sBuffer), "</pre>");
 
 	if(iLines > 0)
 	{
-		PrintCSGOHUDText(client, sBuffer);
+		PrintHintText(client, "%s", sBuffer);
 	}
 }
 
+// TODO: remake the hint hud
 static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 {
 	int iLines = 0;
@@ -106,9 +105,6 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 
 	char sSpeed[8];
 	FormatEx(sSpeed, 8, "%T", "Speed", client);
-
-	StrCat(buffer, MAX_HINT_SIZE, "<span class='fontSize-m'>");
-	StrCat(buffer, MAX_HINT_SIZE, "<span class='fontWeight-Light'>");
 
 	if(data.bReplay)
 	{
@@ -128,7 +124,7 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 			FormatEx(sLine, 128, "%T ", "ReplayText", client);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 			
-			FormatEx(sLine, 128, "[<span color='#00FF00'>%s - %s</span>]", sTrack, gS_StyleStrings[data.iStyle].sStyleName);
+			FormatEx(sLine, 128, "[%s - %s]", sTrack, gS_StyleStrings[data.iStyle].sStyleName);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
 			iLines++;
@@ -141,21 +137,14 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 				char sPlayerName[16]; // shouldn't too long bytes.
 				Shavit_GetReplayName(data.iStyle, data.iTrack, sPlayerName, sizeof(sPlayerName), data.iStage);
 
-				FormatEx(sLine, 128, "%s: <span color='#FFFF00'>%s</span> (%s)", sTransTime, sTime, sPlayerName);
+				FormatEx(sLine, 128, "%s: %s (%s)", sTransTime, sTime, sPlayerName);
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 				iLines++;
 			}
 
 			if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
 			{
-				int iColor = 0x66BCFF;
-
-				if(data.iSpeed < gI_PreviousSpeed[client])
-				{
-					iColor = 0xFF6767;
-				}
-
-				FormatEx(sLine, 128, "%s: <span color='#%06X'>%d</span>", sSpeed, iColor, data.iSpeed);
+				FormatEx(sLine, 128, "%s: %d", sSpeed, data.iSpeed);
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 				iLines++;
 			}
@@ -186,55 +175,35 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 				FormatHUDSeconds(data.fTime, sTime, 32);
 			}
 
-			int iColor = 0xFF0000;
-
 			if(data.fTime == 0.0)
 			{
-				// 不计时 | 起点 红色
-			}
-			else if(data.bPractice || data.iTimerStatus == Timer_Paused)
-			{
-				iColor = 0xE066FF; // 暂停 中兰紫
+				// TODO: Time: Start..
 			}
 			else if(data.fTime < data.fWR || data.fWR == 0.0) 
 			{
-				iColor = 0x00FA9A; // 小于WR 青绿
+				// TODO: Time: 9.332 (#1)
 			}
 			else if(data.fTime < data.fPB || data.fPB == 0.0)
 			{
-				iColor = 0xFFFACD; // 小于PB 黄色
+				// TODO: Time: 9.332 (#2)
 			}
 
 			if(data.iStyle == 0)
 			{
-				FormatEx(sLine, 128, "Time: <span color='#%06X'>%s </span>", iColor, sTime);
+				FormatEx(sLine, 128, "Time: %s", sTime);
 			}
 			else
 			{
 				char sStyle[32];
 				Shavit_GetStyleStrings(data.iStyle, sStyleName, sStyle, 32);
-				FormatEx(sLine, 128, "Time: <span color='#%06X'>%s </span>[%s] ", iColor, sTime, sStyle);
+				FormatEx(sLine, 128, "Time: %s [%s] ", sTime, sStyle);
 			}
 
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
 			if(data.iCheckpoint > 0 && data.iStyle >= 0 && !data.bStageTimer && data.iTimerStatus == Timer_Running)
 			{
-				int iDiffColor;
-				if(Shavit_GetWRCPTime(data.iCheckpoint, data.iStyle) == -1.0)
-				{
-					iDiffColor = 0xFFFF00;
-				}
-				else if(Shavit_GetWRCPDiffTime(data.iTarget) > 0.0)
-				{
-					iDiffColor = 0xFF0000;
-				}
-				else
-				{
-					iDiffColor = 0x00FF00;
-				}
-
-				FormatEx(sLine, 128, "[CP%d <span color='#%06X'>%s</span>]", data.iCheckpoint, iDiffColor, data.sDiff);
+				FormatEx(sLine, 128, "[CP%d %s]", data.iCheckpoint, data.sDiff);
 
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 			}
@@ -253,6 +222,7 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 			iLines++;
 		}
 
+		// TODO: to be deleted because topleft hud would show these
 		if((gI_HUD2Settings[client] & HUD2_WRPB) == 0)
 		{
 			char sTargetSR[64];
@@ -342,22 +312,13 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 
 		if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
 		{
-			int iColor = 0x66BCFF;
-
-			if(data.iSpeed < gI_PreviousSpeed[client])
-			{
-				iColor = 0xFF6767;
-			}
-
-			FormatEx(sLine, 128, "Speed: <span color='#%06X'>%d</span>", iColor, data.iSpeed);
+			FormatEx(sLine, 128, "Speed: %d", data.iSpeed);
 
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
 			iLines++;
 		}
 	}
-
-	StrCat(buffer, MAX_HINT_SIZE, "</span></span>");
 
 	return iLines;
 }
@@ -376,21 +337,4 @@ static void AddHUDLine(char[] buffer, int maxlen, const char[] line, int lines)
 	{
 		StrCat(buffer, maxlen, line);
 	}
-}
-
-static void PrintCSGOHUDText(int client, const char[] str)
-{
-	char buff[2048];
-	FormatEx(buff, 2048, "</font>%s%s", str, gS_HintPadding);
-
-	Protobuf pb = view_as<Protobuf>(StartMessageOne("TextMsg", client, USERMSG_RELIABLE | USERMSG_BLOCKHOOKS));
-	pb.SetInt("msg_dst", 4);
-	pb.AddString("params", "#SFUI_ContractKillStart");
-	pb.AddString("params", buff);
-	pb.AddString("params", NULL_STRING);
-	pb.AddString("params", NULL_STRING);
-	pb.AddString("params", NULL_STRING);
-	pb.AddString("params", NULL_STRING);
-
-	EndMessage();
 }

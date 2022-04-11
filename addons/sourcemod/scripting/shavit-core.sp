@@ -133,6 +133,7 @@ StringMap gSM_StyleCommands = null;
 
 // player timer variables
 timer_snapshot_t gA_Timers[MAXPLAYERS+1];
+bool gB_Auto[MAXPLAYERS+1];
 
 // used for offsets
 float gF_SmallestDist[MAXPLAYERS + 1];
@@ -141,6 +142,7 @@ float gF_Fraction[MAXPLAYERS + 1];
 
 // cookies
 Handle gH_StyleCookie = null;
+Handle gH_AutoBhopCookie = null;
 
 // late load
 bool gB_Late = false;
@@ -270,9 +272,9 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
-	if(GetEngineVersion() != Engine_CSGO)
+	if(GetEngineVersion() != Engine_CSS)
 	{
-		SetFailState("This plugin only support for csgo!");
+		SetFailState("This plugin only support for CSS!");
 		return;
 	}
 
@@ -356,6 +358,11 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_pause", Command_TogglePause, "Toggle pause.");
 	RegConsoleCmd("sm_unpause", Command_TogglePause, "Toggle pause.");
 	RegConsoleCmd("sm_resume", Command_TogglePause, "Toggle pause");
+
+	// autobhop toggle
+	RegConsoleCmd("sm_auto", Command_AutoBhop, "Toggle autobhop.");
+	RegConsoleCmd("sm_autobhop", Command_AutoBhop, "Toggle autobhop.");
+	gH_AutoBhopCookie = RegClientCookie("shavit_autobhop", "Autobhop cookie", CookieAccess_Protected);
 
 	// style commands
 	gSM_StyleCommands = new StringMap();
@@ -467,7 +474,7 @@ void LoadDHooks()
 	delete CreateInterface;
 	delete gamedataConf;
 
-	GameData AcceptInputGameData = new GameData("sdktools.games/engine.csgo");
+	GameData AcceptInputGameData = new GameData("sdktools.games/game.cstrike");
 
 	// Stolen from dhooks-test.sp
 	offset = AcceptInputGameData.GetOffset("AcceptInput");
@@ -910,6 +917,33 @@ void DeleteUserData(int client, const int iSteamID)
 	DeleteRestOfUser(iSteamID, hPack);
 }
 
+public Action Command_AutoBhop(int client, int args)
+{
+	if(!IsValidClient(client))
+	{
+		return Plugin_Handled;
+	}
+
+	gB_Auto[client] = !gB_Auto[client];
+
+	if (gB_Auto[client])
+	{
+		Shavit_PrintToChat(client, "%T", "AutobhopEnabled", client, gS_ChatStrings.sGood, gS_ChatStrings.sText);
+	}
+	else
+	{
+		Shavit_PrintToChat(client, "%T", "AutobhopDisabled", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+	}
+
+	char sAutoBhop[4];
+	IntToString(view_as<int>(gB_Auto[client]), sAutoBhop, 4);
+	SetClientCookie(client, gH_AutoBhopCookie, sAutoBhop);
+
+	UpdateStyleSettings(client);
+
+	return Plugin_Handled;
+}
+
 public Action Command_Style(int client, int args)
 {
 	if(!IsValidClient(client))
@@ -987,7 +1021,7 @@ public Action Command_Style(int client, int args)
 		menu.AddItem("-1", "Nothing");
 	}
 
-	else if(menu.ItemCount <= 8)
+	else if(menu.ItemCount <= 9)
 	{
 		menu.Pagination = MENU_NO_PAGINATION;
 	}
@@ -1370,7 +1404,7 @@ public int Native_CanPause(Handle handler, int numParams)
 	bool bDucked = view_as<bool>(GetEntProp(client, Prop_Send, "m_bDucked"));
 	bool bDucking = view_as<bool>(GetEntProp(client, Prop_Send, "m_bDucking"));
 
-	float fDucktime = GetEntPropFloat(client, Prop_Send, "m_flDuckAmount");
+	float fDucktime = GetEntPropFloat(client, Prop_Send, "m_flDucktime");
 
 	if (bDucked || bDucking || fDucktime > 0.0 || GetClientButtons(client) & IN_DUCK)
 	{
@@ -1569,17 +1603,9 @@ public int SemiNative_PrintToChat(int client, int formatParam)
 
 	// space before message needed show colors in cs:go
 	// strlen(sBuffer)>252 is when CSS stops printing the messages
-	char sPrefix[sizeof(chatstrings_t::sPrefix)];
-	char sText[sizeof(chatstrings_t::sText)];
-
-	strcopy(sPrefix, sizeof(sPrefix), gS_ChatStrings.sPrefix);
-	strcopy(sText, sizeof(sText), gS_ChatStrings.sText);
-
-	ReplaceColors(sPrefix, sizeof(sPrefix));
-	ReplaceColors(sText, sizeof(sText));
-	ReplaceColors(sInput, 300);
-	FormatEx(sBuffer, (gB_Protobuf ? sizeof(sBuffer) : 253), "%s%s%s %s%s", (gB_Protobuf ? " ":""), sTime, sPrefix, sText, sInput);
-
+	FormatEx(sBuffer, (gB_Protobuf ? sizeof(sBuffer) : 253), "%s%s%s%s%s%s", (gB_Protobuf ? " ":""), sTime, gS_ChatStrings.sPrefix, (gS_ChatStrings.sPrefix[0] != 0 ? " " : ""), gS_ChatStrings.sText, sInput);
+	ReplaceColors(sBuffer, sizeof(sBuffer));
+	
 	if(client == 0)
 	{
 		PrintToServer("%s", sBuffer);
@@ -1735,6 +1761,8 @@ public int Native_GetChatStrings(Handle handler, int numParams)
 		case sMessageWarning: return SetNativeString(2, gS_ChatStrings.sWarning, size);
 		case sMessageTeam: return SetNativeString(2, gS_ChatStrings.sTeam, size);
 		case sMessageStyle: return SetNativeString(2, gS_ChatStrings.sStyle, size);
+		case sMessageGood: return SetNativeString(2, gS_ChatStrings.sGood, size);
+		case sMessageBad: return SetNativeString(2, gS_ChatStrings.sBad, size);
 	}
 
 	return -1;
@@ -2239,11 +2267,19 @@ public void OnClientCookiesCached(int client)
 		return;
 	}
 
+	char sCookie[4];
+
+	if(gH_AutoBhopCookie != null)
+	{
+		GetClientCookie(client, gH_AutoBhopCookie, sCookie, 4);
+	}
+
+	gB_Auto[client] = (strlen(sCookie) > 0)? view_as<bool>(StringToInt(sCookie)):true;
+
 	int style = gI_DefaultStyle;
 
 	if(gB_StyleCookies && gH_StyleCookie != null)
 	{
-		char sCookie[4];
 		GetClientCookie(client, gH_StyleCookie, sCookie, 4);
 		int newstyle = StringToInt(sCookie);
 
@@ -2275,6 +2311,7 @@ public void OnClientPutInServer(int client)
 		gA_HookedPlayer[client].AddHook(client);
 	}
 
+	gB_Auto[client] = true;
 	gA_Timers[client].fStrafeWarning = 0.0;
 	gA_Timers[client].bPracticeMode = false;
 	gA_Timers[client].iSHSWCombination = -1;
@@ -2636,15 +2673,25 @@ bool LoadMessages()
 		return false;
 	}
 
-	kv.JumpToKey("CS:GO");
+	kv.JumpToKey("CS:S");
 
-	kv.GetString("prefix", gS_ChatStrings.sPrefix, sizeof(chatstrings_t::sPrefix), "\x075e70d0[Timer]");
+	kv.GetString("prefix", gS_ChatStrings.sPrefix, sizeof(chatstrings_t::sPrefix), "\x07ff6a6a[Timer]");
 	kv.GetString("text", gS_ChatStrings.sText, sizeof(chatstrings_t::sText), "\x07ffffff");
 	kv.GetString("warning", gS_ChatStrings.sWarning, sizeof(chatstrings_t::sWarning), "\x07af2a22");
 	kv.GetString("team", gS_ChatStrings.sTeam, sizeof(chatstrings_t::sTeam), "\x07276f5c");
 	kv.GetString("style", gS_ChatStrings.sStyle, sizeof(chatstrings_t::sStyle), "\x07db88c2");
+	kv.GetString("good", gS_ChatStrings.sGood, sizeof(chatstrings_t::sGood), "\x0799ff99");
+	kv.GetString("bad", gS_ChatStrings.sBad, sizeof(chatstrings_t::sBad), "\x07ff4040");
 
 	delete kv;
+
+	ReplaceColors(gS_ChatStrings.sPrefix, sizeof(chatstrings_t::sPrefix));
+	ReplaceColors(gS_ChatStrings.sText, sizeof(chatstrings_t::sText));
+	ReplaceColors(gS_ChatStrings.sWarning, sizeof(chatstrings_t::sWarning));
+	ReplaceColors(gS_ChatStrings.sTeam, sizeof(chatstrings_t::sTeam));
+	ReplaceColors(gS_ChatStrings.sStyle, sizeof(chatstrings_t::sStyle));
+	ReplaceColors(gS_ChatStrings.sGood, sizeof(chatstrings_t::sGood));
+	ReplaceColors(gS_ChatStrings.sBad, sizeof(chatstrings_t::sBad));
 
 	Call_StartForward(gH_Forwards_OnChatConfigLoaded);
 	Call_Finish();
@@ -3514,12 +3561,11 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	bool bInWater = (GetEntProp(client, Prop_Send, "m_nWaterLevel") >= 2);
 	bool bOnGround = (!bInWater && mtMoveType == MOVETYPE_WALK && iGroundEntity != -1);
 
-	// css old auto jump code 
-	/*if (GetStyleSettingBool(gA_Timers[client].bsStyle, "autobhop") && gB_Auto[client] && (buttons & IN_JUMP) > 0 && mtMoveType == MOVETYPE_WALK && !bInWater)
+	if (GetStyleSettingBool(gA_Timers[client].bsStyle, "autobhop") && gB_Auto[client] && (buttons & IN_JUMP) > 0 && mtMoveType == MOVETYPE_WALK && !bInWater)
 	{
 		int iOldButtons = GetEntProp(client, Prop_Data, "m_nOldButtons");
 		SetEntProp(client, Prop_Data, "m_nOldButtons", (iOldButtons & ~IN_JUMP));
-	}*/
+	}
 
 	// no jump zone implementation
 	/*if (buttons & IN_JUMP) > 0)

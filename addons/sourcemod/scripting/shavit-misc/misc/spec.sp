@@ -262,23 +262,14 @@ public Action Command_Specs(int client, int args)
 
 static void CleanSwitchTeam(int client, int team)
 {
-	if (GetClientTeam(client) == team)
-	{
-		// Close the team menu when selecting your own team...
-		Event event = CreateEvent("player_team");
-		event.SetInt("userid", GetClientUserId(client));
-		event.SetInt("team", team);
-		event.SetBool("silent", true);
-		event.FireToClient(client);
-		event.Cancel();
-	}
-
 	if(team != 1)
 	{
 		CS_SwitchTeam(client, team);
 	}
 	else
 	{
+		int EF_DIMLIGHT = 4;
+		SetEntProp(client, Prop_Send, "m_fEffects", ~EF_DIMLIGHT & GetEntProp(client, Prop_Send, "m_fEffects"));
 		ChangeClientTeam(client, team);
 	}
 }
@@ -296,8 +287,8 @@ public int ScoreboardSort(int index1, int index2, Handle array, Handle hndl)
 		return a_team > b_team ? -1 : 1;
 	}
 
-	int a_score = CS_GetClientContributionScore(a);
-	int b_score = CS_GetClientContributionScore(b);
+	int a_score = GetEntProp(a, Prop_Data, "m_iFrags");
+	int b_score = GetEntProp(b, Prop_Data, "m_iFrags");
 
 	if (a_score != b_score)
 	{

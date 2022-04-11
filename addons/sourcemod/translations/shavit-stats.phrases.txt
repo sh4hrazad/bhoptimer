@@ -3,8 +3,8 @@
 	// ---------- Errors ---------- //
 	"StatsMenuFailure"
 	{
-		"en"		"{darkred}ERROR: {default}Could not open the stats menu."
-		"chi"		"{darkred}错误：{default}无法打开统计信息菜单."
+		"en"		"{red}ERROR: {white}Could not open the stats menu."
+		"chi"		"{red}错误：{white}无法打开统计信息菜单."
 	}
 	// ---------- Map Completions ---------- //
 	"SelectTrack"
