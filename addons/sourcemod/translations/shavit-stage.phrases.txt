@@ -1,0 +1,68 @@
+"Phrases"
+{
+	/*-------------Chat-------------*/
+	"Chat-WRCP"
+	{
+		"#format"	"{1:s},{2:d},{3:s},{4:s}"
+		"en"		"{gold}{1}{default} hold {palered}[Stage {2}]{default} record! Mode: {blue}{3}{default} Time: {orchid}{4}{default}."
+		"chi"		"{gold}{1}{default} 维持住了 {palered}[关卡 {2}]{default} 记录! 模式: {blue}{3}{default} 时间: {orchid}{4}{default}."
+	}
+	"Chat-WRCP-NoRecord"
+	{
+		"#format"	"{1:d},{2:s}"
+		"en"		"No Records for {palered}[Stage {1}]{default}. (style: {blue}{2}{default})"
+		"chi"		"{palered}[关卡 {1}]{default} 没有记录. (模式: {blue}{2}{default})"
+	}
+	"WRCPDeleteSuccessful"
+	{
+		"#format"	"{1:d},{2:s},{3:d}"
+		"en"		"{palered}[Stage {1}]{default} WR deleted successfuly (style: {blue}{2}{default}), Steamid: {green}{3}{default}"
+		"chi"		"{palered}[关卡 {1}]{default} 最佳纪录已被删除 (模式: {blue}{2}{default}), Steamid: {green}{3}{default}"
+	}
+	"StageRecordDeleteSuccessful"
+	{
+		"#format"	"{1:d},{2:s},{3:d}"
+		"en"		"A record of {palered}[Stage {1}]{default} deleted successfuly (style: {blue}{2}{default}), Steamid: {green}{3}{default}"
+		"chi"		"{palered}[关卡 {1}]{default} 的记录删除成功 (模式: {blue}{2}{default}), Steamid: {green}{3}{default}"
+	}
+	/*-------------Menu Title-------------*/
+	"WrcpMenuTitle-Style"
+	{
+		"en"		"Choose a style: "
+		"chi"		"选择一个模式: "
+	}
+	"WrcpMenuTitle-Stage"
+	{
+		"en"		"Choose a stage: "
+		"chi"		"选择一个关卡: "
+	}
+	"WrcpMenuTitle-Maptop"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"		"{1} - Stage {2} - Top100"
+		"chi"		"{1} - 关卡 {2} - 前100"
+	}
+	"DeleteMaptopMenuTitle-Maptop"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"		"{1} - Stage {2} - Deleting Record"
+		"chi"		"{1} - 关卡 {2} - 删除记录中"
+	}
+	"DeleteWrcpMenuTitle-Confirm"
+	{
+		"#format"	"{1:d},{2:s}"
+		"en"		"Deleting Stage {1} (style:{2}), confirm?"
+		"chi"		"正在删除关卡{1}(模式: {2}), 确认吗?"
+	}
+	/*-------------Menu Item-------------*/
+	"WrcpMenuItem-Stage"
+	{
+		"en"		"Stage"
+		"chi"		"关卡"
+	}
+	"WrcpMenuItem-NoRecord"
+	{
+		"en"		"No Record..."
+		"chi"		"没有记录..."
+	}
+}

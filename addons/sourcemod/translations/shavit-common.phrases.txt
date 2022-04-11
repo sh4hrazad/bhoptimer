@@ -1,0 +1,93 @@
+"Phrases"
+{
+	// ---------- Tracks ---------- //
+	"Track"
+	{
+		"en"		"Track"
+	}
+	"Track_Unknown"
+	{
+		"en"		"UNKNOWN TRACK"
+		"chi"		"未知 TRACK"
+	}
+	"Track_Main"
+	{
+		"en"		"Main"
+		"chi"		"主线"
+	}
+	"Track_Bonus"
+	{
+		"#format"	"{1:d}"
+		"en"		"Bonus {1}"
+	}
+	"Zone_Start"
+	{
+		"en"		"Start Zone"
+		"chi"		"起点"
+	}
+	"Zone_End"
+	{
+		"en"		"End Zone"
+		"chi"		"终点"
+	}
+	"Zone_Stage"
+	{
+		"en"		"Stage Zone"
+		"chi"		"关卡"
+	}
+	"Zone_Checkpoint"
+	{
+		"en"		"Checkpoint Zone"
+		"chi"		"检查点"
+	}
+	"Zone_Stop"
+	{
+		"en"		"Stop Timer"
+		"chi"		"停止计时器区域"
+	}
+	"Zone_Teleport"
+	{
+		"en"		"Teleport Zone"
+		"chi"		"传送区域"
+	}
+	"Zone_Mark"
+	{
+		"en"		"Mark Zone"
+		"chi"		"标记区域"
+	}
+	// ---------- Commands ---------- //
+	"NoCommandAccess"
+	{
+		"en"		"You do not have access to this command."
+		"chi"		"您无权访问此命令."
+	}
+	"NoConsole"
+	{
+		"en"		"Run this command from inside the game."
+		"chi"		"从游戏内部运行此命令."
+	}
+	"ArgumentsMissing"
+	{
+		"#format"	"{1:s}"
+		"en"		"Usage: {1}"
+		"chi"		"用法: {1}"
+	}
+	"TimerCommands"
+	{
+		"en"		"Timer Commands"
+		"chi"		"计时器命令"
+	}
+	// ---------- Timelimit ---------- //
+	"Minutes"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} minutes remaining."
+		"chi"		"剩余{1}分钟."
+	}	
+	"Seconds"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} seconds remaining."
+		"chi"		"剩余{1}秒"
+	}
+}

@@ -1,0 +1,401 @@
+"Phrases"
+{
+	// ---------- HUD Components ---------- //
+	// DO NOT MAKE NAMES LONGER THAN DISPLAYED HERE //
+	"HudStartZone"
+	{
+		"en"		"Start Zone"
+	}
+	"Tier"
+	{
+		"en"		"难度"
+	}
+	"Checkpoints"
+	{
+		"en"		"CPs"
+		"chi"		"检查点数"
+	}
+	"Stages"
+	{
+		"en"		"关卡数"
+	}
+	"Bonuses"
+	{
+		"en"		"奖励数"
+	}
+	"HudZoneMapinfo"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"en"		"{1} | {2} | {3}"
+	}
+	"HudInStartZone"
+	{
+		"#format"	"{1:d}"
+		"en"		"In Start Zone\n\n{1}"
+	}
+	"InStartZone"
+	{
+		"en"		"In Start Zone"
+		"chi"		"起点"
+	}
+	"InEndZone"
+	{
+		"en"		"In End Zone"
+		"chi"		"\t\t  终点"
+	}
+	"HudInStartZoneCSGO"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"		"\n\n\t\t\t{1}({2})"
+	}
+	"HudInStartZoneCSGO_Linearmap"
+	{
+		"#format"	"{1:s}"
+		"en"		"\n\n\t\t\t{1}"
+	}
+	"HudEndZone"
+	{
+		"en"		"End Zone"
+	}
+	"SR"
+	{
+		"en"		"SR"
+		"chi"		"最佳记录"
+	}
+	"PR"
+	{
+		"en"		"PR"
+		"chi"		"个人记录"
+	}
+	"Rank"
+	{
+		"en"		"Rank"
+		"chi"		"排名"
+	}
+	"HUDNoRecord"
+	{
+		"en"		"N/A"
+		"chi"		"无记录"
+	}
+	"InStageZone"
+	{
+		"en"		"In End Zone"
+		"chi"		"\t   关卡"
+	}
+	"WRCP"
+	{
+		"en"		"WRCP"
+		"chi"		"关卡最佳"
+	}
+	"PRCP"
+	{
+		"en"		"PR"
+		"chi"		"个人最佳"
+	}
+	"HudPaused"
+	{
+		"en"		"[PAUSED]"
+	}
+	"TimerStopped"
+	{
+		"en"		"Stopped"
+		"chi"		"计时已停止"
+	}
+	"Time"
+	{
+		"en"		"Time"
+		"chi"		"时间"
+	}
+	"Checkpoint"
+	{
+		"en"		"Checkpoint"
+		"chi"		"检查点"
+	}
+	"Stage"
+	{
+		"en"		"Stage"
+		"chi"		"关卡"
+	}
+	"Speed"
+	{
+		"en"		"Speed"
+		"chi"		"速度"
+	}
+	"HudTimeText"
+	{
+		"en"		"Time"
+		"chi"		"时间"
+	}
+	"HudBestText"
+	{
+		"en"		"Best"
+		"chi"		"最佳"
+	}
+	"HudJumpsText"
+	{
+		"en"		"Jumps"
+		"chi"		"跳跃数"
+	}
+	"HudStyleText"
+	{
+		"en"		"Style"
+		"chi"		"模式"
+	}
+	"HudSpeedText"
+	{
+		"en"		"Speed"
+		"chi"		"速度"
+	}
+	"HudStrafeText"
+	{
+		"en"		"Strafes"
+		"chi"		"加速数"
+	}
+	"HudTimeLeft"
+	{
+		"en"		"Time left"
+		"chi"		"剩下的时间"
+	}
+	"HudSync"
+	{
+		"en"		"Sync"
+		"chi"		"同步"
+	}
+	"HudPerfs"
+	{
+		"en"		"Perfect jumps"
+		"chi"		"完美的跳跃数"
+	}
+	"HudPracticeMode"
+	{
+		"en"		"[PRACTICE]"
+		"chi"		"[练习模式]"
+	}
+	// ---------- Menus ---------- //
+	"HUDMenuTitle"
+	{
+		"en"		"HUD settings:"
+		"chi"		"HUD设置:"
+	}
+	"HudMaster"
+	{
+		"en"		"Master"
+		"chi"		"总体"
+	}
+	"HudCenter"
+	{
+		"en"		"Center text"
+		"chi"		"中间的文本"
+	}
+	"HudZoneHud"
+	{
+		"en"		"Zone HUD"
+		"chi"		"区域 HUD"
+	}
+	"HudObserve"
+	{
+		"en"		"Spectate HUD"
+		"chi"		"观看者 HUD"
+	}
+	"HudSpectators"
+	{
+		"en"		"Spectator list"
+		"chi"		"观察者列表"
+	}
+	"HudKeyOverlay"
+	{
+		"en"		"Key display"
+		"chi"		"按键显示"
+	}
+	"HudHideWeapon"
+	{
+		"en"		"Hide weapons"
+		"chi"		"隐藏武器"
+	}
+	"HudTopLeft"
+	{
+		"en"		"Top left HUD (WR/PB)"
+		"chi"		"左上角HUD(SR/个人)"
+	}
+	"Hud2dVel"
+	{
+		"en"		"Use 2D Velocity"
+		"chi"		"使用2D速度(xy)"
+	}
+	"HudNoRecordSounds"
+	{
+		"en"		"No record sounds"
+		"chi"		"无破记录声音"
+	}
+	"HudPracticeModeAlert"
+	{
+		"en"		"No practice mode alert"
+		"chi"		"无练习模式警报"
+	}
+	"HudRankText"
+	{
+		"en"		"Expected rank"
+		"chi"		"期望排名"
+	}
+	"HudTrackText"
+	{
+		"en"		"Timer track"
+		"chi"		"计时器track"
+	}
+	"HudSplitPbText"
+	{
+		"en"		"Split PB"
+		"chi"		"拆分个人记录"
+	}
+	"HudMapTierText"
+	{
+		"en"		"Map tier"
+		"chi"		"地图难度"
+	}
+	"HudTimeDifference"
+	{
+		"en"		"Time Difference"
+		"chi"		"完成时间差异"
+	}
+	"HudTopLeftRankText"
+	{
+		"en"		"Top left Rank"
+		"chi"		"左上角排名"
+	}
+	"HudWRPBText"
+	{
+		"en"		"SR mode[+] | PB mode[-]"
+		"chi"		"SR模式[+] | PB模式[-]"
+	}
+	"HudPrestrafeText"
+	{
+		"en"		"Prestrafe text"
+		"chi"		"Prestrafe信息"
+	}
+	"HudStage"
+	{
+		"en"		"Stage message"
+		"chi"		"关卡信息"
+	}
+	"HudVelocityDifference"
+	{
+		"en"		"Velocity Difference"
+	}
+	// ---------- Record Bots ---------- //
+	"ReplayText"
+	{
+		"en"		"Replay"
+		"chi"		"回放"
+	}
+	"NoReplayData"
+	{
+		"en"		"No replay data loaded\nPress USE or beat #1 to play"
+		"chi"		"未加载回放数据\n按E(使用键)或打败第一名来播放"
+	}
+	// ---------- Panels ---------- //
+	"SpectatorPersonal"
+	{
+		"en"		"Spectators"
+		"chi"		"观察者数"
+	}
+	"SpectatorWatching"
+	{
+		"en"		"Other Spectators"
+		"chi"		"其他的观察者"
+	}
+	// ---------- Commands ---------- //
+	"HudEnabledComponent"
+	{
+		"#format"	"{1:s}"
+		"en"		"{gold}{1} {default}HUD setting {orchid}enabled{default}."
+		"chi"		"{gold}{1} {default}HUD设置{orchid}已启用{default}."
+	}
+	"HudDisabledComponent"
+	{
+		"#format"	"{1:s}"
+		"en"		"{gold}{1} {default}HUD setting {darkred}disabled{default}."
+		"chi"		"{gold}{1} {default}HUD设置{darkred}已禁用{default}."
+	}
+	// ---------- Misc ---------- //
+	"BotPrestrafe"
+	{
+		"#format"	"{1:d}"
+		"en"		"{grey}Speed: {grey2}{1} u/s{default}."
+		"chi"		"{grey}速度: {grey2}{1} u/s{default}."
+	}
+	"StartPrestrafe"
+	{
+		"#format"	"{1:d},{2:s},{3:s}"
+		"en"		"{grey}Start: {grey2}{1} u/s {default}| {gold}WR:{default} {2} | {darkblue}PB:{default} {3}"
+		"chi"		"{grey}起点 Prestrafe: {grey2}{1} u/s {default}| {gold}WR:{default} {2} | {darkblue}PB:{default} {3}"
+	}
+	"CPStagePrestrafe"
+	{
+		"#format"	"{1:d},{2:d},{3:s},{4:s}"
+		"en"		"{grey}CP{default} [{orchid}{1}{default}] | Prestrafe: {grey2}{2} u/s{default} | {gold}WR:{default} {3} | {darkblue}PB:{default} {4}."
+		"chi"		"{grey}检查点{default} [{orchid}{1}{default}] | Prestrafe: {grey2}{2} u/s{default} | {gold}WR:{default} {3} | {darkblue}PB:{default} {4}."
+	}
+	"CPLinearPrestrafe"
+	{
+		"#format"	"{1:d},{2:d},{3:s},{4:s}"
+		"en"		"{grey}CP{default} [{orchid}{1}{default}] | Speed: {grey2}{2} u/s{default} | {gold}WR:{default} {3} | {darkblue}PB:{default} {4}."
+		"chi"		"{grey}检查点{default} [{orchid}{1}{default}] | Speed: {grey2}{2} u/s{default} | {gold}WR:{default} {3} | {darkblue}PB:{default} {4}."
+	}
+	"StagePrestrafe"
+	{
+		"#format"	"{1:d},{2:d},{3:s},{4:s}"
+		"en"		"{grey}Stage {1}: {grey2}{2} u/s {default}| {gold}WRCP:{default} {3} | {darkblue}PB:{default} {4}"
+		"chi"		"{grey}关卡 [{1}] Prestrafe: {grey2}{2} u/s {default}| {gold}WRCP:{default} {3} | {darkblue}PB:{default} {4}"
+	}
+	"PrestrafeIncrease"
+	{
+		"#format"	"{1:d}"
+		"en"		"{green}+{1} u/s{default}"
+	}
+	"PrestrafeNochange"
+	{
+		"#format"	"{1:d}"
+		"en"		"{orchid}{1} u/s{default}"
+	}
+	"PrestrafeDecrease"
+	{
+		"#format"	"{1:d}"
+		"en"		"{lightred}{1} u/s{default}"
+	}
+	"ZoneCheckpointTime"
+	{
+		"#format"	"{1:d},{2:s},{3:s},{4:s}"
+		"en"		"{grey}CP{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WR{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default}"
+		"chi"		"{grey}检查点{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WR{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default}"
+	}
+	"ZoneStageTime-Improved"
+	{
+		"#format"	"{1:d},{2:s},{3:s},{4:s},{5:s}"
+		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WRCP{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default} | {gold}Rank{default}: {blue}{5}{default}"
+		"chi"		"{grey}关卡{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WRCP{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default} | {gold}排名{default}: {blue}{5}{default}"
+	}
+	"ZoneStageTime-Noimproved"
+	{
+		"#format"	"{1:d},{2:s},{3:s},{4:s}"
+		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WRCP{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default}"
+		"chi"		"{grey}关卡{default} [{orchid}{1}{default}] | {grey2}{2}{default} | {palered}WRCP{default} {yellow}{3}{default} | {darkblue}PB{default} {yellow}{4}{default}"
+	}
+	"EnterStageMessage_Bot_Improved"
+	{
+		"#format"	"{1:d},{2:s},{3:d}"
+		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {grey}Time:{default} {green}{2}{default} | {grey}Attemps:{default} {gold}{3}{default}"
+		"chi"		"{grey}关卡{default} [{orchid}{1}{default}] | {grey}到达时间:{default} {green}{2}{default} | {grey}尝试次数:{default} {gold}{3}{default}"
+	}
+	"EnterStageMessage_Bot_NoImproved"
+	{
+		"#format"	"{1:d},{2:s},{3:d}"
+		"en"		"{grey}Stage{default} [{orchid}{1}{default}] | {grey}Time:{default} {darkred}{2}{default} | {grey}Attemps:{default} {gold}{3}{default}"
+		"chi"		"{grey}关卡{default} [{orchid}{1}{default}] | {grey}到达时间:{default} {darkred}{2}{default} | {grey}尝试次数:{default} {gold}{3}{default}"
+	}
+	"OnWRCP"
+	{
+		"#format"	"{1:N},{2:d},{3:s},{4:s},{5:s},{6:s}"
+		"en"		"{gold}{1}{default} beat {palered}[Stage {2}]{default} record! Mode: {blue}{3}{default} Time: {orchid}{4}{default} ({green}WR {5}{default}) Rank: {bluegrey}{6}{default}."
+		"chi"		"{gold}{1}{default} 打破了 {palered}[关卡 {2}]{default} 记录! 模式: {blue}{3}{default} 时间: {orchid}{4}{default} ({green}WR {5}{default}) 排名: {bluegrey}{6}{default}."
+	}
+}

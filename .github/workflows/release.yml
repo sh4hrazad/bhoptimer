@@ -1,0 +1,117 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sm_version: [ "1.11.6795" ]
+
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Set environment variables
+        run: |
+          SOURCEMOD_PATH=$GITHUB_WORKSPACE/addons/sourcemod
+          SCRIPTING_PATH=$GITHUB_WORKSPACE/addons/sourcemod/scripting
+          GAMEDATA_PATH=$GITHUB_WORKSPACE/addons/sourcemod/gamedata
+          EXT_PATH=$GITHUB_WORKSPACE/addons/sourcemod/extensions
+          echo "SOURCEMOD_PATH=$SOURCEMOD_PATH" >> $GITHUB_ENV
+          echo "SCRIPTING_PATH=$SCRIPTING_PATH" >> $GITHUB_ENV
+          echo "INCLUDE_PATH=$SCRIPTING_PATH/include" >> $GITHUB_ENV
+          echo "GAMEDATA_PATH=$GAMEDATA_PATH" >> $GITHUB_ENV
+          echo "EXT_PATH=$EXT_PATH" >> $GITHUB_ENV
+
+      - name: Setup SourcePawn Compiler ${{ matrix.SM_VERSION }}
+        uses: rumblefrog/setup-sp@master
+        with:
+          version: ${{ matrix.SM_VERSION }}
+
+      - name: Download Requirements
+        run: |
+          echo -e "\nDownloading requirements..."
+
+          wget https://github.com/peace-maker/DHooks2/releases/download/v2.2.0-detours17/dhooks-2.2.0-detours17-sm110.zip
+          unzip -o dhooks-2.2.0-detours17-sm110.zip
+          rm -rf ./dhooks-2.2.0-detours17-sm110.zip
+
+          git clone https://github.com/GAMMACASE/MomSurfFix.git
+          cp -r MomSurfFix/addons ./
+          rm -rf ./MomSurfFix
+
+          git clone https://github.com/jason-e/rngfix.git
+          cp -r rngfix/plugin/* ./addons/sourcemod/
+          rm -rf ./rngfix
+
+          git clone https://github.com/GAMMACASE/HeadBugFix.git
+          cp -r HeadBugFix/addons ./
+          rm -rf ./HeadBugFix
+
+      - name: Compile shavit plugin
+        run: |
+          echo -e "\nCompiling shavit plugins..."
+
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-chat.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-checkpoints.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-core.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-hud.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-mapchooser.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-misc.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-paint.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-rankings.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-replay-playback.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-replay-recorder.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-sounds.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-stage.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-stats.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-timelimit.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-wr.sp
+          spcomp64 -O2 -i $INCLUDE_PATH shavit-zones.sp
+
+          mkdir ../plugins && mv ./*.smx ../plugins
+        working-directory: ${{ env.SCRIPTING_PATH }}/
+
+      - name: Compile Requirements
+        run: |
+          echo -e "\nCompiling required plugins..."
+
+          spcomp64 -O2 -i $INCLUDE_PATH momsurffix2.sp
+          spcomp64 -O2 -i $INCLUDE_PATH rngfix.sp
+          spcomp64 -O2 -i $INCLUDE_PATH headbugfix.sp
+
+          mv ./*.smx ../plugins
+        working-directory: ${{ env.SCRIPTING_PATH }}/
+
+      - name: Building Package
+        run: |
+          echo -e "\nBuilding Package..."
+          zip -r Package ./*
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Package
+        id: upload-package
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./Package.zip
+          asset_name: Package.zip
+          asset_content_type: application/zip

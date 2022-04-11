@@ -1,0 +1,398 @@
+"Phrases"
+{
+	// ---------- Admin Menu ---------- //
+	"AddMapZone"
+	{
+		"en"		"Add map zone"
+		"chi"		"添加地图区域"
+	}
+	"DeleteAllMapZone"
+	{
+		"en"		"Delete ALL map zones"
+		"chi"		"删除地图所有区域"
+	}
+	"DeleteMapZone"
+	{
+		"en"		"Delete map zone"
+		"chi"		"删除地图区域"
+	}
+	// --------- Set Start --------- //
+	"SetStart"
+	{
+		"en"		"Start position has been {green}set{default}."
+		"chi"		"主线起始位置{green}已设置{default}."
+	}
+	"SetStageStart"
+	{
+		"en"		"Start position has been {green}set{default}."
+		"chi"		"关卡起始位置{green}已设置{default}."
+	}
+	"SetStartCommandAlive"
+	{
+		"en"		"You have to be {darkred}alive{default} to set your start position."
+		"chi"		"您必须{darkred}活着{default}才能设置您的起始位置."
+	}
+	"SetStartRestartTimer"
+	{
+		"en"		"You must {darkred}restart your timer{default} to set your start position"
+		"chi"		"你必须要{darkred}恢复计时{default}才能自定义起点"
+	}
+	"SetStartOnGround"
+	{
+		"en"		"You must {darkred}stand on ground{default} to set your start position"
+		"chi"		"你必须{darkred}站在地面上{default}才能自定义起点"
+	}
+	"SetStartNotInStartZone"
+	{
+		"en"		"You {darkred}must{default} be in the {orchid}start zone{default} to use set start."
+		"chi"		"您{darkred}必须{default}在{orchid}起点区域{default}内才能设置起始位置."
+	}
+	"DeleteSetStart"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"Start position has been {1}deleted{2}."
+		"chi"		"起始位置已{1}删除{2}."
+	}
+	// ---------- Commands ---------- //
+	"StageCommandAlive"
+	{
+		"en"		"You have to be {orchid}alive{default} to use this command."
+		"chi"		"您必须{orchid}活着{default}才能使用此命令."
+	}
+	"InvalidStage"
+	{
+		"en"		"Your input stage is {orchid}invalid{default}"
+		"chi"		"{orchid}无效{default}关卡."
+	}
+	"ModifierCommandNoArgs"
+	{
+		"en"		"Usage: sm_modifier <decimal number>"
+		"chi"		"用法: sm_modifier <数字>"
+	}
+	"ModifierTooLow"
+	{
+		"en"		"Modifier must be higher than 0."
+		"chi"		"数字必须大于0."
+	}
+	"ModifierSet"
+	{
+		"en"		"{gold}Modifier set to{default}"
+		"chi"		"{gold}数字已设置为{default}"
+	}
+	"ZonesCommand"
+	{
+		"en"		"You {darkred}cannot{default} setup mapzones when you're dead."
+		"chi"		"死亡状态下，您{darkred}无法{default}设置地图区域."
+	}
+	"ZoneDead"
+	{
+		"en"		"You can't place zones when you're dead."
+		"chi"		"未复活不能设置区域."
+	}
+	// ---------- Panel Text ---------- //
+	"AbortZoneCreation"
+	{
+		"en"		"Abort zone creation"
+		"chi"		"中止创建区域"
+	}
+	"GridSnapPlus"
+	{
+		"#format"	"{1:d}"
+		"en"		"Grid snap + (x{1})"
+		"chi"		"增加精度 (x{1})"
+	}
+	"GridSnapMinus"
+	{
+		"en"		"Grid snap -"
+		"chi"		"减少精度 -"
+	}
+	"WallSnap"
+	{
+		"#format"	"{1:T}"
+		"en"		"Snap to wall: {1}"
+		"chi"		"使用自身位置(贴墙): {1}"
+	}
+	"CursorZone"
+	{
+		"#format"	"{1:T}"
+		"en"		"Use cursor position: {1}"
+		"chi"		"使用光标位置: {1}"
+	}
+	// ---------- Zone Menu ---------- //
+	"ZoneAdjustCancel"
+	{
+		"en"		"Cancel"
+		"chi"		"取消"
+	}
+	"ZoneAdjustDone"
+	{
+		"en"		"Done!"
+		"chi"		"确定!"
+	}
+	"ZoneAdjustPosition"
+	{
+		"en"		"Adjust the zone's position.\nUse 'sm_modifier <number>' to set a new modifier."
+		"chi"		"调整区域的位置。\n输入'sm_modifier<数字>'设置新的值."
+	}
+	"ZoneAxis"
+	{
+		"en"		"axis"
+		"chi"		"轴"
+	}
+	"ZoneDecreased"
+	{
+		"en"		"decreased"
+		"chi"		"减少了"
+	}
+	"ZoneEditConfirm"
+	{
+		"en"		"Confirm?"
+		"chi"		"确认?"
+	}
+	"ZoneDeleteSuccessful"
+	{
+		"#format"	"{1:s}"
+		"en"		"Deleted {gold}{1}{default} successfully."
+		"chi"		"删除区域 {gold}{1}{default} 成功."
+	}
+	"ZoneDeleteAllSuccessful"
+	{
+		"en"		"Deleted all map zones successfully"
+		"chi"		"已成功删除地图所有区域"
+	}
+	"ZoneFirst"
+	{
+		"en"		"FIRST"
+		"chi"		"第一个点"
+	}
+	"ZoneIncreased"
+	{
+		"en"		"increased"
+		"chi"		"增加了"
+	}
+	"ZoneMenuDeleteTitle"
+	{
+		"en"		"Delete a zone:\nPressing a zone will delete it. This action CANNOT BE REVERTED!"
+		"chi"		"删除区域：\n按着区域将删除该区域。此操作无法恢复!"
+	}
+	"ZoneMenuDeleteALLTitle"
+	{
+		"en"		"Delete ALL mapzones?\nPressing 'Yes' will delete all the existing mapzones for this map.\nThis action CANNOT BE REVERTED!"
+		"chi"		"是否删除地图所有区域？\n按'是'将删除此地图的所有现有的区域。\n此操作无法恢复!"
+	}
+	"ZoneMenuNo"
+	{
+		"en"		"NO!"
+		"chi"		"不!"
+	}
+	"ZonesMenuNoneFound"
+	{
+		"en"		"No zones found."
+		"chi"		"找不到任何区域."
+	}
+	"ZoneMenuStage"
+	{
+		"en"		"Select a Stage:"
+		"chi"		"选择一个关卡:"
+	}
+	"HookZoneSelectMethod"
+	{
+		"en"		"Select a method"
+		"chi"		"选择一个方式"
+	}
+	"HookZoneMenuBefore"
+	{
+		"en"		"What do you want?"
+		"chi"		"你想做什么呢?"
+	}
+	"HookZoneMenuTrigger"
+	{
+		"en"		"Select a trigger"
+		"chi"		"选择一个触发区域"
+	}
+	"HookTeleportZonesItem"
+	{
+		"#format"	"{1:s}"
+		"en"		"Teleport to '{1}'"
+		"chi"		"传送到了'{1}'"
+	}
+	"HookZonesItem"
+	{
+		"#format"	"{1:s}"
+		"en"		"Selecting '{1}' as Hookzone name"
+		"chi"		"选择 '{1}' 作为Hookzone的名字"
+	}
+	"ZoneMenuTrack"
+	{
+		"en"		"Select a track:"
+		"chi"		"选择一个track:"
+	}
+	"ZoneMenuTitle"
+	{
+		"#format"	"{1:s}"
+		"en"		"Select a zone type: ({1})"
+		"chi"		"选择一个区域类型: ({1})"
+	}
+	"ZoneMenuYes"
+	{
+		"en"		"YES!!! DELETE ALL THE MAPZONES!!!"
+		"chi"		"是的！删除该地图所有区域!!!"
+	}
+	"ZonePlaceText"
+	{
+		"#format"	"{1:s}"
+		"en"		"Press USE (default 'E') to set the {1} corner in your current position."
+		"chi"		"按E键 (默认E键是'使用键') 将{1}设置在当前位置."
+	}
+	"ZonePoint"
+	{
+		"#format"	"{1:d},{2:c}"
+		"en"		"Point {1} | {2} axis"
+		"chi"		"点{1}|{2}轴"
+	}
+	"ZoneSecond"
+	{
+		"en"		"SECOND"
+		"chi"		"第二个点"
+	}
+	"ZoneHeight"
+	{
+		"en"		"height"
+		"chi"		"高度"
+	}
+	"ZoneSetAdjust"
+	{
+		"en"		"Adjust position"
+		"chi"		"调整坐标"
+	}
+	"ZoneForceRender"
+	{
+		"#format"	"{1:s}"
+		"en"		"[{1}] Force zone drawing"
+		"chi"		"[{1}] 强制区域显示"
+	}
+	"ZoneSetLimitSpeed"
+	{
+		"#format"	"{1:.02f}"
+		"en"		"LimitSpeed: {1} \n  (when enter zone)"
+		"chi"		"区域限速: {1} \n  (进入区域时)"
+	}
+	"ZoneSetData"
+	{
+		"#format"	"{1:d}"
+		"en"		"Data: {1}"
+		"chi"		"数值: {1}"
+	}
+	"ZoneForceMaxData"
+	{
+		"#format"	"{1:s}"
+		"en"		"[{1}] Create mode \n  (MaxData + 1)"
+		"chi"		"[{1}] 创建模式 \n  (最大数值 + 1)"
+	}
+	"ZoneEnterDataChat"
+	{
+		"en"		"Input your desired data in chat."
+		"chi"		"在聊天中输入您需要的数据."
+	}
+	"ZoneEnterLimitSpeedChat"
+	{
+		"en"		"Input your desired limitspeed in chat, {lightgreen}-1{default} is limitless."
+		"chi"		"在聊天中输入您需要的数据, {lightgreen}-1{default}则表示无限速."
+	}
+	"ZoneSetNo"
+	{
+		"en"		"No"
+		"chi"		"不"
+	}
+	"ZoneSetTP"
+	{
+		"en"		"Yes (choose teleport destination first)"
+		"chi"		"需选择一个点，否则会随机传送"
+	}
+	"ZoneSetTPZone"
+	{
+		"en"		"Update teleport destination"
+		"chi"		"更新区域的传送点"
+	}
+	"TPToZone"
+	{
+		"en"		"Teleport to zone"
+		"chi"		"传送到该区域"
+	}
+	"ZoneSetYes"
+	{
+		"en"		"Yes"
+		"chi"		"是"
+	}
+	"ZoneSizeIncrease"
+	{
+		"#format"	"{1:c},{2:d},{3:.01f}"
+		"en"		"{orchid}{1} axis{default} (point {2}) increased by {gold}{3}{default}."
+		"chi"		"{orchid}{1}轴{default}(点{2})增加了{gold}{3}{default}."
+	}
+	"ZoneSizeDecrease"
+	{
+		"#format"	"{1:c},{2:d},{3:.01f}"
+		"en"		"{orchid}{1} axis{default} (point {2}) decreased by {gold}{3}{default}."
+		"chi"		"{orchid}{1}轴{default}(点{2})减少了{gold}{3}{default}."
+	}
+	"ZoneTeleportUpdated"
+	{
+		"en"		"Teleport destination updated."
+		"chi"		"传送目的地已更新"
+	}
+	"ZoneTeleportInsideZone"
+	{
+		"en"		"You may not place the destination inside the zone."
+		"chi"		"您不能将目的地放在区域内."
+	}
+	"ZoneEditTrack"
+	{
+		"#format"	"{1:s}"
+		"en"		"Zone track: {1}"
+		"chi"		"区域track: {1}"
+	}
+	"ZoneEdit"
+	{
+		"en"		"Edit a map zone"
+		"chi"		"编辑一个地图区域"
+	}
+	"ZoneEditTitle"
+	{
+		"en"		"Choose a zone to edit:"
+		"chi"		"选择一个区域来编辑:"
+	}
+	"ZoneInside"
+	{
+		"en"		"(Inside!)"
+		"chi"		"(在里面了!)"
+	}
+	"ZoneEditRefresh"
+	{
+		"en"		"Refresh menu"
+		"chi"		"刷新目录"
+	}
+	// ---------- Messages ---------- //
+	"ZoneStopEnter"
+	{
+		"en"		"{darkred}Your timer has been stopped for entering a {orchid}glitch zone{darkred}."
+		"chi"		"{darkred}您的计时器因进入{orchid}故障区域{darkred}而停止."
+	}
+	"ZoneExceededLimit"
+	{
+		"en"		"{darkred}You exceeded the speed limit!{default}"
+		"chi"		"{darkred}您已超出最大限速!{default}"
+	}
+	// ---------- Restart ----------- //
+	"StartZoneUndefined"
+	{
+		"#format"	"{1:s}"
+		"en"		"Your timer {darkred}will not{default} start because the {orchid}{1}{default} start zone is not set."
+		"chi"		"您的计时器{darkred}将不会{default}启动，因为地图未设置{orchid}{1}{default}起点区域."
+	}
+	"EndZoneUndefined"
+	{
+		"en"		"You {darkred}can't{default} teleport as an end zone for the map is not defined."
+		"chi"		"您{darkred}无法{default}传送，因为地图未设置结束区域"
+	}
+}

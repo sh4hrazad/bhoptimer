@@ -1,0 +1,279 @@
+"Phrases"
+{
+	// ---------- Commands ---------- //
+	"DeletionAborted"
+	{
+		"en"		"Aborted deletion."
+		"chi"		"已中止删除."
+	}
+	"DeletedRecord"
+	{
+		"en"		"Deleted record."
+		"chi"		"已删除记录."
+	}
+	"DeletedRecordsMap"
+	{
+		"#format"	"{1:s}"
+		"en"		"Deleted ALL records for {gold}{1}{default}."
+		"chi"		"已删除{gold}{1}{default}的所有记录."
+	}
+	"DeletedRecordsStyle"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"en"		"Deleted ALL records for {1}{2}{3}."
+		"chi"		"已删除{1}{2}{3}的所有记录."
+	}
+	// ---------- Client Menus ---------- //
+	"ListClientRecords"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"Records for {1}:\n({2})"
+		"chi"		"{1}的记录：\n({2})"
+	}
+	// ---------- Completion Messages ---------- //
+	"FirstCompletion-Normal"
+	{
+		"#format"	"{1:N},{2:s},{3:s},{4:d},{5:d}"
+		"en"		"{orchid}{1}{default} finished ({grey}{2}{default}) in {orchid}{3}{default} ({gold}#{5}{default})."
+		"chi"		"{team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} 排名: {blue}{4}/{5}{default}."
+	}
+	"FirstCompletion-Other"
+	{
+		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:d},{6:d}"
+		"en"		"{orchid}{1}{default} finished ({grey}{2}{default}) in {orchid}{3}{default} ({gold}#{5}{default})."
+		"chi"		"{team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} 模式: {grey}{4}{default} 排名: {blue}{5}/{6}{default}."
+	}
+	"NotFirstCompletion-Normal"
+	{
+		"#format"	"{1:N},{2:s},{3:s},{4:d},{5:d},{6:s}"
+		"en"		"{orchid}{1}{default} finished ({grey}{2}{default}) in {orchid}{3}{default} ({gold}#{4}{default}) (#{5})"
+		"chi"		"{team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} ({green}-{6}{default}) 排名: {blue}{4}/{5}{default}."
+	}
+	"NotFirstCompletion-Other"
+	{
+		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:d},{6:d},{7:s}"
+		"en"		"{orchid}{1}{default} finished ({grey}{2}{default}) in {orchid}{3}{default} ({gold}#{4}{default}) (#{5})"
+		"chi"		"{team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} ({green}-{7}{default}) 模式: {grey}{4}{default} 排名: {blue}{5}/{6}{default}."
+	}
+	"NotFirstCompletionWorse-Normal"
+	{
+		"#format"	"{1:N},{2:s},{3:s},{4:d},{5:d},{6:s}"
+		"en"		"{orchid}{1}{default} finished ({grey}{2}{default}) in {orchid}{3}{default} ({gold}#{4}{default}) (+{5})"
+		"chi"		"{team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} ({darkred}+{6}{default}) 排名: {blue}{4}/{5}{default}."
+	}
+	"NotFirstCompletionWorse-Other"
+	{
+		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:d},{6:d},{7:s}"
+		"en"		"{orchid}{1}{default} finished ({grey}{2}{default}) in {orchid}{3}{default} ({gold}#{4}{default}) (+{5})"
+		"chi"		"{team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} ({darkred}+{7}{default}) 模式: {grey}{4}{default} 排名: {blue}{5}/{6}{default}."
+	}
+	"WorseTime-Normal"
+	{
+		"#format"	"{1:N},{2:s},{3:s},{4:s}"
+		"en"		"{1} have finished ({grey}{2}{default}) in {orchid}{3}{default} ({4})(+{5})"
+		"chi"		"{team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} ({darkred}+{4}{default})."
+	}
+	"WorseTime-Other"
+	{
+		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:s}"
+		"en"		"{1} have finished ({grey}{2}{default}) in {orchid}{3}{default} ({4})(+{5})"
+		"chi"		"{team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} ({darkred}+{5}{default}) 模式: {grey}{4}{default}."
+	}
+	"UnrankedTime-Normal"
+	{
+		"#format"	"{1:N},{2:s},{3:s},{4:s}"
+		"en"		"{1} have finished ({grey}{2}{default}) in {orchid}{3}{default}."
+		"chi"		"{darkred}{4}{default} {team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default}."
+	}
+	"UnrankedTime-Other"
+	{
+		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:s}"
+		"en"		"{1} have finished ({grey}{2}{default}) in {orchid}{3}{default}."
+		"chi"		"{darkred}{5}{default} {team}{1}{default} 完成了 [{darkblue}{2}{default}] 时间: {orchid}{3}{default} 模式: {grey}{4}{default}."
+	}
+	// ---------- Deletion Menus ---------- //
+	"DeleteAllRecords"
+	{
+		"en"		"Delete ALL map records"
+		"chi"		"删除该地图的所有记录"
+	}
+	"DeleteAllRecordsMenuTitle"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"en"		"Delete ALL the records for '{1}'? (Track: {2} | Style: {3})"
+		"chi"		"是否删除'{1}'的所有记录？(Track：{2}|模式：{3})"
+	}
+	"DeleteConfirm"
+	{
+		"en"		"Are you sure?"
+		"chi"		"你确定吗?"
+	}
+	"DeleteMenuTitle"
+	{
+		"en"		"Delete a record from:"
+		"chi"		"从以下内容删除记录:"
+	}
+	"DeleteSingleRecord"
+	{
+		"en"		"Delete a single record"
+		"chi"		"删除单个记录"
+	}
+	"MenuResponseNo"
+	{
+		"en"		"NO!"
+		"chi"		"不!"
+	}
+	"MenuResponseYesSingle"
+	{
+		"en"		"YES!!! DELETE THE RECORD!!!"
+		"chi"		"是的!!! 删除该记录!!!"
+	}
+	"MenuResponseYes"
+	{
+		"en"		"YES!!! DELETE ALL THE RECORDS!!! THIS ACTION IS IRREVERSIBLE!"
+		"chi"		"是的! 删除所有记录! 不反悔!"
+	}
+	"DeleteStyleRecordsRecordsMenuTitle"
+	{
+		"#format"	"{1:s}"
+		"en"		"Choose a style to delete all the records for '{1}':"
+		"chi"		"选择一种模式来删除'{1}'的所有记录:"
+	}
+	"DeleteConfirmStyle"
+	{
+		"#format"	"{1:s}"
+		"en"		"Are you sure you want to delete ALL THE RECORDS for {1}?"
+		"chi"		"是否要删除{1}的所有记录?"
+	}
+	"MenuResponseYesStyle"
+	{
+		"#format"	"{1:s}"
+		"en"		"YES!!! DELETE THE RECORDS FOR {1}!!! THIS ACTION IS IRREVERSIBLE!"
+		"chi"		"是的! 删除{1}的记录! 不反悔!"
+	}
+	"DeleteTrackSingle"
+	{
+		"en"		"Choose a track to delete a single record from:"
+		"chi"		"选择要从中删除单个记录的Track:"
+	}
+	"DeleteTrackAll"
+	{
+		"en"		"Choose a track to delete a ALL records from:"
+		"chi"		"选择要从中删除所有记录的Track:"
+	}
+	"DeleteTrackAllStyle"
+	{
+		"#format"	"{1:s}"
+		"en"		"Choose a style to delete all the records for ({1}):"
+		"chi"		"选择要删除({1})的所有记录的模式:"
+	}
+	// ---------- Errors ---------- //
+	"DatabaseError"
+	{
+		"en"		"Database error"
+		"chi"		"数据库异常"
+	}
+	"Error"
+	{
+		"en"		"ERROR"
+		"chi"		"错误!ERROR!"
+	}
+	"NoStyles"
+	{
+		"en"		"{darkred}FATAL ERROR: {default}No styles are available. Contact the server owner immediately!"
+		"chi"		"{darkred}致命错误ERROR：{default}没有可用的模式。请立即联系服务器OP!"
+	}
+	// ---------- WR Menu ---------- //
+	"RecentRecords"
+	{
+		"#format"	"{1:d}"
+		"en"		"Recent {1} record(s)"
+		"chi"		"最近{1}条记录"
+	}
+	"WRDate"
+	{
+		"en"		"Date"
+		"chi"		"日期"
+	}
+	"WRJump"
+	{
+		"en"		"jump"
+		"chi"		"跳跃"
+	}
+	"WRJumps"
+	{
+		"en"		"Jumps"
+		"chi"		"跳跃数"
+	}
+	"WRMap"
+	{
+		"#format"	"{1:s}"
+		"en"		"Records for {1}"
+		"chi"		"{1}的记录"
+	}
+	"WRMapNoRecords"
+	{
+		"en"		"No records found."
+		"chi"		"找不到任何记录."
+	}
+	"WRMenuTitle"
+	{
+		"en"		"Choose a style:"
+		"chi"		"选择一个模式:"
+	}
+	"WRPoints"
+	{
+		"en"		"points"
+		"chi"		"Pts"
+	}
+	"WRPlayerStats"
+	{
+		"en"		"Player stats"
+		"chi"		"玩家总体信息"
+	}
+	"WRDeleteRecord"
+	{
+		"en"		"Delete record"
+		"chi"		"删除记录"
+	}
+	"WRPointsCap"
+	{
+		"en"		"Points"
+		"chi"		"Pts"
+	}
+	"WRRecord"
+	{
+		"en"		"records"
+		"chi"		"记录数"
+	}
+	"WRRecordFor"
+	{
+		"en"		"Records for"
+		"chi"		"记录"
+	}
+	"WRStrafes"
+	{
+		"en"		"Strafes"
+		"chi"		"加速次数"
+	}
+	"WRCompletions"
+	{
+		"en"		"Completions"
+		"chi"		"完成次数"
+	}
+	"WRStyle"
+	{
+		"en"		"Style"
+		"chi"		"模式"
+	}
+	"WRStyleNothing"
+	{
+		"en"		"Nothing."
+		"chi"		"什么都没有."
+	}
+	"WRTime"
+	{
+		"en"		"Time"
+		"chi"		"时间"
+	}
+}

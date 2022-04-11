@@ -1,0 +1,139 @@
+"Phrases"
+{
+	// ---------- Commands ---------- //
+	"AutobhopEnabled"
+	{
+		"en"		"Autobhop {orchid}enabled{default}."
+		"chi"		"自动连跳 {orchid}已开启{default}."
+	}
+	"AutobhopDisabled"
+	{
+		"en"		"Autobhop {darkred}disabled{default}."
+		"chi"		"自动连跳 {darkred}已关闭{default}."
+	}
+	"CheatTimerStop"
+	{
+		"#format"	"{1:s}"
+		"en"		"{darkred}Timer stopped! {default}{1}"
+		"chi"		"{darkred}计时器已停止! {default}{1}"
+	}
+	"CommandDisabled"
+	{
+		"#format" 	"{1:s}"
+		"en"		"The command ({gold}{1}{default}) is disabled."
+		"chi"		"这条指令 ({gold}{1}{default}) 已禁止."
+	}
+	"StyleNoAccess"
+	{
+		"en"		"You lack the {darkred}permissions{default} for this style."
+		"chi"		"你没有这个模式的{darkred}权限{default}."
+	}
+	"BlockNoclipResume"
+	{
+		"en"		"You {darkred}can't{default} resume timer while {darkred}nocliping{default}"
+		"chi"		"你不能在{darkred}穿墙状态{default}下恢复计时"
+	}
+	// ---------- Errors ---------- //
+	"VerificationFailed"
+	{
+		"en"		"Couldn't verify your, or the server's connection to Steam."
+		"chi"		"无法验证您或服务器与Steam的连接."
+	}
+	// ---------- Menus ---------- //
+	"StyleMenuTitle"
+	{
+		"en"		"Choose a style:"
+		"chi"		"选择一个模式:"
+	}
+	"StyleSelection"
+	{
+		"#format"	"{1:s}"
+		"en"		"You have chosen to play {grey}{1}{default}."
+		"chi"		"你已经选择了玩 {grey}{1}{default}."
+	}
+	"StyleUnranked"
+	{
+		"en"		"[Unranked]"
+		"chi"		"[无排名]"
+	}
+	// ---------- Misc ---------- //
+	"LeftRightCheat"
+	{
+		"en"		"Detected +left/right on a disallowed style."
+		"chi"		"在不允许的模式上检测到 +left/+right."
+	}
+	"Inconsistencies"
+	{
+		"en"		"Detected inconsistencies in button presses."
+		"chi"		"检测到按键不一致"
+	}
+	"UnrankedWarning"
+	{
+		"en"		"{darkred}WARNING: {default}This style is unranked. Your times WILL NOT be saved and will be only displayed to you!"
+		"chi"		"{darkred}警告：{default}此模式未排名。您的时间不会被保存，只会显示给你自己！"
+	}
+	"PracticeModeAlert"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{1}WARNING: {2}You're now in practice mode. Your times WILL NOT be saved and will be only displayed to you!"
+		"chi"		"{1}警告：{2}您现在处于练习模式。您的时间不会被保存，只会显示给你自己！"
+	}
+	"SHSWCombination0"
+	{
+		"en"		"Your SHSW combination is {gold}W/A & S/D{default}."
+		"chi"		"你的半侧滑按键组合为： {gold}W/A 和 S/D{default}."
+	}
+	"SHSWCombination1"
+	{
+		"en"		"Your SHSW combination is {gold}W/D & S/A{default}."
+		"chi"		"你的半侧滑按键组合为：{gold}W/D 和 S/A{default}."
+	}
+	"NewAiraccelerate"
+	{
+		"#format"	"{1:d},{2:s},{3:d},{4:s}"
+		"en"		"Your airacceleration has been changed from {1} to {2}{3}{4}."
+		"chi"		"您的aa值已从{1}更改为{2}{3}{4}."
+	}
+	// ---------- Pauses ---------- //
+	"MessagePause"
+	{
+		"en"		"{default}Timer has been {darkred}paused{default}."
+		"chi"		"{default}计时器已{darkred}暂停{default}."
+	}
+	"MessageUnpause"
+	{
+		"en"		"{default}Timer has been {darkred}resumed{default}."
+		"chi"		"{default}计时器已{darkred}恢复{default}."
+	}
+	"PauseNotOnGround"
+	{
+		"en"		"You {darkred}are not{default} allowed to pause when not on ground."
+		"chi"		"您{darkred}不允许{default}在空中暂停."
+	}
+	"PauseStartZone"
+	{
+		"en"		"{default}You {darkred}cannot{default} pause in the {gold}start zone{default}."
+		"chi"		"{default}您{darkred}无法在{default}{gold}开始区域{default}中暂停."
+	}
+	"PauseEndZone"
+	{
+		"en"		"{default}You {darkred}cannot{default} pause in the {gold}end zone{default}."
+		"chi"		"{default}您{darkred}无法在{default}{gold}终点区域{default}中暂停."
+	}
+	"PauseMoving"
+	{
+		"en"		"You {darkred}are not{default} allowed to pause while moving."
+		"chi"		"您{darkred}不允许{default}在移动时暂停."
+	}
+	"PauseDuck"
+	{
+		"en"		"You {darkred}are not{default} allowed to pause while crouching."
+		"chi"		"您{darkred}不允许{default}在蹲下时暂停."
+	}
+	// ---------- Zones ---------- //
+	"TrackChangeFromMain"
+	{
+		"en"		"Use {orchid}!m{default}/{orchid}!main{default} go to back to the main track."
+		"chi"		"输入 {orchid}!r{default}或者{orchid}!main{default} 回到主线."
+	}
+}

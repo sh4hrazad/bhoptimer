@@ -1,0 +1,255 @@
+"Phrases"
+{
+	// ---------- Commands ---------- //
+	"CommandAlive"
+	{
+		"en"		"You have to be {gold}alive{default} to use this command."
+		"chi"		"您必须{gold}活着{default}才能使用此命令."
+	}
+	"CommandAliveSpectate"
+	{
+		"en"		"You have to be {gold}alive{default} or {gold}spectate a player{default} to use this command."
+		"chi"		"您必须{gold}活着{default}或{gold}观看玩家{default}才能使用此命令."
+	}
+	"CommandSaveCPKZInvalid"
+	{
+		"en"		"You cannot perform this action when airborne or while watching another player."
+		"chi"		"您不能在空中或观看其他选手时执行此动作."
+	}
+	"CommandSaveCPKZZone"
+	{
+		"en"		"You cannot perform this action while in the start zone."
+		"chi"		"您不能在开始区域中执行此操作."
+	}
+	"CommandTeleCPInvalid"
+	{
+		"en"		"You may not teleport to this checkpoint due to setting mismatch."
+		"chi"		"由于设置不匹配，您可能无法传送到此检查点."
+	}
+	"CommandNoPause"
+	{
+		"en"		"Your timer has to be {gold}resumed{default} to use this command."
+		"chi"		"您的计时器必须{gold}恢复{default}才能使用此命令."
+	}
+	"CommandDisabled"
+	{
+		"en"		"This command is {darkred}disabled{default}."
+		"chi"		"此命令已{darkred}禁用{default}."
+	}
+	"FeatureDisabled"
+	{
+		"en"		"This feature is {darkred}disabled{default}."
+		"chi"		"此功能已{darkred}禁用{default}."
+	}
+	"HideEnabled"
+	{
+		"en"		"You are now {gold}hiding{default} players."
+		"chi"		"您现在{gold}隐藏了{default}所有玩家."
+	}
+	"HideDisabled"
+	{
+		"en"		"You are now {darkred}not hiding{default} players."
+		"chi"		"您现在{darkred}取消隐藏了{default}所有玩家."
+	}
+	"LackingAccess"
+	{
+		"en"		"You're {darkred}lacking access{default} to this command."
+		"chi"		"您{darkred}无权访问{default}此命令."
+	}
+	"SpectateDead"
+	{
+		"en"		"You {darkred}cannot{default} target a dead player."
+		"chi"		"您{darkred}不能{default}将死亡玩家作为目标."
+	}
+	"SpectatorCount"
+	{
+		"#format"	"{1:N},{2:i},{3:s}"
+		"en"		"{orchid}{1}{default} has {gold}{2}{default} spectators: {3}"
+		"chi"		"{orchid}{1}{default}有{gold}{2}{default}个观众：{3}."
+	}
+	"SpectatorCountZero"
+	{
+		"#format"	"{1:N}"
+		"en"		"No one is spectating {orchid}{1}{default}."
+		"chi"		"没有人观察 {orchid}{1}{default}."
+	}
+	"SpectatorInvalid"
+	{
+		"en"		"You should be alive or spectate someone to see your/their spectators."
+		"chi"		"你应该活着或看着别人去看你的或者他们的观众."
+	}
+	"TeleportAlive"
+	{
+		"en"		"You can teleport only if you are alive."
+		"chi"		"你只有在活着的时候才能传送."
+	}
+	"TeleportInvalidTarget"
+	{
+		"en"		"Invalid target."
+		"chi"		"目标无效."
+	}
+	"MiscCheckpointsSaved"
+	{
+		"#format"	"{1:d}"
+		"en"		"Checkpoint ({1}) {gold}saved{default}."
+		"chi"		"存点 ({1}) {gold}已保存{default}."
+	}
+	"NoclipCanTrigger"
+	{
+		"en"		"Your noclip setting is: {gold}Triggerable{default}"
+		"chi"		"你的穿墙设置为: {gold}可传送{default} (输入!nctrigger修改)."
+	}
+	"NoclipCannotTrigger"
+	{
+		"en"		"Your noclip setting is: {darkred}UnTriggerable{default}"
+		"chi"		"你的穿墙设置为: {darkred}不可传送{default} (输入!nctrigger修改)."
+	}
+	"MiscCheckpointsTeleported"
+	{
+		"#format"	"{1:d}"
+		"en"		"{gold}Teleported{default} to checkpoint ({1})."
+		"chi"		"{gold}已传送到{default} 存点({1})."
+	}
+	"MiscCheckpointsEmpty"
+	{
+		"#format"	"{1:d}"
+		"en"		"Checkpoint {1} is {darkred}empty{default}."
+		"chi"		"存点{1}为{darkred}空{default}。"
+	}
+	"MiscCheckpointsOverflow"
+	{
+		"en"		"Unable to save due to checkpoint overflow."
+		"chi"		"由于存点溢出，无法保存."
+	}
+	"MiscSegmentedCommand"
+	{
+		"en"		"Use {gold}!cpmenu{default} to re-open the segmented checkpoints menu."
+		"chi"		"输入{gold}!cpmenu{default}重新打开Segment存点菜单。"
+	}
+	// ---------- Menus ---------- //
+	"StopTimerWarning"
+	{
+		"en"		"Are you sure you want to stop your timer?"
+		"chi"		"您确定要停止计时器吗?"
+	}
+	"StopTimerYes"
+	{
+		"en"		"Yes, stop my timer."
+		"chi"		"是，停止我的计时器."
+	}
+	"StopTimerNo"
+	{
+		"en"		"No, keep my timer running."
+		"chi"		"否，让我的计时器保持运行."
+	}
+	"ClearCPWarning"
+	{
+		"en"		"Are you sure you want to clear your checkpoints?"
+		"chi"		"您确定要清除你的存点吗?"
+	}
+	"ClearCPYes"
+	{
+		"en"		"Yes, and I know this action cannot be reversed."
+		"chi"		"是的，我知道这么做是不能反悔的."
+	}
+	"ClearCPNo"
+	{
+		"en"		"No."
+		"chi"		"不."
+	}
+	"TeleportMenuTitle"
+	{
+		"en"		"Teleport to:"
+		"chi"		"传送到:"
+	}
+	"WeaponAlive"
+	{
+		"en"		"You need to be {orchid}alive{default} to spawn weapons."
+		"chi"		"您需要{orchid}活着{default}才能得到武器."
+	}
+	"MiscCheckpointMenu"
+	{
+		"en"		"Checkpoints"
+		"chi"		"存点菜单"
+	}
+	"MiscCheckpointMenuSegmented"
+	{
+		"en"		"Segmented Checkpoints"
+		"chi"		"Segmented 存点菜单"
+	}
+	"MiscCheckpointWarning"
+	{
+		"en"		"WARNING: Teleporting will stop your timer!"
+		"chi"		"警告：传送会停止你的计时器!"
+	}
+	"MiscCheckpointSave"
+	{
+		"#format"	"{1:d}"
+		"en"		"Save checkpoint ({1})"
+		"chi"		"存点({1})"
+	}
+	"MiscCheckpointTeleport"
+	{
+		"#format"	"{1:d}"
+		"en"		"Teleport to checkpoint ({1})"
+		"chi"		"读点({1})"
+	}
+	"MiscCheckpointPrevious"
+	{
+		"en"		"Previous"
+		"chi"		"上一个存点"
+	}
+	"MiscCheckpointNext"
+	{
+		"en"		"Next"
+		"chi"		"下一个存点"
+	}
+	"MiscCheckpointReset"
+	{
+		"en"		"Reset checkpoints"
+		"chi"		"重置存点"
+	}
+	"MiscCheckpointDeleteCurrent"
+	{
+		"en"		"Delete current checkpoint"
+		"chi"		"删除当前存点"
+	}
+	"MiscCheckpointPause"
+	{
+		"en"		"Pause"
+		"chi"		"暂停"
+	}
+	"MiscCheckpointUseAngles"
+	{
+		"en"		"Use angles"
+		"chi"		"保存视角"
+	}
+	"MiscCheckpointUseVelocity"
+	{
+		"en"		"Use velocity"
+		"chi"		"保存速度"
+	}
+	// ---------- Misc ---------- //
+	"BHStartZoneDisallowed"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Bunnyhopping in the {1}start zone{2} is {3}not allowed{4}."
+		"chi"		"{1}在起点连跳{2}是{3}不允许的{4}."
+	}
+	"WRNotice"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{darkred}NEW{default} {green}{1}-{2}{default} WR!!!"
+		"chi"		"{darkred}新的{default} {green}{1}-{2}{default} {darkred}服务器记录!!!"
+	}
+	"AdvertisementsEnabled"
+	{
+		"en"		"Advertisements enabled"
+		"chi"		"已启用广告提示"
+	}
+	"AdvertisementsDisabled"
+	{
+		"en"		"Advertisements disabled"
+		"chi"		"已关闭广告提示"
+	}
+}
