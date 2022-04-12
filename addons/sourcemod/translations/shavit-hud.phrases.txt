@@ -326,26 +326,26 @@
 	"StartPrestrafe"
 	{
 		"#format"	"{1:d},{2:s},{3:s}"
-		"en"		"{grey}Start: {grey2}{1} u/s {white}| {gold}WR:{white} {2} | {lightblue}PB:{white} {3}"
-		"chi"		"{grey}起点 Prestrafe: {grey2}{1} u/s {white}| {gold}WR:{white} {2} | {lightblue}PB:{white} {3}"
+		"en"		"{grey}Start: {grey2}{1} u/s {white}| {gold}WR:{white} {2} {white}| {lightblue}PB:{white} {3}"
+		"chi"		"{grey}起点 Prestrafe: {grey2}{1} u/s {white}| {gold}WR:{white} {2} {white}| {lightblue}PB:{white} {3}"
 	}
 	"CPStagePrestrafe"
 	{
 		"#format"	"{1:d},{2:d},{3:s},{4:s}"
-		"en"		"{grey}CP{white} [{orchid}{1}{white}] | Prestrafe: {grey2}{2} u/s{white} | {gold}WR:{white} {3} | {lightblue}PB:{white} {4}."
-		"chi"		"{grey}检查点{white} [{orchid}{1}{white}] | Prestrafe: {grey2}{2} u/s{white} | {gold}WR:{white} {3} | {lightblue}PB:{white} {4}."
+		"en"		"{grey}CP{white} [{orchid}{1}{white}] | Prestrafe: {grey2}{2} u/s{white} | {gold}WR:{white} {3} {white}| {lightblue}PB:{white} {4}."
+		"chi"		"{grey}检查点{white} [{orchid}{1}{white}] | Prestrafe: {grey2}{2} u/s{white} | {gold}WR:{white} {3} {white}| {lightblue}PB:{white} {4}."
 	}
 	"CPLinearPrestrafe"
 	{
 		"#format"	"{1:d},{2:d},{3:s},{4:s}"
-		"en"		"{grey}CP{white} [{orchid}{1}{white}] | Speed: {grey2}{2} u/s{white} | {gold}WR:{white} {3} | {lightblue}PB:{white} {4}."
-		"chi"		"{grey}检查点{white} [{orchid}{1}{white}] | Speed: {grey2}{2} u/s{white} | {gold}WR:{white} {3} | {lightblue}PB:{white} {4}."
+		"en"		"{grey}CP{white} [{orchid}{1}{white}] | Speed: {grey2}{2} u/s{white} | {gold}WR:{white} {3} {white}| {lightblue}PB:{white} {4}."
+		"chi"		"{grey}检查点{white} [{orchid}{1}{white}] | Speed: {grey2}{2} u/s{white} | {gold}WR:{white} {3} {white}| {lightblue}PB:{white} {4}."
 	}
 	"StagePrestrafe"
 	{
 		"#format"	"{1:d},{2:d},{3:s},{4:s}"
-		"en"		"{grey}Stage {1}: {grey2}{2} u/s {white}| {gold}WRCP:{white} {3} | {lightblue}PB:{white} {4}"
-		"chi"		"{grey}关卡 [{1}] Prestrafe: {grey2}{2} u/s {white}| {gold}WRCP:{white} {3} | {lightblue}PB:{white} {4}"
+		"en"		"{grey}Stage {1}: {grey2}{2} u/s {white}| {gold}WRCP:{white} {3} {white}| {lightblue}PB:{white} {4}"
+		"chi"		"{grey}关卡 [{1}] Prestrafe: {grey2}{2} u/s {white}| {gold}WRCP:{white} {3} {white}| {lightblue}PB:{white} {4}"
 	}
 	"PrestrafeIncrease"
 	{

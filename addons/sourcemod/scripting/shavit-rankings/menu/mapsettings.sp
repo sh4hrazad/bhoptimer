@@ -4,12 +4,15 @@ static float gF_MenuMaxvelocity[MAXPLAYERS+1];
 
 
 
-void SetMapSettings(int client)
+void SetMapSettings(int client, bool reset = true)
 {
-	gI_MenuTier[client] = gI_Tier;
-	gB_MenuMaplimitspeed[client] = gB_Maplimitspeed;
-	gF_MenuMaxvelocity[client] = gF_Maxvelocity;
-
+	if(reset)
+	{
+		gI_MenuTier[client] = gI_Tier;
+		gB_MenuMaplimitspeed[client] = gB_Maplimitspeed;
+		gF_MenuMaxvelocity[client] = gF_Maxvelocity;
+	}
+	
 	Menu menu = new Menu(SetMapSettings_Handler);
 	menu.SetTitle("地图设置\n");
 
@@ -56,7 +59,7 @@ public int SetMapSettings_Handler(Menu menu, MenuAction action, int param1, int 
 		else if(StrEqual(sInfo, "LimitStage"))
 		{
 			gB_MenuMaplimitspeed[param1] = !gB_MenuMaplimitspeed[param1];
-			SetMapSettings(param1);
+			SetMapSettings(param1, false);
 		}
 		else if(StrEqual(sInfo, "Maxvel"))
 		{
@@ -93,16 +96,16 @@ public int SetMapSettings2_Handler(Menu menu, MenuAction action, int param1, int
 
 		int num = StringToInt(sInfo);
 
-		if(num < 3500)
+		if(num < 3500) // settier
 		{
 			gI_MenuTier[param1] = num;
 		}
-		else
+		else // set maxvel
 		{
 			gF_MenuMaxvelocity[param1] = num * 1.0;
 		}
 
-		SetMapSettings(param1);
+		SetMapSettings(param1, false);
 	}
 	else if(action == MenuAction_Cancel)
 	{
