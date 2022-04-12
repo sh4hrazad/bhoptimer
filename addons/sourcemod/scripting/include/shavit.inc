@@ -1071,36 +1071,6 @@ forward void Shavit_OnEnterStageZone_Bot(int bot, int stage);
 forward void Shavit_OnEnterCheckpointZone_Bot(int bot, int cp);
 
 /**
- * Called when a bot leaves a start zone.
- *
- * @param bot						Bot index.
- * @param track						Track id.
- * @param speed						3D speed.
- * @noreturn
- */
-forward void Shavit_OnLeaveStartZone_Bot(int bot, int track, float speed);
-
-/**
- * Called when a bot leaves a stage zone.
- *
- * @param bot						Bot index.
- * @param stage						Stage id.
- * @param speed						3D speed.
- * @noreturn
- */
-forward void Shavit_OnLeaveStageZone_Bot(int bot, int stage, float speed);
-
-/**
- * Called when a bot leaves a checkpoint zone.
- *
- * @param bot						Bot index.
- * @param cp						Checkpoint id.
- * @param speed						3D speed.
- * @noreturn
- */
-forward void Shavit_OnLeaveCheckpointZone_Bot(int bot, int cp, float speed);
-
-/**
  * Called after a player start timer.
  *
  * @param client					Client index.

@@ -281,34 +281,3 @@ void Shavit_OnEnterStageZone_Bot_Message(int bot, int stage)
 
 	SendMessageToSpectator(bot, "%t", failed ? "EnterStageMessage_Bot_NoImproved" : "EnterStageMessage_Bot_Improved", stage, sTime, attemps, true);
 }
-
-void Shavit_OnLeaveStartZone_Bot_Message(int bot, int track, float speed)
-{
-	if(Shavit_GetReplayBotTrack(bot) != track)
-	{
-		return;
-	}
-
-	SendMessageToSpectator(bot, "%t", "BotPrestrafe", RoundToFloor(speed), true);
-}
-
-void Shavit_OnLeaveStageZone_Bot_Message(int bot, int stage, float speed)
-{
-	if(Shavit_GetReplayBotTrack(bot) != Track_Main || 
-		(Shavit_GetReplayBotStage(bot) != 0 && Shavit_GetReplayBotStage(bot) != stage))
-	{
-		return;
-	}
-
-	SendMessageToSpectator(bot, "%t", "BotPrestrafe", RoundToFloor(speed), true);
-}
-
-void Shavit_OnLeaveCheckpointZone_Bot_Message(int bot, float speed)
-{
-	if(Shavit_GetReplayBotTrack(bot) != Track_Main)
-	{
-		return;
-	}
-
-	SendMessageToSpectator(bot, "%t", "BotPrestrafe", RoundToFloor(speed), true);
-}

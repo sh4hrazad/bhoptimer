@@ -306,21 +306,6 @@ public void Shavit_OnEnterStageZone_Bot(int bot, int stage)
 	Shavit_OnEnterStageZone_Bot_Message(bot, stage);
 }
 
-public void Shavit_OnLeaveStartZone_Bot(int bot, int track, float speed)
-{
-	Shavit_OnLeaveStartZone_Bot_Message(bot, track, speed);
-}
-
-public void Shavit_OnLeaveStageZone_Bot(int bot, int stage, float speed)
-{
-	Shavit_OnLeaveStageZone_Bot_Message(bot, stage, speed);
-}
-
-public void Shavit_OnLeaveCheckpointZone_Bot(int bot, int cp, float speed)
-{
-	Shavit_OnLeaveCheckpointZone_Bot_Message(bot, speed);
-}
-
 public void OnClientPutInServer(int client)
 {
 	ResetPrestrafeDiff(client);

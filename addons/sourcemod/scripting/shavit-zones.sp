@@ -173,9 +173,6 @@ Handle gH_Forwards_EnterZone = null;
 Handle gH_Forwards_LeaveZone = null;
 Handle gH_Forwards_BotEnterStageZone = null;
 Handle gH_Forwards_BotEnterCheckpointZone = null;
-Handle gH_Forwards_BotLeaveStartZone = null;
-Handle gH_Forwards_BotLeaveStageZone = null;
-Handle gH_Forwards_BotLeaveCheckpointZone = null;
 Handle gH_Forwards_StartTimer_Post = null;
 Handle gH_Forwards_StageTimer_Post = null;
 Handle gH_Forwards_OnStage = null;
@@ -291,9 +288,6 @@ public void OnPluginStart()
 	gH_Forwards_LeaveZone = CreateGlobalForward("Shavit_OnLeaveZone", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
 	gH_Forwards_BotEnterStageZone = CreateGlobalForward("Shavit_OnEnterStageZone_Bot", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_BotEnterCheckpointZone = CreateGlobalForward("Shavit_OnEnterCheckpointZone_Bot", ET_Event, Param_Cell, Param_Cell);
-	gH_Forwards_BotLeaveStartZone = CreateGlobalForward("Shavit_OnLeaveStartZone_Bot", ET_Event, Param_Cell, Param_Cell, Param_Float);
-	gH_Forwards_BotLeaveStageZone = CreateGlobalForward("Shavit_OnLeaveStageZone_Bot", ET_Event, Param_Cell, Param_Cell, Param_Float);
-	gH_Forwards_BotLeaveCheckpointZone = CreateGlobalForward("Shavit_OnLeaveCheckpointZone_Bot", ET_Event, Param_Cell, Param_Cell, Param_Float);
 	gH_Forwards_StartTimer_Post = CreateGlobalForward("Shavit_OnStartTimer_Post", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
 	gH_Forwards_StageTimer_Post = CreateGlobalForward("Shavit_OnStageTimer_Post", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Float);
 	gH_Forwards_OnStage = CreateGlobalForward("Shavit_OnStage", ET_Event, Param_Cell, Param_Cell);
@@ -4128,6 +4122,9 @@ public void EndTouchPost(int entity, int other)
 
 	if(!IsFakeClient(other))
 	{
+		// debug
+		Shavit_PrintToChat(other, "{rand}EndTouchPost()");
+
 		gB_InsideZone[other][type][track] = false;
 		gB_InsideZoneID[other][entityzone] = false;
 
@@ -4167,44 +4164,6 @@ public void EndTouchPost(int entity, int other)
 				Call_StartForward(gH_Forwards_StageTimer_Post);
 				Call_PushCell(other);
 				Call_PushCell(Shavit_GetBhopStyle(other));
-				Call_PushCell(data);
-				Call_PushFloat(fSpeed3D);
-				Call_Finish();
-			}
-		}
-	}
-
-	else
-	{
-		if(fSpeed3D == 0.0) // this is a invalid speed
-		{
-			return;
-		}
-
-		switch(type)
-		{
-			case Zone_Start:
-			{
-				Call_StartForward(gH_Forwards_BotLeaveStartZone);
-				Call_PushCell(other);
-				Call_PushCell(track);
-				Call_PushFloat(fSpeed3D);
-				Call_Finish();
-			}
-
-			case Zone_Stage:
-			{
-				Call_StartForward(gH_Forwards_BotLeaveStageZone);
-				Call_PushCell(other);
-				Call_PushCell(data);
-				Call_PushFloat(fSpeed3D);
-				Call_Finish();
-			}
-
-			case Zone_Checkpoint:
-			{
-				Call_StartForward(gH_Forwards_BotLeaveCheckpointZone);
-				Call_PushCell(other);
 				Call_PushCell(data);
 				Call_PushFloat(fSpeed3D);
 				Call_Finish();
