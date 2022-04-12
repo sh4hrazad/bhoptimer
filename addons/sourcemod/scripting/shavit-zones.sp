@@ -4122,9 +4122,6 @@ public void EndTouchPost(int entity, int other)
 
 	if(!IsFakeClient(other))
 	{
-		// debug
-		Shavit_PrintToChat(other, "{rand}EndTouchPost()");
-
 		gB_InsideZone[other][type][track] = false;
 		gB_InsideZoneID[other][entityzone] = false;
 
