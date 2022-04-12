@@ -477,34 +477,23 @@ stock float GetAngleDiff(float current, float previous)
 */
 stock void SanerGetClientName(int client, char[] name)
 {
-	static EngineVersion ev = Engine_Unknown;
-
-	if (ev == Engine_Unknown)
-	{
-		ev = GetEngineVersion();
-	}
-
 	GetClientName(client, name, 32+1);
 
-	TrimTrailingInvalidUnicode(name);
-}
+	int len = strlen(name);
 
-stock bool TrimTrailingInvalidUnicode(char[] outstr)
-{
-	static int masks[3] = {0xC0, 0xE0, 0xF0};
-
-	int maxidx = strlen(outstr)-1;
-
-	for (int i = 0; (maxidx-i >= 0) && (i < 3); i++)
+	if (len == 31)
 	{
-		if ((outstr[maxidx-i] & masks[i]) == masks[i])
+		for (int i = 0; i < 3; i++)
 		{
-			outstr[maxidx-i] = 0;
-			return true;
+			static int masks[3] = {0xC0, 0xE0, 0xF0};
+
+			if ((name[len-i-1] & masks[i]) >= masks[i])
+			{
+				name[len-i-1] = 0;
+				return;
+			}
 		}
 	}
-
-	return false;
 }
 
 // https://forums.alliedmods.net/showthread.php?t=216841
