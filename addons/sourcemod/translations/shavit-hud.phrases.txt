@@ -227,6 +227,11 @@
 		"en"		"No record sounds"
 		"chi"		"无破记录声音"
 	}
+	"HudMapTier"
+	{
+		"en"		"Map and tier"
+		"chi"		"图名与难度"
+	}
 	"HudPracticeModeAlert"
 	{
 		"en"		"No practice mode alert"

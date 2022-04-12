@@ -38,6 +38,10 @@ void ShowHUDMenu(int client, int item)
 	FormatEx(sHudItem, 64, "%T", "Hud2dVel", client);
 	menu.AddItem(sInfo, sHudItem);
 
+	FormatEx(sInfo, 16, "!%d", HUD_MAPTIER);
+	FormatEx(sHudItem, 64, "%T", "HudMapTier", client);
+	menu.AddItem(sInfo, sHudItem);
+
 	// TODO: Top Left HUD, Sync, Timeleft, Map & tier, etc.
 
 	if(gB_Sounds)
@@ -160,6 +164,7 @@ void ToggleHUD(int client, int hud, bool chat)
 			case HUD_TIMELEFT: FormatEx(sHUDSetting, 64, "%T", "HudTimeLeft", client);
 			case HUD_2DVEL: FormatEx(sHUDSetting, 64, "%T", "Hud2dVel", client);
 			case HUD_NOSOUNDS: FormatEx(sHUDSetting, 64, "%T", "HudNoRecordSounds", client);
+			case HUD_MAPTIER: FormatEx(sHUDSetting, 64, "%T", "HudMapTier", client);
 		}
 
 		if((gI_HUDSettings[client] & hud) > 0)

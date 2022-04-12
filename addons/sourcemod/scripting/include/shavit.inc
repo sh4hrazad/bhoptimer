@@ -45,6 +45,7 @@
 #define HUD_TIMELEFT			(1 << 9) // shows time left at right tside of the screen (css only)
 #define HUD_2DVEL				(1 << 10) // shows 2d velocity
 #define HUD_NOSOUNDS			(1 << 11) // disables sounds on personal best, world record etc
+#define HUD_MAPTIER			(1 << 12)
 
 #define SHAVIT_LOG_QUERIES 0
 

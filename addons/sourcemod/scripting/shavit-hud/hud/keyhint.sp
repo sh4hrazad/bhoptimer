@@ -1,10 +1,56 @@
+native int Shavit_GetMapTier(const char[] map = "");
+
 void UpdateKeyHint(int client)
 {
 	// TODO: complete key hint
-	if((gI_Cycle % 10) == 0)
+	if((gI_HUDSettings[client] & HUD_MAPTIER) > 0)
 	{
 		char sMessage[256];
+
+		if((gI_HUDSettings[client] & HUD_MAPTIER) > 0)
+		{
+			char sMap[64];
+			GetCurrentMap(sMap, sizeof(sMap));
+
+			FormatEx(sMessage, sizeof(sMessage), "%sMap: %s [T%d]\n", sMessage,
+				sMap, Shavit_GetMapTier());
+		}
+
 		int target = GetSpectatorTarget(client, client);
+
+		// SRPB
+		huddata_t huddata;
+
+		huddata.iTarget = target;
+		huddata.iStyle = Shavit_GetBhopStyle(target);
+		huddata.iTrack = Shavit_GetClientTrack(target);
+
+		char sWRName[32];
+		Shavit_GetWRName(huddata.iStyle, sWRName, sizeof(sWRName), huddata.iTrack);
+
+		huddata.fPB = Shavit_GetClientPB(target, huddata.iStyle, huddata.iTrack);
+		huddata.fWR = Shavit_GetWorldRecord(huddata.iStyle, huddata.iTrack);
+		char sWRTime[32];
+		char sPBTime[32];
+		FormatHUDSeconds(huddata.fWR, sWRTime, sizeof(sWRTime));
+		FormatHUDSeconds(huddata.fPB, sPBTime, sizeof(sPBTime));
+
+		huddata.iFinishNum = (huddata.iStyle == -1 || huddata.iTrack == -1) ? Shavit_GetRecordAmount(0, 0) : Shavit_GetRecordAmount(huddata.iStyle, huddata.iTrack);
+		huddata.iRank = Shavit_GetRankForTime(huddata.iStyle, huddata.fPB, huddata.iTrack);
+
+		if((gI_HUD2Settings[client] & HUD2_WRPB) == 0)
+			FormatEx(sMessage, sizeof(sMessage), "%sSR: %s (%s)\n", sMessage,
+				sWRTime, sWRName);
+
+		FormatEx(sMessage, sizeof(sMessage), "%sPB: %s (#%d/%d)\n", sMessage,
+			sPBTime, huddata.iRank, huddata.iFinishNum);
+		// end of SRPB
+
+		/** TODO:
+		 * -- Stage 1/4 --
+		 * SRCP: sSRCPTime (sSRCPName)
+		 * PBCP: sPBCPTimer (iPBCPRank/iFinishNum)
+		 */
 
 		if(target == client || (gI_HUDSettings[client] & HUD_OBSERVE) > 0)
 		{
@@ -53,6 +99,14 @@ void UpdateKeyHint(int client)
 					}
 				}
 			}
+		}
+
+		if(strlen(sMessage) > 0)
+		{
+			Handle hKeyHintText = StartMessageOne("KeyHintText", client);
+			BfWriteByte(hKeyHintText, 1);
+			BfWriteString(hKeyHintText, sMessage);
+			EndMessage();
 		}
 	}
 }

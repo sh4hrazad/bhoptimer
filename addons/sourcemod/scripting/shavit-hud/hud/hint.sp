@@ -203,60 +203,24 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 
 			if(data.iCheckpoint > 0 && data.iStyle >= 0 && !data.bStageTimer && data.iTimerStatus == Timer_Running)
 			{
-				FormatEx(sLine, 128, "[CP%d %s]", data.iCheckpoint, data.sDiff);
+				FormatEx(sLine, 128, " [CP%d %s]", data.iCheckpoint, data.sDiff);
 
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 			}
 
 			if(data.bPractice)
 			{
-				FormatEx(sLine, 128, "[练习模式]");
+				FormatEx(sLine, 128, " [练习模式]");
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 			}
 			else if(data.iTimerStatus == Timer_Paused)
 			{
-				FormatEx(sLine, 128, "[暂停中]");
+				FormatEx(sLine, 128, " [暂停中]");
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 			}
 
 			iLines++;
 		}
-
-		// TODO: to be deleted because topleft hud would show these
-		if((gI_HUD2Settings[client] & HUD2_WRPB) == 0)
-		{
-			char sTargetSR[64];
-
-			if(data.iFinishNum == 0)
-			{
-				FormatEx(sTargetSR, 64, "None");
-			}
-			else
-			{
-				FormatHUDSeconds(data.fWR, sTargetSR, 64);
-			}
-
-			FormatEx(sLine, 64, "SR: %s", sTargetSR);
-			AddHUDLine(buffer, maxlen, sLine, iLines);
-		}
-		else
-		{
-			char sTargetPB[64];
-
-			if(data.fPB == 0)
-			{
-				FormatEx(sTargetPB, 64, "None");
-			}
-			else
-			{
-				FormatHUDSeconds(data.fPB, sTargetPB, 64);
-			}
-
-			FormatEx(sLine, 128, "PB: %s", sTargetPB);
-			AddHUDLine(buffer, maxlen, sLine, iLines);
-		}
-
-		iLines = 0;
 
 		switch(data.iZoneHUD)
 		{
@@ -266,43 +230,43 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 				{
 					if(bLinearMap)
 					{
-						FormatEx(sLine, 32, " | Linear Map");
+						FormatEx(sLine, 32, "Linear Map");
 					}
 					else
 					{
-						FormatEx(sLine, 32, " | Stage %d / %d", data.iStage, Shavit_GetMapStages());
+						FormatEx(sLine, 32, "Stage %d / %d", data.iStage, Shavit_GetMapStages());
 					}
 				}
 				else
 				{
-					FormatEx(sLine, 32, " | Bonus %d", data.iTrack);
+					FormatEx(sLine, 32, "Bonus %d", data.iTrack);
 				}
 			}
 			case ZoneHUD_Start:
 			{
 				if(data.iTrack == 0)
 				{
-					FormatEx(sLine, 32, " | Map Start");
+					FormatEx(sLine, 32, "Map Start");
 				}
 				else
 				{
-					FormatEx(sLine, 32, " | Bonus %d Start", data.iTrack);
+					FormatEx(sLine, 32, "Bonus %d Start", data.iTrack);
 				}
 			}
 			case ZoneHUD_End:
 			{
 				if(data.iTrack == 0)
 				{
-					FormatEx(sLine, 32, " | Map End");
+					FormatEx(sLine, 32, "Map End");
 				}
 				else
 				{
-					FormatEx(sLine, 32, " | Bonus %d End", data.iTrack);
+					FormatEx(sLine, 32, "Bonus %d End", data.iTrack);
 				}
 			}
 			case ZoneHUD_Stage:
 			{
-				FormatEx(sLine, 32, " | Stage %d Start", data.iStage);
+				FormatEx(sLine, 32, "Stage %d Start", data.iStage);
 			}
 		}
 

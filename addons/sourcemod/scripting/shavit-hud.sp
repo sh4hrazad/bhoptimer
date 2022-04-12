@@ -30,7 +30,6 @@
 #include <shavit/wr>
 #include <shavit/stage>
 #include <shavit/replay-playback>
-#include <DynamicChannels>
 
 
 #pragma newdecls required
@@ -54,7 +53,6 @@ public Plugin myinfo =
 bool gB_Replay = false;
 bool gB_Zones = false;
 bool gB_Sounds = false;
-bool gB_DynamicChannels = false;
 
 // cache
 int gI_Styles = 0;
@@ -85,7 +83,6 @@ Cookie gH_HUDCookie = null;
 Cookie gH_HUDCookieMain = null;
 
 // sync hud text
-Handle gH_TopLeftHud;
 UserMsg gI_TextMsg = view_as<UserMsg>(-1);
 
 // timer settings
@@ -99,8 +96,7 @@ int gI_BotLastStage[MAXPLAYERS+1];
 
 
 #include "shavit-hud/hud/hint.sp"
-#include "shavit-hud/hud/panel.sp"
-#include "shavit-hud/hud/synctext.sp"
+#include "shavit-hud/hud/keyhint.sp"
 
 #include "shavit-hud/api.sp"
 #include "shavit-hud/commands.sp"
@@ -140,7 +136,6 @@ public void OnPluginStart()
 	InitHintSize();
 	InitCookies();
 
-	gH_TopLeftHud = CreateHudSynchronizer();
 	gI_TextMsg = GetUserMessageId("TextMsg");
 
 	if(gB_Late)
@@ -154,7 +149,6 @@ public void OnPluginStart()
 	gB_Replay = LibraryExists("shavit-replay-playback");
 	gB_Zones = LibraryExists("shavit-zones");
 	gB_Sounds = LibraryExists("shavit-sounds");
-	gB_DynamicChannels = LibraryExists("DynamicChannels");
 }
 
 public void OnMapStart()
@@ -176,10 +170,6 @@ public void OnLibraryAdded(const char[] name)
 	{
 		gB_Sounds = true;
 	}
-	else if(StrEqual(name, "DynamicChannels"))
-	{
-		gB_DynamicChannels = true;
-	}
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -195,10 +185,6 @@ public void OnLibraryRemoved(const char[] name)
 	else if(StrEqual(name, "shavit-sounds"))
 	{
 		gB_Sounds = false;
-	}
-	else if(StrEqual(name, "DynamicChannels"))
-	{
-		gB_DynamicChannels = false;
 	}
 }
 
@@ -231,7 +217,6 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 	{
 		if(i == client || (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
 		{
-			UpdateTopLeftHud(i, true);
 			UpdateKeyHint(i);
 			UpdateHintHud(i);
 
@@ -383,9 +368,6 @@ void Cron()
 		// sidebar hud
 		UpdateKeyHint(i);
 
-		// topleft hud
-		UpdateTopLeftHud(i, true);
-
 		float fSpeed[3];
 		GetEntPropVector(GetSpectatorTarget(i, i), Prop_Data, "m_vecAbsVelocity", fSpeed);
 		gI_PreviousSpeed[i] = RoundToNearest(((gI_HUDSettings[i] & HUD_2DVEL) == 0)? GetVectorLength(fSpeed):(SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0))));
@@ -417,7 +399,8 @@ static void CreateConVars()
 		..."HUD_SYNC					256\n"
 		..."HUD_TIMELEFT				512\n"
 		..."HUD_2DVEL				1024\n"
-		..."HUD_NOSOUNDS				2048\n");
+		..."HUD_NOSOUNDS				2048\n"
+		..."HUD_MAPTIER				4096");
 
 	IntToString(HUD_DEFAULT2, defaultHUD, sizeof(defaultHUD));
 	gCV_DefaultHUD2 = new Convar("shavit_hud2_default", defaultHUD, "Default HUD2 settings as a bitflag of what to remove\n"
