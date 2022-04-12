@@ -60,31 +60,20 @@ void UpdateReplayClient(int client)
 
 	if(strlen(sWeapon) > 0)
 	{
-		int iWeapon = GetEntPropEnt(client, Prop_Data, "m_hActiveWeapon");
-
 		if(StrEqual(sWeapon, "none"))
 		{
 			RemoveAllWeapons(client);
 		}
 		else
 		{
-			char sClassname[32];
+			int iWeapon = GetEntPropEnt(client, Prop_Data, "m_hActiveWeapon");
 
 			if(iWeapon != -1 && IsValidEntity(iWeapon))
 			{
+				char sClassname[32];
 				GetEntityClassname(iWeapon, sClassname, 32);
 
 				bool same_thing = false;
-
-				// special case for csgo stuff because the usp classname becomes weapon_hpk2000
-				if (StrEqual(sWeapon, "weapon_usp_silencer"))
-				{
-					same_thing = (61 == GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"));
-				}
-				else if (StrEqual(sWeapon, "weapon_hpk2000"))
-				{
-					same_thing = (32 == GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"));
-				}
 
 				if (!same_thing && !StrEqual(sWeapon, sClassname))
 				{

@@ -5,8 +5,8 @@
 ```
 
 ### 要改的:
-- 隐藏玩家没效果 <u>(pr needed)</u>
-- 录像 bot 起步左下角刷速度信息 (糖果服没有这个bug)
+- 隐藏玩家没效果 <u>(pr needed)</u> (sdkhook的问题?)
+- 录像 bot 起步左下角刷速度信息 (糖果服没有这个bug) (sdkhook的问题?)
 - 起点开穿墙不停止计时, 而是暂停计时 <u>(pr needed)</u>
 - `!ms` 无法更改设置 (fixed) <u>(pr needed)</u>
 

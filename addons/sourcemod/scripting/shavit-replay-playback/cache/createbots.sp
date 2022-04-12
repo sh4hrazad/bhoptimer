@@ -2,7 +2,6 @@ int InternalCreateReplayBot()
 {
 	gI_LatestClient = -1;
 
-	// Do all this mp_randomspawn stuff on CSGO since it's easier than updating the signature for CCSGameRules::TeamFull.
 	int mp_randomspawn_orig;
 	
 	if (mp_randomspawn != null)

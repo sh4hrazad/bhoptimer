@@ -266,6 +266,7 @@ public void OnPluginStart()
 
 	RegAdminCmd("sm_editzone", Command_ZoneEdit, ADMFLAG_RCON, "Modify an existing zone.");
 	RegAdminCmd("sm_editzones", Command_ZoneEdit, ADMFLAG_RCON, "Modify an existing zone.");
+	RegAdminCmd("sm_zoneedit", Command_ZoneEdit, ADMFLAG_RCON, "Modify an existing zone.");
 
 	RegAdminCmd("sm_prebuild", Command_ZonePreBuild, ADMFLAG_RCON, "Prebuild zones.");
 
@@ -280,6 +281,7 @@ public void OnPluginStart()
 
 	RegConsoleCmd("sm_setstart", Command_Startpos, "Set track/stage startzones position.");
 	RegConsoleCmd("sm_startpos", Command_Startpos, "Set track/stage startzones position. Alias of sm_setstart.");
+	RegConsoleCmd("sm_ss", Command_Startpos, "Set track/stage startzones position. Alias of sm_setstart.");
 
 	// events
 	HookEvent("round_start", Round_Start);
@@ -4314,14 +4316,6 @@ bool PointInBox(float point[3], float bmin[3], float bmax[3])
 	       (bmin[2] <= point[2] <= bmax[2]);
 }
 
-/*
-L 04/11/2022 - 16:19:15: [SM] Exception reported: Handle 0 cannot be cloned because it is invalid (error 4)
-L 04/11/2022 - 16:19:15: [SM] Blaming: shavit-zones.smx
-L 04/11/2022 - 16:19:15: [SM] Call stack trace:
-L 04/11/2022 - 16:19:15: [SM]   [0] CloneHandle
-L 04/11/2022 - 16:19:15: [SM]   [1] Line 4324, D:\SteamCMD\steamapps\common\Counter-Strike Source Dedicated Server\cstrike\addons\sourcemod\scripting\shavit-zones.sp::TransmitTriggers
-L 04/11/2022 - 16:19:15: [SM]   [2] Line 1825, D:\SteamCMD\steamapps\common\Counter-Strike Source Dedicated Server\cstrike\addons\sourcemod\scripting\shavit-zones.sp::Command_ShowTriggers
- */
 void TransmitTriggers(int client, bool btransmit, bool all = false)
 {
 	if(!IsValidClient(client))
