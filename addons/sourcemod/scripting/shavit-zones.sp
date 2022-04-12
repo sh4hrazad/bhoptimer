@@ -1174,7 +1174,7 @@ bool PreBuildZones()
 		int iEnt = gA_Triggers.Get(i);
 
 		char sTriggerName[128];
-		GetEntPropString(iEnt, Prop_Send, "m_iName", sTriggerName, 128);
+		GetEntPropString(iEnt, Prop_Data, "m_iName", sTriggerName, 128);
 		// block weird trigger
 		if(StrContains(sTriggerName, "tele", false) != -1 ||
 			StrContains(sTriggerName, "tp", false) != -1 ||
@@ -1938,7 +1938,7 @@ public int HookZoneMenuHandler_SelectMethod(Menu a, MenuAction action, int param
 					}
 
 					char sTriggerName[128];
-					GetEntPropString(iEnt, Prop_Send, "m_iName", sTriggerName, 128, 0);
+					GetEntPropString(iEnt, Prop_Data, "m_iName", sTriggerName, 128, 0);
 					menu.AddItem(sTriggerName, sTriggerName);
 				}
 			}
@@ -2011,7 +2011,7 @@ public int MenuHandler_SelectHookZone(Menu menu, MenuAction action, int param1, 
 	{
 		int entity = gI_HookZoneIndex[param1];
 		char sHookname[128];
-		GetEntPropString(entity, Prop_Send, "m_iName", sHookname, 128, 0);
+		GetEntPropString(entity, Prop_Data, "m_iName", sHookname, 128, 0);
 
 		float origin[3];
 		GetEntPropVector(entity, Prop_Send, "m_vecOrigin", origin);
