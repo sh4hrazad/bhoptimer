@@ -35,17 +35,17 @@
 	"SetStartRestartTimer"
 	{
 		"en"		"You must {red}restart your timer{white} to set your start position"
-		"chi"		"你必须要{red}恢复计时{white}才能自定义起点"
+		"chi"		"你必须要{red}恢复计时{white}才能自定义起点."
 	}
 	"SetStartOnGround"
 	{
 		"en"		"You must {red}stand on ground{white} to set your start position"
-		"chi"		"你必须{red}站在地面上{white}才能自定义起点"
+		"chi"		"你必须{red}站在地面上{white}才能自定义起点."
 	}
 	"SetStartNotInStartZone"
 	{
-		"en"		"You {red}must{white} be in the {orchid}start zone{white} to use set start."
-		"chi"		"您{red}必须{white}在{orchid}起点区域{white}内才能设置起始位置."
+		"en"		"You {red}must{white} be in the {lightred}start zone{white} to use set start."
+		"chi"		"您{red}必须{white}在{lightred}起点区域{white}内才能设置起始位置."
 	}
 	"DeleteSetStart"
 	{
@@ -56,13 +56,13 @@
 	// ---------- Commands ---------- //
 	"StageCommandAlive"
 	{
-		"en"		"You have to be {orchid}alive{white} to use this command."
-		"chi"		"您必须{orchid}活着{white}才能使用此命令."
+		"en"		"You have to be {lightred}alive{white} to use this command."
+		"chi"		"您必须{lightred}活着{white}才能使用此命令."
 	}
 	"InvalidStage"
 	{
-		"en"		"Your input stage is {orchid}invalid"
-		"chi"		"{orchid}无效{white}关卡."
+		"en"		"Your input stage is {lightred}invalid"
+		"chi"		"{lightred}无效{white}关卡."
 	}
 	"ModifierCommandNoArgs"
 	{
@@ -82,12 +82,12 @@
 	"ZonesCommand"
 	{
 		"en"		"You {red}cannot{white} setup mapzones when you're dead."
-		"chi"		"死亡状态下，您{red}无法{white}设置地图区域."
+		"chi"		"死亡状态下，您{lightred}无法{white}设置地图区域."
 	}
 	"ZoneDead"
 	{
-		"en"		"You can't place zones when you're dead."
-		"chi"		"未复活不能设置区域."
+		"en"		"You can't {lightred}place zones{white} when you're dead."
+		"chi"		"死亡状态下{lightred}不能{white}设置区域."
 	}
 	// ---------- Panel Text ---------- //
 	"AbortZoneCreation"
@@ -132,7 +132,7 @@
 	"ZoneAdjustPosition"
 	{
 		"en"		"Adjust the zone's position.\nUse 'sm_modifier <number>' to set a new modifier."
-		"chi"		"调整区域的位置。\n输入'sm_modifier<数字>'设置新的值."
+		"chi"		"调整区域的位置。\n输入 'sm_modifier <数字>' 设置新的值."
 	}
 	"ZoneAxis"
 	{
@@ -242,7 +242,7 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"Press USE (default 'E') to set the {1} corner in your current position."
-		"chi"		"按E键 (默认E键是'使用键') 将{1}设置在当前位置."
+		"chi"		"按 '使用' 键 (默认为 E 键) 将{1}设置在当前位置."
 	}
 	"ZonePoint"
 	{
@@ -269,7 +269,7 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"[{1}] Force zone drawing"
-		"chi"		"[{1}] 强制区域显示"
+		"chi"		"[{1}] 强制绘制区域"
 	}
 	"ZoneSetLimitSpeed"
 	{
@@ -297,7 +297,7 @@
 	"ZoneEnterLimitSpeedChat"
 	{
 		"en"		"Input your desired limitspeed in chat, {lightgreen}-1{white} is limitless."
-		"chi"		"在聊天中输入您需要的数据, {lightgreen}-1{white}则表示无限速."
+		"chi"		"在聊天中输入您需要的数据, {lightgreen}-1{white} 则表示无限速."
 	}
 	"ZoneSetNo"
 	{
@@ -327,14 +327,14 @@
 	"ZoneSizeIncrease"
 	{
 		"#format"	"{1:c},{2:d},{3:.01f}"
-		"en"		"{orchid}{1} axis{white} (point {2}) increased by {gold}{3}{white}."
-		"chi"		"{orchid}{1}轴{white}(点{2})增加了{gold}{3}{white}."
+		"en"		"{lightred}{1} axis{white} (point {2}) increased by {gold}{3}{white}."
+		"chi"		"{lightred}{1} 轴{white}(点 {2} )增加了 {gold}{3}{white}."
 	}
 	"ZoneSizeDecrease"
 	{
 		"#format"	"{1:c},{2:d},{3:.01f}"
-		"en"		"{orchid}{1} axis{white} (point {2}) decreased by {gold}{3}{white}."
-		"chi"		"{orchid}{1}轴{white}(点{2})减少了{gold}{3}{white}."
+		"en"		"{lightred}{1} axis{white} (point {2}) decreased by {gold}{3}{white}."
+		"chi"		"{lightred}{1} 轴{white}(点 {2} )减少了 {gold}{3}{white}."
 	}
 	"ZoneTeleportUpdated"
 	{
@@ -350,7 +350,7 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"Zone track: {1}"
-		"chi"		"区域track: {1}"
+		"chi"		"区域 Track: {1}"
 	}
 	"ZoneEdit"
 	{
@@ -365,7 +365,7 @@
 	"ZoneInside"
 	{
 		"en"		"(Inside!)"
-		"chi"		"(在里面了!)"
+		"chi"		"(所在区域)"
 	}
 	"ZoneEditRefresh"
 	{
@@ -375,24 +375,24 @@
 	// ---------- Messages ---------- //
 	"ZoneStopEnter"
 	{
-		"en"		"{red}Your timer has been stopped for entering a {orchid}glitch zone{red}."
-		"chi"		"{red}您的计时器因进入{orchid}故障区域{red}而停止."
+		"en"		"{red}Your timer has been stopped for entering a {lightred}glitch zone{red}."
+		"chi"		"{red}计时中止{white}, 你进入了进入{lightred}故障区域{white}."
 	}
 	"ZoneExceededLimit"
 	{
-		"en"		"{red}You exceeded the speed limit!"
-		"chi"		"{red}您已超出最大限速!"
+		"en"		"{red}Speed limit exceeded!"
+		"chi"		"{red}已超出最大限速!"
 	}
 	// ---------- Restart ----------- //
 	"StartZoneUndefined"
 	{
 		"#format"	"{1:s}"
-		"en"		"Your timer {red}will not{white} start because the {orchid}{1}{white} start zone is not set."
-		"chi"		"您的计时器{red}将不会{white}启动，因为地图未设置{orchid}{1}{white}起点区域."
+		"en"		"Your timer {red}will not{white} start because the {lightred}{1}{white} start zone is not set."
+		"chi"		"{red}无法{white}传送到该起点, 因为地图未设置 {lightred}{1}{white} 起点区域."
 	}
 	"EndZoneUndefined"
 	{
-		"en"		"You {red}can't{white} teleport as an end zone for the map is not defined."
-		"chi"		"您{red}无法{white}传送，因为地图未设置结束区域"
+		"en"		"You {red}can't{white} teleport as an end zone for the track is not defined."
+		"chi"		"{red}无法{white}传送到该终点, 因为地图未设置该 Track 的终点区域."
 	}
 }

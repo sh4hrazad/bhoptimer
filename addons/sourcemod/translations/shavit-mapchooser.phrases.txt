@@ -109,25 +109,25 @@
 	"BlockSpectatorRTV"
 	{
 		"en"			"Spectators have been blocked from RTVing"
-		"chi"			"观察者不允许rtv."
+		"chi"			"观察者不允许滚动投票."
 	}
 	"RankedRTV"
 	{
 		"#format"		"{1:.2f},{2:.2f}"
 		"en"			"You must be a higher rank to RTV! Minimun points needs: {1}, your points: {2}"
-		"chi"			"您未达到rtv所需的排名. 最低pts要求: {1}, 您的pts为: {2}"
+		"chi"			"您未达到 !rtv 所需的排名. 最低pts要求: {1}, 您的pts为: {2}"
 	}
 	"RTVFinished-MapChange"
 	{
 		"#format"		"{1:N},{2:s}"
 		"en"			"{1} wants to rock the vote! Map will now change to {2} ..."
-		"chi"			"{1} 想要rtv! 地图现在将更改为 {2} ..."
+		"chi"			"{1} 想要滚动投票! 地图现在将更改为 {2} ..."
 	}
 	"RTVFinished-MapVote"
 	{
 		"#format"		"{1:N}"
 		"en"			"{1} wants to rock the vote! Map vote will now start ..."
-		"chi"			"{1} 想要rtv! 地图投票现在开始 ..."
+		"chi"			"{1} 想要滚动投票! 地图投票现在开始 ..."
 	}
 	"RTVFinishedMajorily-MapChange"
 	{
@@ -144,13 +144,13 @@
 	{
 		"#format"		"{1:i}"
 		"en"			"You have already RTVed, if you want to un-RTV use the command \'sm_unrtv\' ({1} votes already)"
-		"chi"			"您已经进行了RTV，如果您想取消RTV，请使用命令 \'sm_unrtv\' (已有 {1} 票)"
+		"chi"			"您已经要求滚动投票, 如果您想取消滚动投票, 请使用命令 \'sm_unrtv\' (已有 {1} 票)"
 	}
 	"UnRTVNeeds"
 	{
 		"#format"		"{1:N},{2:i}"
 		"en"			"{1} no longer wants to rock the vote! ({2} more votes needed)"
-		"chi"			"{1} 不再想rtv! (还需要 {2} 张票)"
+		"chi"			"{1} 不再想要滚动投票! (还需要 {2} 张票)"
 	}
 	"Minutes Until Map Vote"
 	{

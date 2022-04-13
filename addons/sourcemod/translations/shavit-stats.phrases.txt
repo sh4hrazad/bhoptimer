@@ -21,13 +21,13 @@
 	{
 		"#format"	"{1:s},{2:s},{3:d}"
 		"en"		"[{1}] Maps done for {2}: ({3})"
-		"chi"		"[{1}] 以{2}完成的地图数: ({3})"
+		"chi"		"[{1}] {2} 完成的地图数: ({3})"
 	}
 	"MapsDoneOnStyle"
 	{
 		"#format"	"{1:s}"
 		"en"		"Maps done for {1} on style:"
-		"chi"		"在模式{1}上完成的地图:"
+		"chi"		"在模式 {1} 上完成的地图:"
 	}
 	"MapsLeft"
 	{
@@ -38,7 +38,7 @@
 	{
 		"#format"	"{1:s},{2:s},{3:d}"
 		"en"		"[{1}] Maps left for {2}: ({3})"
-		"chi"		"[{1}] 以{2}未完成的地图数: ({3})"
+		"chi"		"[{1}] {2} 未完成的地图数: ({3})"
 	}
 	"MapsLeftOnStyle"
 	{
@@ -101,10 +101,12 @@
 	"Playtime"
 	{
 		"en"		"Play time"
+		"chi"		"游玩时间"
 	}
 	"YourPlaytime"
 	{
 		"en"		"Yours"
+		"chi"		"你的"
 	}
 	"Points"
 	{
@@ -130,12 +132,12 @@
 	"Date"
 	{
 		"en"		"Date"
-		"chi"		"日期"
+		"chi"		"完成日期"
 	}
 	"Jumps"
 	{
 		"en"		"Jumps"
-		"chi"		"跳跃数"
+		"chi"		"起跳次数"
 	}
 	"Strafes"
 	{
@@ -145,11 +147,11 @@
 	"Style"
 	{
 		"en"		"Style"
-		"chi"		"模式"
+		"chi"		"游戏模式"
 	}
 	"Time"
 	{
 		"en"		"Time"
-		"chi"		"时间"
+		"chi"		"完成时间"
 	}
 }

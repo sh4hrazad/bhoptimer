@@ -5,13 +5,13 @@
 	{
 		"#format"	"{1:s},{2:d},{3:s},{4:s}"
 		"en"		"{gold}{1}{white} hold {palered}[Stage {2}]{white} record! Mode: {blue}{3}{white} Time: {orchid}{4}{white}."
-		"chi"		"{gold}{1}{white} 维持住了 {palered}[关卡 {2}]{white} 记录! 模式: {blue}{3}{white} 时间: {orchid}{4}{white}."
+		"chi"		"{gold}{1}{white} 正保持着 {palered}[关卡 {2}]{white} 记录! 模式: {blue}{3}{white} 时间: {orchid}{4}{white}."
 	}
 	"Chat-WRCP-NoRecord"
 	{
 		"#format"	"{1:d},{2:s}"
 		"en"		"No Records for {palered}[Stage {1}]{white}. (style: {blue}{2}{white})"
-		"chi"		"{palered}[关卡 {1}]{white} 没有记录. (模式: {blue}{2}{white})"
+		"chi"		"{palered}[关卡 {1}]{white} 暂无记录. (模式: {blue}{2}{white})"
 	}
 	"WRCPDeleteSuccessful"
 	{
@@ -39,8 +39,8 @@
 	"WrcpMenuTitle-Maptop"
 	{
 		"#format"	"{1:s},{2:d}"
-		"en"		"{1} - Stage {2} - Top100"
-		"chi"		"{1} - 关卡 {2} - 前100"
+		"en"		"{1} - Stage {2} - Top 100"
+		"chi"		"{1} - 关卡 {2} - 前 100"
 	}
 	"DeleteMaptopMenuTitle-Maptop"
 	{
@@ -51,8 +51,8 @@
 	"DeleteWrcpMenuTitle-Confirm"
 	{
 		"#format"	"{1:d},{2:s}"
-		"en"		"Deleting Stage {1} (style:{2}), confirm?"
-		"chi"		"正在删除关卡{1}(模式: {2}), 确认吗?"
+		"en"		"Deleting WRCP for Stage {1} (style:{2}), confirm?"
+		"chi"		"是否删除关卡 {1} 的 WRCP? (模式: {2})"
 	}
 	/*-------------Menu Item-------------*/
 	"WrcpMenuItem-Stage"

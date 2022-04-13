@@ -15,13 +15,13 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"Deleted ALL records for {gold}{1}{white}."
-		"chi"		"已删除{gold}{1}{white}的所有记录."
+		"chi"		"已删除 {gold}{1}{white} 的所有记录."
 	}
 	"DeletedRecordsStyle"
 	{
 		"#format"	"{1:s},{2:s},{3:s}"
 		"en"		"Deleted ALL records for {1}{2}{3}."
-		"chi"		"已删除{1}{2}{3}的所有记录."
+		"chi"		"已删除 {1}{2}{3} 的所有记录."
 	}
 	// ---------- Client Menus ---------- //
 	"ListClientRecords"
@@ -35,61 +35,61 @@
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:d},{5:d}"
 		"en"		"{orchid}{1}{white} finished ({grey}{2}{white}) in {orchid}{3}{white} ({gold}#{5}{white})."
-		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} 排名: {blue}{4}/{5}{white}."
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {orchid}{3}{white} 排名: {blue}{4}/{5}{white}."
 	}
 	"FirstCompletion-Other"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:d},{6:d}"
 		"en"		"{orchid}{1}{white} finished ({grey}{2}{white}) in {orchid}{3}{white} ({gold}#{5}{white})."
-		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} 模式: {grey}{4}{white} 排名: {blue}{5}/{6}{white}."
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {orchid}{3}{white} 模式: {grey}{4}{white} 排名: {blue}{5}/{6}{white}."
 	}
 	"NotFirstCompletion-Normal"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:d},{5:d},{6:s}"
 		"en"		"{orchid}{1}{white} finished ({grey}{2}{white}) in {orchid}{3}{white} ({gold}#{4}{white}) (#{5})"
-		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} ({lightgreen}-{6}{white}) 排名: {blue}{4}/{5}{white}."
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {orchid}{3}{white} ({lightgreen}-{6}{white}) 排名: {blue}{4}/{5}{white}."
 	}
 	"NotFirstCompletion-Other"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:d},{6:d},{7:s}"
 		"en"		"{orchid}{1}{white} finished ({grey}{2}{white}) in {orchid}{3}{white} ({gold}#{4}{white}) (#{5})"
-		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} ({lightgreen}-{7}{white}) 模式: {grey}{4}{white} 排名: {blue}{5}/{6}{white}."
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {orchid}{3}{white} ({lightgreen}-{7}{white}) 模式: {grey}{4}{white} 排名: {blue}{5}/{6}{white}."
 	}
 	"NotFirstCompletionWorse-Normal"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:d},{5:d},{6:s}"
 		"en"		"{orchid}{1}{white} finished ({grey}{2}{white}) in {orchid}{3}{white} ({gold}#{4}{white}) (+{5})"
-		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} ({lightred}+{6}{white}) 排名: {blue}{4}/{5}{white}."
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {orchid}{3}{white} ({lightred}+{6}{white}) 排名: {blue}{4}/{5}{white}."
 	}
 	"NotFirstCompletionWorse-Other"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:d},{6:d},{7:s}"
 		"en"		"{orchid}{1}{white} finished ({grey}{2}{white}) in {orchid}{3}{white} ({gold}#{4}{white}) (+{5})"
-		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} ({lightred}+{7}{white}) 模式: {grey}{4}{white} 排名: {blue}{5}/{6}{white}."
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {orchid}{3}{white} ({lightred}+{7}{white}) 模式: {grey}{4}{white} 排名: {blue}{5}/{6}{white}."
 	}
 	"WorseTime-Normal"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s}"
 		"en"		"{1} have finished ({grey}{2}{white}) in {orchid}{3}{white} ({4})(+{5})"
-		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} ({lightred}+{4}{white})."
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {orchid}{3}{white} ({lightred}+{4}{white})."
 	}
 	"WorseTime-Other"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:s}"
 		"en"		"{1} have finished ({grey}{2}{white}) in {orchid}{3}{white} ({4})(+{5})"
-		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} ({lightred}+{5}{white}) 模式: {grey}{4}{white}."
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {orchid}{3}{white} ({lightred}+{5}{white}) 模式: {grey}{4}{white}."
 	}
 	"UnrankedTime-Normal"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s}"
 		"en"		"{1} have finished ({grey}{2}{white}) in {orchid}{3}{white}."
-		"chi"		"{lightred}{4}{white} {team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white}."
+		"chi"		"{lightred}{4}{white} {team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {orchid}{3}{white}."
 	}
 	"UnrankedTime-Other"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:s}"
 		"en"		"{1} have finished ({grey}{2}{white}) in {orchid}{3}{white}."
-		"chi"		"{lightred}{5}{white} {team}{1}{white} 完成了 [{lightblue}{2}{white}] 时间: {orchid}{3}{white} 模式: {grey}{4}{white}."
+		"chi"		"{lightred}{5}{white} {team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {orchid}{3}{white} 模式: {grey}{4}{white}."
 	}
 	// ---------- Deletion Menus ---------- //
 	"DeleteAllRecords"
@@ -101,7 +101,7 @@
 	{
 		"#format"	"{1:s},{2:s},{3:s}"
 		"en"		"Delete ALL the records for '{1}'? (Track: {2} | Style: {3})"
-		"chi"		"是否删除'{1}'的所有记录？(Track：{2}|模式：{3})"
+		"chi"		"是否删除'{1}'的所有记录？(Track: {2} | 模式： {3})"
 	}
 	"DeleteConfirm"
 	{
@@ -137,35 +137,35 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"Choose a style to delete all the records for '{1}':"
-		"chi"		"选择一种模式来删除'{1}'的所有记录:"
+		"chi"		"选择一种模式来删除 '{1}' 的所有记录:"
 	}
 	"DeleteConfirmStyle"
 	{
 		"#format"	"{1:s}"
 		"en"		"Are you sure you want to delete ALL THE RECORDS for {1}?"
-		"chi"		"是否要删除{1}的所有记录?"
+		"chi"		"是否要删除 {1} 的所有记录?"
 	}
 	"MenuResponseYesStyle"
 	{
 		"#format"	"{1:s}"
 		"en"		"YES!!! DELETE THE RECORDS FOR {1}!!! THIS ACTION IS IRREVERSIBLE!"
-		"chi"		"是的! 删除{1}的记录! 不反悔!"
+		"chi"		"是的! 删除 {1} 的记录! 不反悔!"
 	}
 	"DeleteTrackSingle"
 	{
 		"en"		"Choose a track to delete a single record from:"
-		"chi"		"选择要从中删除单个记录的Track:"
+		"chi"		"选择要从中删除单个记录的 Track:"
 	}
 	"DeleteTrackAll"
 	{
 		"en"		"Choose a track to delete a ALL records from:"
-		"chi"		"选择要从中删除所有记录的Track:"
+		"chi"		"选择要从中删除所有记录的 Track:"
 	}
 	"DeleteTrackAllStyle"
 	{
 		"#format"	"{1:s}"
 		"en"		"Choose a style to delete all the records for ({1}):"
-		"chi"		"选择要删除({1})的所有记录的模式:"
+		"chi"		"选择要删除 ({1}) 的所有记录的模式:"
 	}
 	// ---------- Errors ---------- //
 	"DatabaseError"
@@ -181,14 +181,14 @@
 	"NoStyles"
 	{
 		"en"		"{lightred}FATAL ERROR: {white}No styles are available. Contact the server owner immediately!"
-		"chi"		"{lightred}致命错误ERROR：{white}没有可用的模式。请立即联系服务器OP!"
+		"chi"		"{lightred}致命错误ERROR: {white}没有可用的模式。请立即联系服务器OP!"
 	}
 	// ---------- WR Menu ---------- //
 	"RecentRecords"
 	{
 		"#format"	"{1:d}"
 		"en"		"Recent {1} record(s)"
-		"chi"		"最近{1}条记录"
+		"chi"		"最近 {1} 条记录"
 	}
 	"WRDate"
 	{
@@ -209,7 +209,7 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"Records for {1}"
-		"chi"		"{1}的记录"
+		"chi"		"{1} 的记录"
 	}
 	"WRMapNoRecords"
 	{

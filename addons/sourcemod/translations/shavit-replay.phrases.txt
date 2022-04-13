@@ -58,8 +58,8 @@
 	}
 	"CentralReplayStop"
 	{
-		"en"		"Stop the current replay."
-		"chi"		"停止播放该录像."
+		"en"		"Stop"
+		"chi"		"中止播放"
 	}
 	"CentralReplayStopped"
 	{
@@ -69,12 +69,12 @@
 	"CentralReplayTrack"
 	{
 		"en"		"Select a track to play:"
-		"chi"		"选择一个track:"
+		"chi"		"选择一个 Track:"
 	}
 	"Replay_Central"
 	{
 		"en"		"!replay"
-		"chi"		"输入!replay"
+		"chi"		"输入 !replay"
 	}
 	"Replay_Dynamic"
 	{
@@ -100,7 +100,7 @@
 	"Menu_Replay_Central"
 	{
 		"en"		"Central !replay bot"
-		"chi"		"!replay名字的电脑"
+		"chi"		"!replay 名字的电脑"
 	}
 	"Menu_Replay_Dynamic"
 	{
@@ -120,22 +120,22 @@
 	"Menu_Replay"
 	{
 		"en"		"Replay"
-		"chi"		"回放"
+		"chi"		"回放菜单"
 	}
 	"Menu_SpawnReplay"
 	{
 		"en"		"Spawn replay"
-		"chi"		"复活回放电脑"
+		"chi"		"生成回放 BOT"
 	}
 	"Menu_Replay2X"
 	{
 		"#format"	"{1:d}"
-		"en"		"Toggle {1}x speed"
-		"chi"		"设置为{1}倍速"
+		"en"		"Replay Speed: {1}x"
+		"chi"		"播放倍率: {1}x"
 	}
 	"Menu_RefreshReplay"
 	{
 		"en"		"Refresh"
-		"chi"		"刷新"
+		"chi"		"刷新菜单"
 	}
 }

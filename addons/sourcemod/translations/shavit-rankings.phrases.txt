@@ -5,19 +5,19 @@
 	{
 		"#format"	"{1:s},{2:d}"
 		"en"		"{gold}{1}{white} is tier {orchid}{2}{white}."
-		"chi"		"当前地图{gold}{1}{white} 难度 {orchid}{2}{white}."
+		"chi"		"{gold}{1}{white} | 难度: Tier {orchid}{2}{white}."
 	}
 	"SetTier"
 	{
 		"#format"	"{1:d}"
 		"en"		"Tier changed to {orchid}{1}{white}."
-		"chi"		"难度已更改为 {orchid}{1}{white}."
+		"chi"		"难度已更改为: Tier {orchid}{1}{white}."
 	}
 	"Rank"
 	{
 		"#format"	"{1:N},{2:d},{3:d},{4:.1f}"
 		"en"		"{orchid}{1}{white} is ranked {gold}{2}{white} out of {3} with {gold}{4}{white} points."
-		"chi"		"{orchid}{1}{white}以{gold}{4}{white}分在{3}中排名{gold}{2}{white}."
+		"chi"		"{orchid}{1}{white} | 得分: {gold}{4}{white} Pts | 排名: {gold}{2}{white}/{3}."
 	}
 	"Unranked"
 	{
@@ -29,11 +29,11 @@
 	"Top100"
 	{
 		"en"		"Top 100 ranked players:"
-		"chi"		"前100已排名的玩家:"
+		"chi"		"前 100 已排名的玩家:"
 	}
 	"NoRankedPlayers"
 	{
 		"en"		"No ranked players found."
-		"chi"		"找不到有排名的选手."
+		"chi"		"找不到有排名的玩家."
 	}
 }

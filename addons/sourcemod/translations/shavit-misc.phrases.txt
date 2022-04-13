@@ -24,7 +24,7 @@
 	"CommandTeleCPInvalid"
 	{
 		"en"		"You may not teleport to this checkpoint due to setting mismatch."
-		"chi"		"由于设置不匹配，您可能无法传送到此检查点."
+		"chi"		"由于设置 (kzcheckpoints) 不匹配, 您无法读取该点."
 	}
 	"CommandNoPause"
 	{
@@ -43,29 +43,29 @@
 	}
 	"HideEnabled"
 	{
-		"en"		"You are now {gold}hiding{white} players."
-		"chi"		"您现在{gold}隐藏了{white}所有玩家."
+		"en"		"You are now {lightgreen}hiding{white} players."
+		"chi"		"您现在{lightgreen}隐藏了{white}所有玩家."
 	}
 	"HideDisabled"
 	{
-		"en"		"You are now {red}not hiding{white} players."
-		"chi"		"您现在{red}取消隐藏了{white}所有玩家."
+		"en"		"You are now {lightgreen}not hiding{white} players."
+		"chi"		"您现在{lightgreen}取消隐藏{white}了所有玩家."
 	}
 	"LackingAccess"
 	{
 		"en"		"You're {red}lacking access{white} to this command."
-		"chi"		"您{red}无权访问{white}此命令."
+		"chi"		"您{red}无权使用{white}此命令."
 	}
 	"SpectateDead"
 	{
 		"en"		"You {red}cannot{white} target a dead player."
-		"chi"		"您{red}不能{white}将死亡玩家作为目标."
+		"chi"		"您{red}不能{white}将已死亡的玩家作为目标."
 	}
 	"SpectatorCount"
 	{
 		"#format"	"{1:N},{2:i},{3:s}"
 		"en"		"{orchid}{1}{white} has {gold}{2}{white} spectators: {3}"
-		"chi"		"{orchid}{1}{white}有{gold}{2}{white}个观众：{3}."
+		"chi"		"观察 {orchid}{1}{white} 的玩家 ({gold}{2}{white}): {3}."
 	}
 	"SpectatorCountZero"
 	{
@@ -91,71 +91,71 @@
 	"MiscCheckpointsSaved"
 	{
 		"#format"	"{1:d}"
-		"en"		"Checkpoint ({1}) {gold}saved{white}."
-		"chi"		"存点 ({1}) {gold}已保存{white}."
+		"en"		"Checkpoint ({1}) {lightgreen}saved{white}."
+		"chi"		"存点 ({1}) {lightgreen}已保存{white}."
 	}
 	"NoclipCanTrigger"
 	{
 		"en"		"Your noclip setting is: {gold}Triggerable"
-		"chi"		"你的穿墙设置为: {gold}可传送{white} (输入!nctrigger修改)."
+		"chi"		"穿墙触发{lightgreen}已启用{white} (输入 !nctrigger 修改)."
 	}
 	"NoclipCannotTrigger"
 	{
 		"en"		"Your noclip setting is: {red}UnTriggerable"
-		"chi"		"你的穿墙设置为: {red}不可传送{white} (输入!nctrigger修改)."
+		"chi"		"穿墙触发{lightgreen}已禁用{white} (输入 !nctrigger 修改)."
 	}
 	"MiscCheckpointsTeleported"
 	{
 		"#format"	"{1:d}"
 		"en"		"{gold}Teleported{white} to checkpoint ({1})."
-		"chi"		"{gold}已传送到{white} 存点({1})."
+		"chi"		"{gold}已传送到{white}存点 #{1}."
 	}
 	"MiscCheckpointsEmpty"
 	{
 		"#format"	"{1:d}"
-		"en"		"Checkpoint {1} is {red}empty{white}."
-		"chi"		"存点{1}为{red}空{white}。"
+		"en"		"Checkpoint {1} is {red}unexisted{white}."
+		"chi"		"存点 #{1} {red}不存在{white}。"
 	}
 	"MiscCheckpointsOverflow"
 	{
 		"en"		"Unable to save due to checkpoint overflow."
-		"chi"		"由于存点溢出，无法保存."
+		"chi"		"由于存点溢出, 无法保存."
 	}
 	"MiscSegmentedCommand"
 	{
 		"en"		"Use {gold}!cpmenu{white} to re-open the segmented checkpoints menu."
-		"chi"		"输入{gold}!cpmenu{white}重新打开Segment存点菜单。"
+		"chi"		"输入 {gold}!cpmenu{white} 重新打开点菜单。"
 	}
 	// ---------- Menus ---------- //
 	"StopTimerWarning"
 	{
 		"en"		"Are you sure you want to stop your timer?"
-		"chi"		"您确定要停止计时器吗?"
+		"chi"		"您确定要中止计时吗?"
 	}
 	"StopTimerYes"
 	{
 		"en"		"Yes, stop my timer."
-		"chi"		"是，停止我的计时器."
+		"chi"		"是"
 	}
 	"StopTimerNo"
 	{
 		"en"		"No, keep my timer running."
-		"chi"		"否，让我的计时器保持运行."
+		"chi"		"否"
 	}
 	"ClearCPWarning"
 	{
 		"en"		"Are you sure you want to clear your checkpoints?"
-		"chi"		"您确定要清除你的存点吗?"
+		"chi"		"您确定要清空所有存点吗?"
 	}
 	"ClearCPYes"
 	{
 		"en"		"Yes, and I know this action cannot be reversed."
-		"chi"		"是的，我知道这么做是不能反悔的."
+		"chi"		"是"
 	}
 	"ClearCPNo"
 	{
 		"en"		"No."
-		"chi"		"不."
+		"chi"		"否"
 	}
 	"TeleportMenuTitle"
 	{
@@ -180,19 +180,19 @@
 	"MiscCheckpointWarning"
 	{
 		"en"		"WARNING: Teleporting will stop your timer!"
-		"chi"		"警告：传送会停止你的计时器!"
+		"chi"		"!!! 读点将中止计时"
 	}
 	"MiscCheckpointSave"
 	{
 		"#format"	"{1:d}"
 		"en"		"Save checkpoint ({1})"
-		"chi"		"存点({1})"
+		"chi"		"存点 #{1}"
 	}
 	"MiscCheckpointTeleport"
 	{
 		"#format"	"{1:d}"
 		"en"		"Teleport to checkpoint ({1})"
-		"chi"		"读点({1})"
+		"chi"		"读点 #{1}"
 	}
 	"MiscCheckpointPrevious"
 	{
@@ -234,12 +234,12 @@
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"Bunnyhopping in the {1}start zone{2} is {3}not allowed{4}."
-		"chi"		"{1}在起点连跳{2}是{3}不允许的{4}."
+		"chi"		"起点{3}不得{4}{1}连跳{2}."
 	}
 	"WRNotice"
 	{
 		"#format"	"{1:s},{2:s}"
-		"en"		"{red}NEW{white} {green}{1}-{2}{white} WR!!!"
+		"en"		"{red}NEW{white} {green}{1}-{2}{white} {red}WR!!!"
 		"chi"		"{red}新的{white} {green}{1}-{2}{white} {red}服务器记录!!!"
 	}
 	"AdvertisementsEnabled"
