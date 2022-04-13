@@ -17,13 +17,14 @@ void UpdateKeyHint(int client)
 		}
 
 		int target = GetSpectatorTarget(client, client);
+		bool bReplay = (gB_Replay && Shavit_IsReplayEntity(target));
 
-		// SRPB
+		// SR and PB
 		huddata_t huddata;
 
 		huddata.iTarget = target;
-		huddata.iStyle = Shavit_GetBhopStyle(target);
-		huddata.iTrack = Shavit_GetClientTrack(target);
+		huddata.iStyle = (bReplay) ? Shavit_GetReplayBotStyle(target) : Shavit_GetBhopStyle(target);
+		huddata.iTrack = (bReplay) ? Shavit_GetReplayBotTrack(target) : Shavit_GetClientTrack(target);
 
 		char sWRName[32];
 		Shavit_GetWRName(huddata.iStyle, sWRName, sizeof(sWRName), huddata.iTrack);
@@ -39,19 +40,64 @@ void UpdateKeyHint(int client)
 		huddata.iRank = Shavit_GetRankForTime(huddata.iStyle, huddata.fPB, huddata.iTrack);
 
 		if((gI_HUD2Settings[client] & HUD2_WRPB) == 0)
-			FormatEx(sMessage, sizeof(sMessage), "%sSR: %s (%s)\n", sMessage,
-				sWRTime, sWRName);
+		{
+			if(huddata.iFinishNum != 0)
+				FormatEx(sMessage, sizeof(sMessage), "%sSR: %s (%s)\n", sMessage,
+					sWRTime, sWRName);
+			else
+				FormatEx(sMessage, sizeof(sMessage), "%sSR: None\n", sMessage);
+		}
 
-		FormatEx(sMessage, sizeof(sMessage), "%sPB: %s (#%d/%d)\n", sMessage,
-			sPBTime, huddata.iRank, huddata.iFinishNum);
-		// end of SRPB
+		if(huddata.fPB != 0.0)
+			FormatEx(sMessage, sizeof(sMessage), "%sPB: %s (#%d/%d)\n\n", sMessage,
+				sPBTime, huddata.iRank, huddata.iFinishNum);
+		else
+			FormatEx(sMessage, sizeof(sMessage), "%sPB: None\n\n", sMessage);
 
-		/** TODO:
-		 * -- Stage 1/4 --
-		 * SRCP: sSRCPTime (sSRCPName)
-		 * PBCP: sPBCPTimer (iPBCPRank/iFinishNum)
-		 */
+		// SRCP and PBCP
+		huddata.iStage = (bReplay) ? Shavit_GetReplayBotStage(target) : Shavit_GetCurrentStage(target);
 
+		if(huddata.iStage > Shavit_GetMapStages())
+		{
+			huddata.iStage = Shavit_GetMapStages();
+		}
+
+		Shavit_GetWRStageName(huddata.iStyle, huddata.iStage, sWRName, sizeof(sWRName));
+
+		stage_t pb;
+		Shavit_GetStagePB(target, huddata.iStyle, huddata.iStage, pb, sizeof(stage_t));
+
+		huddata.fPB = pb.fTime;
+		huddata.fWR = Shavit_GetWRStageTime(huddata.iStage, huddata.iStyle);
+
+		FormatHUDSeconds(huddata.fWR, sWRTime, sizeof(sWRTime));
+		FormatHUDSeconds(huddata.fPB, sPBTime, sizeof(sPBTime));
+
+		huddata.iFinishNum = (huddata.iStyle == -1 || huddata.iStage == -1) ? Shavit_GetStageRecordAmount(0, 0) : Shavit_GetStageRecordAmount(huddata.iStyle, huddata.iStage);
+		huddata.iRank = Shavit_GetStageRankForTime(huddata.iStyle, huddata.fPB, huddata.iStage);
+
+		if (huddata.iStage != 0)
+		{
+			FormatEx(sMessage, sizeof(sMessage), "%s- Stage %d/%d -\n", sMessage,
+				huddata.iStage, Shavit_GetMapStages());
+				
+			if((gI_HUD2Settings[client] & HUD2_WRPB) == 0)
+			{
+				if(huddata.iFinishNum != 0)
+					FormatEx(sMessage, sizeof(sMessage), "%sSRCP: %s (%s)\n", sMessage,
+						sWRTime, sWRName);
+				else
+					FormatEx(sMessage, sizeof(sMessage), "%sSRCP: None\n", sMessage);
+			}
+
+			if(huddata.fPB != 0.0)
+				FormatEx(sMessage, sizeof(sMessage), "%sPBCP: %s (#%d/%d)\n\n", sMessage,
+					sPBTime, huddata.iRank, huddata.iFinishNum);
+			else
+				FormatEx(sMessage, sizeof(sMessage), "%sPBCP: None\n\n", sMessage);
+		}
+
+		// spec
 		if(target == client || (gI_HUDSettings[client] & HUD_OBSERVE) > 0)
 		{
 			if((gI_HUDSettings[client] & HUD_SPECTATORS) > 0)

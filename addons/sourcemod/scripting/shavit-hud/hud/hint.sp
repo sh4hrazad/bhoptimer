@@ -161,32 +161,68 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 	else
 	{
 		bool bLinearMap = Shavit_IsLinearMap();
+		
+		switch(data.iZoneHUD)
+		{
+			case ZoneHUD_None:
+			{
+				if(data.iTrack == 0)
+				{
+					if(bLinearMap)
+					{
+						// FormatEx(sLine, 32, "Linear Map");
+					}
+					else
+					{
+						// FormatEx(sLine, 32, "Stage %d / %d", data.iStage, Shavit_GetMapStages());
+					}
+				}
+				else
+				{
+					FormatEx(sLine, 32, "Bonus %d", data.iTrack);
+				}
+			}
+			case ZoneHUD_Start:
+			{
+				if(data.iTrack == 0)
+				{
+					FormatEx(sLine, 32, "In Main Start Zone");
+				}
+				else
+				{
+					FormatEx(sLine, 32, "In Bonus %d Start Zone", data.iTrack);
+				}
+			}
+			case ZoneHUD_End:
+			{
+				if(data.iTrack == 0)
+				{
+					FormatEx(sLine, 32, "In Main End Zone");
+				}
+				else
+				{
+					FormatEx(sLine, 32, "In Bonus %d End Zone", data.iTrack);
+				}
+			}
+			case ZoneHUD_Stage:
+			{
+				FormatEx(sLine, 32, "In Stage %d Start Zone", data.iStage);
+			}
+		}
 
-		if((gI_HUD2Settings[client] & HUD2_TIME) == 0)
+		if(sLine[0])
+		{
+			AddHUDLine(buffer, maxlen, sLine, iLines);
+
+			iLines++;
+		}
+
+		if((gI_HUD2Settings[client] & HUD2_TIME) == 0 && data.fTime != 0.0)
 		{
 			char sTime[32];
+			FormatHUDSeconds(data.fTime, sTime, 32);
 
-			if(data.fTime == 0.0)
-			{
-				FormatEx(sTime, 32, "Stopped");
-			}
-			else
-			{
-				FormatHUDSeconds(data.fTime, sTime, 32);
-			}
-
-			if(data.fTime == 0.0)
-			{
-				// TODO: Time: Start..
-			}
-			else if(data.fTime < data.fWR || data.fWR == 0.0) 
-			{
-				// TODO: Time: 9.332 (#1)
-			}
-			else if(data.fTime < data.fPB || data.fPB == 0.0)
-			{
-				// TODO: Time: 9.332 (#2)
-			}
+			// TODO: expected rank
 
 			if(data.iStyle == 0)
 			{
@@ -210,69 +246,17 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 
 			if(data.bPractice)
 			{
-				FormatEx(sLine, 128, " [练习模式]");
+				FormatEx(sLine, 128, " [Practice]");
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 			}
 			else if(data.iTimerStatus == Timer_Paused)
 			{
-				FormatEx(sLine, 128, " [暂停中]");
+				FormatEx(sLine, 128, " [Paused]");
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 			}
 
 			iLines++;
 		}
-
-		switch(data.iZoneHUD)
-		{
-			case ZoneHUD_None:
-			{
-				if(data.iTrack == 0)
-				{
-					if(bLinearMap)
-					{
-						FormatEx(sLine, 32, "Linear Map");
-					}
-					else
-					{
-						FormatEx(sLine, 32, "Stage %d / %d", data.iStage, Shavit_GetMapStages());
-					}
-				}
-				else
-				{
-					FormatEx(sLine, 32, "Bonus %d", data.iTrack);
-				}
-			}
-			case ZoneHUD_Start:
-			{
-				if(data.iTrack == 0)
-				{
-					FormatEx(sLine, 32, "Map Start");
-				}
-				else
-				{
-					FormatEx(sLine, 32, "Bonus %d Start", data.iTrack);
-				}
-			}
-			case ZoneHUD_End:
-			{
-				if(data.iTrack == 0)
-				{
-					FormatEx(sLine, 32, "Map End");
-				}
-				else
-				{
-					FormatEx(sLine, 32, "Bonus %d End", data.iTrack);
-				}
-			}
-			case ZoneHUD_Stage:
-			{
-				FormatEx(sLine, 32, "Stage %d Start", data.iStage);
-			}
-		}
-
-		AddHUDLine(buffer, maxlen, sLine, iLines);
-
-		iLines++;
 
 		if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
 		{

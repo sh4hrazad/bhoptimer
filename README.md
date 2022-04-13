@@ -10,6 +10,7 @@
 (录像播放的原理是将bot一帧一帧地传送到特定位置, 而在区域内传送时会触发 `EndTouchPost()`)
 - 起点开穿墙不停止计时, 而是暂停计时 <u>(pr needed)</u>
 - `!ms` 无法更改设置 (fixed) <u>(pr needed)</u>
+- 关卡起点可以bhop
 
 ### 要加的:
 - 将区域传送点设置到 info_teleport_destination
