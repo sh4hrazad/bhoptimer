@@ -130,6 +130,7 @@ Convar gCV_ReplayDelay = null;
 Convar gCV_DefaultTeam = null;
 Convar gCV_CentralBot = null;
 Convar gCV_DynamicBotLimit = null;
+Convar gCV_AddLoopBot = null;
 Convar gCV_BotShooting = null;
 Convar gCV_BotPlusUse = null;
 Convar gCV_BotWeapon = null;
@@ -841,6 +842,7 @@ static void CreateConVars()
 	gCV_DefaultTeam = new Convar("shavit_replay_defaultteam", "3", "Default team to make the bots join, if possible.\n2 - Terrorists/RED\n3 - Counter Terrorists/BLU", 0, true, 2.0, true, 3.0);
 	gCV_CentralBot = new Convar("shavit_replay_centralbot", "0", "Have one central bot instead of one bot per replay.\nTriggered with !replay.\nRestart the map for changes to take effect.\nThe disabled setting is not supported - use at your own risk.\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_DynamicBotLimit = new Convar("shavit_replay_dynamicbotlimit", "5", "How many extra bots next to the central bot can be spawned with !replay.\n0 - no dynamically spawning bots.", 0, true, 0.0, true, float(MaxClients-2));
+	gCV_AddLoopBot = new Convar("shavit_replay_addloopbot", "1", "Add looping bots for main track?\nChange will take effect on map changes.\n0 - No\n1 - Add track and stage bots\n2 - Add track bot only\n3 - Add stage bot only", 0, true, 0.0, true, 3.0);
 	gCV_BotShooting = new Convar("shavit_replay_botshooting", "0", "Attacking buttons to allow for bots.\n0 - none\n1 - +attack\n2 - +attack2\n3 - both", 0, true, 0.0, true, 3.0);
 	gCV_BotPlusUse = new Convar("shavit_replay_botplususe", "1", "Allow bots to use +use?", 0, true, 0.0, true, 1.0);
 	gCV_BotWeapon = new Convar("shavit_replay_botweapon", "none", "Choose which weapon the bot will hold.\nLeave empty to use the default.\nSet to \"none\" to have none.\nExample: weapon_usp");

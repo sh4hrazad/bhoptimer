@@ -2,7 +2,7 @@ native int Shavit_GetMapTier(const char[] map = "");
 
 void UpdateKeyHint(int client)
 {
-	// TODO: complete key hint
+	// TODO: timeleft
 	if((gI_HUDSettings[client] & HUD_MAPTIER) > 0)
 	{
 		char sMessage[256];
@@ -27,32 +27,43 @@ void UpdateKeyHint(int client)
 		huddata.iTrack = (bReplay) ? Shavit_GetReplayBotTrack(target) : Shavit_GetClientTrack(target);
 
 		char sWRName[32];
-		Shavit_GetWRName(huddata.iStyle, sWRName, sizeof(sWRName), huddata.iTrack);
-
-		huddata.fPB = Shavit_GetClientPB(target, huddata.iStyle, huddata.iTrack);
-		huddata.fWR = Shavit_GetWorldRecord(huddata.iStyle, huddata.iTrack);
 		char sWRTime[32];
 		char sPBTime[32];
-		FormatHUDSeconds(huddata.fWR, sWRTime, sizeof(sWRTime));
-		FormatHUDSeconds(huddata.fPB, sPBTime, sizeof(sPBTime));
 
-		huddata.iFinishNum = (huddata.iStyle == -1 || huddata.iTrack == -1) ? Shavit_GetRecordAmount(0, 0) : Shavit_GetRecordAmount(huddata.iStyle, huddata.iTrack);
-		huddata.iRank = Shavit_GetRankForTime(huddata.iStyle, huddata.fPB, huddata.iTrack);
-
-		if((gI_HUD2Settings[client] & HUD2_WRPB) == 0)
+		if(huddata.iStyle != -1 && huddata.iTrack != -1)
 		{
-			if(huddata.iFinishNum != 0)
-				FormatEx(sMessage, sizeof(sMessage), "%sSR: %s (%s)\n", sMessage,
-					sWRTime, sWRName);
-			else
-				FormatEx(sMessage, sizeof(sMessage), "%sSR: None\n", sMessage);
-		}
+			Shavit_GetWRName(huddata.iStyle, sWRName, sizeof(sWRName), huddata.iTrack);
 
-		if(huddata.fPB != 0.0)
-			FormatEx(sMessage, sizeof(sMessage), "%sPB: %s (#%d/%d)\n\n", sMessage,
-				sPBTime, huddata.iRank, huddata.iFinishNum);
-		else
-			FormatEx(sMessage, sizeof(sMessage), "%sPB: None\n\n", sMessage);
+			huddata.fPB = Shavit_GetClientPB((bReplay) ? client : target, huddata.iStyle, huddata.iTrack);
+			huddata.fWR = Shavit_GetWorldRecord(huddata.iStyle, huddata.iTrack);
+
+			FormatHUDSeconds(huddata.fWR, sWRTime, sizeof(sWRTime));
+			FormatHUDSeconds(huddata.fPB, sPBTime, sizeof(sPBTime));
+
+			huddata.iFinishNum = (huddata.iStyle == -1 || huddata.iTrack == -1) ? Shavit_GetRecordAmount(0, 0) : Shavit_GetRecordAmount(huddata.iStyle, huddata.iTrack);
+			huddata.iRank = Shavit_GetRankForTime(huddata.iStyle, huddata.fPB, huddata.iTrack);
+
+			if(huddata.iTrack > 0) // bonus
+			{
+				FormatEx(sMessage, sizeof(sMessage), "%s\n- Bonus %d/%d -\n", sMessage,
+					huddata.iTrack, Shavit_GetMapBonuses());
+			}
+
+			if((gI_HUD2Settings[client] & HUD2_WRPB) == 0)
+			{
+				if(huddata.iFinishNum != 0)
+					FormatEx(sMessage, sizeof(sMessage), "%sSR: %s (%s)\n", sMessage,
+						sWRTime, sWRName);
+				else
+					FormatEx(sMessage, sizeof(sMessage), "%sSR: None\n", sMessage);
+			}
+
+			if(huddata.fPB != 0.0)
+				FormatEx(sMessage, sizeof(sMessage), "%sPB: %s (#%d/%d)\n\n", sMessage,
+					sPBTime, huddata.iRank, huddata.iFinishNum);
+			else
+				FormatEx(sMessage, sizeof(sMessage), "%sPB: None\n\n", sMessage);
+		}
 
 		// SRCP and PBCP
 		huddata.iStage = (bReplay) ? Shavit_GetReplayBotStage(target) : Shavit_GetCurrentStage(target);
@@ -62,25 +73,25 @@ void UpdateKeyHint(int client)
 			huddata.iStage = Shavit_GetMapStages();
 		}
 
-		Shavit_GetWRStageName(huddata.iStyle, huddata.iStage, sWRName, sizeof(sWRName));
-
-		stage_t pb;
-		Shavit_GetStagePB(target, huddata.iStyle, huddata.iStage, pb, sizeof(stage_t));
-
-		huddata.fPB = pb.fTime;
-		huddata.fWR = Shavit_GetWRStageTime(huddata.iStage, huddata.iStyle);
-
-		FormatHUDSeconds(huddata.fWR, sWRTime, sizeof(sWRTime));
-		FormatHUDSeconds(huddata.fPB, sPBTime, sizeof(sPBTime));
-
-		huddata.iFinishNum = (huddata.iStyle == -1 || huddata.iStage == -1) ? Shavit_GetStageRecordAmount(0, 0) : Shavit_GetStageRecordAmount(huddata.iStyle, huddata.iStage);
-		huddata.iRank = Shavit_GetStageRankForTime(huddata.iStyle, huddata.fPB, huddata.iStage);
-
-		if (huddata.iStage != 0)
+		if (huddata.iStage > 0 && huddata.iTrack == Track_Main)
 		{
+			Shavit_GetWRStageName(huddata.iStyle, huddata.iStage, sWRName, sizeof(sWRName));
+
+			stage_t pb;
+			Shavit_GetStagePB((bReplay) ? client : target, huddata.iStyle, huddata.iStage, pb, sizeof(stage_t));
+
+			huddata.fPB = pb.fTime;
+			huddata.fWR = Shavit_GetWRStageTime(huddata.iStage, huddata.iStyle);
+
+			FormatHUDSeconds(huddata.fWR, sWRTime, sizeof(sWRTime));
+			FormatHUDSeconds(huddata.fPB, sPBTime, sizeof(sPBTime));
+
+			huddata.iFinishNum = (huddata.iStyle == -1 || huddata.iStage == -1) ? Shavit_GetStageRecordAmount(0, 0) : Shavit_GetStageRecordAmount(huddata.iStyle, huddata.iStage);
+			huddata.iRank = Shavit_GetStageRankForTime(huddata.iStyle, huddata.fPB, huddata.iStage);
+
 			FormatEx(sMessage, sizeof(sMessage), "%s- Stage %d/%d -\n", sMessage,
 				huddata.iStage, Shavit_GetMapStages());
-				
+
 			if((gI_HUD2Settings[client] & HUD2_WRPB) == 0)
 			{
 				if(huddata.iFinishNum != 0)

@@ -131,7 +131,7 @@ void AddReplayBots()
 		UpdateReplayClient(bot);
 	}
 
-	if (gI_TrackBot <= 0)
+	if (gI_TrackBot <= 0 && (gCV_AddLoopBot.IntValue == 1 || gCV_AddLoopBot.IntValue == 2))
 	{
 		int bot = CreateReplayEntity(0, 0, -1.0, 0, -1, Replay_Looping, false, cache, 0);
 
@@ -144,7 +144,7 @@ void AddReplayBots()
 		UpdateReplayClient(bot);
 	}
 
-	if (gI_StageBot <= 0)
+	if (gI_StageBot <= 0 && (gCV_AddLoopBot.IntValue == 1 || gCV_AddLoopBot.IntValue == 3))
 	{
 		int bot = CreateReplayEntity(0, 0, -1.0, 0, -1, Replay_Looping, false, cache, 1);
 

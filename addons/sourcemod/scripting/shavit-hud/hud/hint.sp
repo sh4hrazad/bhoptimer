@@ -164,24 +164,6 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 		
 		switch(data.iZoneHUD)
 		{
-			case ZoneHUD_None:
-			{
-				if(data.iTrack == 0)
-				{
-					if(bLinearMap)
-					{
-						// FormatEx(sLine, 32, "Linear Map");
-					}
-					else
-					{
-						// FormatEx(sLine, 32, "Stage %d / %d", data.iStage, Shavit_GetMapStages());
-					}
-				}
-				else
-				{
-					FormatEx(sLine, 32, "Bonus %d", data.iTrack);
-				}
-			}
 			case ZoneHUD_Start:
 			{
 				if(data.iTrack == 0)
@@ -230,9 +212,9 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 			}
 			else
 			{
-				char sStyle[32];
-				Shavit_GetStyleStrings(data.iStyle, sStyleName, sStyle, 32);
-				FormatEx(sLine, 128, "Time: %s [%s] ", sTime, sStyle);
+				char sStyle[8];
+				Shavit_GetStyleStrings(data.iStyle, sShortName, sStyle, 8);
+				FormatEx(sLine, 128, "%s: %s", sStyle, sTime);
 			}
 
 			AddHUDLine(buffer, maxlen, sLine, iLines);
