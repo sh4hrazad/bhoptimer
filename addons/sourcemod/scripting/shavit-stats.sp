@@ -616,7 +616,7 @@ public Action Command_MapsDoneLeft(int client, int args)
 
 		iSteamID = SteamIDToAccountID(sArgs);
 
-		if (iSteamID < 1)
+		if (iSteamID == 0)
 		{
 			target = FindTarget(client, sArgs, true, false);
 
@@ -627,11 +627,11 @@ public Action Command_MapsDoneLeft(int client, int args)
 		}
 		else
 		{
-			FormatEx(gS_TargetName[client], sizeof(gS_TargetName[]), "[U:1:%d]", iSteamID);
+			FormatEx(gS_TargetName[client], sizeof(gS_TargetName[]), "[U:1:%u]", iSteamID);
 		}
 	}
 
-	if (iSteamID < 1)
+	if (iSteamID == 0)
 	{
 		SanerGetClientName(target, gS_TargetName[client]);
 		iSteamID = GetSteamAccountID(target);
@@ -744,7 +744,7 @@ public Action Command_Profile(int client, int args)
 
 		iSteamID = SteamIDToAccountID(sArgs);
 
-		if (iSteamID < 1)
+		if (iSteamID == 0)
 		{
 			target = FindTarget(client, sArgs, true, false);
 
@@ -755,7 +755,7 @@ public Action Command_Profile(int client, int args)
 		}
 	}
 
-	gI_TargetSteamID[client] = (iSteamID > 0) ? iSteamID : GetSteamAccountID(target);
+	gI_TargetSteamID[client] = (iSteamID != 0) ? iSteamID : GetSteamAccountID(target);
 
 	return OpenStatsMenu(client, gI_TargetSteamID[client]);
 }
@@ -1006,7 +1006,7 @@ public void OpenStatsMenuCallback(Database db, DBResultSet results, const char[]
 		}
 
 		Menu menu = new Menu(MenuHandler_ProfileHandler);
-		menu.SetTitle("%s%T. [U:1:%d]\n%T: %s\n%s\n%s\n%T: %s\n",
+		menu.SetTitle("%s%T. [U:1:%u]\n%T: %s\n%s\n%s\n%T: %s\n",
 			gS_TargetName[client], "Profile", client, gI_TargetSteamID[client], "Country", client, sCountry, sLastLogin,
 			sRankingString, "Playtime", client, sPlaytime);
 
@@ -1071,7 +1071,7 @@ public void OpenStatsMenuCallback(Database db, DBResultSet results, const char[]
 			AccountIDToSteamID2(gI_TargetSteamID[client], steam2, sizeof(steam2));
 			char steam64[40];
 			AccountIDToSteamID64(gI_TargetSteamID[client], steam64, sizeof(steam64));
-			Shavit_PrintToChat(client, "%s: %s%s %s[U:1:%d]%s %s", gS_TargetName[client], gS_ChatStrings.sVariable, steam2, gS_ChatStrings.sText, gI_TargetSteamID[client], gS_ChatStrings.sVariable2, steam64);
+			Shavit_PrintToChat(client, "%s: %s%s %s[U:1:%u]%s %s", gS_TargetName[client], gS_ChatStrings.sVariable, steam2, gS_ChatStrings.sText, gI_TargetSteamID[client], gS_ChatStrings.sVariable2, steam64);
 		}
 	}
 }
@@ -1417,7 +1417,7 @@ public void SQL_SubMenu_Callback(Database db, DBResultSet results, const char[] 
 	}
 
 	char sFormattedTitle[256];
-	FormatEx(sFormattedTitle, 256, "%s [U:1:%d]\n--- %s:", sName, iSteamID, sMap);
+	FormatEx(sFormattedTitle, 256, "%s [U:1:%u]\n--- %s:", sName, iSteamID, sMap);
 
 	hMenu.SetTitle(sFormattedTitle);
 	hMenu.ExitBackButton = true;

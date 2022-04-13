@@ -1213,7 +1213,7 @@ public Action Command_CCAdd(int client, int args)
 
 	int iSteamID = SteamIDToAccountID(sArgString);
 
-	if (iSteamID < 1)
+	if (iSteamID == 0)
 	{
 		ReplyToCommand(client, "Invalid steamid");
 		return Plugin_Handled;
@@ -1251,7 +1251,7 @@ public Action Command_CCDelete(int client, int args)
 
 	int iSteamID = SteamIDToAccountID(sArgString);
 
-	if (iSteamID < 1)
+	if (iSteamID == 0)
 	{
 		ReplyToCommand(client, "Invalid steamid");
 		return Plugin_Handled;
