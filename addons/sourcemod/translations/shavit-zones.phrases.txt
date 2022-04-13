@@ -192,8 +192,8 @@
 	}
 	"ZoneMenuStage"
 	{
-		"en"		"Select a Stage:"
-		"chi"		"选择一个关卡:"
+		"en"		"Select a main stage:"
+		"chi"		"选择一个主线关卡:"
 	}
 	"HookZoneSelectMethod"
 	{
@@ -202,7 +202,7 @@
 	}
 	"HookZoneMenuBefore"
 	{
-		"en"		"What do you want?"
+		"en"		"What do you want to do?"
 		"chi"		"你想做什么呢?"
 	}
 	"HookZoneMenuTrigger"
@@ -220,12 +220,12 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"Selecting '{1}' as Hookzone name"
-		"chi"		"选择 '{1}' 作为Hookzone的名字"
+		"chi"		"选择 '{1}' 作为 Hookzone 的名字"
 	}
 	"ZoneMenuTrack"
 	{
 		"en"		"Select a track:"
-		"chi"		"选择一个track:"
+		"chi"		"选择一个 Track:"
 	}
 	"ZoneMenuTitle"
 	{
@@ -248,7 +248,7 @@
 	{
 		"#format"	"{1:d},{2:c}"
 		"en"		"Point {1} | {2} axis"
-		"chi"		"点{1}|{2}轴"
+		"chi"		"点{1} | {2}轴"
 	}
 	"ZoneSecond"
 	{

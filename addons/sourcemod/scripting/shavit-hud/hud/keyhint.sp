@@ -30,7 +30,7 @@ void UpdateKeyHint(int client)
 		char sWRTime[32];
 		char sPBTime[32];
 
-		if(huddata.iStyle != -1 && huddata.iTrack != -1)
+		if(huddata.iStyle != -1 && huddata.iTrack != -1 && !Shavit_IsStageTimer(target))
 		{
 			Shavit_GetWRName(huddata.iStyle, sWRName, sizeof(sWRName), huddata.iTrack);
 
@@ -59,10 +59,10 @@ void UpdateKeyHint(int client)
 			}
 
 			if(huddata.fPB != 0.0)
-				FormatEx(sMessage, sizeof(sMessage), "%sPB: %s (#%d/%d)\n\n", sMessage,
+				FormatEx(sMessage, sizeof(sMessage), "%sPB: %s (#%d/%d)\n", sMessage,
 					sPBTime, huddata.iRank, huddata.iFinishNum);
 			else
-				FormatEx(sMessage, sizeof(sMessage), "%sPB: None\n\n", sMessage);
+				FormatEx(sMessage, sizeof(sMessage), "%sPB: None\n", sMessage);
 		}
 
 		// SRCP and PBCP
@@ -89,7 +89,7 @@ void UpdateKeyHint(int client)
 			huddata.iFinishNum = (huddata.iStyle == -1 || huddata.iStage == -1) ? Shavit_GetStageRecordAmount(0, 0) : Shavit_GetStageRecordAmount(huddata.iStyle, huddata.iStage);
 			huddata.iRank = Shavit_GetStageRankForTime(huddata.iStyle, huddata.fPB, huddata.iStage);
 
-			FormatEx(sMessage, sizeof(sMessage), "%s- Stage %d/%d -\n", sMessage,
+			FormatEx(sMessage, sizeof(sMessage), "%s\n- Stage %d/%d -\n", sMessage,
 				huddata.iStage, Shavit_GetMapStages());
 
 			if((gI_HUD2Settings[client] & HUD2_WRPB) == 0)

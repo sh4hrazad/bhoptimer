@@ -160,8 +160,6 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 
 	else
 	{
-		bool bLinearMap = Shavit_IsLinearMap();
-		
 		switch(data.iZoneHUD)
 		{
 			case ZoneHUD_Start:

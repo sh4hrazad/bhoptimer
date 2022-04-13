@@ -1692,13 +1692,6 @@ public Action Command_Stages(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(Shavit_GetClientTrack(client) != Track_Main)
-	{
-		Shavit_PrintToChat(client, "%T(因为奖励关没有关卡)", "InvalidStage", client);
-
-		return Plugin_Handled;
-	}
-
 	int iStage = -1;
 	char sCommand[16];
 	GetCmdArg(0, sCommand, 16);
@@ -1732,6 +1725,8 @@ public Action Command_Stages(int client, int args)
 			{
 				Shavit_StopTimer(client);
 				Shavit_SetPracticeMode(client, false);
+				Shavit_StartTimer(client, Track_Main);
+				Shavit_StopTimer(client);
 				Shavit_SetStageTimer(client, true);
 
 				DoTeleport(client, i);
@@ -1743,23 +1738,27 @@ public Action Command_Stages(int client, int args)
 	else
 	{
 		Menu menu = new Menu(MenuHandler_SelectStage);
-		menu.SetTitle("%T", "ZoneMenuStage", client);
+		menu.SetTitle("%T\n", "ZoneMenuStage", client);
 
 		char sDisplay[64];
 
 		for(int i = 0; i < gI_MapZones; i++)
 		{
-			if(gA_ZoneCache[i].bZoneInitialized && gA_ZoneCache[i].iZoneType == Zone_Stage)
+			if(gA_ZoneCache[i].bZoneInitialized)
 			{
-				char sTrack[32];
-				GetTrackName(client, gA_ZoneCache[i].iZoneTrack, sTrack, 32);
+				// stage 1 (main start)
+				if(gA_ZoneCache[i].iZoneType == Zone_Start && gA_ZoneCache[i].iZoneTrack == 0)
+					menu.AddItem("1", "Stage 1");
 
-				FormatEx(sDisplay, 64, "#%d - (%s)", (i + 1), gA_ZoneCache[i].iZoneData, sTrack);
+				if(gA_ZoneCache[i].iZoneType == Zone_Stage)
+				{
+					FormatEx(sDisplay, 64, "Stage %d", (i + 1), gA_ZoneCache[i].iZoneData);
 
-				char sInfo[8];
-				IntToString(i, sInfo, 8);
+					char sInfo[8];
+					IntToString(i, sInfo, 8);
 
-				menu.AddItem(sInfo, sDisplay);
+					menu.AddItem(sInfo, sDisplay);
+				}
 			}
 		}
 
@@ -1773,16 +1772,20 @@ public int MenuHandler_SelectStage(Menu menu, MenuAction action, int param1, int
 {
 	if(action == MenuAction_Select)
 	{
-		char sInfo[8];
-		menu.GetItem(param2, sInfo, 8);
-		int index = StringToInt(sInfo);
+		if(param2 == 0)
+		{
+			FakeClientCommand(param1, "sm_r");
+		}
+		else
+		{
+			Shavit_StopTimer(param1);
+			Shavit_StartTimer(param1, Track_Main);
+			Shavit_StopTimer(param1);
+			Shavit_SetStageTimer(param1, true);
 
-		Shavit_StopTimer(param1);
-		Shavit_SetStageTimer(param1, true);
-
-		DoTeleport(param1, index);
+			DoTeleport(param1, param2);
+		}
 	}
-
 	else if(action == MenuAction_End)
 	{
 		delete menu;
