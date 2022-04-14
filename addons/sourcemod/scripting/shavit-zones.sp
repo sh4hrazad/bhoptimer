@@ -4567,16 +4567,20 @@ bool ShittyLimitPrestrafe(int client, int id, bool inStage, bool inZone)
 	{
 		if(gCV_PreSpeed.IntValue >= 1)
 		{
+			if(inStage && !Shavit_GetMapLimitspeed()) // do not limit all stages' speed
+			{
+				return false;
+			}
+
 			// surfheaven prespeed
 			// limit speed since 2 jumps
 			// int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
 			// iGroundEntity == 0 ---> onGround
 			// iGroundEntity == -1 ---> onAir
 
-			if(inStage && !Shavit_GetMapLimitspeed()) // do not limit all stages' speed
-			{
-				return false;
-			}
+			// ksf prespeed
+			// ksf 可以 bhop 出起点, 但速度不能高于 270, 否则出起点后自动压到 270
+			// 整张地图只能连续 bhop 4 次
 
 			float fSpeed[3];
 			GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);

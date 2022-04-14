@@ -12,6 +12,8 @@
 (录像播放的原理是将bot一帧一帧地传送到特定位置, 而在区域内传送时会触发 `EndTouchPost()`)
 - ✔️ 起点开穿墙不停止计时, 而是暂停计时
 - ✔️ `!ms` 无法更改设置
+- 编辑区域时传送到某个区域的传送点后在起点正常起步时仍被限速
+- 编辑区域时传送到某个区域的传送点后开始计时会触发两次 `Shavit_OnStartTimer_Post()` 或 `Shavit_OnStageTimer_Post()`
 
 ### 要加的:
 - ✔️ 将区域传送点设置到 `info_teleport_destination`
