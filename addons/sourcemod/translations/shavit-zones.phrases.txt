@@ -324,6 +324,16 @@
 		"en"		"Yes"
 		"chi"		"是"
 	}
+	"ZoneCurrentPosition"
+	{
+		"en"		"Use current position"
+		"chi"		"使用当前位置"
+	}
+	"ZoneTelefinder"
+	{
+		"en"		"Use !telefinder to look for the entity you want to set"
+		"chi"		"输入 !telefinder 可用于寻找需要传送到的实体"
+	}
 	"ZoneSizeIncrease"
 	{
 		"#format"	"{1:c},{2:d},{3:.01f}"

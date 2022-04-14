@@ -3058,7 +3058,9 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 
 		else if(StrEqual(sInfo, "zonedes"))
 		{
-			UpdateTeleportZone(param1);
+			CreateUpdateTeleportZoneMenu(param1, 0);
+
+			return 0;
 		}
 
 		else if(StrEqual(sInfo, "tpzone"))
@@ -3108,6 +3110,74 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 	return 0;
 }
 
+void CreateUpdateTeleportZoneMenu(int client, int page)
+{
+	char sInfo[128];
+
+	Menu menu = new Menu(UpdateTeleportZoneMenu_Handler);
+	
+	FormatEx(sInfo, sizeof(sInfo), "%T\n%T", "ZoneSetTPZone", client, "ZoneTelefinder", client);
+	menu.SetTitle(sInfo);
+
+	FormatEx(sInfo, sizeof(sInfo), "%T\n ", "ZoneCurrentPosition", client);
+	menu.AddItem("tpzone", sInfo);
+
+	int iEntity;
+	while ((iEntity = FindEntityByClassname(iEntity, "info_teleport_destination")) != -1)
+	{
+		char target_name[32];
+		GetEntPropString(iEntity, Prop_Data, "m_iName", target_name, sizeof(target_name));
+
+		char sEntity[8];
+		IntToString(iEntity, sEntity, sizeof(sEntity));
+		
+		menu.AddItem(sEntity, target_name);
+	}
+
+	menu.ExitButton = false;
+	menu.DisplayAt(client, page, MENU_TIME_FOREVER);
+}
+
+public int UpdateTeleportZoneMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
+{
+	if (action == MenuAction_Select)
+	{
+		char sInfo[16];
+		menu.GetItem(param2, sInfo, 16);
+
+		if(StrEqual(sInfo, "tpzone"))
+		{
+			UpdateTeleportZone(param1);
+		}
+		else
+		{
+			float position[3];
+
+			GetEntPropVector(StringToInt(sInfo), Prop_Send, "m_vecOrigin", position);
+
+			UpdateTeleportZone(param1, position);
+		}
+
+		CreateEditMenu(param1);
+	}
+	else if (action == MenuAction_Cancel)
+	{
+		if (gI_ZoneID[param1] != -1)
+		{
+			// reenable original zone
+			gA_ZoneCache[gI_ZoneID[param1]].bZoneInitialized = true;
+		}
+
+		Reset(param1);
+	}
+	else if (action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
+}
+
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
 {
 	if(gB_HookZoneConfirm[client])
@@ -3138,11 +3208,18 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 	return Plugin_Continue;
 }
 
-void UpdateTeleportZone(int client)
+void UpdateTeleportZone(int client, float position[3] = {-1.0, -1.0, -1.0})
 {
 	float vTeleport[3];
-	GetClientAbsOrigin(client, vTeleport);
-	vTeleport[2] += 2.0;
+	if(position[0] == -1.0 && position[1] == -1.0 && position[2] == -1.0)
+	{
+		GetClientAbsOrigin(client, vTeleport);
+		vTeleport[2] += 2.0;
+	}
+	else
+	{
+		vTeleport = position;
+	}
 
 	gV_Teleport[client] = vTeleport;
 
