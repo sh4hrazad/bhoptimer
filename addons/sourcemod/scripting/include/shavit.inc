@@ -120,6 +120,7 @@ enum
 	Zone_Teleport,		// teleports to a defined point
 	Zone_Mark,		// do nothing, better to use with !hookzone
 	Zone_AntiJump,
+	Zone_AutoBhop,
 	ZONETYPES_SIZE
 };
 
@@ -712,6 +713,11 @@ stock void GetZoneName(int client, int type, char[] output, int size)
 		case Zone_AntiJump:
 		{
 			FormatEx(output, size, "%T", "Zone_AntiJump", client);
+		}
+
+		case Zone_AutoBhop:
+		{
+			FormatEx(output, size, "%T", "Zone_AutoBhop", client);
 		}
 
 		default:

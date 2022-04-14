@@ -60,6 +60,11 @@
 		"en"		"Anti-Jump Zone"
 		"chi"		"禁止起跳区域"
 	}
+	"Zone_AutoBhop"
+	{
+		"en"		"AutoBhop Zone"
+		"chi"		"自动连跳区域"
+	}
 	// ---------- Commands ---------- //
 	"NoCommandAccess"
 	{

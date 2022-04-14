@@ -189,7 +189,6 @@ bool gB_InZone[MAXPLAYERS+1];
 
 // antijump zone
 int gI_LastButtons[MAXPLAYERS+1];
-bool gB_AntiJump[MAXPLAYERS+1];
 
 public Plugin myinfo =
 {
@@ -3033,16 +3032,19 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 		}
 	}
 
-	if (buttons & IN_JUMP && gB_AntiJump[client])
+	if (buttons & IN_JUMP && InsideZone(client, Zone_AntiJump, -1))
 		if (!(gI_LastButtons[client] & IN_JUMP))
 			Shavit_PrintToChat(client, "%T", "JumpInAntiJumpZone", client);
 
 	gI_LastButtons[client] = buttons;
 
-	if (buttons & IN_JUMP && gB_AntiJump[client])
+	if (buttons & IN_JUMP && InsideZone(client, Zone_AntiJump, -1))
+	{
+		vel[2] = 0.0;
 		buttons &= ~IN_JUMP;
+	}
 
-	if (!gB_AntiJump[client])
+	if (!InsideZone(client, Zone_AntiJump, -1) && !InsideZone(client, Zone_AutoBhop, -1))
 		gB_OnGround[client] = view_as<bool>(GetEntityFlags(client) & FL_ONGROUND);
 
 	return Plugin_Continue;
@@ -4172,11 +4174,6 @@ public void StartTouchPost(int entity, int other)
 					TeleportEntity(other, gV_Destinations[entityzone], NULL_VECTOR, NULL_VECTOR);
 				}
 			}
-
-			case Zone_AntiJump:
-			{
-				gB_AntiJump[other] = true;
-			}
 		}
 	}
 
@@ -4223,7 +4220,6 @@ public void EndTouchPost(int entity, int other)
 	{
 		gB_InsideZone[other][type][track] = false;
 		gB_InsideZoneID[other][entityzone] = false;
-		gB_AntiJump[other] = false;
 
 		ClearShittyLimitPrestrafe(other);
 
