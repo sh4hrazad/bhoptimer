@@ -3033,17 +3033,17 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 		}
 	}
 
-	if (buttons & IN_JUMP && gB_AntiJump[client]) {
+	if (buttons & IN_JUMP && gB_AntiJump[client])
 		if (!(gI_LastButtons[client] & IN_JUMP))
 			Shavit_PrintToChat(client, "%T", "JumpInAntiJumpZone", client);
-	}
 
 	gI_LastButtons[client] = buttons;
 
 	if (buttons & IN_JUMP && gB_AntiJump[client])
 		buttons &= ~IN_JUMP;
 
-	gB_OnGround[client] = view_as<bool>(GetEntityFlags(client) & FL_ONGROUND);
+	if (!gB_AntiJump[client])
+		gB_OnGround[client] = view_as<bool>(GetEntityFlags(client) & FL_ONGROUND);
 
 	return Plugin_Continue;
 }
