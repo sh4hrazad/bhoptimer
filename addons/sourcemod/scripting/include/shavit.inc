@@ -115,10 +115,11 @@ enum
 	Zone_Start,
 	Zone_End,
 	Zone_Stage,
-	Zone_Checkpoint, // track checkpoint zone
-	Zone_Stop, // stops the player's timer
-	Zone_Teleport, // teleports to a defined point
-	Zone_Mark, // do nothing, mainly used for marking map like clip, trigger_push and so on, with hookzone collocation is recommended
+	Zone_Checkpoint,	// track checkpoint zone
+	Zone_Stop,		// stops the player's timer
+	Zone_Teleport,		// teleports to a defined point
+	Zone_Mark,		// do nothing, better to use with !hookzone
+	Zone_AntiJump,
 	ZONETYPES_SIZE
 };
 
@@ -706,6 +707,11 @@ stock void GetZoneName(int client, int type, char[] output, int size)
 		case Zone_Teleport:
 		{
 			FormatEx(output, size, "%T", "Zone_Teleport", client);
+		}
+
+		case Zone_AntiJump:
+		{
+			FormatEx(output, size, "%T", "Zone_AntiJump", client);
 		}
 
 		default:

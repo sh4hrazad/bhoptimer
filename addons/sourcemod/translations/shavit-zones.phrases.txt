@@ -393,6 +393,11 @@
 		"en"		"{red}Speed limit exceeded!"
 		"chi"		"{red}已超出最大限速!"
 	}
+	"JumpInAntiJumpZone"
+	{
+		"en"		"You may {red}not{white} jump in this area."
+		"chi"		"你{red}不能{white}在该区域内起跳."
+	}
 	// ---------- Restart ----------- //
 	"StartZoneUndefined"
 	{

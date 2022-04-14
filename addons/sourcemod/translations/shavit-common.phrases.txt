@@ -55,6 +55,11 @@
 		"en"		"Mark Zone"
 		"chi"		"标记区域"
 	}
+	"Zone_AntiJump"
+	{
+		"en"		"Anti-Jump Zone"
+		"chi"		"禁止起跳区域"
+	}
 	// ---------- Commands ---------- //
 	"NoCommandAccess"
 	{

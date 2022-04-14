@@ -16,7 +16,7 @@
 ### 要加的:
 - ✔️ 将区域传送点设置到 `info_teleport_destination`
 - 把 eventqueuefix 支持加回来 (考虑到部分地图触发需要)
-- 禁止起跳区域 (ksf feature)
+- ✔️ 禁止起跳区域
 - 自动连跳区域 (surf_tycho_fix 中的 bhop trigger)
 - 可在 `!ms` 中设置某个 Track 能否自动跳
 - 复刻存点 `!saveloc posX|posY|posZ|angleX|angleY|angleZ|velX|velY|velZ` (ksf feature)
