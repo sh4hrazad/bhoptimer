@@ -34,3 +34,21 @@ stock void FormatDiffPreStrafeSpeed(char[] buffer, float originSpeed, float wrSp
 		}
 	}
 }
+
+stock bool TrimTrailingInvalidUnicode(char[] outstr)
+{
+	static int masks[3] = {0xC0, 0xE0, 0xF0};
+
+	int maxidx = strlen(outstr)-1;
+
+	for (int i = 0; (maxidx-i >= 0) && (i < 3); i++)
+	{
+		if ((outstr[maxidx-i] & masks[i]) == masks[i])
+		{
+			outstr[maxidx-i] = 0;
+			return true;
+		}
+	}
+
+	return false;
+}

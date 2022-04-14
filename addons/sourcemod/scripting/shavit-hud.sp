@@ -94,8 +94,7 @@ int gI_BotLastStage[MAXPLAYERS+1];
 int gI_Cycle;
 
 
-#include "shavit-hud/hud/hint.sp"
-#include "shavit-hud/hud/keyhint.sp"
+#include "shavit-hud/draw.sp"
 
 #include "shavit-hud/api.sp"
 #include "shavit-hud/commands.sp"
@@ -355,28 +354,6 @@ void Cron()
 	
 		TriggerHUDUpdate(i);
 	}
-}
-
-// keysonly because CS:S lags when you send too many usermessages
-void TriggerHUDUpdate(int client, bool keysonly = false)
-{
-	if(!keysonly)
-	{
-		UpdateCenterHUD(client);
-		SetEntProp(client, Prop_Data, "m_bDrawViewmodel", ((gI_HUDSettings[client] & HUD_HIDEWEAPON) > 0)? 0:1);
-	}
-
-	bool draw_keys = (gI_HUDSettings[client] & HUD_KEYOVERLAY) != 0;
-
-	if (draw_keys)
-	{
-		UpdateCenterKeys(client);
-	}
-
-	if(!keysonly && gI_Cycle % 10 == 0)
-	{
-		UpdateKeyHint(client);
-	}	
 }
 
 // =====[ PRIVATE] =====
