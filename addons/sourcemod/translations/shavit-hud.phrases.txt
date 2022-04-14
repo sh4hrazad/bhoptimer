@@ -80,7 +80,7 @@
 	"InStageZone"
 	{
 		"en"		"In End Zone"
-		"chi"		"\t   关卡"
+		"chi"		"\t 关卡"
 	}
 	"WRCP"
 	{
@@ -134,12 +134,12 @@
 	"HudJumpsText"
 	{
 		"en"		"Jumps"
-		"chi"		"跳跃数"
+		"chi"		"起跳次数"
 	}
 	"HudStyleText"
 	{
 		"en"		"Style"
-		"chi"		"模式"
+		"chi"		"游玩模式"
 	}
 	"HudSpeedText"
 	{
@@ -149,12 +149,12 @@
 	"HudStrafeText"
 	{
 		"en"		"Strafes"
-		"chi"		"加速数"
+		"chi"		"加速次数"
 	}
 	"HudTimeLeft"
 	{
 		"en"		"Time left"
-		"chi"		"剩下的时间"
+		"chi"		"剩余时间"
 	}
 	"HudSync"
 	{
@@ -164,7 +164,7 @@
 	"HudPerfs"
 	{
 		"en"		"Perfect jumps"
-		"chi"		"完美的跳跃数"
+		"chi"		"完美起跳"
 	}
 	"HudPracticeMode"
 	{
@@ -215,7 +215,7 @@
 	"HudTopLeft"
 	{
 		"en"		"Top left HUD (WR/PB)"
-		"chi"		"左上角HUD(SR/个人)"
+		"chi"		"左上角HUD (SR/个人)"
 	}
 	"Hud2dVel"
 	{
@@ -245,7 +245,7 @@
 	"HudTrackText"
 	{
 		"en"		"Timer track"
-		"chi"		"计时器track"
+		"chi"		"计时器 Track"
 	}
 	"HudSplitPbText"
 	{
@@ -270,12 +270,12 @@
 	"HudWRPBText"
 	{
 		"en"		"SR mode[+] | PB mode[-]"
-		"chi"		"SR模式[+] | PB模式[-]"
+		"chi"		"SR [+] | PB [-]"
 	}
 	"HudPrestrafeText"
 	{
 		"en"		"Prestrafe text"
-		"chi"		"Prestrafe信息"
+		"chi"		"Prestrafe 信息"
 	}
 	"HudStage"
 	{
@@ -285,6 +285,7 @@
 	"HudVelocityDifference"
 	{
 		"en"		"Velocity Difference"
+		"chi"		"速度差"
 	}
 	// ---------- Record Bots ---------- //
 	"ReplayText"
@@ -295,7 +296,7 @@
 	"NoReplayData"
 	{
 		"en"		"No replay data loaded\nPress USE or beat #1 to play"
-		"chi"		"未加载回放数据\n按E(使用键)或打败第一名来播放"
+		"chi"		"未加载回放数据\n按 E (使用键) 或打败第一名来播放"
 	}
 	// ---------- Panels ---------- //
 	"SpectatorPersonal"
@@ -313,7 +314,7 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"{gold}{1} {white}HUD setting {orchid}enabled{white}."
-		"chi"		"{gold}{1} {white}HUD设置{orchid}已启用{white}."
+		"chi"		"{gold}{1} {white}HUD 设置{orchid}已启用{white}."
 	}
 	"HudDisabledComponent"
 	{
@@ -365,7 +366,7 @@
 	"PrestrafeDecrease"
 	{
 		"#format"	"{1:d}"
-		"en"		"{lightred}{1} u/s"
+		"en"		"{red}{1} u/s"
 	}
 	"ZoneCheckpointTime"
 	{
@@ -388,19 +389,19 @@
 	"EnterStageMessage_Bot_Improved"
 	{
 		"#format"	"{1:d},{2:s},{3:d}"
-		"en"		"{grey}Stage{white} [{orchid}{1}{white}] | {grey}Time:{white} {lightgreen}{2}{white} | {grey}Attemps:{white} {gold}{3}"
+		"en"		"{grey}Stage{white} [{orchid}{1}{white}] | {grey}Time:{white} {lightgreen}{2}{white} | {grey}Attempts:{white} {gold}{3}"
 		"chi"		"{grey}关卡{white} [{orchid}{1}{white}] | {grey}到达时间:{white} {lightgreen}{2}{white} | {grey}尝试次数:{white} {gold}{3}"
 	}
 	"EnterStageMessage_Bot_NoImproved"
 	{
 		"#format"	"{1:d},{2:s},{3:d}"
-		"en"		"{grey}Stage{white} [{orchid}{1}{white}] | {grey}Time:{white} {red}{2}{white} | {grey}Attemps:{white} {gold}{3}"
+		"en"		"{grey}Stage{white} [{orchid}{1}{white}] | {grey}Time:{white} {red}{2}{white} | {grey}Attempts:{white} {gold}{3}"
 		"chi"		"{grey}关卡{white} [{orchid}{1}{white}] | {grey}到达时间:{white} {red}{2}{white} | {grey}尝试次数:{white} {gold}{3}"
 	}
 	"OnWRCP"
 	{
 		"#format"	"{1:N},{2:d},{3:s},{4:s},{5:s},{6:s}"
 		"en"		"{gold}{1}{white} beat {palered}[Stage {2}]{white} record! Mode: {blue}{3}{white} Time: {orchid}{4}{white} ({lightgreen}WR {5}{white}) Rank: {bluegrey}{6}{white}."
-		"chi"		"{gold}{1}{white} 打破了 {palered}[关卡 {2}]{white} 记录! 模式: {blue}{3}{white} 时间: {orchid}{4}{white} ({lightgreen}WR {5}{white}) 排名: {bluegrey}{6}{white}."
+		"chi"		"{gold}{1}{white} 打破了 {palered}[关卡 {2}]{white} {blue}*{3}*{white} 记录! 用时: {orchid}{4}{white} ({lightgreen}WR {5}{white}) 排名: {bluegrey}{6}{white}."
 	}
 }

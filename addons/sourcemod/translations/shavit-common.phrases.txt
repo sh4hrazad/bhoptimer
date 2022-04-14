@@ -43,7 +43,7 @@
 	"Zone_Stop"
 	{
 		"en"		"Stop Timer"
-		"chi"		"停止计时器区域"
+		"chi"		"中止计时区域"
 	}
 	"Zone_Teleport"
 	{
@@ -59,12 +59,11 @@
 	"NoCommandAccess"
 	{
 		"en"		"You do not have access to this command."
-		"chi"		"您无权访问此命令."
+		"chi"		"您无权使用此命令."
 	}
 	"NoConsole"
 	{
 		"en"		"Run this command from inside the game."
-		"chi"		"从游戏内部运行此命令."
 	}
 	"ArgumentsMissing"
 	{
@@ -75,7 +74,7 @@
 	"TimerCommands"
 	{
 		"en"		"Timer Commands"
-		"chi"		"计时器命令"
+		"chi"		"计时器指令"
 	}
 	// ---------- Timelimit ---------- //
 	"Minutes"

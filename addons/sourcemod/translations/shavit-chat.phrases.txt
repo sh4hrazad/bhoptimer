@@ -35,7 +35,7 @@
 	"CCHelp_Generic"
 	{
 		"en"		"- !ccname can be used to change your custom chat name. Use \"!ccname off\" to toggle it off.\n- !ccmsg can be used to change your custom message prefix/color. Use \"!ccmsg off\" to toggle it off.\nThere are custom variables, such as:"
-		"chi"		"- !ccname可用于更改您的自定义聊天名字。使用\"!ccname OFF\"将其关闭。\n-!ccmsg可用于更改您的自定义聊天前缀/颜色。使用\"!ccmsg off\"将其关闭。\n有一些自定义颜色，例如："
+		"chi"		"- !ccname 可用于更改您的自定义聊天名字。使用 \"!ccname OFF\" 将其关闭。\n- !ccmsg 可用于更改您的自定义聊天前缀/颜色。使用 \"!ccmsg off\" 将其关闭。\n你也可以使用一些颜色标签, 例如:"
 	}
 	"CCHelp_GenericVariables"
 	{
@@ -45,17 +45,17 @@
 	"CCHelp_CSS_1"
 	{
 		"en"		"- To use a custom color, write ^RRGGBB (HEX/HTML colors). For example, ^FFFFFF is white and ^000000 is black."
-		"chi"		"- 要使用自定义颜色，请写入^RRGGBB(十六进制/HTML颜色)。例如，^FFFFFF为白色，^000000为黑色。"
+		"chi"		"- 要使用自定义颜色，请写入 ^RRGGBB (十六进制/ HTML 颜色). 例如: ^FFFFFF 为白色, ^000000 为黑色。"
 	}
 	"CCHelp_CSS_2"
 	{
 		"en"		"- You can also use a set alpha (opacity in HEX, where FF is 255). &RRGGBBAA. For example, &FFFFFF7F is 127 alpha, so all text after the color will have 50% opacity."
-		"chi"		"- 您也可以使用设置Alpha(十六进制中的不透明度，其中FF为255)。&RRGGBBAA。例如，&FFFFFF7F是127 Alpha，因此颜色之后的所有文本都将具有50%的不透明度。"
+		"chi"		"- 您也可以使用设置 &RRGGBBAA (十六进制中的不透明度, 其中 FF 为 255). 例如, &FFFFFF7F 为 50% 透明度白色."
 	}
 	"CCHelp_CSGO_1"
 	{
 		"en"		"- The following colors are also available: {blue}, {bluegrey}, {darkblue}, {darkred}, {gold}, {grey}, {grey2}, {lightgreen}, {lightred}, {lime}, {orchid}, {yellow} and {palered}."
-		"chi"		"- 可用的颜色变量有: {blue}, {bluegrey}, {darkblue}, {darkred}, {gold}, {grey}, {grey2}, {lightgreen}, {lightred}, {lime}, {orchid}, {yellow}, {palered}."
+		"chi"		"- 可用的颜色标签有: {blue}, {bluegrey}, {darkblue}, {darkred}, {gold}, {grey}, {grey2}, {lightgreen}, {lightred}, {lime}, {orchid}, {yellow}, {palered}."
 	}
 	// ---------- Menu ---------- //
 	"SelectChatRank"
@@ -71,12 +71,12 @@
 	"CustomChat"
 	{
 		"en"		"Custom\nUse custom chat settings. See !cchelp for more information."
-		"chi"		"自定义\n使用自定义聊天设置。有关详细信息，请参阅!cchelp."
+		"chi"		"自定义\n使用自定义聊天设置。有关详细信息, 请参阅 !cchelp."
 	}
 	"ChatRanksMenu"
 	{
 		"en"		"Obtainable chat ranks:\nSelect an entry to preview.\n"
-		"chi"		"可获得的聊天等级：\n选择要预览的条目。\n"
+		"chi"		"可获得的聊天等级:\n选择要预览的条目.\n"
 	}
 	"ChatRanksMenu_Unranked"
 	{
@@ -99,13 +99,13 @@
 	{
 		"#format"	"{1:.0f},{2:.0f}"
 		"en"		"Have between {1} and {2} points"
-		"chi"		"Pts在 {1} 到 {2} 之间"
+		"chi"		"Pts 在 {1} 到 {2} 之间"
 	}
 	"ChatRanksMenu_Flat"
 	{
 		"#format"	"{1:.0f}"
 		"en"		"Ranked #{1} or better"
-		"chi"		"排名 #{1} 或 更高"
+		"chi"		"排名 #{1} 或更高"
 	}
 	"ChatRanksMenu_Flat_1"
 	{
@@ -128,49 +128,49 @@
 	{
 		"#format"	"{1:.1f},{2:.1f},{3:c},{4:c}"
 		"en"		"Between top {1}{3} and {2}{4}"
-		"chi"		"在 Top{1}{3} 和 Top{2}{4} 之间"
+		"chi"		"在 Top {1}{3} 和 Top {2}{4} 之间"
 	}
 	"ChatRanksMenu_WR_Count"
 	{
 		"#format"	"{1:.0f}"
 		"en"		"Have {1} WRs"
-		"chi"		"有{1}个WR"
+		"chi"		"有 {1} 个 WR"
 	}
 	"ChatRanksMenu_WR_Count_1"
 	{
 		"#format"	"{1:.0f}"
 		"en"		"Have {1} WR"
-		"chi"		"有{1}个WR"
+		"chi"		"有 {1} 个 WR"
 	}
 	"ChatRanksMenu_WR_Count_Ranged"
 	{
 		"#format"	"{1:.0f},{2:.0f}"
 		"en"		"Have between {1} and {2} WRs"
-		"chi"		"有{1}到{2}个WR"
+		"chi"		"有 {1} 到 {2} 个 WR"
 	}
 	"ChatRanksMenu_WR_Rank"
 	{
 		"#format"	"{1:.0f}"
 		"en"		"Ranked #{1} or better from WR holders"
-		"chi"		"WR持有者排名#{1}或更高"
+		"chi"		"WR 持有者排名 #{1} 或更高"
 	}
 	"ChatRanksMenu_WR_Rank_1"
 	{
 		"#format"	"{1:.0f}"
 		"en"		"Ranked #{1} out of WRs held"
-		"chi"		"在持有的WR中排名第{1}位"
+		"chi"		"在持有的 WR 中排名第 {1} 位"
 	}
 	"ChatRanksMenu_WR_Rank_Ranged"
 	{
 		"#format"	"{1:.0f},{2:.0f}"
 		"en"		"Ranked between #{1} and #{2} out of WRs held"
-		"chi"		"在持有的WR中排名在#{1}到#{2}之间"
+		"chi"		"在持有的 WR 中排名在 #{1} 到 #{2} 之间"
 	}
 	"ChatRanksMenu_WR_Rank_Percentage"
 	{
 		"#format"	"{1:.0f},{2:.0f},{3:c}"
 		"en"		"Top {1}{3} out of WRs held"
-		"chi"		"持有Top{1}{3}以外个WR"
+		"chi"		"持有 Top {1}{3} 以外个 WR"
 	}
 	"ChatRanksMenu_WR_Rank_Percentage_Ranged"
 	{

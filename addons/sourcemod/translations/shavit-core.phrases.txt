@@ -15,13 +15,13 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"{red}Timer stopped! {white}{1}"
-		"chi"		"{red}计时器已停止! {white}{1}"
+		"chi"		"{red}计时中止! {white}{1}"
 	}
 	"CommandDisabled"
 	{
 		"#format" 	"{1:s}"
 		"en"		"The command ({gold}{1}{white}) is disabled."
-		"chi"		"这条指令 ({gold}{1}{white}) 已禁止."
+		"chi"		"这条指令 ({gold}{1}{white}) 已被禁用."
 	}
 	"StyleNoAccess"
 	{
@@ -36,20 +36,20 @@
 	// ---------- Errors ---------- //
 	"VerificationFailed"
 	{
-		"en"		"Couldn't verify your, or the server's connection to Steam."
-		"chi"		"无法验证您或服务器与Steam的连接."
+		"en"		"Couldn't verify your, or the server's connection to Steam"
+		"chi"		"无法验证您或服务器与 Steam 的连接"
 	}
 	// ---------- Menus ---------- //
 	"StyleMenuTitle"
 	{
 		"en"		"Choose a style:"
-		"chi"		"选择一个模式:"
+		"chi"		"选择游玩模式:"
 	}
 	"StyleSelection"
 	{
 		"#format"	"{1:s}"
 		"en"		"You have chosen to play {grey}{1}{white}."
-		"chi"		"你已经选择了玩 {grey}{1}{white}."
+		"chi"		"已更换游玩模式为: {grey}{1}{white}."
 	}
 	"StyleUnranked"
 	{
@@ -60,80 +60,80 @@
 	"LeftRightCheat"
 	{
 		"en"		"Detected +left/right on a disallowed style."
-		"chi"		"在不允许的模式上检测到 +left/+right."
+		"chi"		"该模式下 +left/+right 禁用."
 	}
 	"Inconsistencies"
 	{
 		"en"		"Detected inconsistencies in button presses."
-		"chi"		"检测到按键不一致"
+		"chi"		"检测到非法按键"
 	}
 	"UnrankedWarning"
 	{
 		"en"		"{red}WARNING: {white}This style is unranked. Your times WILL NOT be saved and will be only displayed to you!"
-		"chi"		"{red}警告：{white}此模式未排名。您的时间不会被保存，只会显示给你自己！"
+		"chi"		"{red}警告：{white}此模式未排名, 您的计时不会被保存."
 	}
 	"PracticeModeAlert"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"{1}WARNING: {2}You're now in practice mode. Your times WILL NOT be saved and will be only displayed to you!"
-		"chi"		"{1}警告：{2}您现在处于练习模式。您的时间不会被保存，只会显示给你自己！"
+		"chi"		"{1}警告：{2}您现在处于练习模式, 您的计时不会被保存."
 	}
 	"SHSWCombination0"
 	{
 		"en"		"Your SHSW combination is {gold}W/A & S/D{white}."
-		"chi"		"你的半侧滑按键组合为： {gold}W/A 和 S/D{white}."
+		"chi"		"你的半侧滑按键组合为: {gold}W/A 和 S/D{white}."
 	}
 	"SHSWCombination1"
 	{
 		"en"		"Your SHSW combination is {gold}W/D & S/A{white}."
-		"chi"		"你的半侧滑按键组合为：{gold}W/D 和 S/A{white}."
+		"chi"		"你的半侧滑按键组合为: {gold}W/D 和 S/A{white}."
 	}
 	"NewAiraccelerate"
 	{
 		"#format"	"{1:d},{2:s},{3:d},{4:s}"
 		"en"		"Your airacceleration has been changed from {1} to {2}{3}{4}."
-		"chi"		"您的aa值已从 {1} 更改为 {2}{3}{4}."
+		"chi"		"您的空速值已从 {1} 更改为 {2}{3}{4}."
 	}
 	// ---------- Pauses ---------- //
 	"MessagePause"
 	{
 		"en"		"{white}Timer has been {red}paused{white}."
-		"chi"		"{white}计时器已{red}暂停{white}."
+		"chi"		"{white}计时已{red}暂停{white}."
 	}
 	"MessageUnpause"
 	{
 		"en"		"{white}Timer has been {red}resumed{white}."
-		"chi"		"{white}计时器已{red}恢复{white}."
+		"chi"		"{white}计时已{red}恢复{white}."
 	}
 	"PauseNotOnGround"
 	{
 		"en"		"You {red}are not{white} allowed to pause when not on ground."
-		"chi"		"您{red}不允许{white}在空中暂停."
+		"chi"		"空中{red}不允许{white}暂停."
 	}
 	"PauseStartZone"
 	{
-		"en"		"{white}You {red}cannot{white} pause in the {gold}start zone{white}."
-		"chi"		"{white}您{red}无法在{white}{gold}开始区域{white}中暂停."
+		"en"		"{white}You {red}cannot{white} pause in the {lightgreen}start zone{white}."
+		"chi"		"{lightgreen}起点{red}不允许{white}暂停."
 	}
 	"PauseEndZone"
 	{
-		"en"		"{white}You {red}cannot{white} pause in the {gold}end zone{white}."
-		"chi"		"{white}您{red}无法在{white}{gold}终点区域{white}中暂停."
+		"en"		"{white}You {red}cannot{white} pause in the {lightgreen}end zone{white}."
+		"chi"		"{lightgreen}终点{red}不允许{white}暂停.."
 	}
 	"PauseMoving"
 	{
 		"en"		"You {red}are not{white} allowed to pause while moving."
-		"chi"		"您{red}不允许{white}在移动时暂停."
+		"chi"		"移动时{red}不允许{white}暂停."
 	}
 	"PauseDuck"
 	{
 		"en"		"You {red}are not{white} allowed to pause while crouching."
-		"chi"		"您{red}不允许{white}在蹲下时暂停."
+		"chi"		"蹲下时{red}不允许{white}暂停."
 	}
 	// ---------- Zones ---------- //
 	"TrackChangeFromMain"
 	{
 		"en"		"Use {orchid}!m{white}/{orchid}!main{white} go to back to the main track."
-		"chi"		"输入 {orchid}!r{white}或者{orchid}!main{white} 回到主线."
+		"chi"		"输入 {orchid}!r{white} 或者 {orchid}!main{white} 回到主线."
 	}
 }

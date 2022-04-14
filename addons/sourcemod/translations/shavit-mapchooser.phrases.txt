@@ -10,25 +10,25 @@
 	{
 		"#format"		"{1:.0f},{2:s},{3:.0f},{4:s},{5:.0f}"
 		"en"			"No map got over {1}%% votes ({2} [{3}%%] & {4} [{5}%%]), starting runoff vote"
-        "chi"		    "无地图获得 {1}%% 以上票数 ({2} [{3}%%] & {4} [{5}%%]), 开始决胜轮投票"
+        "chi"		    "没有地图获得 {1}%% 以上票数 ({2} [{3}%%] & {4} [{5}%%]), 开始决胜轮投票"
 	}
 	"Current Map Extended"
 	{
 		"#format"		"{1:i},{2:i}"
 		"en"			"The current map has been extended. (Received {1}%% of {2} votes)"
-        "chi"		    "当前地图已被延长! 投票显示! (得票 {1}%% 共 {2} 票)"
+        "chi"		    "当前地图已被延长! (得票 {1}%% 共 {2} 票)"
 	}
 	"Current Map Stays"
 	{
 		"#format"		"{1:i},{2:i}"
 		"en"			"Current map continues! The Vote has spoken! (Received {1}%% of {2} votes)"
-        "chi"		    "当前地图仍在继续! 投票显示! (得票 {1}%% 共 {2} 票)"
+        "chi"		    "当前地图将不被更换! (得票 {1}%% 共 {2} 票)"
 	}
 	"Nextmap Voting Finished"
 	{
 		"#format"		"{1:s},{2:i},{3:i}"
 		"en"			"Map voting has finished. The next map will be {1}. (Received {2}%% of {3} votes)"
-        "chi"		    "地图投票已结束. 下一幅地图将为 {1}. ( 得票{2}%% , {3}票)"
+        "chi"		    "地图投票已结束. 下一幅地图将为 {1}. (得票{2}%% , {3}票)"
 	}
 	"Extend Map"
 	{
@@ -103,8 +103,8 @@
 	//------ plugin ------//
 	"RTVDisabled"
 	{
-		"en"			"RTV has not been enabled yet"
-		"chi"			"RTV 未开启"
+		"en"			"RTV has not been enabled yet."
+		"chi"			"滚动投票暂不可用."
 	}
 	"BlockSpectatorRTV"
 	{
@@ -115,7 +115,7 @@
 	{
 		"#format"		"{1:.2f},{2:.2f}"
 		"en"			"You must be a higher rank to RTV! Minimun points needs: {1}, your points: {2}"
-		"chi"			"您未达到 !rtv 所需的排名. 最低pts要求: {1}, 您的pts为: {2}"
+		"chi"			"您未达到滚动投票所需的排名. 最低 Pts 要求: {1}, 而你只有 {2}."
 	}
 	"RTVFinished-MapChange"
 	{
@@ -150,19 +150,19 @@
 	{
 		"#format"		"{1:N},{2:i}"
 		"en"			"{1} no longer wants to rock the vote! ({2} more votes needed)"
-		"chi"			"{1} 不再想要滚动投票! (还需要 {2} 张票)"
+		"chi"			"{1} 不再想要滚动投票! (还需要 {2} 票)"
 	}
 	"Minutes Until Map Vote"
 	{
 		"#format"		"{1:d}"
 		"en"			"{1} minutes until map vote"
-		"chi"			"距离地图投票还有{1}分钟"
+		"chi"			"距离地图投票还有 {1} 分钟"
 	}
 	"Seconds Until Map Vote"
 	{
 		"#format"		"{1:d}"
 		"en"			"{1} seconds until map vote"
-		"chi"			"距离地图投票还有{1}秒"
+		"chi"			"距离地图投票还有 {1} 秒"
 	}
 	"VoteDelay"
 	{
@@ -200,7 +200,7 @@
 	{
 		"#format"		"{1:s}"
 		"en"			"Successfully removed nomination for \'{1}\'"
-		"chi"			"成功取消预订地图 \'{1}\'"
+		"chi"			"已取消预订地图 \'{1}\'"
 	}
 	"NominateDisabled"
 	{
@@ -216,7 +216,7 @@
 	{
 		"#format"		"{1:s}"
 		"en"			"Loading unzoned map {1} ..."
-		"chi"			"正在加载未划线的地图中: {1}"
+		"chi"			"即将更换至无区域地图: {1}"
 	}
 	"Reloading Current Map"
 	{
