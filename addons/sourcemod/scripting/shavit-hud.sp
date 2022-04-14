@@ -57,7 +57,6 @@ bool gB_Sounds = false;
 // cache
 int gI_Styles = 0;
 
-
 int gI_HUDSettings[MAXPLAYERS+1];
 int gI_HUD2Settings[MAXPLAYERS+1];
 int gI_Buttons[MAXPLAYERS+1];
@@ -92,6 +91,7 @@ char gS_PreStrafeDiff[MAXPLAYERS+1][64];
 char gS_DiffTime[MAXPLAYERS+1][64];
 char gS_Map[160];
 int gI_BotLastStage[MAXPLAYERS+1];
+int gI_Cycle;
 
 
 #include "shavit-hud/hud/hint.sp"
@@ -334,6 +334,11 @@ public void OnGameFrame()
 
 void Cron()
 {	
+	if(++gI_Cycle >= 65535)
+	{
+		gI_Cycle = 0;
+	}
+
 	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(!IsValidClient(i) || IsFakeClient(i) || (gI_HUDSettings[i] & HUD_MASTER) == 0)
@@ -341,9 +346,12 @@ void Cron()
 			continue;
 		}
 
-		float fSpeed[3];
-		GetEntPropVector(GetSpectatorTarget(i, i), Prop_Data, "m_vecAbsVelocity", fSpeed);
-		gI_PreviousSpeed[i] = RoundToNearest(((gI_HUDSettings[i] & HUD_2DVEL) == 0)? GetVectorLength(fSpeed):(SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0))));
+		if((gI_Cycle % 50) == 0)
+		{
+			float fSpeed[3];
+			GetEntPropVector(GetSpectatorTarget(i, i), Prop_Data, "m_vecAbsVelocity", fSpeed);
+			gI_PreviousSpeed[i] = RoundToNearest(((gI_HUDSettings[i] & HUD_2DVEL) == 0)? GetVectorLength(fSpeed):(SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0))));
+		}
 	
 		TriggerHUDUpdate(i);
 	}
@@ -365,7 +373,7 @@ void TriggerHUDUpdate(int client, bool keysonly = false)
 		UpdateCenterKeys(client);
 	}
 
-	if(!keysonly)
+	if(!keysonly && gI_Cycle % 10 == 0)
 	{
 		UpdateKeyHint(client);
 	}	
