@@ -143,7 +143,6 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 				iLines++;
 			}
 		}
-
 		else
 		{
 			FormatEx(sLine, 128, "%T", "NoReplayData", client);
@@ -151,44 +150,46 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 			iLines++;
 		}
 	}
-
 	else
 	{
-		switch(data.iZoneHUD)
+		if(Shavit_GetClientTime(client) == 0.0)
 		{
-			case ZoneHUD_Start:
+			switch(data.iZoneHUD)
 			{
-				if(data.iTrack == 0)
+				case ZoneHUD_Start:
 				{
-					FormatEx(sLine, 32, "In Main Start Zone");
+					if(data.iTrack == 0)
+					{
+						FormatEx(sLine, 32, "In Main Start Zone");
+					}
+					else
+					{
+						FormatEx(sLine, 32, "In Bonus %d Start Zone", data.iTrack);
+					}
 				}
-				else
+				case ZoneHUD_End:
 				{
-					FormatEx(sLine, 32, "In Bonus %d Start Zone", data.iTrack);
+					if(data.iTrack == 0)
+					{
+						FormatEx(sLine, 32, "In Main End Zone");
+					}
+					else
+					{
+						FormatEx(sLine, 32, "In Bonus %d End Zone", data.iTrack);
+					}
+				}
+				case ZoneHUD_Stage:
+				{
+					FormatEx(sLine, 32, "In Stage %d Start Zone", data.iStage);
 				}
 			}
-			case ZoneHUD_End:
-			{
-				if(data.iTrack == 0)
-				{
-					FormatEx(sLine, 32, "In Main End Zone");
-				}
-				else
-				{
-					FormatEx(sLine, 32, "In Bonus %d End Zone", data.iTrack);
-				}
-			}
-			case ZoneHUD_Stage:
-			{
-				FormatEx(sLine, 32, "In Stage %d Start Zone", data.iStage);
-			}
-		}
 
-		if(sLine[0])
-		{
-			AddHUDLine(buffer, maxlen, sLine, iLines);
+			if(sLine[0])
+			{
+				AddHUDLine(buffer, maxlen, sLine, iLines);
 
-			iLines++;
+				iLines++;
+			}
 		}
 
 		if((gI_HUD2Settings[client] & HUD2_TIME) == 0 && data.fTime != 0.0)

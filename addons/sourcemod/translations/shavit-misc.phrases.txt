@@ -252,4 +252,19 @@
 		"en"		"Advertisements disabled"
 		"chi"		"已关闭广告提示"
 	}
+	"MessagePause"
+	{
+		"en"		"Timer {lightgreen}paused{white}."
+		"chi"		"计时已{lightgreen}暂停{white}."
+	}
+	"NoclipResumeTimer"
+	{
+		"en"		"Resume timer using {lightgreen}!pause{white}."
+		"chi"		"输入 {lightgreen}!pause{white} 以恢复计时."
+	}
+	"FailedToNoclip"
+	{
+		"en"		"You {red}can't{white} noclip when moving, crouching or in the air."
+		"chi"		"空中, 蹲下时或移动时{red}不允许{white}存点."
+	}
 }

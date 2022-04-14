@@ -138,23 +138,40 @@ public Action HookTrigger(int entity, int other)
 	return Plugin_Continue;
 }
 
-static void UpdateByNoclipStatus(int client, bool walking)
+static void UpdateByNoclipStatus(int client, bool condition)
 {
-	if(walking)
-	{
-		if(Shavit_GetTimerStatus(client) != Timer_Paused && !Shavit_IsPracticeMode(client))
-		{
-			Shavit_PauseTimer(client);
-		}
+	char sSpecial[32];
+	Shavit_GetStyleStrings(Shavit_GetBhopStyle(client), sSpecialString, sSpecial, sizeof(sSpecial));
 
-		Shavit_PrintToChat(client, "%T", (gB_CanTouchTrigger[client])?"NoclipCanTrigger":"NoclipCannotTrigger", client);
-		SetEntityMoveType(client, MOVETYPE_NOCLIP);
+	if(condition)
+	{
+		if(StrContains(sSpecial, "segments", false) == -1
+			 && !Shavit_IsPracticeMode(client)
+			 && Shavit_GetTimerStatus(client) == Timer_Running
+			 && Shavit_GetClientTime(client) != 0.0)
+		{
+			if(Shavit_CanPause(client) == 0)
+			{
+				Shavit_PauseTimer(client);
+				Shavit_PrintToChat(client, "%T", "MessagePause", client);
+				SetEntityMoveType(client, MOVETYPE_NOCLIP);
+			}
+			else
+			{
+				Shavit_PrintToChat(client, "%T", "FailedToNoclip", client);
+			}
+		}
+		else
+		{
+			Shavit_StopTimer(client);
+			SetEntityMoveType(client, MOVETYPE_NOCLIP);
+		}
 	}
 	else
 	{
 		if(Shavit_GetTimerStatus(client) == Timer_Paused)
 		{
-			Shavit_PrintToChat(client, "输入{palered}%s{default}恢复计时器", Shavit_GetClientTime(client) != 0.0 ? "!pause" : "!r");
+			Shavit_PrintToChat(client, "%T", "NoclipResumeTimer", client);
 		}
 
 		SetEntityMoveType(client, MOVETYPE_WALK);
