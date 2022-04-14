@@ -1,10 +1,4 @@
-void UpdateHintHud(int client)
-{
-	UpdateMainHUD(client);
-	SetEntProp(client, Prop_Data, "m_bDrawViewmodel", ((gI_HUDSettings[client] & HUD_HIDEWEAPON) > 0)? 0:1);
-}
-
-static void UpdateMainHUD(int client)
+void UpdateCenterHUD(int client)
 {
 	int target = GetSpectatorTarget(client, client);
 

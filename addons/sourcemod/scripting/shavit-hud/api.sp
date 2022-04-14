@@ -37,8 +37,7 @@ public int Native_ForceHUDUpdate(Handle handler, int numParams)
 
 	for(int i = 0; i < count; i++)
 	{
-		UpdateHintHud(clients[i]);
-		UpdateKeyHint(clients[i]);
+		TriggerHUDUpdate(i, true);
 	}
 
 	return count;

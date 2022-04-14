@@ -78,7 +78,6 @@ Convar gCV_DefaultHUD = null;
 Convar gCV_DefaultHUD2 = null;
 
 // cookies
-int gI_Cycle = 0;
 Cookie gH_HUDCookie = null;
 Cookie gH_HUDCookieMain = null;
 
@@ -217,15 +216,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 	{
 		if(i == client || (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
 		{
-			UpdateKeyHint(i);
-			UpdateHintHud(i);
-
-			bool draw_keys = (gI_HUDSettings[i] & HUD_KEYOVERLAY) != 0;
-
-			if (draw_keys)
-			{
-				UpdateCenterKeys(i);
-			}
+			TriggerHUDUpdate(i, true);
 		}
 	}
 
@@ -321,7 +312,7 @@ public void PostThinkPost(int client)
 		{
 			if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
 			{
-				UpdateKeyHint(i);
+				TriggerHUDUpdate(i, true);
 			}
 		}
 	}
@@ -342,12 +333,7 @@ public void OnGameFrame()
 }
 
 void Cron()
-{
-	if(++gI_Cycle >= 65535)
-	{
-		gI_Cycle = 0;
-	}
-	
+{	
 	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(!IsValidClient(i) || IsFakeClient(i) || (gI_HUDSettings[i] & HUD_MASTER) == 0)
@@ -355,26 +341,35 @@ void Cron()
 			continue;
 		}
 
-		bool draw_keys = (gI_HUDSettings[i] & HUD_KEYOVERLAY) != 0;
-
-		if (draw_keys)
-		{
-			UpdateCenterKeys(i);
-		}
-
-		// center hud
-		UpdateHintHud(i);
-
-		// sidebar hud
-		UpdateKeyHint(i);
-
 		float fSpeed[3];
 		GetEntPropVector(GetSpectatorTarget(i, i), Prop_Data, "m_vecAbsVelocity", fSpeed);
 		gI_PreviousSpeed[i] = RoundToNearest(((gI_HUDSettings[i] & HUD_2DVEL) == 0)? GetVectorLength(fSpeed):(SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0))));
+	
+		TriggerHUDUpdate(i);
 	}
 }
 
+// keysonly because CS:S lags when you send too many usermessages
+void TriggerHUDUpdate(int client, bool keysonly = false)
+{
+	if(!keysonly)
+	{
+		UpdateCenterHUD(client);
+		SetEntProp(client, Prop_Data, "m_bDrawViewmodel", ((gI_HUDSettings[client] & HUD_HIDEWEAPON) > 0)? 0:1);
+	}
 
+	bool draw_keys = (gI_HUDSettings[client] & HUD_KEYOVERLAY) != 0;
+
+	if (draw_keys)
+	{
+		UpdateCenterKeys(client);
+	}
+
+	if(!keysonly)
+	{
+		UpdateKeyHint(client);
+	}	
+}
 
 // =====[ PRIVATE] =====
 
