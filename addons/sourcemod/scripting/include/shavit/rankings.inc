@@ -208,6 +208,7 @@ public void __pl_shavit_rankings_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetMapTiers");
 	MarkNativeAsOptional("Shavit_GetMapLimitspeed");
 	MarkNativeAsOptional("Shavit_GetMapMaxvelocity");
+	MarkNativeAsOptional("Shavit_GetMapAutoBhopTrack");
 	MarkNativeAsOptional("Shavit_GetPoints");
 	MarkNativeAsOptional("Shavit_GetRank");
 	MarkNativeAsOptional("Shavit_GetRankedPlayers");
