@@ -382,6 +382,11 @@
 		"en"		"Refresh menu"
 		"chi"		"刷新目录"
 	}
+	"TpToZone"
+	{
+		"en"        	"Teleport to a zone"
+		"chi"		"传送至一个区域"
+	}
 	// ---------- Messages ---------- //
 	"ZoneStopEnter"
 	{

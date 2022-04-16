@@ -13,13 +13,14 @@
 - ✔️ 起点开穿墙不停止计时, 而是暂停计时
 - ✔️ `!ms` 无法更改设置
 - 编辑区域时传送到某个区域的传送点后在起点正常起步时仍被限速
-- 编辑区域时传送到某个区域的传送点后开始计时会触发两次 `Shavit_OnStartTimer_Post()` 或 `Shavit_OnStageTimer_Post()`
+- ✔️ 编辑区域时传送到某个区域的传送点后开始计时会触发两次 `Shavit_OnStartTimer_Post()` 或 `Shavit_OnStageTimer_Post()`
 
 ### 要加的:
 - ✔️ 将区域传送点设置到 `info_teleport_destination`
 - 把 eventqueuefix 支持加回来 (考虑到部分地图触发需要)
 - ✔️ 禁止起跳区域
 - ✔️ 自动连跳区域
+- HUD 显示时间/速度差
 - 可在 `!ms` 中设置某个 Track 能否自动跳
 - 复刻存点 `!saveloc posX|posY|posZ|angleX|angleY|angleZ|velX|velY|velZ` (ksf feature)
 - WRCP循环播放bot不播进入终点后的部分(最后一关除外)
