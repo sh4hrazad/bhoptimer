@@ -70,11 +70,12 @@ native bool Shavit_GetMapLimitspeed();
 native float Shavit_GetMapMaxvelocity();
 
 /**
- * Get track autobhop status for a map
+ * Get whether a player can autobhop in his/her current track.
  * 
+ * @param client					Client index.
  * @return							Current map's autobhop status for each track.
  */
-native int Shavit_GetMapAutoBhopTrack();
+native bool Shavit_CanAutoBhopInTrack(int client);
 
 /**
  * Gets player points.
@@ -208,7 +209,7 @@ public void __pl_shavit_rankings_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetMapTiers");
 	MarkNativeAsOptional("Shavit_GetMapLimitspeed");
 	MarkNativeAsOptional("Shavit_GetMapMaxvelocity");
-	MarkNativeAsOptional("Shavit_GetMapAutoBhopTrack");
+	MarkNativeAsOptional("Shavit_CanAutoBhopInTrack");
 	MarkNativeAsOptional("Shavit_GetPoints");
 	MarkNativeAsOptional("Shavit_GetRank");
 	MarkNativeAsOptional("Shavit_GetRankedPlayers");

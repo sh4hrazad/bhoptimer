@@ -11,7 +11,7 @@ void CreateNatives()
 	CreateNative("Shavit_GetMapTiers", Native_GetMapTiers);
 	CreateNative("Shavit_GetMapLimitspeed", Native_GetMapLimitspeed);
 	CreateNative("Shavit_GetMapMaxvelocity", Native_GetMapMaxvelocity);
-	CreateNative("Shavit_GetMapAutoBhopTrack", Native_GetMapAutoBhopTrack);
+	CreateNative("Shavit_CanAutoBhopInTrack", Native_CanAutoBhopInTrack);
 	CreateNative("Shavit_GetPoints", Native_GetPoints);
 	CreateNative("Shavit_GetRank", Native_GetRank);
 	CreateNative("Shavit_GetRankedPlayers", Native_GetRankedPlayers);
@@ -52,9 +52,9 @@ public int Native_GetMapMaxvelocity(Handle handler, int numParams)
 	return view_as<int>(gF_Maxvelocity);
 }
 
-public int Native_GetMapAutoBhopTrack(Handle handler, int numParams)
+public int Native_CanAutoBhopInTrack(Handle handler, int numParams)
 {
-	return gI_AllowBhop;
+	return view_as<bool>(!(gI_AllowBhop & (1 << Shavit_GetClientTrack(GetNativeCell(1)))));
 }
 
 public int Native_GetPoints(Handle handler, int numParams)
