@@ -19,8 +19,9 @@
 - 把 eventqueuefix 支持加回来 (考虑到部分地图触发需要)
 - ✔️ 禁止起跳区域
 - ✔️ 自动连跳区域
+- 可设置 `!r` 应传送回关卡或 Track 起点
 - 重做起步限速
-- HUD 显示时间/速度差
+- HUD 显示时间/速度差, 剩余时间, 同步率, 预估排名
 - ✔️ 可在 `!ms` 中设置某个 Track 能否自动跳
 - 复刻存点 `!saveloc posX|posY|posZ|angleX|angleY|angleZ|velX|velY|velZ` (ksf feature)
 - WRCP循环播放bot不播进入终点后的部分(最后一关除外)

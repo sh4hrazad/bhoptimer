@@ -73,7 +73,7 @@ native float Shavit_GetMapMaxvelocity();
  * Get whether a player can autobhop in his/her current track.
  * 
  * @param client					Client index.
- * @return							Current map's autobhop status for each track.
+ * @return							Boolean. true if can autobhop.
  */
 native bool Shavit_CanAutoBhopInTrack(int client);
 

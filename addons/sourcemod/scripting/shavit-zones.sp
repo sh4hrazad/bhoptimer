@@ -2047,6 +2047,7 @@ public int MenuHandler_SelectHookZone(Menu menu, MenuAction action, int param1, 
 		{
 			case 0:
 			{
+				Shavit_StopTimer(param1);
 				TeleportEntity(param1, origin, NULL_VECTOR, NULL_VECTOR);
 				Shavit_PrintToChat(param1, "%T", "HookTeleportZonesItem", param1, sHookname);
 				menu.Display(param1, -1);
