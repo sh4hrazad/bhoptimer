@@ -78,6 +78,7 @@ bool gB_Maplimitspeed;
 
 int gI_Tier = 1; // No floating numbers for tiers, sorry.
 float gF_Maxvelocity = 3500.0;
+int gI_AllowBhop;
 
 char gS_Map[PLATFORM_MAX_PATH];
 

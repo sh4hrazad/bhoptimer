@@ -20,6 +20,7 @@ public void SQL_GetMapSettings_Callback(Database db, DBResultSet results, const 
 		gB_Maplimitspeed = view_as<bool>(results.FetchInt(1));
 		gF_Maxvelocity = results.FetchFloat(2);
 		gCV_Maxvelocity.FloatValue = gF_Maxvelocity;
+		gI_AllowBhop = results.FetchInt(3);
 	}
 	else
 	{
@@ -139,10 +140,10 @@ public void SQL_SetMapTier_Callback(Database db, DBResultSet results, const char
 	DB_RecalculateCurrentMap();
 }
 
-void DB_SaveMapSettings(int client, int tier, bool limitspeed, float maxvel)
+void DB_SaveMapSettings(int client, int tier, bool limitspeed, float maxvel, int allowbhop)
 {
 	char sQuery[256];
-	FormatEx(sQuery, 256, mysql_SaveMapSettings, tier, view_as<int>(limitspeed), maxvel, gS_Map);
+	FormatEx(sQuery, 256, mysql_SaveMapSettings, tier, view_as<int>(limitspeed), maxvel, allowbhop, gS_Map);
 
 	gH_SQL.Query(SQL_SetMapSettings_Callback, sQuery, GetClientSerial(client));
 }

@@ -3,30 +3,29 @@ native int Shavit_GetMapTier(const char[] map = "");
 // keysonly because CS:S lags when you send too many usermessages
 void TriggerHUDUpdate(int client, bool keysonly = false)
 {
-	huddata_t huddata;
-	int target = GetSpectatorTarget(client, client);
-	bool bReplay = (gB_Replay && Shavit_IsReplayEntity(target));
-	
-	if(!keysonly)
-	{
-		huddata.iTarget = target;
-		huddata.iStyle = (bReplay) ? Shavit_GetReplayBotStyle(target) : Shavit_GetBhopStyle(target);
-		huddata.iTrack = (bReplay) ? Shavit_GetReplayBotTrack(target) : Shavit_GetClientTrack(target);
-		huddata.iStage = (bReplay) ? Shavit_GetReplayBotStage(target) : Shavit_GetCurrentStage(target);
-
-		DrawCenterHintHUD(client, target, huddata, bReplay);
-		SetEntProp(client, Prop_Data, "m_bDrawViewmodel", ((gI_HUDSettings[client] & HUD_HIDEWEAPON) > 0)? 0:1);
-	}
-
-	bool draw_keys = (gI_HUDSettings[client] & HUD_KEYOVERLAY) != 0;
-
-	if (draw_keys)
+	if ((gI_HUDSettings[client] & HUD_KEYOVERLAY) != 0)
 	{
 		// key hud
 		DrawCenterKeys(client);
 	}
 
-	if(!keysonly && gI_Cycle % 10 == 0)
+	if (keysonly)
+	{
+		return;
+	}
+
+	huddata_t huddata;
+	int target = GetSpectatorTarget(client, client);
+	bool bReplay = (gB_Replay && Shavit_IsReplayEntity(target));
+	huddata.iTarget = target;
+	huddata.iStyle = (bReplay) ? Shavit_GetReplayBotStyle(target) : Shavit_GetBhopStyle(target);
+	huddata.iTrack = (bReplay) ? Shavit_GetReplayBotTrack(target) : Shavit_GetClientTrack(target);
+	huddata.iStage = (bReplay) ? Shavit_GetReplayBotStage(target) : Shavit_GetCurrentStage(target);
+
+	DrawCenterHintHUD(client, target, huddata, bReplay);
+	SetEntProp(client, Prop_Data, "m_bDrawViewmodel", ((gI_HUDSettings[client] & HUD_HIDEWEAPON) > 0)? 0:1);
+
+	if(gI_Cycle % 10 ==0)
 	{
 		DrawSidebarHintHUD(client, target, huddata, bReplay);
 	}

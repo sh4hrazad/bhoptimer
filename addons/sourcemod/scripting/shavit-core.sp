@@ -29,6 +29,7 @@
 
 #undef REQUIRE_PLUGIN
 #include <shavit>
+#include <shavit/rankings>
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -3561,7 +3562,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	bool bInWater = (GetEntProp(client, Prop_Send, "m_nWaterLevel") >= 2);
 	bool bOnGround = (!bInWater && mtMoveType == MOVETYPE_WALK && iGroundEntity != -1);
 
-	if (Shavit_InsideZone(client, Zone_AutoBhop, -1) || (GetStyleSettingBool(gA_Timers[client].bsStyle, "autobhop") && gB_Auto[client] && (buttons & IN_JUMP) > 0 && mtMoveType == MOVETYPE_WALK && !bInWater))
+	if (Shavit_GetMapAutoBhopTrack() & (1 << Shavit_GetClientTrack(client)) == 0 || Shavit_InsideZone(client, Zone_AutoBhop, -1) || (GetStyleSettingBool(gA_Timers[client].bsStyle, "autobhop") && gB_Auto[client] && (buttons & IN_JUMP) > 0 && mtMoveType == MOVETYPE_WALK && !bInWater))
 	{
 		int iOldButtons = GetEntProp(client, Prop_Data, "m_nOldButtons");
 		SetEntProp(client, Prop_Data, "m_nOldButtons", (iOldButtons & ~IN_JUMP));
