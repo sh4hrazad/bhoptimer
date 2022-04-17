@@ -1202,6 +1202,16 @@ forward void Shavit_OnUserDeleteData(int client, int steamid);
 forward void Shavit_OnDeleteRestOfUserSuccess(int client, int steamid);
 
 /**
+ * Called after client's stage is changed.
+ *
+ * @param client					Client Index.
+ * @param laststage					Last stage.
+ * @param newstage					New stage.
+ * @noreturn
+ */
+forward void Shavit_OnStageChanged(int client, int oldstage, int newstage);
+
+/**
  * Called when a player RTV's.
  * Requires shavit-mapchooser.
  *

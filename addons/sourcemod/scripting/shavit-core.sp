@@ -129,6 +129,7 @@ Handle gH_Forwards_OnDeleteMapData = null;
 Handle gH_Forwards_OnCommandStyle = null;
 Handle gH_Forwards_OnUserDeleteData = null;
 Handle gH_Forwards_OnDeleteRestOfUserSuccess = null;
+Handle gH_Forwards_OnStageChanged = null;
 
 StringMap gSM_StyleCommands = null;
 
@@ -307,6 +308,7 @@ public void OnPluginStart()
 	gH_Forwards_OnCommandStyle = CreateGlobalForward("Shavit_OnCommandStyle", ET_Event, Param_Cell, Param_Cell, Param_FloatByRef);
 	gH_Forwards_OnUserDeleteData = CreateGlobalForward("Shavit_OnUserDeleteData", ET_Event, Param_Cell, Param_Cell);
 	gH_Forwards_OnDeleteRestOfUserSuccess = CreateGlobalForward("Shavit_OnDeleteRestOfUserSuccess", ET_Event, Param_Cell, Param_Cell);
+	gH_Forwards_OnStageChanged = CreateGlobalForward("Shavit_OnStageChanged", ET_Event, Param_Cell, Param_Cell, Param_Cell);
 
 	LoadTranslations("shavit-core.phrases");
 	LoadTranslations("shavit-common.phrases");
@@ -2075,7 +2077,16 @@ public int Native_GetLastCP(Handle handler, int numParams)
 
 public int Native_SetCurrentStage(Handle handler, int numParams)
 {
-	gA_Timers[GetNativeCell(1)].iCurrentStage = GetNativeCell(2);
+	int client = GetNativeCell(1);
+	int iOldStage = gA_Timers[client].iCurrentStage;
+	int iNewStage = GetNativeCell(2);
+	gA_Timers[client].iCurrentStage = iNewStage;
+
+	Call_StartForward(gH_Forwards_OnStageChanged);
+	Call_PushCell(client);
+	Call_PushCell(iOldStage);
+	Call_PushCell(iNewStage);
+	Call_Finish();
 
 	return 0;
 }

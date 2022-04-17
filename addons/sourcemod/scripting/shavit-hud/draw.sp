@@ -1,15 +1,15 @@
 native int Shavit_GetMapTier(const char[] map = "");
 
 // keysonly because CS:S lags when you send too many usermessages
-void TriggerHUDUpdate(int client, bool keysonly = false)
+void TriggerHUDUpdate(int client, bool keysonly = false, bool keyhintonly = false, bool forceupdate = false)
 {
-	if ((gI_HUDSettings[client] & HUD_KEYOVERLAY) != 0)
+	if ((gI_HUDSettings[client] & HUD_KEYOVERLAY) != 0 && !keyhintonly)
 	{
 		// key hud
 		DrawCenterKeys(client);
 	}
 
-	if (keysonly)
+	if (keysonly && !keyhintonly)
 	{
 		return;
 	}
@@ -22,13 +22,18 @@ void TriggerHUDUpdate(int client, bool keysonly = false)
 	huddata.iTrack = (bReplay) ? Shavit_GetReplayBotTrack(target) : Shavit_GetClientTrack(target);
 	huddata.iStage = (bReplay) ? Shavit_GetReplayBotStage(target) : Shavit_GetCurrentStage(target);
 
-	DrawCenterHintHUD(client, target, huddata, bReplay);
-	SetEntProp(client, Prop_Data, "m_bDrawViewmodel", ((gI_HUDSettings[client] & HUD_HIDEWEAPON) > 0)? 0:1);
-
-	if(gI_Cycle % 10 ==0)
+	if(gI_Cycle % 50 == 0 || forceupdate)
 	{
 		DrawSidebarHintHUD(client, target, huddata, bReplay);
 	}
+
+	if(keyhintonly)
+	{
+		return;
+	}
+
+	DrawCenterHintHUD(client, target, huddata, bReplay);
+	SetEntProp(client, Prop_Data, "m_bDrawViewmodel", ((gI_HUDSettings[client] & HUD_HIDEWEAPON) > 0) ? 0 : 1);
 }
 
 static void DrawCenterHintHUD(int client, int target, huddata_t huddata, bool bReplay)
@@ -44,7 +49,7 @@ static void DrawCenterHintHUD(int client, int target, huddata_t huddata, bool bR
 	float fSpeed[3];
 	GetEntPropVector(target, Prop_Data, "m_vecAbsVelocity", fSpeed);
 
-	float fSpeedHUD = ((gI_HUDSettings[client] & HUD_2DVEL) == 0)? GetVectorLength(fSpeed):(SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0)));
+	float fSpeedHUD = ((gI_HUDSettings[client] & HUD_2DVEL) == 0) ? GetVectorLength(fSpeed) : (SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0)));
 	ZoneHUD iZoneHUD = ZoneHUD_None;
 	float fReplayTime = 0.0;
 
@@ -74,11 +79,11 @@ static void DrawCenterHintHUD(int client, int target, huddata_t huddata, bool bR
 
 	huddata.iSpeed = RoundToNearest(fSpeedHUD);
 	huddata.iZoneHUD = iZoneHUD;
-	huddata.fTime = (bReplay)? fReplayTime:Shavit_GetClientTime(target);
-	huddata.fSync = (bReplay)? 0.0:Shavit_GetSync(target);
-	huddata.iTimerStatus = (bReplay)? Timer_Running:Shavit_GetTimerStatus(target);
+	huddata.fTime = (bReplay) ? fReplayTime : Shavit_GetClientTime(target);
+	huddata.fSync = (bReplay) ? 0.0 : Shavit_GetSync(target);
+	huddata.iTimerStatus = (bReplay) ? Timer_Running : Shavit_GetTimerStatus(target);
 	huddata.bReplay = bReplay;
-	huddata.bPractice = (bReplay)? false:Shavit_IsPracticeMode(target);
+	huddata.bPractice = (bReplay) ? false : Shavit_IsPracticeMode(target);
 	huddata.bStageTimer = Shavit_IsStageTimer(target);
 	strcopy(huddata.sDiff, 64, gS_DiffTime[target]);
 	strcopy(huddata.sPreStrafe, 64, gS_PreStrafeDiff[target]);
@@ -99,7 +104,7 @@ static void DrawCenterHintHUD(int client, int target, huddata_t huddata, bool bR
 
 	if(iLines > 0)
 	{
-		PrintHintText(client, "%s", sBuffer);
+		UnreliablePrintHintText(client, sBuffer);
 	}
 }
 
@@ -107,7 +112,7 @@ static void DrawCenterHintHUD(int client, int target, huddata_t huddata, bool bR
 static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 {
 	int iLines = 0;
-	char sLine[256];
+	char sLine[96];
 
 	char sTransTime[8];
 	FormatEx(sTransTime, 8, "%T", "Time", client);
@@ -119,7 +124,7 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 	{
 		if(data.iStyle != -1 && Shavit_IsReplayDataLoaded(data.iStyle, data.iTrack, data.iStage))
 		{
-			char sTrack[64];
+			char sTrack[32];
 			if(data.iStage == 0)
 			{
 				GetTrackName(client, data.iTrack, sTrack, 64);
@@ -130,37 +135,37 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 				Format(sTrack, 64, "%T #%d", "Stage", client, data.iStage);
 			}
 
-			FormatEx(sLine, 128, "%T ", "ReplayText", client);
+			FormatEx(sLine, 96, "%T ", "ReplayText", client);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 			
-			FormatEx(sLine, 128, "[%s - %s]", sTrack, gS_StyleStrings[data.iStyle].sStyleName);
+			FormatEx(sLine, 96, "[%s - %s]", sTrack, gS_StyleStrings[data.iStyle].sStyleName);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
 			iLines++;
 
 			if((gI_HUD2Settings[client] & HUD2_TIME) == 0)
 			{
-				char sTime[32];
+				char sTime[16];
 				FormatSeconds(data.fTime, sTime, 32, false);
 
 				char sPlayerName[16]; // shouldn't too long bytes.
 				Shavit_GetReplayName(data.iStyle, data.iTrack, sPlayerName, sizeof(sPlayerName), data.iStage);
 
-				FormatEx(sLine, 128, "%s: %s (%s)", sTransTime, sTime, sPlayerName);
+				FormatEx(sLine, 96, "%s: %s (%s)", sTransTime, sTime, sPlayerName);
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 				iLines++;
 			}
 
 			if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
 			{
-				FormatEx(sLine, 128, "%s: %d", sSpeed, data.iSpeed);
+				FormatEx(sLine, 96, "%s: %d", sSpeed, data.iSpeed);
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 				iLines++;
 			}
 		}
 		else
 		{
-			FormatEx(sLine, 128, "%T", "NoReplayData", client);
+			FormatEx(sLine, 96, "%T", "NoReplayData", client);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 			iLines++;
 		}
@@ -175,27 +180,27 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 				{
 					if(data.iTrack == 0)
 					{
-						FormatEx(sLine, 32, "In Main Start Zone");
+						FormatEx(sLine, 96, "In Main Start Zone");
 					}
 					else
 					{
-						FormatEx(sLine, 32, "In Bonus %d Start Zone", data.iTrack);
+						FormatEx(sLine, 96, "In Bonus %d Start Zone", data.iTrack);
 					}
 				}
 				case ZoneHUD_End:
 				{
 					if(data.iTrack == 0)
 					{
-						FormatEx(sLine, 32, "In Main End Zone");
+						FormatEx(sLine, 96, "In Main End Zone");
 					}
 					else
 					{
-						FormatEx(sLine, 32, "In Bonus %d End Zone", data.iTrack);
+						FormatEx(sLine, 96, "In Bonus %d End Zone", data.iTrack);
 					}
 				}
 				case ZoneHUD_Stage:
 				{
-					FormatEx(sLine, 32, "In Stage %d Start Zone", data.iStage);
+					FormatEx(sLine, 96, "In Stage %d Start Zone", data.iStage);
 				}
 			}
 
@@ -216,32 +221,32 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 
 			if(data.iStyle == 0)
 			{
-				FormatEx(sLine, 128, "Time: %s", sTime);
+				FormatEx(sLine, 96, "Time: %s", sTime);
 			}
 			else
 			{
-				char sStyle[8];
+				char sStyle[4];
 				Shavit_GetStyleStrings(data.iStyle, sShortName, sStyle, 8);
-				FormatEx(sLine, 128, "%s: %s", sStyle, sTime);
+				FormatEx(sLine, 96, "%s: %s", sStyle, sTime);
 			}
 
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
 			if(data.iCheckpoint > 0 && data.iStyle >= 0 && !data.bStageTimer && data.iTimerStatus == Timer_Running)
 			{
-				FormatEx(sLine, 128, " [CP%d %s]", data.iCheckpoint, data.sDiff);
+				FormatEx(sLine, 96, " [CP%d %s]", data.iCheckpoint, data.sDiff);
 
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 			}
 
 			if(data.bPractice)
 			{
-				FormatEx(sLine, 128, " [Practice]");
+				FormatEx(sLine, 96, " [Practice]");
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 			}
 			else if(data.iTimerStatus == Timer_Paused)
 			{
-				FormatEx(sLine, 128, " [Paused]");
+				FormatEx(sLine, 96, " [Paused]");
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 			}
 
@@ -267,11 +272,11 @@ static void DrawSidebarHintHUD(int client, int target, huddata_t huddata, bool b
 	// TODO: timeleft
 	if((gI_HUDSettings[client] & HUD_MAPTIER) > 0)
 	{
-		char sMessage[256];
+		char sMessage[192];
 
 		if((gI_HUDSettings[client] & HUD_MAPTIER) > 0)
 		{
-			char sMap[64];
+			char sMap[32];
 			GetCurrentMap(sMap, sizeof(sMap));
 
 			FormatEx(sMessage, sizeof(sMessage), "%sMap: %s [T%d]\n", sMessage,
@@ -280,8 +285,8 @@ static void DrawSidebarHintHUD(int client, int target, huddata_t huddata, bool b
 
 		// SR and PB
 		char sWRName[32];
-		char sWRTime[32];
-		char sPBTime[32];
+		char sWRTime[16];
+		char sPBTime[16];
 
 		if(huddata.iStyle != -1 && huddata.iTrack != -1 && !Shavit_IsStageTimer(target))
 		{
@@ -496,6 +501,18 @@ static void UnreliablePrintCenterText(int client, const char[] str)
 	msg.WriteString("");
 	msg.WriteString("");
 	msg.WriteString("");
+	EndMessage();
+}
+
+static void UnreliablePrintHintText(int client, const char[] str)
+{
+	int clients[1];
+	clients[0] = client;
+
+	// Start our own message instead of using PrintHintText so we can exclude USERMSG_RELIABLE.
+	// This makes the HUD update visually faster.
+	BfWrite msg = view_as<BfWrite>(StartMessageEx(gI_HintText, clients, 1, 0));
+	msg.WriteString(str);
 	EndMessage();
 }
 

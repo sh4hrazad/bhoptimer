@@ -81,6 +81,7 @@ Cookie gH_HUDCookie = null;
 Cookie gH_HUDCookieMain = null;
 
 // sync hud text
+UserMsg gI_HintText = view_as<UserMsg>(-1);
 UserMsg gI_TextMsg = view_as<UserMsg>(-1);
 
 // timer settings
@@ -134,6 +135,7 @@ public void OnPluginStart()
 	InitHintSize();
 	InitCookies();
 
+	gI_HintText = GetUserMessageId("HintText");
 	gI_TextMsg = GetUserMessageId("TextMsg");
 
 	if(gB_Late)
@@ -279,6 +281,30 @@ public void Shavit_OnEnterCheckpoint(int client, int cp, int style, float enters
 public void Shavit_OnEnterStageZone_Bot(int bot, int stage)
 {
 	Shavit_OnEnterStageZone_Bot_Message(bot, stage);
+}
+
+public void Shavit_OnStyleChanged(int client, int oldstyle, int newstyle, int track, bool manual)
+{
+	if(IsClientInGame(client))
+	{
+		TriggerHUDUpdate(client, false, true, true);
+	}
+}
+
+public void Shavit_OnTrackChanged(int client, int oldtrack, int newtrack)
+{
+	if(IsClientInGame(client))
+	{
+		TriggerHUDUpdate(client, false, true, true);
+	}
+}
+
+public void Shavit_OnStageChanged(int client, int oldstage, int newstage)
+{
+	if(IsClientInGame(client))
+	{
+		TriggerHUDUpdate(client, false, true, true);
+	}
 }
 
 public void OnClientPutInServer(int client)
