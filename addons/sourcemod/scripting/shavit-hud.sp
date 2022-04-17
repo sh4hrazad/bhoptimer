@@ -105,6 +105,7 @@ Convar gCV_GradientStepSize = null;
 Convar gCV_TicksPerUpdate = null;
 Convar gCV_SpectatorList = null;
 Convar gCV_SpecNameSymbolLength = null;
+Convar gCV_BlockYouHaveSpottedHint = null;
 Convar gCV_DefaultHUD = null;
 Convar gCV_DefaultHUD2 = null;
 
@@ -161,6 +162,8 @@ public void OnPluginStart()
 	gI_HintText = GetUserMessageId("HintText");
 	gI_TextMsg = GetUserMessageId("TextMsg");
 
+	HookUserMessage(gI_HintText, Hook_HintText, true);
+	
 	gB_ReplayPlayback = LibraryExists("shavit-replay-playback");
 	gB_Sounds = LibraryExists("shavit-sounds");
 	gB_Rankings = LibraryExists("shavit-rankings");
@@ -174,6 +177,7 @@ public void OnPluginStart()
 	gCV_TicksPerUpdate = new Convar("shavit_hud_ticksperupdate", "5", "How often (in ticks) should the HUD update?\nPlay around with this value until you find the best for your server.\nThe maximum value is your tickrate.", 0, true, 1.0, true, (1.0 / GetTickInterval()));
 	gCV_SpectatorList = new Convar("shavit_hud_speclist", "1", "Who to show in the specators list?\n0 - everyone\n1 - all admins (admin_speclisthide override to bypass)\n2 - players you can target", 0, true, 0.0, true, 2.0);
 	gCV_SpecNameSymbolLength = new Convar("shavit_hud_specnamesymbollength", "32", "Maximum player name length that should be displayed in spectators panel", 0, true, 0.0, true, float(MAX_NAME_LENGTH));
+	gCV_BlockYouHaveSpottedHint = new Convar("shavit_hud_block_spotted_hint", "1", "Blocks the hint message for spotting an enemy or friendly (which covers the center HUD)", 0, true, 0.0, true, 1.0);
 
 	char defaultHUD[8];
 	IntToString(HUD_DEFAULT, defaultHUD, 8);
@@ -375,7 +379,7 @@ public void OnClientPutInServer(int client)
 
 	if(IsFakeClient(client))
 	{
-		SDKHook(client, SDKHook_PostThinkPost, PostThinkPost);
+		SDKHook(client, SDKHook_PostThinkPost, BotPostThinkPost);
 	}
 	else
 	{
@@ -400,7 +404,7 @@ public void OnWindowsCvarQueried(QueryCookie cookie, int client, ConVarQueryResu
 	gB_AlternateCenterKeys[client] = (result == ConVarQuery_NotFound);
 }
 
-public void PostThinkPost(int client)
+public void BotPostThinkPost(int client)
 {
 	int buttons = GetClientButtons(client);
 
@@ -476,6 +480,22 @@ public void Player_ChangeClass(Event event, const char[] name, bool dontBroadcas
 public void Teamplay_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
 	CreateTimer(0.5, Timer_FillerHintTextAll, 0, TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public Action Hook_HintText(UserMsg msg_id, BfRead msg, const int[] players, int playersNum, bool reliable, bool init)
+{
+	if (gCV_BlockYouHaveSpottedHint.BoolValue)
+	{
+		char text[64];
+		msg.ReadString(text, sizeof(text));
+
+		if (StrEqual(text, "#Hint_spotted_a_friend") || StrEqual(text, "#Hint_spotted_an_enemy"))
+		{
+			return Plugin_Handled;
+		}
+	}
+
+	return Plugin_Continue;
 }
 
 public Action Timer_FillerHintTextAll(Handle timer, any data)
@@ -1101,7 +1121,7 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 	int iLines = 0;
 	char sLine[128];
 
-	if (client == data.iTarget && !Shavit_Core_CookiesRetrieved(client))
+	if (client == data.iTarget && !AreClientCookiesCached(client))
 	{
 		FormatEx(sLine, sizeof(sLine), "%T", "TimerLoading", client);
 		AddHUDLine(buffer, maxlen, sLine, iLines);
@@ -1305,7 +1325,7 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 
 		float limit = Shavit_GetStyleSettingFloat(data.iStyle, "velocity_limit");
 
-		if (limit > 0.0 && Shavit_InsideZone(data.iTarget, Zone_CustomSpeedLimit, data.iTrack))
+		if (limit > 0.0 && gB_Zones && Shavit_InsideZone(data.iTarget, Zone_CustomSpeedLimit, data.iTrack))
 		{
 			if(gI_ZoneSpeedLimit[data.iTarget] == 0)
 			{
@@ -1355,13 +1375,16 @@ void UpdateMainHUD(int client)
 
 	if(!bReplay)
 	{
-		if (Shavit_InsideZone(target, Zone_Start, huddata.iTrack))
+		if (gB_Zones)
 		{
-			iZoneHUD = ZoneHUD_Start;
-		}
-		else if (Shavit_InsideZone(target, Zone_End, huddata.iTrack))
-		{
-			iZoneHUD = ZoneHUD_End;
+			if (Shavit_InsideZone(target, Zone_Start, huddata.iTrack))
+			{
+				iZoneHUD = ZoneHUD_Start;
+			}
+			else if (Shavit_InsideZone(target, Zone_End, huddata.iTrack))
+			{
+				iZoneHUD = ZoneHUD_End;
+			}
 		}
 	}
 	else
@@ -1454,6 +1477,16 @@ void UpdateCenterKeys(int client)
 	{
 		return;
 	}
+
+	int current_tick = GetGameTickCount();
+	static int last_drawn[MAXPLAYERS+1];
+
+	if (current_tick == last_drawn[client])
+	{
+		return;
+	}
+
+	last_drawn[client] = current_tick;
 
 	int target = GetSpectatorTarget(client, client);
 
@@ -1870,7 +1903,7 @@ void UnreliablePrintCenterText(int client, const char[] str)
 
 	// Start our own message instead of using PrintCenterText so we can exclude USERMSG_RELIABLE.
 	// This makes the HUD update visually faster.
-	BfWrite msg = view_as<BfWrite>(StartMessageEx(gI_TextMsg, clients, 1, 0));
+	BfWrite msg = view_as<BfWrite>(StartMessageEx(gI_TextMsg, clients, 1, USERMSG_BLOCKHOOKS));
 	msg.WriteByte(HUD_PRINTCENTER);
 	msg.WriteString(str);
 	msg.WriteString("");
@@ -1887,7 +1920,7 @@ void UnreliablePrintHintText(int client, const char[] str)
 
 	// Start our own message instead of using PrintHintText so we can exclude USERMSG_RELIABLE.
 	// This makes the HUD update visually faster.
-	BfWrite msg = view_as<BfWrite>(StartMessageEx(gI_HintText, clients, 1, 0));
+	BfWrite msg = view_as<BfWrite>(StartMessageEx(gI_HintText, clients, 1, USERMSG_BLOCKHOOKS));
 	msg.WriteString(str);
 	EndMessage();
 }
