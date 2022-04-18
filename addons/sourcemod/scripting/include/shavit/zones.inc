@@ -365,5 +365,6 @@ public void __pl_shavit_zones_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_GetZoneTrack");
 	MarkNativeAsOptional("Shavit_GetZoneType");
 	MarkNativeAsOptional("Shavit_GetZoneID");
+	MarkNativeAsOptional("sFork_GetBonusCount");
 }
 #endif

@@ -220,5 +220,6 @@ public void __pl_shavit_hud_SetNTVOptional()
 	MarkNativeAsOptional("Shavit_ForceHUDUpdate");
 	MarkNativeAsOptional("Shavit_GetHUDSettings");
 	MarkNativeAsOptional("Shavit_GetHUD2Settings");
+	MarkNativeAsOptional("sFork_ToggleBlockSidebarHUD");
 }
 #endif
