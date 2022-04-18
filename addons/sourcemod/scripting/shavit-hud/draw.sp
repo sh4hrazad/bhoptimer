@@ -1,4 +1,5 @@
 native int Shavit_GetMapTier(const char[] map = "");
+#define KEYHINT_UPDATE_INTERVAL 5
 
 // keysonly because CS:S lags when you send too many usermessages
 void TriggerHUDUpdate(int client, bool keysonly = false, bool keyhintonly = false, bool forceupdate = false)
@@ -22,7 +23,7 @@ void TriggerHUDUpdate(int client, bool keysonly = false, bool keyhintonly = fals
 	huddata.iTrack = (bReplay) ? Shavit_GetReplayBotTrack(target) : Shavit_GetClientTrack(target);
 	huddata.iStage = (bReplay) ? Shavit_GetReplayBotStage(target) : Shavit_GetCurrentStage(target);
 
-	if(gI_Cycle % 50 == 0 || forceupdate)
+	if(gI_Cycle % ((RoundToFloor(1.0 / GetTickInterval()) / gCV_TicksPerUpdate.IntValue) * KEYHINT_UPDATE_INTERVAL) == 0 || forceupdate)
 	{
 		DrawSidebarHintHUD(client, target, huddata, bReplay);
 	}
@@ -114,12 +115,6 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 	int iLines = 0;
 	char sLine[96];
 
-	char sTransTime[8];
-	FormatEx(sTransTime, 8, "%T", "Time", client);
-
-	char sSpeed[8];
-	FormatEx(sSpeed, 8, "%T", "Speed", client);
-
 	if(data.bReplay)
 	{
 		if(data.iStyle != -1 && Shavit_IsReplayDataLoaded(data.iStyle, data.iTrack, data.iStage))
@@ -151,14 +146,14 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 				char sPlayerName[16]; // shouldn't too long bytes.
 				Shavit_GetReplayName(data.iStyle, data.iTrack, sPlayerName, sizeof(sPlayerName), data.iStage);
 
-				FormatEx(sLine, 96, "%s: %s (%s)", sTransTime, sTime, sPlayerName);
+				FormatEx(sLine, 96, "T: %s (%s)", sTime, sPlayerName);
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 				iLines++;
 			}
 
 			if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
 			{
-				FormatEx(sLine, 96, "%s: %d", sSpeed, data.iSpeed);
+				FormatEx(sLine, 96, "Spd: %d", data.iSpeed);
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 				iLines++;
 			}
@@ -221,7 +216,7 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 
 			if(data.iStyle == 0)
 			{
-				FormatEx(sLine, 96, "Time: %s", sTime);
+				FormatEx(sLine, 96, "T: %s", sTime);
 			}
 			else
 			{
@@ -255,7 +250,7 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 
 		if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
 		{
-			FormatEx(sLine, 128, "Speed: %d", data.iSpeed);
+			FormatEx(sLine, 128, "Spd: %d", data.iSpeed);
 
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 

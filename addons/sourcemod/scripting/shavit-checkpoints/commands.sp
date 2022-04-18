@@ -1,13 +1,12 @@
 void RegisterCommands()
 {
 	RegConsoleCmd("sm_cpmenu", Command_Checkpoints, "Opens the checkpoints menu.");
-	RegConsoleCmd("sm_cps", Command_Checkpoints, "Opens the checkpoints menu. Alias for sm_cpmenu.");
-	RegConsoleCmd("sm_cpcaidan", Command_Checkpoints, "Opens the checkpoints menu. Alias for sm_cpmenu.");
+	RegConsoleCmd("sm_cp", Command_Checkpoints, "Opens the checkpoints menu. Alias for sm_cpmenu.");
 	RegConsoleCmd("sm_checkpoint", Command_Checkpoints, "Opens the checkpoints menu. Alias for sm_cpmenu.");
 	RegConsoleCmd("sm_checkpoints", Command_Checkpoints, "Opens the checkpoints menu. Alias for sm_cpmenu.");
 	RegConsoleCmd("sm_save", Command_Save, "Saves checkpoint.");
 	RegConsoleCmd("sm_saveloc", Command_Save, "Saves checkpoint.");
-	RegConsoleCmd("sm_cp", Command_Save, "Saves checkpoint. Alias for sm_save.");
+	RegConsoleCmd("sm_save", Command_Save, "Saves checkpoint. Alias for sm_save.");
 	RegConsoleCmd("sm_tele", Command_Tele, "Teleports to checkpoint. Usage: sm_tele [number]");
 	RegConsoleCmd("sm_prac", Command_Tele, "Teleports to checkpoint. Usage: sm_tele [number]. Alias of sm_tele.");
 	RegConsoleCmd("sm_practice", Command_Tele, "Teleports to checkpoint. Usage: sm_tele [number]. Alias of sm_tele.");

@@ -335,6 +335,7 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_start", Command_StartTimer, "Start your timer.");
 	RegConsoleCmd("sm_r", Command_StartTimer, "Start your timer.");
 	RegConsoleCmd("sm_restart", Command_StartTimer, "Start your timer.");
+	RegConsoleCmd("sm_remake", Command_StartTimer, "Start your timer.");
 	RegConsoleCmd("sm_main", Command_StartTimer, "Start your timer on the main track.");
 
 	RegConsoleCmd("sm_b", Command_StartTimer, "Start your timer on the bonus track.");

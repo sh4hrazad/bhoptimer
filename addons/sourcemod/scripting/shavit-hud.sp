@@ -283,6 +283,14 @@ public void Shavit_OnEnterStageZone_Bot(int bot, int stage)
 	Shavit_OnEnterStageZone_Bot_Message(bot, stage);
 }
 
+public void Shavit_OnRestart(int client, int track)
+{
+	if(IsClientInGame(client))
+	{
+		TriggerHUDUpdate(client, false, true, true);
+	}
+}
+
 public void Shavit_OnStyleChanged(int client, int oldstyle, int newstyle, int track, bool manual)
 {
 	if(IsClientInGame(client))
