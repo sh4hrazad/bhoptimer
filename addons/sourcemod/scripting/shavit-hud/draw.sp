@@ -28,7 +28,7 @@ void TriggerHUDUpdate(int client, bool keysonly = false, bool keyhintonly = fals
 		DrawSidebarHintHUD(client, target, huddata, bReplay);
 	}
 
-	if(keyhintonly)
+	if(keyhintonly || (!keyhintonly && GetClientButtons(client) & IN_SCORE != 0))
 	{
 		return;
 	}
@@ -99,7 +99,7 @@ static void DrawCenterHintHUD(int client, int target, huddata_t huddata, bool bR
 		huddata.iCheckpoint = (Shavit_IsLinearMap())? Shavit_GetCurrentCP(target) : Shavit_GetCurrentStage(target) - 1;
 	}
 
-	char sBuffer[512];
+	char sBuffer[256];
 		
 	int iLines = AddHUDToBuffer(client, huddata, sBuffer, sizeof(sBuffer));
 
@@ -113,7 +113,7 @@ static void DrawCenterHintHUD(int client, int target, huddata_t huddata, bool bR
 static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 {
 	int iLines = 0;
-	char sLine[96];
+	char sLine[64];
 
 	if(data.bReplay)
 	{
@@ -130,10 +130,10 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 				Format(sTrack, 64, "%T #%d", "Stage", client, data.iStage);
 			}
 
-			FormatEx(sLine, 96, "%T ", "ReplayText", client);
+			FormatEx(sLine, sizeof(sLine), "%T ", "ReplayText", client);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 			
-			FormatEx(sLine, 96, "[%s - %s]", sTrack, gS_StyleStrings[data.iStyle].sStyleName);
+			FormatEx(sLine, sizeof(sLine), "[%s - %s]", sTrack, gS_StyleStrings[data.iStyle].sStyleName);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
 			iLines++;
@@ -146,21 +146,21 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 				char sPlayerName[16]; // shouldn't too long bytes.
 				Shavit_GetReplayName(data.iStyle, data.iTrack, sPlayerName, sizeof(sPlayerName), data.iStage);
 
-				FormatEx(sLine, 96, "T: %s (%s)", sTime, sPlayerName);
+				FormatEx(sLine, sizeof(sLine), "T: %s (%s)", sTime, sPlayerName);
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 				iLines++;
 			}
 
 			if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
 			{
-				FormatEx(sLine, 96, "Spd: %d", data.iSpeed);
+				FormatEx(sLine, sizeof(sLine), "Spd: %d", data.iSpeed);
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 				iLines++;
 			}
 		}
 		else
 		{
-			FormatEx(sLine, 96, "%T", "NoReplayData", client);
+			FormatEx(sLine, sizeof(sLine), "%T", "NoReplayData", client);
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 			iLines++;
 		}
@@ -175,27 +175,27 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 				{
 					if(data.iTrack == 0)
 					{
-						FormatEx(sLine, 96, "In Main Start Zone");
+						FormatEx(sLine, sizeof(sLine), "In Main Start Zone");
 					}
 					else
 					{
-						FormatEx(sLine, 96, "In Bonus %d Start Zone", data.iTrack);
+						FormatEx(sLine, sizeof(sLine), "In Bonus %d Start Zone", data.iTrack);
 					}
 				}
 				case ZoneHUD_End:
 				{
 					if(data.iTrack == 0)
 					{
-						FormatEx(sLine, 96, "In Main End Zone");
+						FormatEx(sLine, sizeof(sLine), "In Main End Zone");
 					}
 					else
 					{
-						FormatEx(sLine, 96, "In Bonus %d End Zone", data.iTrack);
+						FormatEx(sLine, sizeof(sLine), "In Bonus %d End Zone", data.iTrack);
 					}
 				}
 				case ZoneHUD_Stage:
 				{
-					FormatEx(sLine, 96, "In Stage %d Start Zone", data.iStage);
+					FormatEx(sLine, sizeof(sLine), "In Stage %d Start Zone", data.iStage);
 				}
 			}
 
@@ -216,32 +216,32 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 
 			if(data.iStyle == 0)
 			{
-				FormatEx(sLine, 96, "T: %s", sTime);
+				FormatEx(sLine, sizeof(sLine), "T: %s", sTime);
 			}
 			else
 			{
 				char sStyle[4];
 				Shavit_GetStyleStrings(data.iStyle, sShortName, sStyle, 8);
-				FormatEx(sLine, 96, "%s: %s", sStyle, sTime);
+				FormatEx(sLine, sizeof(sLine), "%s: %s", sStyle, sTime);
 			}
 
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
 			if(data.iCheckpoint > 0 && data.iStyle >= 0 && !data.bStageTimer && data.iTimerStatus == Timer_Running)
 			{
-				FormatEx(sLine, 96, " [CP%d %s]", data.iCheckpoint, data.sDiff);
+				FormatEx(sLine, sizeof(sLine), " [CP%d %s]", data.iCheckpoint, data.sDiff);
 
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 			}
 
 			if(data.bPractice)
 			{
-				FormatEx(sLine, 96, " [Practice]");
+				FormatEx(sLine, sizeof(sLine), " [Practice]");
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 			}
 			else if(data.iTimerStatus == Timer_Paused)
 			{
-				FormatEx(sLine, 96, " [Paused]");
+				FormatEx(sLine, sizeof(sLine), " [Paused]");
 				AddHUDLine(buffer, maxlen, sLine, iLines);
 			}
 
@@ -250,7 +250,7 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 
 		if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
 		{
-			FormatEx(sLine, 128, "Spd: %d", data.iSpeed);
+			FormatEx(sLine, sizeof(sLine), "Spd: %d", data.iSpeed);
 
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 
