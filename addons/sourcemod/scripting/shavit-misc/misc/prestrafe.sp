@@ -1,14 +1,25 @@
 #define NEW_LIMIT_METHOD
 
-#define PREHOP true
-#define BHOP false
+#define PREHOP 0
+#define BHOP 1
+#define ENTERSTART 2
+#define NOCLIP 3
 
 #define BHOP_PUNISH_RATIO 0.4
 #define BHOP_FRAMES 10
 
 static int gI_Bhop[MAXPLAYERS+1];
 static int gI_TicksOnGround[MAXPLAYERS+1];
+static bool gB_UseNoclipInStart[MAXPLAYERS+1];
 
+void OnClientPutInServer_InitPrestrafe(int client)
+{
+	gI_Bhop[client] = 0;
+	gI_TicksOnGround[client] = 0;
+	gB_UseNoclipInStart[client] = false;
+}
+
+/* -- Public -- */
 public void Player_Jump(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
@@ -21,14 +32,7 @@ public Action Shavit_OnEnterZone(int client, int type, int track, int id, int en
 {
 	if(shavit_zones_entryzonespeedlimit.FloatValue > 0.0 && (type == Zone_Start || (Shavit_GetMapLimitspeed() && type == Zone_Stage)))
 	{
-		float fSpeed[3];
-		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
-		float fSpeedXY = SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0));
-		
-		if(fSpeedXY > shavit_zones_entryzonespeedlimit.FloatValue)
-		{
-			DumbSetVelocity(client, fSpeed, fSpeedXY <= 290 * 10 ? 0.1 : 0.0);
-		}
+		LimitInvalidSpeed(client, ENTERSTART);
 	}
 }
 
@@ -36,16 +40,12 @@ public Action Shavit_OnLeaveZone(int client, int type, int track, int id, int en
 {
 	if(gCV_LimitPrestrafe.BoolValue && (type == Zone_Start || (Shavit_GetMapLimitspeed() && type == Zone_Stage)))
 	{
-		LimitBhopSpeed(client, PREHOP);
+		LimitInvalidSpeed(client, PREHOP);
+		LimitInvalidSpeed(client, NOCLIP);
 	}
 }
 
-void OnClientPutInServer_InitPrestrafe(int client)
-{
-	gI_Bhop[client] = 0;
-	gI_TicksOnGround[client] = 0;
-}
-
+/* -- Sub functions -- */
 void OnUserCmdPre_PreStrafe(int client, int buttons)
 {
 	int flags = GetEntityFlags(client);
@@ -75,11 +75,17 @@ void OnUserCmdPre_PreStrafe(int client, int buttons)
 
 	if(!Shavit_CanAutoBhopInTrack(client) && gCV_LimitBhop.IntValue != 0)
 	{
-		LimitBhopSpeed(client, BHOP);
+		LimitInvalidSpeed(client, BHOP);
+	}
+
+	if(Shavit_InsideZone(client, Zone_Start, -1) && GetEntityMoveType(client) == MOVETYPE_NOCLIP)
+	{
+		gB_UseNoclipInStart[client] = true;
 	}
 }
 
-static void LimitBhopSpeed(int client, bool type)
+/* -- Private -- */
+static void LimitInvalidSpeed(int client, int type)
 {
 	if(GetEntityMoveType(client) == MOVETYPE_NOCLIP)
 	{
@@ -122,6 +128,27 @@ static void LimitBhopSpeed(int client, bool type)
 			gI_Bhop[client] = 0;
 		}
 	}
+
+	// 进起点 enter start
+	if(type == ENTERSTART)
+	{
+		if(fSpeedXY > shavit_zones_entryzonespeedlimit.FloatValue)
+		{
+			DumbSetVelocity(client, fSpeed, fSpeedXY <= 290 * 10 ? 0.1 : 0.0);
+		}
+	}
+
+	// 起点开穿墙 noclip in start
+	if(type == NOCLIP)
+	{
+		if(gB_UseNoclipInStart[client])
+		{
+			Shavit_StopTimer(client);
+			Shavit_PrintToChat(client, "计时{red}中止{white}! 尝试使用穿墙获取起步速度.");
+		}
+
+		gB_UseNoclipInStart[client] = false;
+	}
 }
 
 static void DumbSetVelocity(int client, float fSpeed[3], float scale)
@@ -142,5 +169,7 @@ static void DumbSetVelocity(int client, float fSpeed[3], float scale)
 #undef NEW_LIMIT_METHOD
 #undef PREHOP
 #undef BHOP
+#undef ENTERSTART
+#undef NOCLIP
 #undef BHOP_PUNISH_RATIO
 #undef BHOP_FRAMES
