@@ -128,6 +128,7 @@ public void OnPluginStart()
 	InitCookies();
 
 	CreateTimer(10.0, Timer_Cron, 0, TIMER_REPEAT);
+	CreateTimer(0.5, Timer_PersistCPMenu, 0, TIMER_REPEAT);
 
 	gB_Replay = LibraryExists("shavit-replay-recorder");
 }
@@ -359,6 +360,24 @@ public Action Timer_Cron(Handle timer)
 		if(aData.iDisconnectTime && (iTime - aData.iDisconnectTime >= gCV_PersistData.IntValue))
 		{
 			DeletePersistentData(i, aData);
+		}
+	}
+
+	return Plugin_Continue;
+}
+
+public Action Timer_PersistCPMenu(Handle timer)
+{
+	if (!gCV_Checkpoints.BoolValue)
+	{
+		return Plugin_Continue;
+	}
+
+	for(int i = 1; i <= MaxClients; i++)
+	{	
+		if(IsClientInGame(i) && IsPlayerAlive(i) && !IsFakeClient(i) && gB_InCheckpointMenu[i])
+		{
+			OpenCheckpointsMenu(i);
 		}
 	}
 

@@ -14,7 +14,15 @@ void UseOtherCheckpoints(int client)
 		}
 	}
 
+	int iItems = menu.ItemCount;
+
 	menu.Display(client, -1);
+	
+	if(iItems == 0)
+	{
+		Shavit_PrintToChat(client, "服务器只有你一人, 无法使用他人存点.");
+		OpenCheckpointsMenu(client);
+	}
 }
 
 public int OtherCheckpointMenu_handler(Menu menu, MenuAction action, int param1, int param2)
@@ -54,7 +62,14 @@ void OpenOtherCPMenu(int other, int client)
 
 	if(!bSegmented)
 	{
-		menu.SetTitle("%T\n%T\n ", "MiscCheckpointMenu", client, "MiscCheckpointWarning", client);
+		if(!Shavit_IsPracticeMode(client))
+		{
+			menu.SetTitle("%T\n%T\n ", "MiscCheckpointMenu", client, "MiscCheckpointWarning", client);
+		}
+		else
+		{
+			menu.SetTitle("%T\n%s\n ", "MiscCheckpointMenu", client, "输入 !r 退出练习模式");
+		}
 	}
 
 	else

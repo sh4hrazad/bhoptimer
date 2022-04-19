@@ -24,6 +24,7 @@
 - 复刻存点 `!saveloc posX|posY|posZ|angleX|angleY|angleZ|velX|velY|velZ` (ksf feature)
 - WRCP循环播放bot不播进入终点后的部分(最后一关除外)
 - 合并 `showspeed.sp` 并添加速度差显示
+- 合并原存点菜单与使用他人存点菜单
 - 给起源用的 zones 和 stripper
 - 自定义检查点 (ksf feature)
 - 可以给关卡或奖励关起名

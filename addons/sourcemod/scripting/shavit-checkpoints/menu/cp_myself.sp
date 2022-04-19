@@ -33,7 +33,14 @@ void OpenCheckpointsMenu(int client)
 
 	if(!bSegmented)
 	{
-		menu.SetTitle("%T\n%T\n ", "MiscCheckpointMenu", client, "MiscCheckpointWarning", client);
+		if(!Shavit_IsPracticeMode(client))
+		{
+			menu.SetTitle("%T\n%T\n ", "MiscCheckpointMenu", client, "MiscCheckpointWarning", client);
+		}
+		else
+		{
+			menu.SetTitle("%T\n%s\n ", "MiscCheckpointMenu", client, "输入 !r 退出练习模式");
+		}
 	}
 
 	else
@@ -151,6 +158,7 @@ public int MenuHandler_Checkpoints(Menu menu, MenuAction action, int param1, int
 		}
 		else if(StrEqual(sInfo, "useother"))
 		{
+			gB_InCheckpointMenu[param1] = false;
 			UseOtherCheckpoints(param1);
 
 			return 0;
