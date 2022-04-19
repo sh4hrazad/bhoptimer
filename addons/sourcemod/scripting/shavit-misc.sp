@@ -495,16 +495,16 @@ public void OnConfigsExecuted()
 
 	if(gCV_CreateSpawnPoints.IntValue > 0)
 	{
-		int info_player_terrorist        = FindEntityByClassname(-1, "info_player_terrorist");
+		int info_player_terrorist		= FindEntityByClassname(-1, "info_player_terrorist");
 		int info_player_counterterrorist = FindEntityByClassname(-1, "info_player_counterterrorist");
-		int info_player_teamspawn        = FindEntityByClassname(-1, "info_player_teamspawn");
-		int info_player_start            = FindEntityByClassname(-1, "info_player_start");
+		int info_player_teamspawn		= FindEntityByClassname(-1, "info_player_teamspawn");
+		int info_player_start			= FindEntityByClassname(-1, "info_player_start");
 
 		int iEntity =
-			((info_player_terrorist != -1)        ? info_player_terrorist :
+			((info_player_terrorist != -1)		? info_player_terrorist :
 			((info_player_counterterrorist != -1) ? info_player_counterterrorist :
-			((info_player_teamspawn != -1)        ? info_player_teamspawn :
-			((info_player_start != -1)            ? info_player_start : -1))));
+			((info_player_teamspawn != -1)		? info_player_teamspawn :
+			((info_player_start != -1)			? info_player_start : -1))));
 
 		if (iEntity != -1)
 		{
@@ -1835,30 +1835,35 @@ public Action CommandListener_Noclip(int client, const char[] command, int args)
 
 void UpdateByNoclipStatus(int client, bool walkingStatus)
 {
-    bool segments = Shavit_GetStyleSettingBool(Shavit_GetBhopStyle(client), "segments");
+	bool segments = Shavit_GetStyleSettingBool(Shavit_GetBhopStyle(client), "segments");
 
-    if(walkingStatus)
-    {
-        if(gCV_PauseMovement.BoolValue
-        	 && !segments
-		     && !Shavit_IsPracticeMode(client)
-             && Shavit_GetTimerStatus(client) == Timer_Running
+	if(walkingStatus)
+	{
+		if(gCV_PauseMovement.BoolValue
+			 && !segments
+			 && !Shavit_IsPracticeMode(client)
+			 && ((Shavit_GetTimerStatus(client) == Timer_Running
 			 && Shavit_GetClientTime(client) != 0.0)
-        {
-            if(Shavit_CanPause(client) == 0)
-            {
+			 || Shavit_IsPaused(client)))
+		{
+			if(Shavit_IsPaused(client))
+			{
+				SetEntityMoveType(client, MOVETYPE_NOCLIP);
+			}
+			else if(Shavit_CanPause(client) == 0)
+			{
 				Shavit_PauseTimer(client);
 				Shavit_PrintToChat(client, "%t", "MessagePause", gS_ChatStrings.sText, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
 				SetEntityMoveType(client, MOVETYPE_NOCLIP);
 			}
-            else
-            {
-                Shavit_PrintToChat(client, "%t", "FailedToNoclip", gS_ChatStrings.sWarning, gS_ChatStrings.sText);
-            }
-        }
-        else
-        {
-            if(!ShouldDisplayStopWarning(client) || segments)
+			else
+			{
+				Shavit_PrintToChat(client, "%t", "FailedToNoclip", gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+			}
+		}
+		else
+		{
+			if(!ShouldDisplayStopWarning(client) || segments)
 			{
 				Shavit_StopTimer(client);
 				SetEntityMoveType(client, MOVETYPE_NOCLIP);
@@ -1867,17 +1872,17 @@ void UpdateByNoclipStatus(int client, bool walkingStatus)
 			{
 				OpenStopWarningMenu(client, DoNoclip);
 			}
-        }
-    }
-    else
-    {
+		}
+	}
+	else
+	{
 		if(Shavit_GetTimerStatus(client) == Timer_Paused && gCV_PauseMovement.BoolValue)
 		{
 			Shavit_PrintToChat(client, "%t", "NoclipResumeTimer", gS_ChatStrings.sVariable, gS_ChatStrings.sText);
 		}
 
 		SetEntityMoveType(client, MOVETYPE_WALK);
-    }
+	}
 }
 
 public Action CommandListener_funcommands_Noclip(int client, const char[] command, int args)
