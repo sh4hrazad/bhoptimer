@@ -68,6 +68,11 @@ void OnUserCmdPre_PreStrafe(int client, int buttons)
 		gI_TicksOnGround[client] = 0;
 	}
 
+	if(Shavit_InsideZone(client, Zone_AutoBhop, -1))
+	{
+		gI_Bhop[client] = 0;
+	}
+
 	if(!Shavit_CanAutoBhopInTrack(client) && gCV_LimitBhop.IntValue != 0)
 	{
 		LimitBhopSpeed(client, BHOP);
