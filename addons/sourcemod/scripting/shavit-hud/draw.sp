@@ -326,7 +326,7 @@ static void DrawSidebarHintHUD(int client, int target, huddata_t huddata, bool b
 			huddata.iStage = Shavit_GetMapStages();
 		}
 
-		if (huddata.iStage > 0 && huddata.iTrack == Track_Main)
+		if (huddata.iStage > 0 && Shavit_GetMapStages() > 1 && huddata.iTrack == Track_Main)
 		{
 			Shavit_GetWRStageName(huddata.iStyle, huddata.iStage, sWRName, sizeof(sWRName));
 

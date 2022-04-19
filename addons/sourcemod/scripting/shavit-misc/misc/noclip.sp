@@ -147,10 +147,15 @@ static void UpdateByNoclipStatus(int client, bool condition)
 	{
 		if(StrContains(sSpecial, "segments", false) == -1
 			 && !Shavit_IsPracticeMode(client)
-			 && Shavit_GetTimerStatus(client) == Timer_Running
+			 && ((Shavit_GetTimerStatus(client) == Timer_Running
 			 && Shavit_GetClientTime(client) != 0.0)
+			 || Shavit_IsPaused(client)))
 		{
-			if(Shavit_CanPause(client) == 0)
+			if(Shavit_IsPaused(client))
+			{
+				SetEntityMoveType(client, MOVETYPE_NOCLIP);
+			}
+			else if(Shavit_CanPause(client) == 0)
 			{
 				Shavit_PauseTimer(client);
 				Shavit_PrintToChat(client, "%T", "MessagePause", client);
