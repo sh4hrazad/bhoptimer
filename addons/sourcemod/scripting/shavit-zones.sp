@@ -157,7 +157,6 @@ Convar gCV_TeleportToEnd = null;
 Convar gCV_UseCustomSprite = null;
 Convar gCV_Offset = null;
 Convar gCV_EnforceTracks = null;
-Convar gCV_PreSpeed = null;
 Convar gCV_EntrySpeedLimit = null;
 Convar gCV_PreBuildZone = null;
 
@@ -181,11 +180,6 @@ Handle gH_Forwards_OnTeleportBackStagePost = null;
 
 bool gB_LinearMap;
 bool gB_DrawEditZone[MAXPLAYERS+1];
-
-// prespeed limit
-int gI_Jumps[MAXPLAYERS+1];
-bool gB_OnGround[MAXPLAYERS+1];
-bool gB_InZone[MAXPLAYERS+1];
 
 // antijump zone
 int gI_LastButtons[MAXPLAYERS+1];
@@ -305,7 +299,6 @@ public void OnPluginStart()
 	gCV_UseCustomSprite = new Convar("shavit_zones_usecustomsprite", "0", "Use custom sprite for zone drawing?\nSee `configs/shavit-zones.cfg`.\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_Offset = new Convar("shavit_zones_offset", "0", "When calculating a zone's *VISUAL* box, by how many units, should we scale it to the center?\n0.0 - no downscaling. Values above 0 will scale it inward and negative numbers will scale it outwards.\nAdjust this value if the zones clip into walls.");
 	gCV_EnforceTracks = new Convar("shavit_zones_enforcetracks", "1", "Enforce zone tracks upon entry?\n0 - allow every zone to affect users on every zone.\n1 - require the user's track to match the zone's track.", 0, true, 0.0, true, 1.0);
-	gCV_PreSpeed = new Convar("shavit_zones_prespeed", "1", "Stop prespeeding in the start zone?\n0 - Disabled, fully allow prespeeding.\n1 - SurfHeaven Limitspeed", 0, true, 0.0, true, 1.0);
 	gCV_EntrySpeedLimit = new Convar("shavit_zones_entryzonespeedlimit", "500.0", "Maximum speed at which entry into the start/stage zone will not be slowed down.\n(***Make sure shavit_misc_prespeed set to 1***)", 0, true, 260.0);
 	gCV_PreBuildZone = new Convar("shavit_zones_prebuild", "0", "Auto prebuild zones when current map have no zones.\n0 - Disabled.\n1 - Enabled", 0, true, 0.0, true, 1.0);
 
@@ -2215,12 +2208,31 @@ public int HookZoneConfirm_Handler(Menu menu, MenuAction action, int param1, int
 
 		if(StrEqual(sInfo, "yes"))
 		{
-			InsertZone(param1);
+			bool bOK = true;
+
+			for(int i = 0; i < ZONETYPES_SIZE; i++)
+			{
+				if(InsideZone(param1, i, -1))
+				{
+					Shavit_PrintToChat(param1, "请离开所有已设置的区域后再确认添加或编辑区域.");
+
+					bOK = false;
+				}
+			}
+
+			if(bOK)
+			{
+				InsertZone(param1);
+
+				return 0;
+			}
 		}
 
 		else if(StrEqual(sInfo, "no"))
 		{
 			OpenHookZonesMenu_SelectMethod(param1);
+
+			return 0;
 		}
 
 		else if(StrEqual(sInfo, "datafromchat"))
@@ -2231,6 +2243,8 @@ public int HookZoneConfirm_Handler(Menu menu, MenuAction action, int param1, int
 
 			return 0;
 		}
+
+		HookZoneConfirmMenu(param1);
 	}
 
 	else if(action == MenuAction_End)
@@ -2638,7 +2652,7 @@ public Action Command_DeleteZone(int client, int args)
 	return OpenDeleteMenu(client);
 }
 
-Action OpenDeleteMenu(int client)
+Action OpenDeleteMenu(int client, int item = 0)
 {
 	Menu menu = new Menu(MenuHandler_DeleteZone);
 	menu.SetTitle("%T\n ", "ZoneMenuDeleteTitle", client);
@@ -2678,7 +2692,7 @@ Action OpenDeleteMenu(int client)
 		menu.AddItem("-1", sMenuItem);
 	}
 
-	menu.Display(client, -1);
+	menu.DisplayAt(client, item, MENU_TIME_FOREVER);
 
 	return Plugin_Handled;
 }
@@ -2706,19 +2720,36 @@ public int MenuHandler_DeleteZone(Menu menu, MenuAction action, int param1, int 
 
 			default:
 			{
-				char sZoneName[32];
-				GetZoneName(param1, gA_ZoneCache[id].iZoneType, sZoneName, 32);
+				bool bOK = true;
 
-				Shavit_LogMessage("%L - deleted %s (id %d) from map `%s`.", param1, sZoneName, gA_ZoneCache[id].iDatabaseID, gS_Map);
+				for(int i = 0; i < ZONETYPES_SIZE; i++)
+				{
+					if(InsideZone(param1, i, -1))
+					{
+						Shavit_PrintToChat(param1, "请离开所有已设置的区域后再删除区域.");
+
+						bOK = false;
+					}
+				}
+
+				if(bOK)
+				{
+					char sZoneName[32];
+					GetZoneName(param1, gA_ZoneCache[id].iZoneType, sZoneName, 32);
+
+					Shavit_LogMessage("%L - deleted %s (id %d) from map `%s`.", param1, sZoneName, gA_ZoneCache[id].iDatabaseID, gS_Map);
 				
-				char sQuery[256];
-				FormatEx(sQuery, 256, "DELETE FROM `mapzones` WHERE %s = %d;", (gB_MySQL)? "id":"rowid", gA_ZoneCache[id].iDatabaseID);
+					char sQuery[256];
+					FormatEx(sQuery, 256, "DELETE FROM `mapzones` WHERE %s = %d;", (gB_MySQL)? "id":"rowid", gA_ZoneCache[id].iDatabaseID);
 
-				DataPack hDatapack = new DataPack();
-				hDatapack.WriteCell(GetClientSerial(param1));
-				hDatapack.WriteCell(gA_ZoneCache[id].iZoneType);
+					DataPack hDatapack = new DataPack();
+					hDatapack.WriteCell(GetClientSerial(param1));
+					hDatapack.WriteCell(gA_ZoneCache[id].iZoneType);
 
-				gH_SQL.Query(SQL_DeleteZone_Callback, sQuery, hDatapack);
+					gH_SQL.Query(SQL_DeleteZone_Callback, sQuery, hDatapack);
+				}
+
+				OpenDeleteMenu(param1, GetMenuSelectionPosition());
 			}
 		}
 	}
@@ -3169,9 +3200,6 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 		buttons &= ~IN_JUMP;
 	}
 
-	if (!InsideZone(client, Zone_AntiJump, -1) && !InsideZone(client, Zone_AutoBhop, -1))
-		gB_OnGround[client] = view_as<bool>(GetEntityFlags(client) & FL_ONGROUND);
-
 	return Plugin_Continue;
 }
 
@@ -3184,10 +3212,25 @@ public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, i
 
 		if(StrEqual(sInfo, "yes"))
 		{
-			InsertZone(param1);
-			gI_MapStep[param1] = EditStep_None;
+			bool bOK = true;
 
-			return 0;
+			for(int i = 0; i < ZONETYPES_SIZE; i++)
+			{
+				if(InsideZone(param1, i, -1))
+				{
+					Shavit_PrintToChat(param1, "请离开所有已设置的区域后再确认添加或编辑区域.");
+
+					bOK = false;
+				}
+			}
+
+			if(bOK)
+			{
+				InsertZone(param1);
+				gI_MapStep[param1] = EditStep_None;
+
+				return 0;
+			}
 		}
 
 		else if(StrEqual(sInfo, "no"))
@@ -4337,8 +4380,6 @@ public void EndTouchPost(int entity, int other)
 		gB_InsideZone[other][type][track] = false;
 		gB_InsideZoneID[other][entityzone] = false;
 
-		ClearShittyLimitPrestrafe(other);
-
 		Action result = Plugin_Continue;
 		Call_StartForward(gH_Forwards_LeaveZone);
 		Call_PushCell(other);
@@ -4410,11 +4451,6 @@ public void TouchPost(int entity, int other)
 			// so you don't accidentally step on those while running
 			Shavit_SetStageTimer(other, false);
 			Shavit_StartTimer(other, track);
-
-			if(ShittyLimitPrestrafe(other, entityzone, false, true))
-			{
-				SendLimitMessage(other);
-			}
 		}
 
 		case Zone_End:
@@ -4443,11 +4479,6 @@ public void TouchPost(int entity, int other)
 				if(result != Plugin_Continue)
 				{
 					return;
-				}
-
-				if(ShittyLimitPrestrafe(other, entityzone, true, true))
-				{
-					SendLimitMessage(other);
 				}
 
 				if(Shavit_IsStageTimer(other))
@@ -4659,127 +4690,9 @@ int FindNumberInString(const char[] str)
 	return StringToInt(sNum);
 }
 
-// This is used instead of `TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed)`.
-// Why: TeleportEntity somehow triggers the zone EndTouch which fucks with `InsideZone`.
-void DumbSetVelocity(int client, float fSpeed[3])
-{
-	// Someone please let me know if any of these are unnecessary.
-	SetEntPropVector(client, Prop_Data, "m_vecBaseVelocity", NULL_VECTOR);
-	SetEntPropVector(client, Prop_Data, "m_vecVelocity", fSpeed);
-	SetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed); // m_vecBaseVelocity+m_vecVelocity
-}
-
-bool ShittyLimitPrestrafe(int client, int id, bool inStage, bool inZone)
-{
-	if(Shavit_IsTeleporting(client) || !IsValidClient(client, true))
-	{
-		return false;
-	}
-
-	bool onGround = view_as<bool>(GetEntityFlags(client) & FL_ONGROUND);
-	bool bLimited = false;
-
-	if(GetEntityMoveType(client) != MOVETYPE_NOCLIP)
-	{
-		if(gCV_PreSpeed.IntValue >= 1)
-		{
-			if(inStage && !Shavit_GetMapLimitspeed()) // do not limit all stages' speed
-			{
-				return false;
-			}
-
-			// surfheaven prespeed
-			// limit speed since 2 jumps
-			// int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
-			// iGroundEntity == 0 ---> onGround
-			// iGroundEntity == -1 ---> onAir
-
-			// ksf prespeed
-			// ksf 可以 bhop 出起点, 但速度不能高于 270, 否则出起点后自动压到 270
-			// 整张地图只能连续 bhop 4 次
-
-			float fSpeed[3];
-			GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
-			float fSpeedXY = SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0));
-
-			if(!gB_InZone[client]) // limit those one that enter zone by outsiding zone
-			{
-				if(gA_ZoneCache[id].fLimitSpeed <= 0.0)
-				{
-					return false;
-				}
-
-				if(fSpeedXY > gA_ZoneCache[id].fLimitSpeed)
-				{
-					fSpeed[0] *= 0.1;
-					fSpeed[1] *= 0.1;
-					DumbSetVelocity(client, fSpeed);
-
-					bLimited = true;
-				}
-			}
-
-			if(GetEntityFlags(client) & FL_BASEVELOCITY) // they are on booster, dont limit them
-			{
-				return false;
-			}
-
-			if(gB_OnGround[client] && !onGround) // 起跳 starts jump
-			{
-				if(++gI_Jumps[client] >= 2)
-				{
-					float fScale = 260.0 / fSpeedXY;
-
-					if(fScale < 1.0)
-					{
-						fSpeed[0] *= fScale;
-						fSpeed[1] *= fScale;
-						DumbSetVelocity(client, fSpeed);
-
-						bLimited = true;
-					}
-				}
-			}
-			else if(gB_OnGround[client] && onGround) // 不跳 not jumping
-			{
-				gI_Jumps[client] = 0;
-			}
-		}
-	}
-
-	gB_InZone[client] = inZone;
-
-	return bLimited;
-}
-
-// clear them when leave zone
-void ClearShittyLimitPrestrafe(int client)
-{
-	gB_InZone[client] = false;
-
-	switch(gI_Jumps[client])
-	{
-		case 1:
-		{
-			return;
-		}
-
-		default:
-		{
-			gI_Jumps[client] = 0;
-		}
-	}
-}
-
 bool IsCurrentTrack(int client, int track)
 {
 	return gCV_EnforceTracks.BoolValue && track == Shavit_GetClientTrack(client);
-}
-
-void SendLimitMessage(int client)
-{
-	Shavit_PrintToChat(client, "%T", "ZoneExceededLimit", client);
-	SendMessageToSpectator(client, "%t", "ZoneExceededLimit", client, true);
 }
 
 stock void SendMessageToSpectator(int client, const char[] message, any ..., bool translate = false)

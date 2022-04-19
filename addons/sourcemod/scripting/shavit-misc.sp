@@ -88,6 +88,8 @@ Convar gCV_WRMessages = null;
 Convar gCV_BhopSounds = null;
 Convar gCV_BotFootsteps = null;
 Convar gCV_SpecScoreboardOrder = null;
+Convar gCV_LimitPrestrafe = null;
+Convar gCV_LimitBhop = null;
 
 // external cvars
 ConVar sv_cheats = null;
@@ -96,6 +98,7 @@ ConVar mp_humanteam = null;
 ConVar hostname = null;
 ConVar hostport = null;
 ConVar sv_disable_radar = null;
+ConVar shavit_zones_entryzonespeedlimit = null;
 
 // dhooks
 DynamicHook gH_GetPlayerMaxSpeed = null;
@@ -128,6 +131,7 @@ stylestrings_t gS_StyleStrings[STYLE_LIMIT];
 #include "shavit-misc/misc/mapfixes.sp"
 #include "shavit-misc/misc/noclip.sp"
 #include "shavit-misc/misc/nodmg.sp"
+#include "shavit-misc/misc/prestrafe.sp"
 #include "shavit-misc/misc/radio.sp"
 #include "shavit-misc/misc/ragdoll.sp"
 #include "shavit-misc/misc/scoreboard.sp"
@@ -401,6 +405,8 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 		Shavit_StopTimer(client);
 	}
 
+	OnUserCmdPre_PreStrafe(client, buttons);
+
 	return Plugin_Continue;
 }
 
@@ -428,6 +434,7 @@ public void OnClientPutInServer(int client)
 
 	OnClientPutInServer_InitWeapon(client);
 	OnClientPutInServer_InitNoclip(client);
+	OnClientPutInServer_InitPrestrafe(client);
 }
 
 public void OnClientDisconnect(int client)
@@ -602,6 +609,7 @@ static void CreateConVars()
 	sv_disable_immunity_alpha = FindConVar("sv_disable_immunity_alpha");
 	sv_disable_radar = FindConVar("sv_disable_radar");
 	mp_humanteam = FindConVar("mp_humanteam");
+	shavit_zones_entryzonespeedlimit = FindConVar("shavit_zones_entryzonespeedlimit");
 
 	// advertisements
 	hostname = FindConVar("hostname");
@@ -636,6 +644,8 @@ static void CreateConVars()
 	gCV_BhopSounds = new Convar("shavit_misc_bhopsounds", "1", "Should bhop (landing and jumping) sounds be muted?\n0 - Disabled\n1 - Blocked while !hide is enabled\n2 - Always blocked", 0,  true, 0.0, true, 2.0);
 	gCV_BotFootsteps = new Convar("shavit_misc_botfootsteps", "1", "Enable footstep sounds for replay bots. Only works if shavit_misc_bhopsounds is less than 2.", 0, true, 0.0, true, 1.0);
 	gCV_SpecScoreboardOrder = new Convar("shavit_misc_spec_scoreboard_order", "1", "Use scoreboard ordering for players when changing target when spectating.", 0, true, 0.0, true, 1.0);
+	gCV_LimitPrestrafe = new Convar("shavit_misc_limitprestrafe", "1", "Limit prestrafe in stage or track's start zone?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
+	gCV_LimitBhop = new Convar("shavit_misc_limitbhop", "4", "Limit times to bhop in tracks that can't autobhop?\n0 - Disabled\n>0 - Times allowed to bhop.", 0, true, 0.0, true, 30.0);
 
 	gCV_HideRadar.AddChangeHook(OnConVarChanged);
 	Convar.AutoExecConfig();
@@ -644,6 +654,7 @@ static void CreateConVars()
 static void HookEvents()
 {
 	HookEvent("player_spawn", Player_Spawn);
+	HookEvent("player_jump", Player_Jump);
 	HookEvent("player_team", Player_Notifications, EventHookMode_Pre);
 	HookEvent("player_death", Player_Notifications, EventHookMode_Pre);
 	HookEventEx("weapon_fire", Weapon_Fire);
