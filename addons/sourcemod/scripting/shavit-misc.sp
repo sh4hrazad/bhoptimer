@@ -496,15 +496,15 @@ public void OnConfigsExecuted()
 	if(gCV_CreateSpawnPoints.IntValue > 0)
 	{
 		int info_player_terrorist		= FindEntityByClassname(-1, "info_player_terrorist");
-		int info_player_counterterrorist = FindEntityByClassname(-1, "info_player_counterterrorist");
+		int info_player_counterterrorist	= FindEntityByClassname(-1, "info_player_counterterrorist");
 		int info_player_teamspawn		= FindEntityByClassname(-1, "info_player_teamspawn");
 		int info_player_start			= FindEntityByClassname(-1, "info_player_start");
 
 		int iEntity =
-			((info_player_terrorist != -1)		? info_player_terrorist :
+			((info_player_terrorist != -1)        ? info_player_terrorist :
 			((info_player_counterterrorist != -1) ? info_player_counterterrorist :
-			((info_player_teamspawn != -1)		? info_player_teamspawn :
-			((info_player_start != -1)			? info_player_start : -1))));
+			((info_player_teamspawn != -1)        ? info_player_teamspawn :
+			((info_player_start != -1)            ? info_player_start : -1))));
 
 		if (iEntity != -1)
 		{
