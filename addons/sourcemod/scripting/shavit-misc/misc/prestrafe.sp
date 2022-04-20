@@ -116,6 +116,8 @@ static void LimitInvalidSpeed(int client, int type)
 
 			Shavit_PrintToChat(client, "Prehop speed exceeded!");
 		}
+
+		return;
 	}
 	
 	// 连跳 bunny hop
@@ -129,6 +131,8 @@ static void LimitInvalidSpeed(int client, int type)
 
 			gI_Bhop[client] = 0;
 		}
+		
+		return;
 	}
 
 	// 进起点 enter start
@@ -138,6 +142,8 @@ static void LimitInvalidSpeed(int client, int type)
 		{
 			DumbSetVelocity(client, fSpeed, fSpeedXY <= 290 * 10 ? 0.1 : 0.0);
 		}
+		
+		return;
 	}
 
 	// 起点开穿墙 noclip in start
@@ -146,10 +152,12 @@ static void LimitInvalidSpeed(int client, int type)
 		if(gB_UseNoclipInStart[client])
 		{
 			Shavit_StopTimer(client);
-			Shavit_PrintToChat(client, "计时{red}中止{white}! 尝试使用穿墙获取起步速度.");
+			Shavit_PrintToChat(client, "计时{red}中止{white}! 因为曾在起点使用穿墙.");
 		}
 
 		gB_UseNoclipInStart[client] = false;
+		
+		return;
 	}
 }
 

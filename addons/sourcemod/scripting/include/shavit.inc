@@ -896,7 +896,7 @@ forward Action Shavit_OnStage(int client, int stage);
 
 /**
  * Called when player is in end zone.
- * (WARNING: Will be called every tick when the player stands at the stage zone!)
+ * (WARNING: Will be called every tick when the player stands at the end zone!)
  *
  * @param client					Client index.
  * @noreturn
