@@ -10,11 +10,7 @@
 - 隐藏玩家没效果
 - 录像 bot 起步左下角刷速度信息
 - 绿色 `{green}` 无法正常显示
-- 读存了回放机器人的点后触发 StartTimer 可能会卡死在原地
-SS -  old m_flLaggedMovementValue: 1065353216
-SS -  gA_Timers[client].fplayer_speedmod: 0
-SS -  new m_flLaggedMovementValue: 0
-SS -  cp fplayer_speedmod: 0
+- 改回不计时穿墙需要 !r
 
 ### 要加的:
 - ✔️ 将区域传送点设置到 `info_teleport_destination`
@@ -32,6 +28,7 @@ SS -  cp fplayer_speedmod: 0
 - 给起源用的 zones 和 stripper
 - 自定义检查点 (ksf feature)
 - 可以给关卡或奖励关起名
+- 优化练习模式, 可选择是否始终处于练习模式
 
 ## 插件依赖:
 - [Counter-Strike: Source (正版)](https://store.steampowered.com/app/240/CounterStrike_Source)
