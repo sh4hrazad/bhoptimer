@@ -24,12 +24,12 @@
 	"CommandTeleCPInvalid"
 	{
 		"en"		"You may not teleport to this checkpoint due to setting mismatch."
-		"chi"		"由于设置 (kzcheckpoints) 不匹配, 您无法读取该点."
+		"chi"		"由于设置 (kzcheckpoints) 不匹配, 无法读取该点."
 	}
 	"CommandNoPause"
 	{
-		"en"		"Your timer has to be {gold}resumed{white} to use this command."
-		"chi"		"您的计时器必须{gold}恢复{white}才能使用此命令."
+		"en"		"Your timer has to be {red}resumed{white} to use this command."
+		"chi"		"您的计时器必须{red}处于计时状态{white}才能使用此命令."
 	}
 	"CommandDisabled"
 	{
@@ -64,14 +64,14 @@
 	"SpectatorCount"
 	{
 		"#format"	"{1:N},{2:i},{3:s}"
-		"en"		"{orchid}{1}{white} has {gold}{2}{white} spectators: {3}"
-		"chi"		"观察 {orchid}{1}{white} 的玩家 ({gold}{2}{white}): {3}."
+		"en"		"{orchid}{1}{white} has {lightgreen}{2}{white} spectators: {3}"
+		"chi"		"观察 {orchid}{1}{white} 的玩家 ({lightgreen}{2}{white}): {3}."
 	}
 	"SpectatorCountZero"
 	{
 		"#format"	"{1:N}"
-		"en"		"No one is spectating {orchid}{1}{white}."
-		"chi"		"没有人观察 {orchid}{1}{white}."
+		"en"		"No one is spectating {lightgreen}{1}{white}."
+		"chi"		"没有人在观察 {lightgreen}{1}{white}."
 	}
 	"SpectatorInvalid"
 	{
@@ -96,24 +96,24 @@
 	}
 	"NoclipCanTrigger"
 	{
-		"en"		"Your noclip setting is: {gold}Triggerable"
-		"chi"		"穿墙触发{lightgreen}已启用{white} (输入 !nctrigger 修改)."
+		"en"		"Noclip triggers {lightgreen}enabled{white}."
+		"chi"		"穿墙触发{lightgreen}已启用{white}. (输入 !nct 禁用)"
 	}
 	"NoclipCannotTrigger"
 	{
-		"en"		"Your noclip setting is: {red}UnTriggerable"
-		"chi"		"穿墙触发{lightgreen}已禁用{white} (输入 !nctrigger 修改)."
+		"en"		"Noclip triggers {red}enabled{white}."
+		"chi"		"穿墙触发{red}已禁用{white}. (输入 !nct 启用)"
 	}
 	"MiscCheckpointsTeleported"
 	{
 		"#format"	"{1:d}"
-		"en"		"{gold}Teleported{white} to checkpoint ({1})."
-		"chi"		"{gold}已传送到{white}存点 #{1}."
+		"en"		"Teleported to checkpoint {lightgreen}#{1}{white}."
+		"chi"		"已传送到存点 {lightgreen}#{1}{white}."
 	}
 	"MiscCheckpointsEmpty"
 	{
 		"#format"	"{1:d}"
-		"en"		"Checkpoint {1} is {red}unexisted{white}."
+		"en"		"Checkpoint #{1} is {red}unexisted{white}."
 		"chi"		"存点 #{1} {red}不存在{white}。"
 	}
 	"MiscCheckpointsOverflow"
@@ -123,13 +123,13 @@
 	}
 	"MiscSegmentedCommand"
 	{
-		"en"		"Use {gold}!cpmenu{white} to re-open the segmented checkpoints menu."
-		"chi"		"输入 {gold}!cpmenu{white} 重新打开点菜单。"
+		"en"		"Use {gold}!cp{white} to re-open the segmented checkpoints menu."
+		"chi"		"输入 {gold}!cp{white} 重新打开点菜单。"
 	}
 	// ---------- Menus ---------- //
 	"StopTimerWarning"
 	{
-		"en"		"Are you sure you want to stop your timer?"
+		"en"		"Stop your timer??"
 		"chi"		"您确定要中止计时吗?"
 	}
 	"StopTimerYes"
@@ -144,17 +144,17 @@
 	}
 	"ClearCPWarning"
 	{
-		"en"		"Are you sure you want to clear your checkpoints?"
+		"en"		"Clean up all of your checkpoints?"
 		"chi"		"您确定要清空所有存点吗?"
 	}
 	"ClearCPYes"
 	{
-		"en"		"Yes, and I know this action cannot be reversed."
+		"en"		"Yes"
 		"chi"		"是"
 	}
 	"ClearCPNo"
 	{
-		"en"		"No."
+		"en"		"No"
 		"chi"		"否"
 	}
 	"TeleportMenuTitle"
@@ -164,8 +164,8 @@
 	}
 	"WeaponAlive"
 	{
-		"en"		"You need to be {orchid}alive{white} to spawn weapons."
-		"chi"		"您需要{orchid}活着{white}才能得到武器."
+		"en"		"You need to be {red}alive{white} to spawn weapons."
+		"chi"		"您需要{red}活着{white}才能得到武器."
 	}
 	"MiscCheckpointMenu"
 	{
@@ -175,7 +175,7 @@
 	"MiscCheckpointMenuSegmented"
 	{
 		"en"		"Segmented Checkpoints"
-		"chi"		"Segmented 存点菜单"
+		"chi"		"存点菜单"
 	}
 	"MiscCheckpointWarning"
 	{
@@ -185,49 +185,44 @@
 	"MiscCheckpointSave"
 	{
 		"#format"	"{1:d}"
-		"en"		"Save checkpoint ({1})"
+		"en"		"Checkpoint #{1}"
 		"chi"		"存点 #{1}"
 	}
 	"MiscCheckpointTeleport"
 	{
 		"#format"	"{1:d}"
-		"en"		"Teleport to checkpoint ({1})"
+		"en"		"Gocheck #{1}"
 		"chi"		"读点 #{1}"
 	}
 	"MiscCheckpointPrevious"
 	{
-		"en"		"Previous"
-		"chi"		"上一个存点"
+		"en"		"Prev"
+		"chi"		"上一存点"
 	}
 	"MiscCheckpointNext"
 	{
 		"en"		"Next"
-		"chi"		"下一个存点"
+		"chi"		"下一存点"
 	}
 	"MiscCheckpointReset"
 	{
 		"en"		"Reset checkpoints"
-		"chi"		"重置存点"
+		"chi"		"重置"
 	}
 	"MiscCheckpointDeleteCurrent"
 	{
 		"en"		"Delete current checkpoint"
-		"chi"		"删除当前存点"
-	}
-	"MiscCheckpointPause"
-	{
-		"en"		"Pause"
-		"chi"		"暂停"
+		"chi"		"删除"
 	}
 	"MiscCheckpointUseAngles"
 	{
 		"en"		"Use angles"
-		"chi"		"保存视角"
+		"chi"		"视角"
 	}
 	"MiscCheckpointUseVelocity"
 	{
 		"en"		"Use velocity"
-		"chi"		"保存速度"
+		"chi"		"速度"
 	}
 	// ---------- Misc ---------- //
 	"BHStartZoneDisallowed"
@@ -239,8 +234,8 @@
 	"WRNotice"
 	{
 		"#format"	"{1:s},{2:s}"
-		"en"		"{red}NEW{white} {green}{1}-{2}{white} {red}WR!!!"
-		"chi"		"{red}新的{white} {green}{1}-{2}{white} {red}服务器记录!!!"
+		"en"		"{red}NEW {1} *{2}* {red}WR!!!"
+		"chi"		"{red}新的 {1} *{2}* {red}服务器记录!!!"
 	}
 	"AdvertisementsEnabled"
 	{

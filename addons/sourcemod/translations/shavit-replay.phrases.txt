@@ -37,13 +37,13 @@
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"Deleted replay for {grey}{1}{default}. ({gold}{2}{default})"
-		"chi"		"已删除{grey}{1}{default}的录像. ({gold}{2}{default})"
+		"chi"		"已删除 {grey}{1}{default} 的录像. ({gold}{2}{default})"
 	}
 	"ReplayDeleteFailure"
 	{
 		"#format"	"{1:s}"
 		"en"		"Could not delete replay for {grey}{1}{default}."
-		"chi"		"无法删除{grey}{1}{default}的录像."
+		"chi"		"无法删除 {grey}{1}{default} 的录像."
 	}
 	// ---------- Central Replay Menu ---------- //
 	"CentralReplayTitle"
@@ -124,13 +124,13 @@
 	}
 	"Menu_SpawnReplay"
 	{
-		"en"		"Spawn replay"
+		"en"		"Spawn"
 		"chi"		"生成回放 BOT"
 	}
 	"Menu_Replay2X"
 	{
 		"#format"	"{1:d}"
-		"en"		"Replay Speed: {1}x"
+		"en"		"Speed: {1}x"
 		"chi"		"播放倍率: {1}x"
 	}
 	"Menu_RefreshReplay"

@@ -8,15 +8,13 @@
 char gS_GlobalColorNames[][] =
 {
 	"{default}", // default color in CS:S is yellow
-	"{team}",
-	"{green}"
+	"{team}"
 };
 
 char gS_GlobalColors[][] =
 {
 	"\x01",
-	"\x03",
-	"\x04"
+	"\x03"
 };
 
 char gS_CSGOColorNames[][] =
@@ -210,7 +208,8 @@ char gS_CustomColorNames[][] =
 	"{bluegrey}",
 	"{grey2}",
 	"{lightred}",
-	"{palered}"
+	"{palered}",
+	"{green}"
 };
 
 char gS_CustomColors[][] = 
@@ -394,7 +393,8 @@ char gS_CustomColors[][] =
 	"\x076A5ACD",
 	"\x07CCCCCC",
 	"\x07F93822",
-	"\x07cd9294"
+	"\x07cd9294",
+	"\x070000ff"
 };
 
 stock void ReplaceColors(char[] string, int size)

@@ -3,101 +3,101 @@
 	//------ native ------//
 	"Nextmap Voting Started"
 	{
-        "en"			"Voting for next map has started."
-		"chi"		    "下一幅地图投选已开始."
+		"en"			"Voting for next map has started."
+		"chi"			"下一幅地图投选已开始."
 	}
 	"Starting Runoff"
 	{
 		"#format"		"{1:.0f},{2:s},{3:.0f},{4:s},{5:.0f}"
 		"en"			"No map got over {1}%% votes ({2} [{3}%%] & {4} [{5}%%]), starting runoff vote"
-        "chi"		    "没有地图获得 {1}%% 以上票数 ({2} [{3}%%] & {4} [{5}%%]), 开始决胜轮投票"
+		"chi"			"没有地图获得 {1}%% 以上票数 ({2} [{3}%%] & {4} [{5}%%]), 开始决胜轮投票"
 	}
 	"Current Map Extended"
 	{
 		"#format"		"{1:i},{2:i}"
-		"en"			"The current map has been extended. (Received {1}%% of {2} votes)"
-        "chi"		    "当前地图已被延长! (得票 {1}%% 共 {2} 票)"
+		"en"			"The current map has been extended. (Received {lightgreen}{1}%%{white} of {2} votes)"
+		"chi"			"当前地图已被延长! (得票 {lightgreen}{1}%%{white} 共 {2} 票)"
 	}
 	"Current Map Stays"
 	{
 		"#format"		"{1:i},{2:i}"
-		"en"			"Current map continues! The Vote has spoken! (Received {1}%% of {2} votes)"
-        "chi"		    "当前地图将不被更换! (得票 {1}%% 共 {2} 票)"
+		"en"			"Current map continues! The Vote has spoken! (Received {lightgreen}{1}%%{white} of {2} votes)"
+		"chi"			"当前地图将不被更换! (得票 {lightgreen}{1}%%{white} 共 {2} 票)"
 	}
 	"Nextmap Voting Finished"
 	{
 		"#format"		"{1:s},{2:i},{3:i}"
-		"en"			"Map voting has finished. The next map will be {1}. (Received {2}%% of {3} votes)"
-        "chi"		    "地图投票已结束. 下一幅地图将为 {1}. (得票{2}%% , {3}票)"
+		"en"			"Map voting has finished. The next map will be {1}. (Received {lightgreen}{2}%%{white} of {3} votes)"
+		"chi"			"地图投票已结束. 下一幅地图将为 {1}. (得票 {lightgreen}{2}%%{white} , {3}票)"
 	}
 	"Extend Map"
 	{
 		"en"			"Extend Current Map"
-        "chi"		    "延长当前地图"
+		"chi"			"延长当前地图"
 	}
 	"No Vote"
 	{
 		"en"			"No Vote"
-        "chi"		    "无投票"
+		"chi"			"无投票"
 	}
 	"Dont Change"
 	{
 		"en"			"Don't Change"
-        "chi"		    "请勿更换"
+		"chi"			"不要更换"
 	}
 	"Can't Nominate Current Map"
 	{
 		"en"			"The map you chose is the current map and cannot be nominated"
-        "chi"		    "您所选的图正是当前地图, 无法预订"
+		"chi"			"您所选的图正是当前地图, 无法预订"
 	}
 	"Recently Played"
 	{
 		"en"			"Recently Played"
-        "chi"		    "最近玩过的地图"
+		"chi"			"最近玩过的地图"
 	}
 	"Map was not found"
 	{
 		"#format"		"{1:s}"
-		"en"			"Map {1} was not found."
-        "chi"		    "地图 {1} 未找到."
+		"en"			"Map {red}{1}{white} was not found."
+		"chi"			"地图 {red}{1}{white} 未找到."
 	}
 	"Changing map"
 	{
 		"#format"		"{1:s}"
-		"en"			"Changing map to {1}..."
-        "chi"		    "更换地图为 {1}..."
+		"en"			"Changing map to {lightgreen}{1}{white} ..."
+		"chi"			"更换地图为 {lightgreen}{1}{white} ..."
 	}
 	"Map Already Nominated"
 	{
 		"en"			"The map you chose has already been nominated."
-        "chi"		    "您所选的地图已被预订."
+		"chi"		    "您所选的地图已被预订."
 	}
 	"Map Nominated"
 	{
 		"#format"		"{1:s},{2:s}"
-		"en"			"{1} has nominated {2}."
-        "chi"		    "{1} 预订了 {2}."
+		"en"			"{1} has nominated {lightgreen}{2}{white}."
+		"chi"		    "{1} 预订了 {lightgreen}{2}{white}."
 	}
 	"RTV Not Allowed"
 	{
 		"en"			"Rock the Vote is not allowed yet."
-        "chi"		    "当前无法启动RTV (滚动投票)."
+		"chi"		    "当前无法启动 RTV (滚动投票)."
 	}
 	"RTV Started"
 	{
 		"en"			"Rock the Vote has already started."
-		"chi"		    "RTV (滚动投票)已开始."
+		"chi"		    "RTV (滚动投票) 已开始."
 	}
 	"RTV Requested"
 	{
 		"#format"		"{1:s},{2:d},{3:d}"
-		"en"			"{1} wants to rock the vote. ({2} votes, {3} required)"
-        "chi"		    "{1} 要滚动投票. ({2} 票同意, 至少需要 {3} 票)"
+		"en"			"{1} wants to rock the vote. ({lightgreen}{2}{white} votes, {3} required)"
+		"chi"		    "{1} 要滚动投票. ({lightgreen}{2}{white} 票同意, 至少需要 {3} 票)"
 	}
 	"Choose Map"
 	{
 		"en"			"Choose Map"
-        "chi"		    "选择地图"
+		"chi"		    "选择地图"
 	}
 
 	//------ plugin ------//
@@ -114,14 +114,14 @@
 	"RankedRTV"
 	{
 		"#format"		"{1:.2f},{2:.2f}"
-		"en"			"You must be a higher rank to RTV! Minimun points needs: {1}, your points: {2}"
-		"chi"			"您未达到滚动投票所需的排名. 最低 Pts 要求: {1}, 而你只有 {2}."
+		"en"			"You must be a higher rank to RTV! Minimun points needs: {1}, your points: {lightgreen}{2}"
+		"chi"			"您未达到滚动投票所需的排名. 最低 Pts 要求: {1}, 而你只有 {lightgreen}{2}{white}."
 	}
 	"RTVFinished-MapChange"
 	{
 		"#format"		"{1:N},{2:s}"
-		"en"			"{1} wants to rock the vote! Map will now change to {2} ..."
-		"chi"			"{1} 想要滚动投票! 地图现在将更改为 {2} ..."
+		"en"			"{1} wants to rock the vote! Map will now change to {lightgreen}{2}{white} ..."
+		"chi"			"{1} 想要滚动投票! 地图现在将更改为 {lightgreen}{2}{white} ..."
 	}
 	"RTVFinished-MapVote"
 	{
@@ -132,8 +132,8 @@
 	"RTVFinishedMajorily-MapChange"
 	{
 		"#format"		"{1:s}"
-		"en"			"RTV vote now majority, map changing to {1} ..."
-		"chi"			"现在RTV投票占多数，地图改为 {1} ..."
+		"en"			"RTV vote now majority, map changing to {lightgreen}{1}{white} ..."
+		"chi"			"现在RTV投票占多数，地图改为 {lightgreen}{1}{white} ..."
 	}
 	"RTVFinishedMajorily-MapVote"
 	{
@@ -143,64 +143,64 @@
 	"UnRTV"
 	{
 		"#format"		"{1:i}"
-		"en"			"You have already RTVed, if you want to un-RTV use the command \'sm_unrtv\' ({1} votes already)"
-		"chi"			"您已经要求滚动投票, 如果您想取消滚动投票, 请使用命令 \'sm_unrtv\' (已有 {1} 票)"
+		"en"			"You have already RTVed, if you want to un-RTV use the command \'sm_unrtv\' ({lightgreen}{1}{white} votes already)"
+		"chi"			"您已经要求滚动投票, 如果您想取消滚动投票, 请使用命令 \'sm_unrtv\' (已有 {lightgreen}{1}{white} 票)"
 	}
 	"UnRTVNeeds"
 	{
 		"#format"		"{1:N},{2:i}"
-		"en"			"{1} no longer wants to rock the vote! ({2} more votes needed)"
-		"chi"			"{1} 不再想要滚动投票! (还需要 {2} 票)"
+		"en"			"{1} no longer wants to rock the vote! ({lightgreen}{2}{white} more votes needed)"
+		"chi"			"{1} 不再想要滚动投票! (还需要 {lightgreen}{2}{white} 票)"
 	}
 	"Minutes Until Map Vote"
 	{
 		"#format"		"{1:d}"
-		"en"			"{1} minutes until map vote"
-		"chi"			"距离地图投票还有 {1} 分钟"
+		"en"			"{lightgreen}{1}{white} minutes until map vote."
+		"chi"			"距离地图投票还有 {lightgreen}{1}{white} 分钟."
 	}
 	"Seconds Until Map Vote"
 	{
 		"#format"		"{1:d}"
-		"en"			"{1} seconds until map vote"
-		"chi"			"距离地图投票还有 {1} 秒"
+		"en"			"{lightgreen}{1}{white} seconds until map vote."
+		"chi"			"距离地图投票还有 {lightgreen}{1}{white} 秒."
 	}
 	"VoteDelay"
 	{
 		"#format"		"{1:.2f}"
-		"en"			"You had a menu open. Waiting {1}s before accepting input"
-		"chi"			"你打开了rtv菜单, 在按之前请等待{1}秒"
+		"en"			"You had a menu open. Waiting {1}s before accepting input."
+		"chi"			"请等待 {1} 秒再选择地图."
 	}
 	"AdminExtendMap"
 	{
 		"#format"		"{1:N},{2:d}"
-		"en"			"{1} extended the map by {2} minutes"
-		"chi"			"{1} 延长了地图 {2} 分钟"
+		"en"			"{1} extended the map by {lightgreen}{2}{white} minutes"
+		"chi"			"{1} 延长了地图 {lightgreen}{2}{white} 分钟"
 	}
 	"MapVote-Initiated"
 	{
 		"en"			"Map vote already initiated"
-		"chi"			"地图投票已经启动了"
+		"chi"			"地图投票已经开始了."
 	}
 	"MapVote-Finished"
 	{
 		"en"			"Map vote already finished"
-		"chi"			"地图投票已经结束了"
+		"chi"			"地图投票已经结束了."
 	}
 	"Stop Spamming"
 	{
 		"en"			"Stop spamming"
-		"chi"			"请停止输入!"
+		"chi"			"短时间内访问次数过多!"
 	}
 	"Haven't Nominated"
 	{
 		"en"			"You haven't nominated a map"
-		"chi"			"您还没有预订地图"
+		"chi"			"您还没有预订地图."
 	}
 	"Removed Nomination"
 	{
 		"#format"		"{1:s}"
-		"en"			"Successfully removed nomination for \'{1}\'"
-		"chi"			"已取消预订地图 \'{1}\'"
+		"en"			"Successfully removed nomination for \'{lightgreen}{1}{white}\'"
+		"chi"			"已取消预订地图 \'{lightgreen}{1}{white}\'"
 	}
 	"NominateDisabled"
 	{
@@ -215,8 +215,8 @@
 	"Loading Unzoned Map"
 	{
 		"#format"		"{1:s}"
-		"en"			"Loading unzoned map {1} ..."
-		"chi"			"即将更换至无区域地图: {1}"
+		"en"			"Loading unzoned map {lightgreen}{1}{white} ..."
+		"chi"			"即将更换至无区域地图: {lightgreen}{1}{white} ..."
 	}
 	"Reloading Current Map"
 	{

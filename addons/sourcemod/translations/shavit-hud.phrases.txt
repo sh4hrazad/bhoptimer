@@ -2,10 +2,6 @@
 {
 	// ---------- HUD Components ---------- //
 	// DO NOT MAKE NAMES LONGER THAN DISPLAYED HERE //
-	"HudStartZone"
-	{
-		"en"		"Start Zone"
-	}
 	"Tier"
 	{
 		"en"		"难度"
@@ -27,31 +23,6 @@
 	{
 		"#format"	"{1:s},{2:s},{3:s}"
 		"en"		"{1} | {2} | {3}"
-	}
-	"HudInStartZone"
-	{
-		"#format"	"{1:d}"
-		"en"		"In Start Zone\n\n{1}"
-	}
-	"InStartZone"
-	{
-		"en"		"In Start Zone"
-		"chi"		"起点"
-	}
-	"InEndZone"
-	{
-		"en"		"In End Zone"
-		"chi"		"\t\t  终点"
-	}
-	"HudInStartZoneCSGO"
-	{
-		"#format"	"{1:s},{2:d}"
-		"en"		"\n\n\t\t\t{1}({2})"
-	}
-	"HudInStartZoneCSGO_Linearmap"
-	{
-		"#format"	"{1:s}"
-		"en"		"\n\n\t\t\t{1}"
 	}
 	"HudEndZone"
 	{
@@ -215,12 +186,12 @@
 	"HudTopLeft"
 	{
 		"en"		"Top left HUD (WR/PB)"
-		"chi"		"左上角HUD (SR/个人)"
+		"chi"		"左上角 HUD (SR / 个人)"
 	}
 	"Hud2dVel"
 	{
 		"en"		"Use 2D Velocity"
-		"chi"		"使用2D速度(xy)"
+		"chi"		"使用 2D 速度 (X / Y)"
 	}
 	"HudNoRecordSounds"
 	{
@@ -260,7 +231,7 @@
 	"HudTimeDifference"
 	{
 		"en"		"Time Difference"
-		"chi"		"完成时间差异"
+		"chi"		"时间差"
 	}
 	"HudTopLeftRankText"
 	{
@@ -269,13 +240,12 @@
 	}
 	"HudWRPBText"
 	{
-		"en"		"SR mode[+] | PB mode[-]"
-		"chi"		"SR [+] | PB [-]"
+		"en"		"SR [+] | PB [-]"
 	}
 	"HudPrestrafeText"
 	{
 		"en"		"Prestrafe text"
-		"chi"		"Prestrafe 信息"
+		"chi"		"起步信息"
 	}
 	"HudStage"
 	{
@@ -313,8 +283,8 @@
 	"HudEnabledComponent"
 	{
 		"#format"	"{1:s}"
-		"en"		"{gold}{1} {white}HUD setting {orchid}enabled{white}."
-		"chi"		"{gold}{1} {white}HUD 设置{orchid}已启用{white}."
+		"en"		"{gold}{1} {white}HUD setting {lightgreen}enabled{white}."
+		"chi"		"{gold}{1} {white}HUD 设置{lightgreen}已启用{white}."
 	}
 	"HudDisabledComponent"
 	{
@@ -326,8 +296,8 @@
 	"BotPrestrafe"
 	{
 		"#format"	"{1:d}"
-		"en"		"{grey}Speed: {grey2}{1} u/s{white}."
-		"chi"		"{grey}速度: {grey2}{1} u/s{white}."
+		"en"		"{grey}Speed: {lightgreen}{1} u/s{white}."
+		"chi"		"{grey}速度: {lightgreen}{1} u/s{white}."
 	}
 	"StartPrestrafe"
 	{
@@ -350,18 +320,18 @@
 	"StagePrestrafe"
 	{
 		"#format"	"{1:d},{2:d},{3:s},{4:s}"
-		"en"		"{grey}Stage {1}: {grey2}{2} u/s {white}| {gold}WRCP:{white} {3} {white}| {lightblue}PB:{white} {4}"
-		"chi"		"{grey}关卡 [{1}] Prestrafe: {grey2}{2} u/s {white}| {gold}WRCP:{white} {3} {white}| {lightblue}PB:{white} {4}"
+		"en"		"{grey}Stage [{lightgreen}{1}{white}] | Speed: {grey2}{2} u/s {white}| {gold}WRCP:{white} {3} {white}| {lightblue}PB:{white} {4}"
+		"chi"		"{grey}关卡 [{lightgreen}{1}{white}] | 速度: {grey2}{2} u/s {white}| {gold}WRCP:{white} {3} {white}| {lightblue}PB:{white} {4}"
 	}
 	"PrestrafeIncrease"
 	{
 		"#format"	"{1:d}"
-		"en"		"{lightgreen}+{1} u/s"
+		"en"		"{green}+{1} u/s"
 	}
 	"PrestrafeNochange"
 	{
 		"#format"	"{1:d}"
-		"en"		"{orchid}{1} u/s"
+		"en"		"{grey}{1} u/s"
 	}
 	"PrestrafeDecrease"
 	{
@@ -401,7 +371,7 @@
 	"OnWRCP"
 	{
 		"#format"	"{1:N},{2:d},{3:s},{4:s},{5:s},{6:s}"
-		"en"		"{gold}{1}{white} beat {palered}[Stage {2}]{white} record! Mode: {blue}{3}{white} Time: {orchid}{4}{white} ({lightgreen}WR {5}{white}) Rank: {bluegrey}{6}{white}."
+		"en"		"{gold}{1}{white} beat {palered}[Stage {2}] {blue}*{3}*{white} record! Time: {orchid}{4}{white} ({lightgreen}WR {5}{white}) Rank: {bluegrey}{6}{white}."
 		"chi"		"{gold}{1}{white} 打破了 {palered}[关卡 {2}]{white} {blue}*{3}*{white} 记录! 用时: {orchid}{4}{white} ({lightgreen}WR {5}{white}) 排名: {bluegrey}{6}{white}."
 	}
 }

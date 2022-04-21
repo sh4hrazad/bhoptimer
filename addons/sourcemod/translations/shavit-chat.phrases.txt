@@ -87,19 +87,19 @@
 	{
 		"#format"	"{1:.0f}"
 		"en"		"Have {1} points"
-		"chi"		"有 {1} Pts"
+		"chi"		"拥有 {1} Pts"
 	}
 	"ChatRanksMenu_Points_1"
 	{
 		"#format"	"{1:.0f}"
 		"en"		"Have {1} point"
-		"chi"		"有 {1} Pts"
+		"chi"		"拥有 {1} Pts"
 	}
 	"ChatRanksMenu_Points_Ranged"
 	{
 		"#format"	"{1:.0f},{2:.0f}"
 		"en"		"Have between {1} and {2} points"
-		"chi"		"Pts 在 {1} 到 {2} 之间"
+		"chi"		"拥有 Pts 在 {1} 至 {2} 之间"
 	}
 	"ChatRanksMenu_Flat"
 	{
@@ -117,7 +117,7 @@
 	{
 		"#format"	"{1:.0f},{2:.0f}"
 		"en"		"Ranked between #{1} and #{2}"
-		"chi"		"排名在 #{1} 和 #{2} 之间"
+		"chi"		"排名位于 #{1} 和 #{2} 之间"
 	}
 	"ChatRanksMenu_Percentage"
 	{
@@ -128,58 +128,59 @@
 	{
 		"#format"	"{1:.1f},{2:.1f},{3:c},{4:c}"
 		"en"		"Between top {1}{3} and {2}{4}"
-		"chi"		"在 Top {1}{3} 和 Top {2}{4} 之间"
+		"chi"		"排名位于 {1}{3} 至 {2}{4} 之间"
 	}
 	"ChatRanksMenu_WR_Count"
 	{
 		"#format"	"{1:.0f}"
 		"en"		"Have {1} WRs"
-		"chi"		"有 {1} 个 WR"
+		"chi"		"拥有 {1} 个 WR"
 	}
 	"ChatRanksMenu_WR_Count_1"
 	{
 		"#format"	"{1:.0f}"
 		"en"		"Have {1} WR"
-		"chi"		"有 {1} 个 WR"
+		"chi"		"拥有 {1} 个 WR"
 	}
 	"ChatRanksMenu_WR_Count_Ranged"
 	{
 		"#format"	"{1:.0f},{2:.0f}"
 		"en"		"Have between {1} and {2} WRs"
-		"chi"		"有 {1} 到 {2} 个 WR"
+		"chi"		"拥有 {1} 到 {2} 个 WR"
 	}
 	"ChatRanksMenu_WR_Rank"
 	{
 		"#format"	"{1:.0f}"
 		"en"		"Ranked #{1} or better from WR holders"
-		"chi"		"WR 持有者排名 #{1} 或更高"
+		"chi"		"排名 #{1} 或更高"
 	}
 	"ChatRanksMenu_WR_Rank_1"
 	{
 		"#format"	"{1:.0f}"
 		"en"		"Ranked #{1} out of WRs held"
-		"chi"		"在持有的 WR 中排名第 {1} 位"
+		"chi"		"拥有 WR 数量排名第 {1} 位"
 	}
 	"ChatRanksMenu_WR_Rank_Ranged"
 	{
 		"#format"	"{1:.0f},{2:.0f}"
 		"en"		"Ranked between #{1} and #{2} out of WRs held"
-		"chi"		"在持有的 WR 中排名在 #{1} 到 #{2} 之间"
+		"chi"		"拥有 WR 数量的排名在 #{1} 到 #{2} 之间"
 	}
 	"ChatRanksMenu_WR_Rank_Percentage"
 	{
 		"#format"	"{1:.0f},{2:.0f},{3:c}"
 		"en"		"Top {1}{3} out of WRs held"
-		"chi"		"持有 Top {1}{3} 以外个 WR"
+		"chi"		"拥有 WR 数量前排名前 {1}{3}"
 	}
 	"ChatRanksMenu_WR_Rank_Percentage_Ranged"
 	{
 		"#format"	"{1:.0f},{2:.0f},{3:c},{4:c}"
 		"en"		"Between Top {1}{3} and {2}{4} out of WRs held"
+		"chi"		"拥有 WR 数量排名位于 {1}{3} 至 {2}{4} 之间"
 	}
 	"ChatRanksMenu_SampleText"
 	{
 		"en"		"The quick brown fox jumps over the lazy dog."
-		"chi"		"不需要文字演示，因为这是 中国 文字."
+		"chi"		"不需要文字演示，因为这是 {red}中国{white} 文字."
 	}
 }

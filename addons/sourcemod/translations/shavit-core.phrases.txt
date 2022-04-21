@@ -3,8 +3,8 @@
 	// ---------- Commands ---------- //
 	"AutobhopEnabled"
 	{
-		"en"		"Autobhop {orchid}enabled{white}."
-		"chi"		"自动连跳 {orchid}已开启{white}."
+		"en"		"Autobhop {lightgreen}enabled{white}."
+		"chi"		"自动连跳 {lightgreen}已开启{white}."
 	}
 	"AutobhopDisabled"
 	{
@@ -80,13 +80,13 @@
 	}
 	"SHSWCombination0"
 	{
-		"en"		"Your SHSW combination is {gold}W/A & S/D{white}."
-		"chi"		"你的半侧滑按键组合为: {gold}W/A 和 S/D{white}."
+		"en"		"Your SHSW combination is {lightgreen}W/A & S/D{white}."
+		"chi"		"你的半侧滑按键组合为: {lightgreen}W/A {white}和{lightgreen} S/D{white}."
 	}
 	"SHSWCombination1"
 	{
-		"en"		"Your SHSW combination is {gold}W/D & S/A{white}."
-		"chi"		"你的半侧滑按键组合为: {gold}W/D 和 S/A{white}."
+		"en"		"Your SHSW combination is {lightgreen}W/D & S/A{white}."
+		"chi"		"你的半侧滑按键组合为: {lightgreen}W/D{white} 和 {lightgreen}S/A{white}."
 	}
 	"NewAiraccelerate"
 	{
@@ -133,7 +133,7 @@
 	// ---------- Zones ---------- //
 	"TrackChangeFromMain"
 	{
-		"en"		"Use {orchid}!m{white}/{orchid}!main{white} go to back to the main track."
-		"chi"		"输入 {orchid}!r{white} 或者 {orchid}!main{white} 回到主线."
+		"en"		"Use {lightgreen}!m{white} or {lightgreen}!main{white} go to back to the main track."
+		"chi"		"输入 {lightgreen}!r{white} 或者 {lightgreen}!main{white} 回到主线."
 	}
 }

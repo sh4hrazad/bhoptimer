@@ -90,13 +90,13 @@
 	"Minutes"
 	{
 		"#format"	"{1:s}"
-		"en"		"{1} minutes remaining."
-		"chi"		"剩余 {1} 分钟."
+		"en"		"{lightgreen}{1}{white} minutes remaining."
+		"chi"		"剩余 {lightgreen}{1}{white} 分钟."
 	}	
 	"Seconds"
 	{
 		"#format"	"{1:s}"
-		"en"		"{1} seconds remaining."
-		"chi"		"剩余 {1} 秒"
+		"en"		"{red}{1}{white} seconds remaining."
+		"chi"		"剩余 {red}{1}{white} 秒."
 	}
 }

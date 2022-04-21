@@ -131,7 +131,7 @@
 	"MenuResponseYes"
 	{
 		"en"		"YES!!! DELETE ALL THE RECORDS!!! THIS ACTION IS IRREVERSIBLE!"
-		"chi"		"是的! 删除所有记录! 不反悔!"
+		"chi"		"是的! 我已知晓此操作不可撤销."
 	}
 	"DeleteStyleRecordsRecordsMenuTitle"
 	{
@@ -149,7 +149,7 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"YES!!! DELETE THE RECORDS FOR {1}!!! THIS ACTION IS IRREVERSIBLE!"
-		"chi"		"是的! 删除 {1} 的记录! 不反悔!"
+		"chi"		"删除 {1} 的记录! 我已知晓此操作不可撤销."
 	}
 	"DeleteTrackSingle"
 	{

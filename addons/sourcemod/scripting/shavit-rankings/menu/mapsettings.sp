@@ -151,6 +151,11 @@ void OpenBhopSettingsMenu(int client, int item = 0)
 		}
 	}
 
+	if(menu.ItemCount == 0)
+	{
+		menu.AddItem("", "请先设置 Track 后再设置此项.", ITEMDRAW_DISABLED);
+	}
+
 	menu.DisplayAt(client, item, MENU_TIME_FOREVER);
 	menu.ExitButton = true;
 }
