@@ -1,6 +1,9 @@
 static bool gB_CanTouchTrigger[MAXPLAYERS+1];
 static int gI_LastNoclipTick[MAXPLAYERS+1];
 
+// for prestrafe.sp
+bool gB_NoclipOnStopped[MAXPLAYERS+1];
+
 
 // ======[ EVENTS ]======
 
@@ -8,6 +11,7 @@ void AddCommandListeners_Noclip()
 {
 	RegConsoleCmd("sm_nc", Command_Noclip, "Toggles noclip.");
 	RegConsoleCmd("sm_noclipme", Command_Noclip, "Toggles noclip.");
+	RegConsoleCmd("sm_nct", Command_NoclipIgnoreTrigger);
 	RegConsoleCmd("sm_nctrigger", Command_NoclipIgnoreTrigger);
 	RegConsoleCmd("sm_nctriggers", Command_NoclipIgnoreTrigger);
 
@@ -21,6 +25,7 @@ void AddCommandListeners_Noclip()
 void OnClientPutInServer_InitNoclip(int client)
 {
 	gB_CanTouchTrigger[client] = false;
+	gB_NoclipOnStopped[client] = false;
 	gI_LastNoclipTick[client] = 0;
 }
 
@@ -32,6 +37,11 @@ void OnEntityCreated_HookTrigger(int entity, const char[] classname)
 		SDKHook(entity, SDKHook_EndTouch, HookTrigger);
 		SDKHook(entity, SDKHook_Touch, HookTrigger);
 	}
+}
+
+void Shavit_OnRestartPre_CleanUpNoclipStatus(int client)
+{
+	gB_NoclipOnStopped[client] = false;
 }
 
 
@@ -174,11 +184,16 @@ static void UpdateByNoclipStatus(int client, bool condition)
 	}
 	else
 	{
+		SetEntityMoveType(client, MOVETYPE_WALK);
+
 		if(Shavit_GetTimerStatus(client) == Timer_Paused)
 		{
 			Shavit_PrintToChat(client, "%T", "NoclipResumeTimer", client);
 		}
 
-		SetEntityMoveType(client, MOVETYPE_WALK);
+		if(gB_NoclipOnStopped[client])
+		{
+			Shavit_PrintToChat(client, "输入 !r 重启计时.");
+		}
 	}
 }

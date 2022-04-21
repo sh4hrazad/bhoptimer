@@ -512,6 +512,8 @@ public void Shavit_OnRestart(int client, int track)
 
 public Action Shavit_OnRestartPre(int client, int track)
 {
+	Shavit_OnRestartPre_CleanUpNoclipStatus(client);
+
 	if(gCV_RespawnOnRestart.BoolValue && !IsPlayerAlive(client))
 	{
 		CS_SwitchTeam(client, GetRandomInt(2, 3));
@@ -609,6 +611,8 @@ static void CreateConVars()
 	sv_disable_immunity_alpha = FindConVar("sv_disable_immunity_alpha");
 	sv_disable_radar = FindConVar("sv_disable_radar");
 	mp_humanteam = FindConVar("mp_humanteam");
+
+	// should fix: invalid handle on first map after server start
 	shavit_zones_entryzonespeedlimit = FindConVar("shavit_zones_entryzonespeedlimit");
 
 	// advertisements

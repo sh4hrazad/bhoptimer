@@ -12,14 +12,12 @@ enum
 
 static int gI_Bhop[MAXPLAYERS+1];
 static int gI_TicksOnGround[MAXPLAYERS+1];
-static bool gB_UseNoclipInStart[MAXPLAYERS+1];
 
 /* -- Sub functions -- */
 void OnClientPutInServer_InitPrestrafe(int client)
 {
 	gI_Bhop[client] = 0;
 	gI_TicksOnGround[client] = 0;
-	gB_UseNoclipInStart[client] = false;
 }
 
 void OnUserCmdPre_PreStrafe(int client, int buttons)
@@ -54,9 +52,12 @@ void OnUserCmdPre_PreStrafe(int client, int buttons)
 		LimitInvalidSpeed(client, Invalid_Bhop);
 	}
 
-	if(Shavit_InsideZone(client, Zone_Start, -1) && GetEntityMoveType(client) == MOVETYPE_NOCLIP)
+	if(GetEntityMoveType(client) == MOVETYPE_NOCLIP
+		 && ((Shavit_GetTimerStatus(client) == Timer_Running
+		 && Shavit_GetClientTime(client) != 0.0)
+		 || Shavit_GetTimerStatus(client) == Timer_Stopped))
 	{
-		gB_UseNoclipInStart[client] = true;
+		gB_NoclipOnStopped[client] = true;
 	}
 }
 
@@ -71,7 +72,9 @@ public void Player_Jump(Event event, const char[] name, bool dontBroadcast)
 // limit those one that enter zone by outsiding zone
 public Action Shavit_OnEnterZone(int client, int type, int track, int id, int entity, int data)
 {
-	if(shavit_zones_entryzonespeedlimit.FloatValue > 0.0 && (type == Zone_Start || (Shavit_GetMapLimitspeed() && type == Zone_Stage)))
+	if(Shavit_GetTimerStatus(client) == Timer_Running
+		 && shavit_zones_entryzonespeedlimit.FloatValue > 0.0
+		 && (type == Zone_Start || (Shavit_GetMapLimitspeed() && type == Zone_Stage)))
 	{
 		LimitInvalidSpeed(client, Invalid_Enterstart);
 	}
@@ -79,10 +82,12 @@ public Action Shavit_OnEnterZone(int client, int type, int track, int id, int en
 
 public Action Shavit_OnLeaveZone(int client, int type, int track, int id, int entity, int data)
 {
-	if(gCV_LimitPrestrafe.BoolValue && (type == Zone_Start || (Shavit_GetMapLimitspeed() && type == Zone_Stage)))
+	if(Shavit_GetTimerStatus(client) == Timer_Running
+		 && gCV_LimitPrestrafe.BoolValue
+		 && (type == Zone_Start || (Shavit_GetMapLimitspeed() && type == Zone_Stage)))
 	{
-		LimitInvalidSpeed(client, Invalid_Prehop);
 		LimitInvalidSpeed(client, Invalid_Noclip);
+		LimitInvalidSpeed(client, Invalid_Prehop);
 	}
 }
 
@@ -149,14 +154,12 @@ static void LimitInvalidSpeed(int client, int type)
 	// 起点开穿墙 noclip in start
 	if(type == Invalid_Noclip)
 	{
-		if(gB_UseNoclipInStart[client])
+		if(gB_NoclipOnStopped[client])
 		{
 			Shavit_StopTimer(client);
-			Shavit_PrintToChat(client, "计时{red}中止{white}! 因为曾在起点使用穿墙.");
+			Shavit_PrintToChat(client, "你曾经使用过穿墙, 需要输入 !r 才能重启计时器.");
 		}
 
-		gB_UseNoclipInStart[client] = false;
-		
 		return;
 	}
 }
