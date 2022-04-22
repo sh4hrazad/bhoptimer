@@ -191,6 +191,11 @@ public void OnPluginStart()
 	gB_Chat = LibraryExists("shavit-chat");
 }
 
+public void OnAllPluginsLoaded()
+{
+	shavit_zones_entryzonespeedlimit = FindConVar("shavit_zones_entryzonespeedlimit");
+}
+
 public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	if (convar == gCV_HideRadar && sv_disable_radar != null)
@@ -611,9 +616,6 @@ static void CreateConVars()
 	sv_disable_immunity_alpha = FindConVar("sv_disable_immunity_alpha");
 	sv_disable_radar = FindConVar("sv_disable_radar");
 	mp_humanteam = FindConVar("mp_humanteam");
-
-	// should fix: invalid handle on first map after server start
-	shavit_zones_entryzonespeedlimit = FindConVar("shavit_zones_entryzonespeedlimit");
 
 	// advertisements
 	hostname = FindConVar("hostname");
