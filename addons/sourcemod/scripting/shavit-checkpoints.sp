@@ -237,9 +237,9 @@ void LoadDHooks()
 
 	LoadPhysicsUntouch(hGameData);
 
+#if MORE_LADDER_CHECKPOINT_STUFF
 	if ((gI_Offset_m_lastStandingPos = GameConfGetOffset(hGameData, "CCSPlayer::m_lastStandingPos")) == -1)
 	{
-#if MORE_LADDER_CHECKPOINT_STUFF
 		if ((gI_Offset_m_lastStandingPos = GameConfGetOffset(hGameData, "CCSPlayer::m_lastStandingPos")) == -1)
 		{
 			SetFailState("Couldn't get the offset for \"CCSPlayer::m_lastStandingPos\"!");
@@ -259,8 +259,8 @@ void LoadDHooks()
 		{
 			SetFailState("Couldn't get the offset for \"CCSPlayer::m_lastLadderPos\"!");
 		}
-#endif
 	}
+#endif
 
 	delete hGameData;
 
