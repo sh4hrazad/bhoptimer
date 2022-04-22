@@ -67,6 +67,7 @@ Handle gH_Forwards_PreOnDrawKeysHUD = null;
 
 // modules
 bool gB_ReplayPlayback = false;
+bool gB_Zones = false;
 bool gB_Sounds = false;
 bool gB_Rankings = false;
 bool gB_DynamicChannels = false;
@@ -288,6 +289,10 @@ public void OnLibraryAdded(const char[] name)
 	{
 		gB_ReplayPlayback = true;
 	}
+	else if(StrEqual(name, "shavit-zones"))
+	{
+		gB_Zones = true;
+	}
 	else if(StrEqual(name, "shavit-sounds"))
 	{
 		gB_Sounds = true;
@@ -307,6 +312,10 @@ public void OnLibraryRemoved(const char[] name)
 	if(StrEqual(name, "shavit-replay-playback"))
 	{
 		gB_ReplayPlayback = false;
+	}
+	else if(StrEqual(name, "shavit-zones"))
+	{
+		gB_Zones = false;
 	}
 	else if(StrEqual(name, "shavit-sounds"))
 	{
