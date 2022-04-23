@@ -53,8 +53,8 @@ void OnUserCmdPre_PreStrafe(int client, int buttons)
 	}
 
 	if(GetEntityMoveType(client) == MOVETYPE_NOCLIP
-		 && ((Shavit_GetTimerStatus(client) == Timer_Running
-		 && Shavit_GetClientTime(client) != 0.0)
+		 && ((Shavit_GetTimerStatus(client) == Timer_Running // Track 或关卡起点
+		 && Shavit_GetClientTime(client) == 0.0) // 这么写是为了防止玩家暂停时开穿墙也会导致计时停止
 		 || Shavit_GetTimerStatus(client) == Timer_Stopped))
 	{
 		gB_NoclipOnStopped[client] = true;
