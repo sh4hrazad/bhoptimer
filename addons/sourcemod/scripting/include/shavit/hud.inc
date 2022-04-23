@@ -104,6 +104,7 @@ enum struct huddata_t
 	float fClosestReplayTime;
 	float fClosestVelocityDifference;
 	int iMapTier;
+	float fClosestReplayLength;
 }
 
 /**
