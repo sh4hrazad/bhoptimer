@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ sfork-cssource ]
+    branches: [ saikyohopz ]
   pull_request:
-    branches: [ sfork-cssource ]
+    branches: [ saikyohopz ]
 
   workflow_dispatch:
 
