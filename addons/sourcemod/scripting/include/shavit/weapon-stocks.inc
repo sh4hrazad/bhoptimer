@@ -75,6 +75,12 @@ stock void RemoveAllWeapons(int client)
 stock void SetMaxWeaponAmmo(int client, int weapon, bool setClip1)
 {
 	int iAmmo = GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType");
+
+	if (iAmmo < 0)
+	{
+		return;
+	}
+
 	SetEntProp(client, Prop_Send, "m_iAmmo", 255, 4, iAmmo);
 
 	if (setClip1)
