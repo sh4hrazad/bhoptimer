@@ -606,7 +606,7 @@ public Action Command_MapInfo(int client, int args)
 		}
 		else
 		{
-			FormatEx(sInfo, sizeof(sInfo), "%s%s | No Bonus", sInfo, gS_ChatStrings.sText, sInfo);
+			FormatEx(sInfo, sizeof(sInfo), "%s%s | No Bonus", sInfo, gS_ChatStrings.sText);
 
 		}
 
