@@ -43,7 +43,4 @@
 #include <shavit/wr>
 #include <shavit/zones>
 
-#include <shavit/colors>
-#include <shavit/map_folder_stocks>
 #include <shavit/replay-shared>
-#include <shavit/surftimer>

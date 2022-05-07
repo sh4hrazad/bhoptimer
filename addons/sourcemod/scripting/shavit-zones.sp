@@ -2124,7 +2124,7 @@ public int MenuHandler_SelectHookZone_Track(Menu menu, MenuAction action, int pa
 		for(int i = 0; i < ZONETYPES_SIZE; i++)
 		{
 			char sZoneName[64];
-			GetZoneName(param1, i, sZoneName, 64);
+			GetZoneTypeName(param1, i, sZoneName, 64);
 
 			if(i == Zone_Stage && gI_Checkpoints > 0)
 			{
@@ -2390,7 +2390,7 @@ public int MenuHandler_SelectZoneTrack(Menu menu, MenuAction action, int param1,
 		for(int i = 0; i < ZONETYPES_SIZE; i++)
 		{
 			char sZoneName[64];
-			GetZoneName(param1, i, sZoneName, 64);
+			GetZoneTypeName(param1, i, sZoneName, 64);
 
 			if(i == Zone_Stage && (gI_Checkpoints > 0 || gI_ZoneTrack[param1] != Track_Main))
 			{
@@ -2481,7 +2481,7 @@ Action OpenTpToZoneMenu(int client, int pagepos=0)
 		GetTrackName(client, gA_ZoneCache[i].iZoneTrack, sTrack, 32);
 
 		char sZoneName[32];
-		GetZoneName(client, gA_ZoneCache[i].iZoneType, sZoneName, sizeof(sZoneName));
+		GetZoneTypeName(client, gA_ZoneCache[i].iZoneType, sZoneName, sizeof(sZoneName));
 
 		if (gA_ZoneCache[i].iZoneType == Zone_Stage || gA_ZoneCache[i].iZoneType == Zone_Checkpoint)
 		{
@@ -2567,7 +2567,7 @@ void OpenEditMenu(int client)
 		GetTrackName(client, gA_ZoneCache[i].iZoneTrack, sTrack, 32);
 
 		char sZoneName[32];
-		GetZoneName(client, gA_ZoneCache[i].iZoneType, sZoneName, 32);
+		GetZoneTypeName(client, gA_ZoneCache[i].iZoneType, sZoneName, 32);
 
 		FormatEx(sDisplay, 64, "#%d - %s #%d (%s)", (i + 1), sZoneName, gA_ZoneCache[i].iZoneData, sTrack);
 
@@ -2670,7 +2670,7 @@ Action OpenDeleteMenu(int client, int item = 0)
 			GetTrackName(client, gA_ZoneCache[i].iZoneTrack, sTrack, 32);
 
 			char sZoneName[32];
-			GetZoneName(client, gA_ZoneCache[i].iZoneType, sZoneName, 32);
+			GetZoneTypeName(client, gA_ZoneCache[i].iZoneType, sZoneName, 32);
 
 			FormatEx(sDisplay, 64, "#%d - %s #%d (%s)", (i + 1), sZoneName, gA_ZoneCache[i].iZoneData, sTrack);
 
@@ -2736,7 +2736,7 @@ public int MenuHandler_DeleteZone(Menu menu, MenuAction action, int param1, int 
 				if(bOK)
 				{
 					char sZoneName[32];
-					GetZoneName(param1, gA_ZoneCache[id].iZoneType, sZoneName, 32);
+					GetZoneTypeName(param1, gA_ZoneCache[id].iZoneType, sZoneName, 32);
 
 					Shavit_LogMessage("%L - deleted %s (id %d) from map `%s`.", param1, sZoneName, gA_ZoneCache[id].iDatabaseID, gS_Map);
 				
@@ -2790,7 +2790,7 @@ public void SQL_DeleteZone_Callback(Database db, DBResultSet results, const char
 	LoadCheckpointZones();
 
 	char sZoneName[32];
-	GetZoneName(client, type, sZoneName, 32);
+	GetZoneTypeName(client, type, sZoneName, 32);
 
 	Shavit_PrintToChat(client, "%T", "ZoneDeleteSuccessful", client, sZoneName);
 	CreateTimer(0.05, Timer_OpenDeleteMenu, client);
@@ -3547,7 +3547,7 @@ void InsertZone(int client)
 
 	char sQuery[512];
 	char sZoneName[32];
-	GetZoneName(client, iType, sZoneName, 32);
+	GetZoneTypeName(client, iType, sZoneName, 32);
 
 	if(bInsert) // insert
 	{
@@ -4054,7 +4054,7 @@ void CreateZoneEntities()
 				GetTrackName(LANG_SERVER, gA_ZoneCache[i].iZoneTrack, sTrack, sizeof(sTrack));
 
 				char sType[32];
-				GetZoneName(LANG_SERVER, gA_ZoneCache[i].iZoneType, sType, sizeof(sType));
+				GetZoneTypeName(LANG_SERVER, gA_ZoneCache[i].iZoneType, sType, sizeof(sType));
 
 				char sLogs[256];
 				FormatEx(sLogs, sizeof(sLogs), "该hook区域丢失hammerid, 请联系OP重新设置hook区域. Hookzone的名字是: \"%s\", Track: \"%s\", 类别为: \"%s\".", 

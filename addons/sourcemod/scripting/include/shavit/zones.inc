@@ -27,7 +27,7 @@ enum
 
 /* -- Stocks -- */
 
-stock void GetZoneName(int client, int type, char[] output, int size)
+stock void GetZoneTypeName(int client, int type, char[] output, int size)
 {
 	switch(type)
 	{
