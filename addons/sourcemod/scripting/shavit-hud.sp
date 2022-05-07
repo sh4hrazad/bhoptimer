@@ -410,7 +410,7 @@ static void CreateConVars()
 		..."HUD_SPECTATORS			16\n"
 		..."HUD_KEYOVERLAY			32\n"
 		..."HUD_HIDEWEAPON			64\n"
-		..."HUD_TOPLEFT				128\n"
+		..."HUD_UNUSED				128\n"
 		..."HUD_SYNC					256\n"
 		..."HUD_TIMELEFT				512\n"
 		..."HUD_2DVEL				1024\n"

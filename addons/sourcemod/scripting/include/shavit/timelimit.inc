@@ -1,8 +1,8 @@
-/*
-	timelimit Plugin Include
-	
-	Website: https://github.com/Ciallo-Ani/surftimer
-*/
+/**
+ * Include file for shavit-timelimit.sp
+ *
+ * Original plugin website: https://github.com/Ciallo-Ani/mytimer/tree/gokz-framework
+ */
 
 #if defined _shavit_timelimit_included_
 #endinput

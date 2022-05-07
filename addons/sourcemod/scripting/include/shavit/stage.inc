@@ -1,8 +1,8 @@
-/*
-	stage Plugin Include
-	
-	Website: https://github.com/Ciallo-Ani/surftimer
-*/
+/**
+ * Include file for shavit-stage.sp
+ *
+ * Original plugin website: https://github.com/Ciallo-Ani/mytimer/tree/gokz-framework
+ */
 
 #if defined _shavit_stage_included_
 #endinput

@@ -1,3 +1,9 @@
+/**
+ * Include file for chat colors
+ *
+ * Original plugin website: https://github.com/Ciallo-Ani/mytimer/tree/gokz-framework
+ */
+
 #if defined _shavit_colors_included_
 #endinput
 #endif
@@ -17,14 +23,6 @@ char gS_GlobalColors[][] =
 	"\x03"
 };
 
-char gS_CSGOColorNames[][] =
-{
-};
-
-char gS_CSGOColors[][] =
-{
-};
-
 // Custom colors from multicolors
 char gS_CustomColorNames[][] =
 {
@@ -37,6 +35,7 @@ char gS_CustomColorNames[][] =
 	"{arcana}", 
 	"{axis}", 
 	"{azure}", 
+
 	"{beige}", 
 	"{bisque}", 
 	"{black}", 
@@ -45,6 +44,7 @@ char gS_CustomColorNames[][] =
 	"{blueviolet}", 
 	"{brown}", 
 	"{burlywood}", 
+
 	"{cadetblue}", 
 	"{chartreuse}", 
 	"{chocolate}", 
@@ -57,6 +57,7 @@ char gS_CustomColorNames[][] =
 	"{corrupted}", 
 	"{crimson}", 
 	"{cyan}", 
+
 	"{darkblue}", 
 	"{darkcyan}", 
 	"{darkgoldenrod}", 
@@ -81,7 +82,9 @@ char gS_CustomColorNames[][] =
 	"{dimgray}", 
 	"{dimgrey}", 
 	"{dodgerblue}", 
+
 	"{exalted}", 
+
 	"{firebrick}", 
 	"{floralwhite}", 
 	"{forestgreen}", 
@@ -89,6 +92,7 @@ char gS_CustomColorNames[][] =
 	"{fuchsia}", 
 	"{fullblue}", 
 	"{fullred}", 
+
 	"{gainsboro}", 
 	"{genuine}", 
 	"{ghostwhite}", 
@@ -97,14 +101,18 @@ char gS_CustomColorNames[][] =
 	"{gray}", 
 	"{grey}", 
 	"{greenyellow}", 
+
 	"{haunted}", 
 	"{honeydew}", 
 	"{hotpink}", 
+
 	"{immortal}", 
 	"{indianred}", 
 	"{indigo}", 
 	"{ivory}", 
+
 	"{khaki}", 
+
 	"{lavender}", 
 	"{lavenderblush}", 
 	"{lawngreen}", 
@@ -128,6 +136,7 @@ char gS_CustomColorNames[][] =
 	"{lime}", 
 	"{limegreen}", 
 	"{linen}", 
+
 	"{magenta}", 
 	"{maroon}", 
 	"{mediumaquamarine}", 
@@ -144,15 +153,18 @@ char gS_CustomColorNames[][] =
 	"{mistyrose}", 
 	"{moccasin}", 
 	"{mythical}", 
+
 	"{navajowhite}", 
 	"{navy}", 
 	"{normal}", 
+
 	"{oldlace}", 
 	"{olive}", 
 	"{olivedrab}", 
 	"{orange}", 
 	"{orangered}", 
 	"{orchid}", 
+
 	"{palegoldenrod}", 
 	"{palegreen}", 
 	"{paleturquoise}", 
@@ -164,10 +176,12 @@ char gS_CustomColorNames[][] =
 	"{plum}", 
 	"{powderblue}", 
 	"{purple}", 
+
 	"{rare}", 
 	"{red}", 
 	"{rosybrown}", 
 	"{royalblue}", 
+
 	"{saddlebrown}", 
 	"{salmon}", 
 	"{sandybrown}", 
@@ -184,20 +198,25 @@ char gS_CustomColorNames[][] =
 	"{springgreen}", 
 	"{steelblue}", 
 	"{strange}", 
+
 	"{tan}", 
 	"{teal}", 
 	"{thistle}", 
 	"{tomato}", 
 	"{turquoise}", 
+
 	"{uncommon}", 
 	"{unique}", 
 	"{unusual}", 
+
 	"{valve}", 
 	"{vintage}", 
 	"{violet}",
+
 	"{wheat}", 
 	"{white}", 
 	"{whitesmoke}", 
+
 	"{yellow}", 
 	"{yellowgreen}", 
 
@@ -214,6 +233,7 @@ char gS_CustomColorNames[][] =
 
 char gS_CustomColors[][] = 
 {
+	// A
 	"\x07F0F8FF",
 	"\x074D7942", // same as Allies team in DoD:S
 	"\x07EB4B4B", // same as Ancient item rarity in Dota 2
@@ -223,6 +243,8 @@ char gS_CustomColors[][] =
 	"\x07ADE55C", // same as Arcana item rarity in Dota 2
 	"\x07FF4040", // same as Axis team in DoD:S
 	"\x07007FFF",
+	
+	// B
 	"\x07F5F5DC",
 	"\x07FFE4C4",
 	"\x07000000",
@@ -231,6 +253,8 @@ char gS_CustomColors[][] =
 	"\x078A2BE2",
 	"\x07A52A2A",
 	"\x07DEB887",
+
+	// C
 	"\x075F9EA0",
 	"\x077FFF00",
 	"\x07D2691E",
@@ -243,6 +267,8 @@ char gS_CustomColors[][] =
 	"\x07A32C2E", // same as Corrupted item quality in Dota 2
 	"\x07DC143C",
 	"\x0700FFFF",
+
+	// D
 	"\x0700008B",
 	"\x07008B8B",
 	"\x07B8860B",
@@ -267,7 +293,11 @@ char gS_CustomColors[][] =
 	"\x07696969",
 	"\x07696969",
 	"\x071E90FF",
+
+	// E
 	"\x07CCCCCD", // same as Exalted item quality in Dota 2
+
+	// F
 	"\x07B22222",
 	"\x07FFFAF0",
 	"\x07228B22",
@@ -275,6 +305,8 @@ char gS_CustomColors[][] =
 	"\x07FF00FF",
 	"\x070000FF",
 	"\x07FF0000",
+
+	// G
 	"\x07DCDCDC",
 	"\x074D7455", // same as Genuine item quality in TF2
 	"\x07F8F8FF",
@@ -283,14 +315,22 @@ char gS_CustomColors[][] =
 	"\x07CCCCCC", // same as spectator team color
 	"\x07CCCCCC",
 	"\x07ADFF2F",
+
+	// H
 	"\x0738F3AB", // same as Haunted item quality in TF2
 	"\x07F0FFF0",
 	"\x07FF69B4",
+
+	// I
 	"\x07E4AE33", // same as Immortal item rarity in Dota 2
 	"\x07CD5C5C",
 	"\x074B0082",
 	"\x07FFFFF0",
+
+	// K
 	"\x07F0E68C",
+
+	// L
 	"\x07E6E6FA",
 	"\x07FFF0F5",
 	"\x077CFC00",
@@ -314,6 +354,8 @@ char gS_CustomColors[][] =
 	"\x0700FF00",
 	"\x0732CD32",
 	"\x07FAF0E6",
+
+	// M
 	"\x07FF00FF",
 	"\x07800000",
 	"\x0766CDAA",
@@ -330,15 +372,21 @@ char gS_CustomColors[][] =
 	"\x07FFE4E1",
 	"\x07FFE4B5",
 	"\x078847FF", // same as Mythical item rarity in Dota 2
+
+	// N
 	"\x07FFDEAD",
 	"\x07000080",
 	"\x07B2B2B2", // same as Normal item quality in TF2
+
+	// O
 	"\x07FDF5E6",
 	"\x079EC34F",
 	"\x076B8E23",
 	"\x07FFA500",
 	"\x07FF4500",
 	"\x07DA70D6",
+	
+	// P
 	"\x07EEE8AA",
 	"\x0798FB98",
 	"\x07AFEEEE",
@@ -350,10 +398,14 @@ char gS_CustomColors[][] =
 	"\x07DDA0DD",
 	"\x07B0E0E6",
 	"\x07800080",
+
+	// R
 	"\x074B69FF", // same as Rare item rarity in Dota 
 	"\x07FF4040", // same as RED/Terrorist team color
 	"\x07BC8F8F",
 	"\x074169E1",
+
+	// S
 	"\x078B4513",
 	"\x07FA8072",
 	"\x07F4A460",
@@ -370,31 +422,43 @@ char gS_CustomColors[][] =
 	"\x0700FF7F",
 	"\x074682B4",
 	"\x07CF6A32", // same as Strange item quality in TF
+	
+	// T
 	"\x07D2B48C",
 	"\x07008080",
 	"\x07D8BFD8",
 	"\x07FF6347",
 	"\x0740E0D0",
+
+	// U
 	"\x07B0C3D9", // same as Uncommon item rarity in Dota 2
 	"\x07FFD700", // same as Unique item quality in TF2
 	"\x078650AC", // same as Unusual item quality in TF2
+	
+	// V
 	"\x07A50F79", // same as Valve item quality in TF2
 	"\x07476291", // same as Vintage item quality in TF2
 	"\x07EE82EE",
+	
+	// W
 	"\x07F5DEB3",
 	"\x07FFFFFF",
 	"\x07F5F5F5",
+	
+	// Y
 	"\x07FFFF00",
 	"\x079ACD32",
 
+	// neko
 	"\x07FF6A6A",
 	"\x076AA6FF",
 
+	// csgo
 	"\x076A5ACD",
 	"\x07CCCCCC",
 	"\x07F93822",
-	"\x07cd9294",
-	"\x070000ff"
+	"\x07CD9294",
+	"\x0700FF00"
 };
 
 stock void ReplaceColors(char[] string, int size)
@@ -402,11 +466,6 @@ stock void ReplaceColors(char[] string, int size)
 	for(int x = 0; x < sizeof(gS_GlobalColorNames); x++)
 	{
 		ReplaceString(string, size, gS_GlobalColorNames[x], gS_GlobalColors[x]);
-	}
-
-	for(int x = 0; x < sizeof(gS_CSGOColorNames); x++)
-	{
-		ReplaceString(string, size, gS_CSGOColorNames[x], gS_CSGOColors[x]);
 	}
 
 	for(int x = 0; x < sizeof(gS_CustomColorNames); x++)
@@ -423,11 +482,11 @@ stock void RemoveColors(char[] string, int size)
 {
 	for(int x = 0; x < sizeof(gS_GlobalColorNames); x++)
 	{
-		ReplaceString(string, size, gS_GlobalColorNames[x];
+		ReplaceString(string, size, gS_GlobalColorNames[x], "");
 	}
 
 	for(int x = 0; x < sizeof(gS_CSGOColorNames); x++)
 	{
-		ReplaceString(string, size, gS_CSGOColorNames[x]);
+		ReplaceString(string, size, gS_CSGOColorNames[x], "");
 	}
 }

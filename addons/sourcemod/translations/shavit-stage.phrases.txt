@@ -4,8 +4,8 @@
 	"Chat-WRCP"
 	{
 		"#format"	"{1:s},{2:d},{3:s},{4:s}"
-		"en"		"{gold}{1}{white} hold {palered}[Stage {2}]{white} record! Mode: {blue}{3}{white} Time: {orchid}{4}{white}."
-		"chi"		"{gold}{1}{white} 正保持着 {palered}[关卡 {2}]{white} 记录! 模式: {blue}{3}{white} 时间: {orchid}{4}{white}."
+		"en"		"{gold}{1}{white} hold {palered}[Stage {2}]{white} record! Mode: {blue}{3}{white} Time: {lightgreen}{4}{white}."
+		"chi"		"{gold}{1}{white} 正保持着 {palered}[关卡 {2}]{white} 记录! 模式: {blue}{3}{white} 时间: {lightgreen}{4}{white}."
 	}
 	"Chat-WRCP-NoRecord"
 	{

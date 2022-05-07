@@ -39,7 +39,7 @@ void ShowHUDMenu(int client, int item)
 	menu.AddItem(sInfo, sHudItem);
 
 	FormatEx(sInfo, 16, "!%d", HUD_MAPTIER);
-	FormatEx(sHudItem, 64, "%T", "HudMapTier", client);
+	FormatEx(sHudItem, 64, "%T", "HudMapAndTier", client);
 	menu.AddItem(sInfo, sHudItem);
 
 	// TODO: Top Left HUD, Sync, Timeleft, Map & tier, etc.
@@ -159,12 +159,11 @@ void ToggleHUD(int client, int hud, bool chat)
 			case HUD_SPECTATORS: FormatEx(sHUDSetting, 64, "%T", "HudSpectators", client);
 			case HUD_KEYOVERLAY: FormatEx(sHUDSetting, 64, "%T", "HudKeyOverlay", client);
 			case HUD_HIDEWEAPON: FormatEx(sHUDSetting, 64, "%T", "HudHideWeapon", client);
-			case HUD_TOPLEFT: FormatEx(sHUDSetting, 64, "%T", "HudTopLeft", client);
 			case HUD_SYNC: FormatEx(sHUDSetting, 64, "%T", "HudSync", client);
 			case HUD_TIMELEFT: FormatEx(sHUDSetting, 64, "%T", "HudTimeLeft", client);
 			case HUD_2DVEL: FormatEx(sHUDSetting, 64, "%T", "Hud2dVel", client);
 			case HUD_NOSOUNDS: FormatEx(sHUDSetting, 64, "%T", "HudNoRecordSounds", client);
-			case HUD_MAPTIER: FormatEx(sHUDSetting, 64, "%T", "HudMapTier", client);
+			case HUD_MAPTIER: FormatEx(sHUDSetting, 64, "%T", "HudMapAndTier", client);
 		}
 
 		if((gI_HUDSettings[client] & hud) > 0)

@@ -54,7 +54,7 @@
 	}
 	"CCHelp_CSGO_1"
 	{
-		"en"		"- The following colors are also available: {blue}, {bluegrey}, {darkblue}, {darkred}, {gold}, {grey}, {grey2}, {lightgreen}, {lightred}, {lime}, {orchid}, {yellow} and {palered}."
+		"en"		"- The following colors are also available: {blue}, {bluegrey}, {darkblue}, {darkred}, {gold}, {grey}, {grey2}, {lightgreen}, {lightred}, {lime}, {lightgreen}, {yellow} and {palered}."
 		"chi"		"- 可用的颜色标签有: {blue}, {bluegrey}, {darkblue}, {darkred}, {gold}, {grey}, {grey2}, {lightgreen}, {lightred}, {lime}, {orchid}, {yellow}, {palered}."
 	}
 	// ---------- Menu ---------- //

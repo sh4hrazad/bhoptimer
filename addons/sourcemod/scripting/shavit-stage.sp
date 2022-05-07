@@ -22,7 +22,7 @@ public Plugin myinfo =
 	author = "Ciallo-Ani",
 	description = "A modified Stage plugin for fork's surf timer.",
 	version = "0.5",
-	url = "https://github.com/Ciallo-Ani/surftimer"
+	url = "https://github.com/Ciallo-Ani/mytimer/tree/gokz-framework"
 };
 
 

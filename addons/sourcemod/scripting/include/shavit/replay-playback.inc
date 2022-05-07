@@ -1,8 +1,8 @@
-/*
-	replay-playback Plugin Include
-	
-	Website: https://github.com/Ciallo-Ani/surftimer
-*/
+/**
+ * Include file for shavit-replay-playback.sp
+ *
+ * Original plugin website: https://github.com/Ciallo-Ani/mytimer/tree/gokz-framework
+ */
 
 #if defined _shavit_replay_playback_included_
 #endinput

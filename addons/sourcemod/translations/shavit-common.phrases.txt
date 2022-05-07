@@ -13,7 +13,6 @@
 	"Track_Main"
 	{
 		"en"		"Main"
-		"chi"		"主线"
 	}
 	"Track_Bonus"
 	{
@@ -57,7 +56,7 @@
 	}
 	"Zone_AntiJump"
 	{
-		"en"		"Anti-Jump Zone"
+		"en"		"AntiJump Zone"
 		"chi"		"禁止起跳区域"
 	}
 	"Zone_AutoBhop"

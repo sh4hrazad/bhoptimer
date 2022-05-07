@@ -132,7 +132,7 @@ void Shavit_OnFinishStage_Post_Message(int client, int stage, int style, float t
 		case PB_UnRanked:
 		{
 			FormatEx(sMessage, sizeof(sMessage), 
-				"{darkred}[未排名]{default} | {grey}关卡{default} [{orchid}%d{default}] | {grey2}%s{default} | {palered}WRCP{default} {yellow}%s{default} | {darkblue}PB{default} {yellow}%s{default}", 
+				"{darkred}[未排名]{white} | {grey}关卡{white} [{orchid}%d{white}] | {grey2}%s{white} | {palered}WRCP{white} {yellow}%s{white} | {darkblue}PB{white} {yellow}%s{white}", 
 				stage, sTime, sWRDifftime, sPBDifftime);
 		}
 	}

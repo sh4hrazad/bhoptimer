@@ -1,8 +1,8 @@
-/*
-	chat Plugin Include
-	
-	Website: https://github.com/Ciallo-Ani/surftimer
-*/
+/**
+ * Include file for shavit-chat.sp
+ *
+ * Original plugin website: https://github.com/Ciallo-Ani/mytimer/tree/gokz-framework
+ */
 
 #if defined _shavit_chat_included_
 #endinput

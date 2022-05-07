@@ -14,14 +14,14 @@
 	"CheatTimerStop"
 	{
 		"#format"	"{1:s}"
-		"en"		"{red}Timer stopped! {white}{1}"
-		"chi"		"{red}计时中止! {white}{1}"
+		"en"		"Timer {red}stopped{white}! {1}"
+		"chi"		"计时{red}中止! {white}{1}"
 	}
 	"CommandDisabled"
 	{
 		"#format" 	"{1:s}"
-		"en"		"The command ({gold}{1}{white}) is disabled."
-		"chi"		"这条指令 ({gold}{1}{white}) 已被禁用."
+		"en"		"The command ({red}{1}{white}) is disabled."
+		"chi"		"这条指令 ({red}{1}{white}) 已被禁用."
 	}
 	"StyleNoAccess"
 	{
@@ -31,7 +31,7 @@
 	"BlockNoclipResume"
 	{
 		"en"		"You {red}can't{white} resume timer while {red}nocliping{white}."
-		"chi"		"你不能在{red}穿墙状态{white}下恢复计时"
+		"chi"		"你不能在{red}穿墙状态{white}下恢复计时."
 	}
 	// ---------- Errors ---------- //
 	"VerificationFailed"
@@ -48,8 +48,8 @@
 	"StyleSelection"
 	{
 		"#format"	"{1:s}"
-		"en"		"You have chosen to play {grey}{1}{white}."
-		"chi"		"已更换游玩模式为: {grey}{1}{white}."
+		"en"		"You have chosen to play {lightgreen}{1}{white}."
+		"chi"		"已更换游玩模式为: {lightgreen}{1}{white}."
 	}
 	"StyleUnranked"
 	{
@@ -59,24 +59,18 @@
 	// ---------- Misc ---------- //
 	"LeftRightCheat"
 	{
-		"en"		"Detected +left/right on a disallowed style."
-		"chi"		"该模式下 +left/+right 禁用."
+		"en"		"Detected {red}+left{white}/{red}+right{white} on a disallowed style."
+		"chi"		"该模式下 {red}+left{white}/{red}+right{white} 禁用."
 	}
 	"Inconsistencies"
 	{
-		"en"		"Detected inconsistencies in button presses."
-		"chi"		"检测到非法按键"
+		"en"		"Detected {red}inconsistencies{white} in button presses."
+		"chi"		"检测到{red}非法按键{white}."
 	}
 	"UnrankedWarning"
 	{
 		"en"		"{red}WARNING: {white}This style is unranked. Your times WILL NOT be saved and will be only displayed to you!"
-		"chi"		"{red}警告：{white}此模式未排名, 您的计时不会被保存."
-	}
-	"PracticeModeAlert"
-	{
-		"#format"	"{1:s},{2:s}"
-		"en"		"{1}WARNING: {2}You're now in practice mode. Your times WILL NOT be saved and will be only displayed to you!"
-		"chi"		"{1}警告：{2}您现在处于练习模式, 您的计时不会被保存."
+		"chi"		"{red}警告：{white}此模式不计排名, 您的计时不会被保存."
 	}
 	"SHSWCombination0"
 	{
@@ -87,12 +81,6 @@
 	{
 		"en"		"Your SHSW combination is {lightgreen}W/D & S/A{white}."
 		"chi"		"你的半侧滑按键组合为: {lightgreen}W/D{white} 和 {lightgreen}S/A{white}."
-	}
-	"NewAiraccelerate"
-	{
-		"#format"	"{1:d},{2:s},{3:d},{4:s}"
-		"en"		"Your airacceleration has been changed from {1} to {2}{3}{4}."
-		"chi"		"您的空速值已从 {1} 更改为 {2}{3}{4}."
 	}
 	// ---------- Pauses ---------- //
 	"MessagePause"
@@ -134,6 +122,6 @@
 	"TrackChangeFromMain"
 	{
 		"en"		"Use {lightgreen}!m{white} or {lightgreen}!main{white} go to back to the main track."
-		"chi"		"输入 {lightgreen}!r{white} 或者 {lightgreen}!main{white} 回到主线."
+		"chi"		"输入 {lightgreen}!r{white} 或者 {lightgreen}!main{white} 回到 Main."
 	}
 }

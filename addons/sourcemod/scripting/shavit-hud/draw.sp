@@ -127,7 +127,7 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 
 			else
 			{
-				Format(sTrack, 64, "%T #%d", "Stage", client, data.iStage);
+				Format(sTrack, 64, "%T #%d", "Record Replay HUD - Stage", client, data.iStage);
 			}
 
 			FormatEx(sLine, sizeof(sLine), "%T ", "ReplayText", client);
@@ -143,7 +143,7 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 				char sTime[16];
 				FormatSeconds(data.fTime, sTime, 32, false);
 
-				char sPlayerName[16]; // shouldn't too long bytes.
+				char sPlayerName[33]; // shouldn't too long bytes.
 				Shavit_GetReplayName(data.iStyle, data.iTrack, sPlayerName, sizeof(sPlayerName), data.iStage);
 
 				FormatEx(sLine, sizeof(sLine), "T: %s (%s)", sTime, sPlayerName);

@@ -1160,12 +1160,12 @@ public void SQL_RefreshZones_Callback(Database db, DBResultSet results, const ch
 
 	if(!mainHasStart)
 	{
-		Shavit_PrintToChatAll("主线缺少{lightgreen}起点{default}区域，请联系管理员添加.");
+		Shavit_PrintToChatAll("主线缺少{lightgreen}起点{white}区域，请联系管理员添加.");
 	}
 
 	if(!mainHasEnd)
 	{
-		Shavit_PrintToChatAll("主线缺少{darkred}终点{default}区域，请联系管理员添加.");
+		Shavit_PrintToChatAll("主线缺少{darkred}终点{white}区域，请联系管理员添加.");
 	}
 
 	CreateZoneEntities();
@@ -1484,19 +1484,19 @@ public void SQL_InsertPrebuildZone_Callback(Database db, DBResultSet results, co
 
 	if(type == Zone_Start)
 	{
-		Shavit_PrintToChatAll("{blue}%s{lightgreen}起点{default}区域预设成功", sTrack);
+		Shavit_PrintToChatAll("{blue}%s{lightgreen}起点{white}区域预设成功", sTrack);
 	}
 	else if(type == Zone_End)
 	{
-		Shavit_PrintToChatAll("{blue}%s{darkred}终点{default}区域预设成功", sTrack);
+		Shavit_PrintToChatAll("{blue}%s{darkred}终点{white}区域预设成功", sTrack);
 	}
 	else if(type == Zone_Stage)
 	{
-		Shavit_PrintToChatAll("{yellow}关卡{default}区域预设成功");
+		Shavit_PrintToChatAll("{yellow}关卡{white}区域预设成功");
 	}
 	else if(type == Zone_Checkpoint)
 	{
-		Shavit_PrintToChatAll("{gold}检查点{default}区域预设成功");
+		Shavit_PrintToChatAll("{gold}检查点{white}区域预设成功");
 	}
 }
 
@@ -1827,11 +1827,11 @@ public Action Command_ShowTriggers(int client, int args)
 
 	if(gB_ShowTriggers[client])
 	{
-		Shavit_PrintToChat(client, "[显示区域] {green}已打开{default}.");
+		Shavit_PrintToChat(client, "[显示区域] {green}已打开{white}.");
 	}
 	else
 	{
-		Shavit_PrintToChat(client, "[显示区域] {darkred}已关闭{default}.");
+		Shavit_PrintToChat(client, "[显示区域] {darkred}已关闭{white}.");
 	}
 
 	char sArgs[32];

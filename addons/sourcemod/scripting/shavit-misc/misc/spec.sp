@@ -238,7 +238,7 @@ public Action Command_Specs(int client, int args)
 
 			else
 			{
-				Format(sSpecs, 192, "%s{default}, {orchid}%N", sSpecs, i);
+				Format(sSpecs, 192, "%s{white}, {orchid}%N", sSpecs, i);
 			}
 		}
 	}

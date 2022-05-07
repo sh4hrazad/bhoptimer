@@ -1,8 +1,8 @@
-/*
-	wr Plugin Include
-	
-	Website: https://github.com/Ciallo-Ani/surftimer
-*/
+/**
+ * Include file for shavit-wr.sp
+ *
+ * Original plugin website: https://github.com/Ciallo-Ani/mytimer/tree/gokz-framework
+ */
 
 #if defined _shavit_wr_included_
 #endinput

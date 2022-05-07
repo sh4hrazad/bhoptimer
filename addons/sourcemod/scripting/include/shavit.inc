@@ -42,5 +42,3 @@
 #include <shavit/timelimit>
 #include <shavit/wr>
 #include <shavit/zones>
-
-#include <shavit/replay-shared>

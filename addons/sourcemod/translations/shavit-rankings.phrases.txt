@@ -4,26 +4,26 @@
 	"CurrentTier"
 	{
 		"#format"	"{1:s},{2:d}"
-		"en"		"{gold}{1}{white} is tier {orchid}{2}{white}."
-		"chi"		"{gold}{1}{white} | 难度: Tier {orchid}{2}{white}."
+		"en"		"{gold}{1}{white} is tier {lightgreen}{2}{white}."
+		"chi"		"{gold}{1}{white} | 难度: Tier {lightgreen}{2}{white}."
 	}
 	"SetTier"
 	{
 		"#format"	"{1:d}"
-		"en"		"Tier changed to {orchid}{1}{white}."
-		"chi"		"难度已更改为: Tier {orchid}{1}{white}."
+		"en"		"Tier changed to {lightgreen}{1}{white}."
+		"chi"		"难度已更改为: Tier {lightgreen}{1}{white}."
 	}
 	"Rank"
 	{
 		"#format"	"{1:N},{2:d},{3:d},{4:.1f}"
-		"en"		"{orchid}{1}{white} is ranked {gold}{2}{white} out of {3} with {gold}{4}{white} points."
-		"chi"		"{orchid}{1}{white} | 得分: {gold}{4}{white} Pts | 排名: {gold}{2}{white}/{3}."
+		"en"		"{lightgreen}{1}{white} is ranked {gold}{2}{white} out of {3} with {gold}{4}{white} points."
+		"chi"		"{lightgreen}{1}{white} | 得分: {gold}{4}{white} Pts | 排名: {gold}{2}{white}/{3}."
 	}
 	"Unranked"
 	{
 		"#format"	"{1:N}"
-		"en"		"{orchid}{1}{white} is unranked."
-		"chi"		"{orchid}{1}{white} 无排名."
+		"en"		"{lightgreen}{1}{white} is unranked."
+		"chi"		"{lightgreen}{1}{white} 无排名."
 	}
 	// ---------- Menus ---------- //
 	"Top100"

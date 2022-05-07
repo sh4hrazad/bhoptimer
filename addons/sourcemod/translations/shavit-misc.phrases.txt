@@ -64,8 +64,8 @@
 	"SpectatorCount"
 	{
 		"#format"	"{1:N},{2:i},{3:s}"
-		"en"		"{orchid}{1}{white} has {lightgreen}{2}{white} spectators: {3}"
-		"chi"		"观察 {orchid}{1}{white} 的玩家 ({lightgreen}{2}{white}): {3}."
+		"en"		"{lightgreen}{1}{white} has {lightgreen}{2}{white} spectators: {3}"
+		"chi"		"观察 {lightgreen}{1}{white} 的玩家 ({lightgreen}{2}{white}): {3}."
 	}
 	"SpectatorCountZero"
 	{

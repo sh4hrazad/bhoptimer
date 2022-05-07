@@ -2,125 +2,20 @@
 {
 	// ---------- HUD Components ---------- //
 	// DO NOT MAKE NAMES LONGER THAN DISPLAYED HERE //
-	"Tier"
-	{
-		"en"		"难度"
-	}
-	"Checkpoints"
-	{
-		"en"		"CPs"
-		"chi"		"检查点数"
-	}
-	"Stages"
-	{
-		"en"		"关卡数"
-	}
-	"Bonuses"
-	{
-		"en"		"奖励数"
-	}
-	"HudZoneMapinfo"
-	{
-		"#format"	"{1:s},{2:s},{3:s}"
-		"en"		"{1} | {2} | {3}"
-	}
-	"HudEndZone"
-	{
-		"en"		"End Zone"
-	}
-	"SR"
-	{
-		"en"		"SR"
-		"chi"		"最佳记录"
-	}
-	"PR"
-	{
-		"en"		"PR"
-		"chi"		"个人记录"
-	}
-	"Rank"
-	{
-		"en"		"Rank"
-		"chi"		"排名"
-	}
-	"HUDNoRecord"
-	{
-		"en"		"N/A"
-		"chi"		"无记录"
-	}
-	"InStageZone"
-	{
-		"en"		"In End Zone"
-		"chi"		"\t 关卡"
-	}
-	"WRCP"
-	{
-		"en"		"WRCP"
-		"chi"		"关卡最佳"
-	}
-	"PRCP"
-	{
-		"en"		"PR"
-		"chi"		"个人最佳"
-	}
-	"HudPaused"
-	{
-		"en"		"[PAUSED]"
-	}
-	"TimerStopped"
-	{
-		"en"		"Stopped"
-		"chi"		"计时已停止"
-	}
-	"Time"
-	{
-		"en"		"Time"
-		"chi"		"时间"
-	}
-	"Checkpoint"
-	{
-		"en"		"Checkpoint"
-		"chi"		"检查点"
-	}
-	"Stage"
+	"Record Replay HUD - Stage"
 	{
 		"en"		"Stage"
 		"chi"		"关卡"
-	}
-	"Speed"
-	{
-		"en"		"Speed"
-		"chi"		"速度"
 	}
 	"HudTimeText"
 	{
 		"en"		"Time"
 		"chi"		"时间"
 	}
-	"HudBestText"
-	{
-		"en"		"Best"
-		"chi"		"最佳"
-	}
-	"HudJumpsText"
-	{
-		"en"		"Jumps"
-		"chi"		"起跳次数"
-	}
-	"HudStyleText"
-	{
-		"en"		"Style"
-		"chi"		"游玩模式"
-	}
 	"HudSpeedText"
 	{
 		"en"		"Speed"
 		"chi"		"速度"
-	}
-	"HudStrafeText"
-	{
-		"en"		"Strafes"
-		"chi"		"加速次数"
 	}
 	"HudTimeLeft"
 	{
@@ -131,16 +26,6 @@
 	{
 		"en"		"Sync"
 		"chi"		"同步"
-	}
-	"HudPerfs"
-	{
-		"en"		"Perfect jumps"
-		"chi"		"完美起跳"
-	}
-	"HudPracticeMode"
-	{
-		"en"		"[PRACTICE]"
-		"chi"		"[练习模式]"
 	}
 	// ---------- Menus ---------- //
 	"HUDMenuTitle"
@@ -183,11 +68,6 @@
 		"en"		"Hide weapons"
 		"chi"		"隐藏武器"
 	}
-	"HudTopLeft"
-	{
-		"en"		"Top left HUD (WR/PB)"
-		"chi"		"左上角 HUD (SR / 个人)"
-	}
 	"Hud2dVel"
 	{
 		"en"		"Use 2D Velocity"
@@ -198,49 +78,24 @@
 		"en"		"No record sounds"
 		"chi"		"无破记录声音"
 	}
-	"HudMapTier"
+	"HudMapAndTier"
 	{
 		"en"		"Map and tier"
 		"chi"		"图名与难度"
 	}
-	"HudPracticeModeAlert"
-	{
-		"en"		"No practice mode alert"
-		"chi"		"无练习模式警报"
-	}
 	"HudRankText"
 	{
 		"en"		"Expected rank"
-		"chi"		"期望排名"
-	}
-	"HudTrackText"
-	{
-		"en"		"Timer track"
-		"chi"		"计时器 Track"
-	}
-	"HudSplitPbText"
-	{
-		"en"		"Split PB"
-		"chi"		"拆分个人记录"
-	}
-	"HudMapTierText"
-	{
-		"en"		"Map tier"
-		"chi"		"地图难度"
+		"chi"		"预估排名"
 	}
 	"HudTimeDifference"
 	{
 		"en"		"Time Difference"
 		"chi"		"时间差"
 	}
-	"HudTopLeftRankText"
-	{
-		"en"		"Top left Rank"
-		"chi"		"左上角排名"
-	}
 	"HudWRPBText"
 	{
-		"en"		"SR [+] | PB [-]"
+		"en"		"显示 WR"
 	}
 	"HudPrestrafeText"
 	{
@@ -266,7 +121,7 @@
 	"NoReplayData"
 	{
 		"en"		"No replay data loaded\nPress USE or beat #1 to play"
-		"chi"		"未加载回放数据\n按 E (使用键) 或打败第一名来播放"
+		"chi"		"未加载回放数据\n按 [使用键] 打开回放菜单"
 	}
 	// ---------- Panels ---------- //
 	"SpectatorPersonal"
@@ -308,14 +163,14 @@
 	"CPStagePrestrafe"
 	{
 		"#format"	"{1:d},{2:d},{3:s},{4:s}"
-		"en"		"{grey}CP{white} [{orchid}{1}{white}] | Prestrafe: {grey2}{2} u/s{white} | {gold}WR:{white} {3} {white}| {lightblue}PB:{white} {4}."
-		"chi"		"{grey}检查点{white} [{orchid}{1}{white}] | Prestrafe: {grey2}{2} u/s{white} | {gold}WR:{white} {3} {white}| {lightblue}PB:{white} {4}."
+		"en"		"{grey}CP{white} [{lightgreen}{1}{white}] | Prestrafe: {grey2}{2} u/s{white} | {gold}WR:{white} {3} {white}| {lightblue}PB:{white} {4}."
+		"chi"		"{grey}检查点{white} [{lightgreen}{1}{white}] | Prestrafe: {grey2}{2} u/s{white} | {gold}WR:{white} {3} {white}| {lightblue}PB:{white} {4}."
 	}
 	"CPLinearPrestrafe"
 	{
 		"#format"	"{1:d},{2:d},{3:s},{4:s}"
-		"en"		"{grey}CP{white} [{orchid}{1}{white}] | Speed: {grey2}{2} u/s{white} | {gold}WR:{white} {3} {white}| {lightblue}PB:{white} {4}."
-		"chi"		"{grey}检查点{white} [{orchid}{1}{white}] | Speed: {grey2}{2} u/s{white} | {gold}WR:{white} {3} {white}| {lightblue}PB:{white} {4}."
+		"en"		"{grey}CP{white} [{lightgreen}{1}{white}] | Speed: {grey2}{2} u/s{white} | {gold}WR:{white} {3} {white}| {lightblue}PB:{white} {4}."
+		"chi"		"{grey}检查点{white} [{lightgreen}{1}{white}] | Speed: {grey2}{2} u/s{white} | {gold}WR:{white} {3} {white}| {lightblue}PB:{white} {4}."
 	}
 	"StagePrestrafe"
 	{
@@ -341,37 +196,37 @@
 	"ZoneCheckpointTime"
 	{
 		"#format"	"{1:d},{2:s},{3:s},{4:s}"
-		"en"		"{grey}CP{white} [{orchid}{1}{white}] | {grey2}{2}{white} | {palered}WR{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}"
-		"chi"		"{grey}检查点{white} [{orchid}{1}{white}] | {grey2}{2}{white} | {palered}WR{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}"
+		"en"		"{grey}CP{white} [{lightgreen}{1}{white}] | {grey2}{2}{white} | {palered}WR{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}"
+		"chi"		"{grey}检查点{white} [{lightgreen}{1}{white}] | {grey2}{2}{white} | {palered}WR{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}"
 	}
 	"ZoneStageTime-Improved"
 	{
 		"#format"	"{1:d},{2:s},{3:s},{4:s},{5:s}"
-		"en"		"{grey}Stage{white} [{orchid}{1}{white}] | {grey2}{2}{white} | {palered}WRCP{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}{white} | {gold}Rank{white}: {blue}{5}"
-		"chi"		"{grey}关卡{white} [{orchid}{1}{white}] | {grey2}{2}{white} | {palered}WRCP{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}{white} | {gold}排名{white}: {blue}{5}"
+		"en"		"{grey}Stage{white} [{lightgreen}{1}{white}] | {grey2}{2}{white} | {palered}WRCP{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}{white} | {gold}Rank{white}: {blue}{5}"
+		"chi"		"{grey}关卡{white} [{lightgreen}{1}{white}] | {grey2}{2}{white} | {palered}WRCP{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}{white} | {gold}排名{white}: {blue}{5}"
 	}
 	"ZoneStageTime-Noimproved"
 	{
 		"#format"	"{1:d},{2:s},{3:s},{4:s}"
-		"en"		"{grey}Stage{white} [{orchid}{1}{white}] | {grey2}{2}{white} | {palered}WRCP{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}"
-		"chi"		"{grey}关卡{white} [{orchid}{1}{white}] | {grey2}{2}{white} | {palered}WRCP{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}"
+		"en"		"{grey}Stage{white} [{lightgreen}{1}{white}] | {grey2}{2}{white} | {palered}WRCP{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}"
+		"chi"		"{grey}关卡{white} [{lightgreen}{1}{white}] | {grey2}{2}{white} | {palered}WRCP{white} {yellow}{3}{white} | {lightblue}PB{white} {yellow}{4}"
 	}
 	"EnterStageMessage_Bot_Improved"
 	{
 		"#format"	"{1:d},{2:s},{3:d}"
-		"en"		"{grey}Stage{white} [{orchid}{1}{white}] | {grey}Time:{white} {lightgreen}{2}{white} | {grey}Attempts:{white} {gold}{3}"
-		"chi"		"{grey}关卡{white} [{orchid}{1}{white}] | {grey}到达时间:{white} {lightgreen}{2}{white} | {grey}尝试次数:{white} {gold}{3}"
+		"en"		"{grey}Stage{white} [{lightgreen}{1}{white}] | {grey}Time:{white} {lightgreen}{2}{white} | {grey}Attempts:{white} {gold}{3}"
+		"chi"		"{grey}关卡{white} [{lightgreen}{1}{white}] | {grey}到达时间:{white} {lightgreen}{2}{white} | {grey}尝试次数:{white} {gold}{3}"
 	}
 	"EnterStageMessage_Bot_NoImproved"
 	{
 		"#format"	"{1:d},{2:s},{3:d}"
-		"en"		"{grey}Stage{white} [{orchid}{1}{white}] | {grey}Time:{white} {red}{2}{white} | {grey}Attempts:{white} {gold}{3}"
-		"chi"		"{grey}关卡{white} [{orchid}{1}{white}] | {grey}到达时间:{white} {red}{2}{white} | {grey}尝试次数:{white} {gold}{3}"
+		"en"		"{grey}Stage{white} [{lightgreen}{1}{white}] | {grey}Time:{white} {red}{2}{white} | {grey}Attempts:{white} {gold}{3}"
+		"chi"		"{grey}关卡{white} [{lightgreen}{1}{white}] | {grey}到达时间:{white} {red}{2}{white} | {grey}尝试次数:{white} {gold}{3}"
 	}
 	"OnWRCP"
 	{
 		"#format"	"{1:N},{2:d},{3:s},{4:s},{5:s},{6:s}"
-		"en"		"{gold}{1}{white} beat {palered}[Stage {2}] {blue}*{3}*{white} record! Time: {orchid}{4}{white} ({lightgreen}WR {5}{white}) Rank: {bluegrey}{6}{white}."
-		"chi"		"{gold}{1}{white} 打破了 {palered}[关卡 {2}]{white} {blue}*{3}*{white} 记录! 用时: {orchid}{4}{white} ({lightgreen}WR {5}{white}) 排名: {bluegrey}{6}{white}."
+		"en"		"{gold}{1}{white} beat {palered}[Stage {2}] {blue}*{3}*{white} record! Time: {lightgreen}{4}{white} ({lightgreen}WR {5}{white}) Rank: {lightgreen}{6}{white}."
+		"chi"		"{gold}{1}{white} 打破了 {palered}[关卡 {2}]{white} {blue}*{3}*{white} 记录! 用时: {lightgreen}{4}{white} ({lightgreen}WR {5}{white}) 排名: {lightgreen}{6}{white}."
 	}
 }
