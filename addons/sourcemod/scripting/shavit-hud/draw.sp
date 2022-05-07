@@ -355,10 +355,10 @@ static void DrawSidebarHintHUD(int client, int target, huddata_t huddata, bool b
 			}
 
 			if(huddata.fPB != 0.0)
-				FormatEx(sMessage, sizeof(sMessage), "%sPBCP: %s (#%d/%d)\n\n", sMessage,
+				FormatEx(sMessage, sizeof(sMessage), "%sPBCP: %s (#%d/%d)\n", sMessage,
 					sPBTime, huddata.iRank, huddata.iFinishNum);
 			else
-				FormatEx(sMessage, sizeof(sMessage), "%sPBCP: None\n\n", sMessage);
+				FormatEx(sMessage, sizeof(sMessage), "%sPBCP: None\n", sMessage);
 		}
 
 		// spec
@@ -388,7 +388,7 @@ static void DrawSidebarHintHUD(int client, int target, huddata_t huddata, bool b
 
 				if(iSpectators > 0)
 				{
-					Format(sMessage, 256, "%s%s%spectators (%d):", sMessage, (strlen(sMessage) > 0)? "\n\n":"", (client == target)? "S":"Other S", iSpectators);
+					Format(sMessage, 256, "%s%s%spectators (%d):", sMessage, (strlen(sMessage) > 0)? "\n":"", (client == target)? "S":"Other S", iSpectators);
 					char sName[MAX_NAME_LENGTH];
 
 					for(int i = 0; i < iSpectators; i++)
@@ -400,9 +400,8 @@ static void DrawSidebarHintHUD(int client, int target, huddata_t huddata, bool b
 							break;
 						}
 
-						GetClientName(client, sName, sizeof(sName));
+						GetClientName(iSpectatorClients[i], sName, MAX_NAME_LENGTH);
 						TrimTrailingInvalidUnicode(sName);
-
 						ReplaceString(sName, sizeof(sName), "#", "?");
 						TrimDisplayString(sName, sName, sizeof(sName), gCV_SpecNameSymbolLength.IntValue);
 						Format(sMessage, 256, "%s\n%s", sMessage, sName);
