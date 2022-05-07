@@ -24,8 +24,9 @@
 #include <clientprefs>
 #include <convar_class>
 #include <dhooks>
-#include <shavit>
+#include <shavit/core>
 #include <shavit/misc>
+#include <shavit/zones>
 
 #undef REQUIRE_PLUGIN
 #include <shavit/chat>

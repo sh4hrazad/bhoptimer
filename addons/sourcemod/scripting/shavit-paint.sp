@@ -2,7 +2,7 @@
 #include <sdktools>
 #include <sourcemod>
 #include <convar_class>
-#include <shavit>
+#include <shavit/core>
 
 #pragma newdecls required
 #pragma semicolon 1

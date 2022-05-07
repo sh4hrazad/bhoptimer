@@ -24,10 +24,11 @@
 #include <convar_class>
 #include <profiler>
 #include <dhooks>
-#include <shavit>
+#include <shavit/core>
 #include <shavit/replay-playback>
 #include <shavit/wr>
 #include <shavit/stage>
+#include <shavit/zones>
 
 #undef REQUIRE_PLUGIN
 #include <adminmenu>

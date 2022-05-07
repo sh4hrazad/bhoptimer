@@ -24,12 +24,13 @@
 #include <clientprefs>
 #include <convar_class>
 #include <dhooks>
-#include <shavit>
+#include <shavit/core>
 #include <shavit/colors>
 #include <shavit/hud>
 #include <shavit/wr>
 #include <shavit/stage>
 #include <shavit/replay-playback>
+#include <shavit/zones>
 
 
 #pragma newdecls required

@@ -24,9 +24,10 @@
 #include <clientprefs>
 #include <convar_class>
 #include <dhooks>
-#include <shavit>
+#include <shavit/core>
 #include <shavit/colors>
 #include <shavit/chat>
+#include <shavit/surftimer>
 
 #undef REQUIRE_PLUGIN
 #include <shavit/rankings>

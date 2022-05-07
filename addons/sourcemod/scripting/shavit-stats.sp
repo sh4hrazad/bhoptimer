@@ -21,9 +21,10 @@
 #include <sourcemod>
 #include <geoip>
 #include <convar_class>
-#include <shavit>
+#include <shavit/core>
 #include <shavit/wr>
 #include <shavit/stats>
+#include <shavit/surftimer>
 
 #undef REQUIRE_PLUGIN
 #include <shavit/rankings>

@@ -25,10 +25,12 @@
 #include <clientprefs>
 #include <convar_class>
 #include <dhooks>
+#include <shavit/core>
+#include <shavit/zones>
 #include <shavit/colors>
+#include <shavit/surftimer>
 
 #undef REQUIRE_PLUGIN
-#include <shavit>
 #include <shavit/rankings>
 
 #pragma newdecls required

@@ -22,12 +22,11 @@
 #include <sdktools>
 #include <clientprefs>
 #include <convar_class>
-#include <shavit>
+#include <shavit/core>
 #include <shavit/checkpoints>
 #include <shavit/replay-recorder>
 #include <shavit/replay-playback>
-
-
+#include <shavit/zones>
 
 #pragma newdecls required
 #pragma semicolon 1

@@ -9,6 +9,8 @@
 #endif
 #define _shavit_stage_included_
 
+#define MAX_STAGES 32
+
 
 
 // =====[ ENUM STRUCTS ]=====
@@ -32,6 +34,15 @@ enum struct stage_t
 	float fPostspeed;
 	char sName[MAX_NAME_LENGTH];
 }
+
+// pb overwrite
+enum
+{
+	PB_UnRanked = -1,
+	PB_NoQuery,
+	PB_Insert,
+	PB_Update
+};
 
 
 

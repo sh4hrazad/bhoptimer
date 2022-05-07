@@ -21,8 +21,9 @@
 #include <sourcemod>
 #include <sdktools>
 #include <convar_class>
-#include <shavit>
+#include <shavit/core>
 #include <shavit/replay-recorder>
+#include <shavit/zones>
 
 #undef REQUIRE_PLUGIN
 #include <shavit/replay-playback>

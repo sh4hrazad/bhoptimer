@@ -23,7 +23,8 @@
 #include <sdkhooks>
 #include <regex>
 #include <convar_class>
-#include <shavit>
+#include <shavit/core>
+#include <shavit/zones>
 #include <shavit/rankings>
 
 #undef REQUIRE_PLUGIN

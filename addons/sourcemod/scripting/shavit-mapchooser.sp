@@ -3,8 +3,9 @@
 #include <sdktools>
 
 #undef REQUIRE_PLUGIN
-#include <shavit>
+#include <shavit/core>
 #include <shavit/rankings>
+#include <shavit/map_folder_stocks>
 #include <mapchooser> // for MapChange type
 
 #undef REQUIRE_EXTENSIONS

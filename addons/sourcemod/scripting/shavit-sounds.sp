@@ -22,7 +22,7 @@
 #include <sdktools>
 #include <convar_class>
 #include <dhooks>
-#include <shavit>
+#include <shavit/core>
 #include <shavit/sounds>
 #include <shavit/wr>
 

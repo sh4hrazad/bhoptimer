@@ -5,9 +5,10 @@
 
 #include <sourcemod>
 #include <regex>
-#include <shavit>
+#include <shavit/core>
 #include <shavit/stage>
 #include <shavit/wr>
+#include <shavit/zones>
 
 
 
