@@ -34,6 +34,7 @@
 #include <shavit/rankings>
 #include <shavit/replay-playback>
 #include <shavit/wr>
+#include <shavit/stage>
 
 #undef REQUIRE_EXTENSIONS
 #include <SteamWorks>
@@ -123,6 +124,7 @@ stylestrings_t gS_StyleStrings[STYLE_LIMIT];
 #include "shavit-misc/cookies.sp"
 
 #include "shavit-misc/misc/advertisement.sp"
+#include "shavit-misc/misc/autorestart.sp"
 #include "shavit-misc/misc/chatcolors.sp"
 #include "shavit-misc/misc/clearweapons.sp"
 #include "shavit-misc/misc/dropweapon.sp"
@@ -412,6 +414,7 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 	}
 
 	OnUserCmdPre_PreStrafe(client, buttons);
+	OnUserCmdPre_AutoRestart(client, track, style);
 
 	return Plugin_Continue;
 }
@@ -504,6 +507,11 @@ public Action Shavit_OnStart(int client)
 	}
 
 	return Plugin_Continue;
+}
+
+public Action Shavit_OnEnterZone(int client, int type, int track, int id, int entity, int data)
+{
+	OnEnterZone_LimitPrestrafe(client, type);
 }
 
 public void Shavit_OnWorldRecord(int client, int style, float time, int jumps, int strafes, float sync, int track)

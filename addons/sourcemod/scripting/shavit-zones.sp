@@ -3842,7 +3842,7 @@ public void SQL_CreateTable_Callback(Database db, DBResultSet results, const cha
 	OnMapStart();
 }
 
-public Action Shavit_OnRestartPre(int client, int track)
+public void Shavit_OnRestart(int client, int track)
 {
 	char sArg[16];
 	GetCmdArg(0, sArg, sizeof(sArg));
@@ -3850,13 +3850,11 @@ public Action Shavit_OnRestartPre(int client, int track)
 	if((StrEqual(sArg, "sm_b", false) || StrEqual(sArg, "sm_bonus", false)) && GetCmdArgs() == 0)
 	{
 		OpenBonusMenu(client);
-		return Plugin_Handled;
+		return;
 	}
 
 	Shavit_SetStageTimer(client, false);
 	DoRestart(client, track);
-
-	return Plugin_Handled;
 }
 
 void DoRestart(int client, int track)

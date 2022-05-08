@@ -83,7 +83,7 @@ public Action Command_Weapon(int client, int args)
 
 	if(StrContains(sCommand, "usp", false) != -1)
 	{
-		strcopy(sWeapon, 32, "weapon_usp_silencer");
+		strcopy(sWeapon, 32, "weapon_usp");
 	}
 	else if(StrContains(sCommand, "glock", false) != -1)
 	{

@@ -6,6 +6,7 @@ void RegisterCommands()
 	RegisterCommands_Teleport();
 	RegisterCommands_Weapon();
 	RegisterCommands_Advs();
+	RegisterCommands_AutoRestart();
 }
 
 void AddCommandListeners()

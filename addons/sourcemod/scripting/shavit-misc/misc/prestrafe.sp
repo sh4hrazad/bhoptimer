@@ -61,16 +61,8 @@ void OnUserCmdPre_PreStrafe(int client, int buttons)
 	}
 }
 
-/* -- Public -- */
-public void Player_Jump(Event event, const char[] name, bool dontBroadcast)
-{
-	int client = GetClientOfUserId(event.GetInt("userid"));
-
-	gI_Bhop[client]++;
-}
-
 // limit those one that enter zone by outsiding zone
-public Action Shavit_OnEnterZone(int client, int type, int track, int id, int entity, int data)
+void OnEnterZone_LimitPrestrafe(int client, int type)
 {
 	if(Shavit_GetTimerStatus(client) == Timer_Running
 		 && shavit_zones_entryzonespeedlimit.FloatValue > 0.0
@@ -78,6 +70,14 @@ public Action Shavit_OnEnterZone(int client, int type, int track, int id, int en
 	{
 		LimitInvalidSpeed(client, Invalid_Enterstart);
 	}
+}
+
+/* -- Public -- */
+public void Player_Jump(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+
+	gI_Bhop[client]++;
 }
 
 public Action Shavit_OnLeaveZone(int client, int type, int track, int id, int entity, int data)

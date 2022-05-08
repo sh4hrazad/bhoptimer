@@ -100,11 +100,11 @@ char gS_Verification[MAXPLAYERS+1][8];
 bool gB_CookiesRetrieved[MAXPLAYERS+1];
 
 #include "shavit-core/timer.sp"
+#include "shavit-core/dhook.sp"
 #include "shavit-core/player.sp"
 #include "shavit-core/styles.sp"
 #include "shavit-core/database.sp"
 #include "shavit-core/commands.sp"
-#include "shavit-core/dhook.sp"
 #include "shavit-core/menus.sp"
 
 #include "shavit-core/api/forwards.sp"

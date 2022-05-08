@@ -4,6 +4,7 @@ void RegisterCookies()
 {
 	RegisterCookie_Hide();
 	RegisterCookie_Advs();
+	RegisterCookie_AutoRestart();
 }
 
 void OnMapStart_CacheCookies()
@@ -30,4 +31,5 @@ public void OnClientCookiesCached(int client)
 	}
 
 	OnClientCookiesCached_Hide(client);
+	OnClientCookiesCached_AutoRestart(client);
 }
