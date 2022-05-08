@@ -556,6 +556,7 @@ public void Player_Spawn(Event event, const char[] name, bool dontBroadcast)
 	if(!IsFakeClient(client))
 	{
 		OnPlayerSpawn_UpdateScoreBoard(client);
+		OnPlayerSpawn_StripWeapons(client);
 
 		if(gCV_HideRadar.BoolValue)
 		{

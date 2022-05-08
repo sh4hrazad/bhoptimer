@@ -52,6 +52,23 @@ enum struct PlayerHook
 
 PlayerHook gA_HookedPlayer[MAXPLAYERS+1];
 
+public void Frame_RemoveFlag(DataPack dp)
+{
+	RequestFrame(Frame2_RemoveFlag, dp);
+}
+
+public void Frame2_RemoveFlag(DataPack dp)
+{
+	dp.Reset();
+
+	int flagsToRemove = dp.ReadCell();
+	int client = dp.ReadCell();
+
+	delete dp;
+
+	CHANGE_FLAGS(gA_HookedPlayer[client].iPlayerFlags, gA_HookedPlayer[client].iPlayerFlags & ~flagsToRemove);
+}
+
 void LoadDHooks()
 {
 	GameData gamedataConf = new GameData("shavit.games");

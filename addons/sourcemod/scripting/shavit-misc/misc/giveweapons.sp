@@ -16,6 +16,20 @@ void OnClientPutInServer_InitWeapon(int client)
 	gI_LastWeaponTick[client] = 0;
 }
 
+void OnPlayerSpawn_StripWeapons(int client)
+{
+	for(int i = 0; i < 6; i++)
+	{
+		int iEnt;
+		
+		while((iEnt = GetPlayerWeaponSlot(client, i)) != -1)
+		{
+			RemovePlayerItem(client, iEnt);
+			AcceptEntityInput(iEnt, "Kill");
+		}
+	}
+}
+
 public void Weapon_Fire(Event event, const char[] name, bool dB)
 {
 	if(gCV_WeaponCommands.IntValue < 2)

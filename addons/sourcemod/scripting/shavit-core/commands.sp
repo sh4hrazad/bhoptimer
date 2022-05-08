@@ -258,6 +258,18 @@ public Action Command_TogglePause(int client, int args)
 	return Plugin_Handled;
 }
 
+void GetPauseMovement(int client)
+{
+	GetClientAbsOrigin(client, gA_Timers[client].fPauseOrigin);
+	GetClientEyeAngles(client, gA_Timers[client].fPauseAngles);
+	GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", gA_Timers[client].fPauseVelocity);
+}
+
+void ResumePauseMovement(int client)
+{
+	TeleportEntity(client, gA_Timers[client].fPauseOrigin, gA_Timers[client].fPauseAngles, gA_Timers[client].fPauseVelocity);
+}
+
 public Action Command_DeleteMap(int client, int args)
 {
 	if(args == 0)

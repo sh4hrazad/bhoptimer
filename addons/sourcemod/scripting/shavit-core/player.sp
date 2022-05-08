@@ -21,6 +21,74 @@ public void Player_Death(Event event, const char[] name, bool dontBroadcast)
 	StopTimer(client);
 }
 
+public void OnClientPutInServer(int client)
+{
+	StopTimer(client);
+
+	if(!IsClientConnected(client) || IsFakeClient(client))
+	{
+		return;
+	}
+
+	if(!gA_HookedPlayer[client].bHooked)
+	{
+		gA_HookedPlayer[client].Add(client);
+	}
+
+	gB_Auto[client] = true;
+	gA_Timers[client].fStrafeWarning = 0.0;
+	gA_Timers[client].bPracticeMode = false;
+	gA_Timers[client].iSHSWCombination = -1;
+	gA_Timers[client].iTimerTrack = 0;
+	gA_Timers[client].bsStyle = 0;
+	gA_Timers[client].fTimescale = 1.0;
+	gA_Timers[client].fTimescaledTicks = 0.0;
+	gA_Timers[client].iZoneIncrement = 0;
+	gA_Timers[client].fplayer_speedmod = 1.0;
+	gS_DeleteMap[client][0] = 0;
+
+	gB_CookiesRetrieved[client] = false;
+
+	if(AreClientCookiesCached(client))
+	{
+		OnClientCookiesCached(client);
+	}
+
+	// not adding style permission check here for obvious reasons
+	else
+	{
+		CallOnStyleChanged(client, 0, gI_DefaultStyle, false);
+	}
+
+	SDKHook(client, SDKHook_PreThinkPost, PreThinkPost);
+	SDKHook(client, SDKHook_PostThinkPost, PostThinkPost);
+
+	if(GetSteamAccountID(client) == 0)
+	{
+		KickClient(client, "%T", "VerificationFailed", client);
+
+		return;
+	}
+
+	OnClientPutInServer_UpdateClientData(client);
+}
+
+public void OnClientDisconnect(int client)
+{
+	gA_HookedPlayer[client].Remove();
+	RequestFrame(StopTimer, client);
+}
+
+public Action Shavit_OnStartPre(int client, int track)
+{
+	if (GetTimerStatus(client) == Timer_Paused && gCV_PauseMovement.BoolValue)
+	{
+		return Plugin_Stop;
+	}
+
+	return Plugin_Continue;
+}
+
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
 {
 	if(IsFakeClient(client))
@@ -390,6 +458,117 @@ static void VelocityChanges(int data)
 	{
 		TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fAbsVelocity);
 	}
+}
+
+public void PreThinkPost(int client)
+{
+	if(IsPlayerAlive(client))
+	{
+		MoveType mtMoveType = GetEntityMoveType(client);
+
+		if (GetStyleSettingFloat(gA_Timers[client].bsStyle, "gravity") != 1.0 &&
+			(mtMoveType == MOVETYPE_WALK || mtMoveType == MOVETYPE_ISOMETRIC) &&
+			(gA_Timers[client].iLastMoveType == MOVETYPE_LADDER || GetEntityGravity(client) == 1.0))
+		{
+			SetEntityGravity(client, GetStyleSettingFloat(gA_Timers[client].bsStyle, "gravity"));
+		}
+
+		gA_Timers[client].iLastMoveType = mtMoveType;
+	}
+}
+
+public void PostThinkPost(int client)
+{
+	gF_Origin[client][1] = gF_Origin[client][0];
+	GetEntPropVector(client, Prop_Data, "m_vecOrigin", gF_Origin[client][0]);
+
+	if(gA_Timers[client].iZoneIncrement == 1 && gCV_UseOffsets.BoolValue)
+	{
+		float fVel[3];
+		GetEntPropVector(client, Prop_Data, "m_vecVelocity", fVel);
+
+		if(fVel[2] == 0.0)
+		{
+			CalculateTickIntervalOffset(client, Zone_Start);
+		}
+	}
+}
+
+// reference: https://github.com/momentum-mod/game/blob/5e2d1995ca7c599907980ee5b5da04d7b5474c61/mp/src/game/server/momentum/mom_timer.cpp#L388
+void CalculateTickIntervalOffset(int client, int zonetype)
+{
+	float localOrigin[3];
+	GetEntPropVector(client, Prop_Send, "m_vecOrigin", localOrigin);
+	float maxs[3];
+	float mins[3];
+	float vel[3];
+	GetEntPropVector(client, Prop_Send, "m_vecMins", mins);
+	GetEntPropVector(client, Prop_Send, "m_vecMaxs", maxs);
+	GetEntPropVector(client, Prop_Data, "m_vecVelocity", vel);
+
+	gF_SmallestDist[client] = 0.0;
+
+	if (zonetype == Zone_Start)
+	{
+		TR_EnumerateEntitiesHull(localOrigin, gF_Origin[client][1], mins, maxs, PARTITION_TRIGGER_EDICTS, TREnumTrigger, client);
+	}
+	else
+	{
+		TR_EnumerateEntitiesHull(gF_Origin[client][0], localOrigin, mins, maxs, PARTITION_TRIGGER_EDICTS, TREnumTrigger, client);
+	}
+
+	float offset = gF_Fraction[client] * GetTickInterval();
+
+	gA_Timers[client].fZoneOffset[zonetype] = gF_Fraction[client];
+	gA_Timers[client].fDistanceOffset[zonetype] = gF_SmallestDist[client];
+
+	Call_OnTimeOffsetCalculated(client, zonetype, offset, gF_SmallestDist[client]);
+
+	gF_SmallestDist[client] = 0.0;
+}
+
+static bool TREnumTrigger(int entity, int client)
+{
+	if(entity <= MaxClients)
+	{
+		return true;
+	}
+
+	char classname[32];
+	GetEntityClassname(entity, classname, sizeof(classname));
+
+	//the entity is a zone
+	if(StrContains(classname, "trigger_multiple") > -1)
+	{
+		TR_ClipCurrentRayToEntity(MASK_ALL, entity);
+
+		float start[3];
+		TR_GetStartPosition(INVALID_HANDLE, start);
+
+		float end[3];
+		TR_GetEndPosition(end);
+
+		float distance = GetVectorDistance(start, end);
+		gF_SmallestDist[client] = distance;
+		gF_Fraction[client] = TR_GetFraction();
+
+		return false;
+	}
+
+	return true;
+}
+
+void UpdateLaggedMovement(int client, bool user_timescale)
+{
+	float style_laggedmovement =
+		  GetStyleSettingFloat(gA_Timers[client].bsStyle, "timescale")
+		* GetStyleSettingFloat(gA_Timers[client].bsStyle, "speed");
+
+	float laggedmovement =
+		  (user_timescale ? gA_Timers[client].fTimescale : 1.0)
+		* style_laggedmovement;
+
+	SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", laggedmovement * gA_Timers[client].fplayer_speedmod);
 }
 
 static void TestAngles(int client, float dirangle, float yawdelta, const float vel[3])
