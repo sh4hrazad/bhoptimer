@@ -421,6 +421,13 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 
 public void OnClientPutInServer(int client)
 {
+	OnClientPutInServer_Hide(client);
+	OnClientPutInServer_HookWeaponDrop(client);
+	OnClientPutInServer_HookDamage(client);
+
+	OnClientPutInServer_InitWeapon(client);
+	OnClientPutInServer_InitNoclip(client);
+	
 	if(IsFakeClient(client))
 	{
 		if (gCV_BotFootsteps.BoolValue && gH_UpdateStepSound != null)
@@ -437,12 +444,6 @@ public void OnClientPutInServer(int client)
 		gH_GetPlayerMaxSpeed.HookEntity(Hook_Post, client, CCSPlayer__GetPlayerMaxSpeed);
 	}
 
-	OnClientPutInServer_HookWeaponDrop(client);
-	OnClientPutInServer_HookDamage(client);
-	OnClientPutInServer_Hide(client);
-
-	OnClientPutInServer_InitWeapon(client);
-	OnClientPutInServer_InitNoclip(client);
 	OnClientPutInServer_InitPrestrafe(client);
 }
 

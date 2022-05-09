@@ -68,9 +68,9 @@ public Action Command_Hide(int client, int args)
 
 public Action OnSetTransmit(int entity, int client)
 {
-	// why client always == entity?
-	if(gB_Hide[client] && client != entity && (!IsClientObserver(client) || (GetEntProp(client, Prop_Send, "m_iObserverMode") != 6 &&
-		GetEntPropEnt(client, Prop_Send, "m_hObserverTarget") != entity)))
+	if((gB_Hide[client] || IsFakeClient(entity) /* always hide replay bot */ ) && client != entity 
+		&& (!IsClientObserver(client) || (GetEntProp(client, Prop_Send, "m_iObserverMode") != 6
+		&& GetEntPropEnt(client, Prop_Send, "m_hObserverTarget") != entity)))
 	{
 		return Plugin_Handled;
 	}
