@@ -234,6 +234,11 @@
 		"#format"   "{1:f}"
 		"chi"        "重力倍率: {1}"
 	}
+	"ZoneSetSpeedmod"
+	{
+		"#format"   "{1:f}"
+		"chi"        "速度倍率: {1}"
+	}
 	"ZoneEnterDataChat"
 	{
 		"chi"		"请在聊天框中输入数值."
@@ -473,6 +478,10 @@
 	"Zone_Gravity"
 	{
 		"chi"		"自定义重力区域"
+	}
+	"Zone_Speedmod"
+	{
+		"chi"		"速度倍率区域"
 	}
 	"Zone_Unknown"
 	{

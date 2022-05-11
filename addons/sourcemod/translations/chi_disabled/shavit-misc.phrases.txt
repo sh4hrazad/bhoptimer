@@ -99,6 +99,10 @@
 	{
 		"chi"		"无法存点, 存点数目已溢出."
 	}
+	"MiscCheckpointOwnerInvalid"
+	{
+		"chi"		"该存点拥有者已下线或不存在."
+	}
 	"MiscSegmentedCommand"
 	{
 		"#format"	"{1:s},{2:s}"
@@ -129,6 +133,10 @@
 	{
 		"chi"		"否"
 	}
+	"MiscCheckpointNoOtherPlayers"
+	{
+		"chi"		"服务器中只有你一人, 无法使用他人存点."
+	}
 	"TeleportMenuTitle"
 	{
 		"chi"		"选择传送目标:"
@@ -155,6 +163,11 @@
 		"#format"	"{1:d},{2:d}"
 		"chi"		"存点 ({1}/{2})"
 	}
+	"MiscCheckpointDuplicate"
+	{
+		"#format"	"{1:d},{2:d}"
+		"chi"		"复制 ({1}/{2})"
+	}
 	"MiscCheckpointTeleport"
 	{
 		"#format"	"{1:d}"
@@ -167,6 +180,14 @@
 	"MiscCheckpointNext"
 	{
 		"chi"		"下一存点"
+	}
+	"MiscCheckpointUseOthers"
+	{
+		"chi"		"使用他人存点"
+	}
+	"MiscCheckpointBack"
+	{
+		"chi"		"返回自己存点"
 	}
 	"MiscCheckpointReset"
 	{

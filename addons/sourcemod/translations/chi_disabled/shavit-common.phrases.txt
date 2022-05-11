@@ -18,6 +18,9 @@
 		"#format"	"{1:d}"
 		"chi"		"Bonus {1}"
 	}
+	"Track_Bonus_NoNum"
+	{
+		"chi"		"Bonus"
 	// ---------- Commands ---------- //
 	"NoCommandAccess"
 	{
