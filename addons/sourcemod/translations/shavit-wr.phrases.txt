@@ -34,62 +34,62 @@
 	"FirstCompletion-Normal"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:d},{5:d}"
-		"en"		"{lightgreen}{1}{white} finished ({grey}{2}{white}) in {lightgreen}{3}{white} ({gold}#{5}{white})."
-		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {lightgreen}{3}{white} 排名: {blue}{4}/{5}{white}."
+		"en"		"{team}{1}{white} finished ({lightblue}{2}{white}) in {lightgreen}{3}{white} Rank: {blue}{4}/{5}{white}."
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {lightgreen}{3}{white} 排名: {blue}{4}/{5}"
 	}
 	"FirstCompletion-Other"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:d},{6:d}"
-		"en"		"{lightgreen}{1}{white} finished ({grey}{2}{white}) in {lightgreen}{3}{white} ({gold}#{5}{white})."
-		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {lightgreen}{3}{white} 模式: {grey}{4}{white} 排名: {blue}{5}/{6}{white}."
+		"en"		"{team}{1}{white} finished (lightblue}{2}{white} - {grey}{4}{white}) in {lightgreen}{3}{white} Rank: {blue}{5}/{6}{white}."
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white} - {grey}{4}{white}] 用时: {lightgreen}{3}{white} 排名: {blue}{5}/{6}"
 	}
 	"NotFirstCompletion-Normal"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:d},{5:d},{6:s}"
-		"en"		"{lightgreen}{1}{white} finished ({grey}{2}{white}) in {lightgreen}{3}{white} ({gold}#{4}{white}) (#{5})"
-		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {lightgreen}{3}{white} ({lightgreen}-{6}{white}) 排名: {blue}{4}/{5}{white}."
+		"en"		"{team}{1}{white} finished ({lightblue}{2}{white}) in {lightgreen}{3}{white} ({lightgreen}-{6}{white}) Rank: {blue}{4}/{5}{white}."
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {lightgreen}{3}{white} ({lightgreen}-{6}{white}) 排名: {blue}{4}/{5}"
 	}
 	"NotFirstCompletion-Other"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:d},{6:d},{7:s}"
-		"en"		"{lightgreen}{1}{white} finished ({grey}{2}{white}) in {lightgreen}{3}{white} ({gold}#{4}{white}) (#{5})"
-		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {lightgreen}{3}{white} ({lightgreen}-{7}{white}) 模式: {grey}{4}{white} 排名: {blue}{5}/{6}{white}."
+		"en"		"{team}{1}{white} finished ({lightblue}{2}{white} - {grey}{4}{white}) in {lightgreen}{3}{white} ({lightgreen}-{7}{white}) Rank: {blue}{5}/{6}{white}."
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white} - {grey}{4}{white}] 用时: {lightgreen}{3}{white} ({lightgreen}-{7}{white}) 排名: {blue}{5}/{6}"
 	}
 	"NotFirstCompletionWorse-Normal"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:d},{5:d},{6:s}"
-		"en"		"{lightgreen}{1}{white} finished ({grey}{2}{white}) in {lightgreen}{3}{white} ({gold}#{4}{white}) (+{5})"
-		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {lightgreen}{3}{white} ({lightred}+{6}{white}) 排名: {blue}{4}/{5}{white}."
+		"en"		"{team}{1}{white} finished ({lightblue}{2}{white}) in {lightgreen}{3}{white} ({lightred}+{6}{white}) Rank: {blue}{4}/{5}{white}."
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {lightgreen}{3}{white} ({lightred}+{6}{white}) 排名: {blue}{4}/{5}"
 	}
 	"NotFirstCompletionWorse-Other"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:d},{6:d},{7:s}"
-		"en"		"{lightgreen}{1}{white} finished ({grey}{2}{white}) in {lightgreen}{3}{white} ({gold}#{4}{white}) (+{5})"
-		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {lightgreen}{3}{white} ({lightred}+{7}{white}) 模式: {grey}{4}{white} 排名: {blue}{5}/{6}{white}."
+		"en"		"{team}{1}{white} finished ({lightblue}{2}{white} - {grey}{4}{white}) in {lightgreen}{3}{white} ({lightred}+{7}{white}) Rank: {blue}{5}/{6}{white}."
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white} - {grey}{4}{white}] 用时: {lightgreen}{3}{white} ({lightred}+{7}{white}) 排名: {blue}{5}/{6}"
 	}
 	"WorseTime-Normal"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s}"
-		"en"		"{1} have finished ({grey}{2}{white}) in {lightgreen}{3}{white} ({4})(+{5})"
-		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {lightgreen}{3}{white} ({lightred}+{4}{white})."
+		"en"		"{team}{1}{white} finished ({lightblue}{2}{white}) in {lightgreen}{3}{white} ({lightred}+{4}{white})"
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {lightgreen}{3}{white} ({lightred}+{4}{white})"
 	}
 	"WorseTime-Other"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:s}"
-		"en"		"{1} have finished ({grey}{2}{white}) in {lightgreen}{3}{white} ({4})(+{5})"
-		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {lightgreen}{3}{white} ({lightred}+{5}{white}) 模式: {grey}{4}{white}."
+		"en"		"{team}{1}{white} finished ({grey}{2}{white} - {grey}{4}{white}) in {lightgreen}{3}{white} ({lightred}+{5}{white})"
+		"chi"		"{team}{1}{white} 完成了 [{lightblue}{2}{white} - {grey}{4}{white}] 用时: {lightgreen}{3}{white} ({lightred}+{5}{white})"
 	}
 	"UnrankedTime-Normal"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s}"
-		"en"		"{1} have finished ({grey}{2}{white}) in {lightgreen}{3}{white}."
-		"chi"		"{lightred}{4}{white} {team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {lightgreen}{3}{white}."
+		"en"		"{lightred}{4}{white} {team}{1}{white} finished ({grey}{2}{white}) in {lightgreen}{3}{white}."
+		"chi"		"{lightred}{4}{white} {team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {lightgreen}{3}"
 	}
 	"UnrankedTime-Other"
 	{
 		"#format"	"{1:N},{2:s},{3:s},{4:s},{5:s}"
-		"en"		"{1} have finished ({grey}{2}{white}) in {lightgreen}{3}{white}."
-		"chi"		"{lightred}{5}{white} {team}{1}{white} 完成了 [{lightblue}{2}{white}] 用时: {lightgreen}{3}{white} 模式: {grey}{4}{white}."
+		"en"		"{lightred}{5}{white} {team}{1}{white} finished ({grey}{2}{white} - {grey}{4}{white}) in {lightgreen}{3}{white}."
+		"chi"		"{lightred}{5}{white} {team}{1}{white} 完成了 [{lightblue}{2}{white} - {grey}{4}{white}] 用时: {lightgreen}{3}"
 	}
 	// ---------- Deletion Menus ---------- //
 	"DeleteAllRecords"

@@ -3,10 +3,10 @@ name: ci
 on: 
   push:
     branches: 
-      - gokz-framework
+      - surf-2
   pull_request:
     branches: 
-      - gokz-framework
+      - surf-2
 
 jobs:
   build:
@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sm_version: [ "1.11.6795" ]
+        sm_version: [ "1.11.6795", "1.10.x" ]
 
 
     steps:
