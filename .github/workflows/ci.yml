@@ -3,10 +3,10 @@ name: ci
 on: 
   push:
     branches: 
-      - surf-2
+      - surf-css
   pull_request:
     branches: 
-      - surf-2
+      - surf-css
 
 jobs:
   build:
