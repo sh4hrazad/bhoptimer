@@ -242,7 +242,7 @@ void Call_OnUserCmdPre(int client, int &buttons, int &impulse, float vel[3], flo
 	Call_Finish(result);
 }
 
-void Call_OnTimerIncrement(int client, timer_snapshot_t snapshot, int size, float time)
+void Call_OnTimerIncrement(int client, timer_snapshot_t snapshot, int size, float &time)
 {
 	Call_StartForward(gH_Forwards_OnTimerIncrement);
 	Call_PushCell(client);
@@ -255,7 +255,7 @@ void Call_OnTimerIncrementPost(int client, float time)
 {
 	Call_StartForward(gH_Forwards_OnTimerIncrementPost);
 	Call_PushCell(client);
-	Call_PushCellRef(time);
+	Call_PushCell(time);
 	Call_Finish();
 }
 
@@ -300,7 +300,7 @@ void Call_OnDeleteMapData(int client, const char[] map)
 	Call_Finish();
 }
 
-void Call_OnCommandStyle(int client, int style, float time)
+void Call_OnCommandStyle(int client, int style, float &time)
 {
 	Call_StartForward(gH_Forwards_OnCommandStyle);
 	Call_PushCell(client);

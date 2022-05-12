@@ -220,7 +220,7 @@ static int AddHUDToBuffer(int client, huddata_t data, char[] buffer, int maxlen)
 			}
 			else
 			{
-				char sStyle[4];
+				char sStyle[8];
 				Shavit_GetStyleStrings(data.iStyle, sShortName, sStyle, 8);
 				FormatEx(sLine, sizeof(sLine), "%s: %s", sStyle, sTime);
 			}

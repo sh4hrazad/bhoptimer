@@ -1,4 +1,3 @@
-#define NEW_LIMIT_METHOD
 #define BHOP_PUNISH_RATIO 0.4
 #define BHOP_FRAMES 10
 
@@ -117,7 +116,7 @@ static void LimitInvalidSpeed(int client, int type)
 
 		if(fScale < 1.0 && gI_Bhop[client] >= 2)
 		{
-			DumbSetVelocity(client, fSpeed, fScale);
+			SetVelocity(client, fSpeed, fScale);
 
 			Shavit_PrintToChat(client, "Prehop speed exceeded!");
 		}
@@ -130,7 +129,7 @@ static void LimitInvalidSpeed(int client, int type)
 	{
 		if(gI_Bhop[client] > gCV_LimitBhop.IntValue)
 		{
-			DumbSetVelocity(client, fSpeed, BHOP_PUNISH_RATIO);
+			SetVelocity(client, fSpeed, BHOP_PUNISH_RATIO);
 			
 			Shavit_PrintToChat(client, "Bhop limit exceeded! ({red}%d{white})", gCV_LimitBhop.IntValue);
 
@@ -145,7 +144,7 @@ static void LimitInvalidSpeed(int client, int type)
 	{
 		if(fSpeedXY > shavit_zones_entryzonespeedlimit.FloatValue)
 		{
-			DumbSetVelocity(client, fSpeed, fSpeedXY <= 290 * 10 ? 0.1 : 0.0);
+			SetVelocity(client, fSpeed, fSpeedXY <= 290 * 10 ? 0.1 : 0.0);
 		}
 		
 		return;
@@ -164,21 +163,13 @@ static void LimitInvalidSpeed(int client, int type)
 	}
 }
 
-static void DumbSetVelocity(int client, float fSpeed[3], float scale)
+static void SetVelocity(int client, float fSpeed[3], float scale)
 {
 	fSpeed[0] *= scale;
 	fSpeed[1] *= scale;
 
-#if defined NEW_LIMIT_METHOD
 	TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed);
-#else
-	// Someone please let me know if any of these are unnecessary.
-	SetEntPropVector(client, Prop_Data, "m_vecBaseVelocity", NULL_VECTOR);
-	SetEntPropVector(client, Prop_Data, "m_vecVelocity", fSpeed);
-	SetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed); // m_vecBaseVelocity+m_vecVelocity
-#endif
 }
 
-#undef NEW_LIMIT_METHOD
 #undef BHOP_PUNISH_RATIO
 #undef BHOP_FRAMES
