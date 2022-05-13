@@ -9,15 +9,14 @@ void OnReplayStart_ResetPrestrafeMsg(int index)
 
 void Replay_PrestrafeMessage(bot_info_t info)
 {
-	if(info.aCache.fTime < 0.0)
-	{
-		return;
-	}
-
 	float fCurrentTime = GetReplayTime(info.iEnt);
 	
 	// fTime = 0.0 输出一次
-	if(fCurrentTime == 0.0)
+	if(fCurrentTime < 0.0)
+	{
+		return;
+	}
+	else if(fCurrentTime == 0.0)
 	{
 		SendMessageToSpectator(info.iEnt, "起点 | 速度: {lightgreen}%d u/s", RoundToFloor(GetSpeed(info.iEnt)), true);
 	}

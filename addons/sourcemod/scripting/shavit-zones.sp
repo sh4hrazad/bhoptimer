@@ -1762,26 +1762,15 @@ public Action Command_Stages(int client, int args)
 		Menu menu = new Menu(MenuHandler_SelectStage);
 		menu.SetTitle("%T\n", "ZoneMenuStage", client);
 
-		char sDisplay[64];
-
-		for(int i = 0; i < gI_MapZones; i++)
+		for(int i = 1; i <= gI_Bonuses; i++)
 		{
-			if(gA_ZoneCache[i].bZoneInitialized)
-			{
-				// stage 1 (main start)
-				if(gA_ZoneCache[i].iZoneType == Zone_Start && gA_ZoneCache[i].iZoneTrack == 0)
-					menu.AddItem("1", "Stage 1");
+			char sDisplay[64];
+			char sInfo[8];
 
-				if(gA_ZoneCache[i].iZoneType == Zone_Stage)
-				{
-					FormatEx(sDisplay, 64, "Stage %d", (i + 1), gA_ZoneCache[i].iZoneData);
+			FormatEx(sDisplay, 64, "Stage %d", i);
+			IntToString(i, sInfo, 8);
 
-					char sInfo[8];
-					IntToString(i, sInfo, 8);
-
-					menu.AddItem(sInfo, sDisplay);
-				}
-			}
+			menu.AddItem(sInfo, sDisplay);
 		}
 
 		menu.Display(client, MENU_TIME_FOREVER);
@@ -1800,12 +1789,24 @@ public int MenuHandler_SelectStage(Menu menu, MenuAction action, int param1, int
 		}
 		else
 		{
-			Shavit_StopTimer(param1);
-			Shavit_StartTimer(param1, Track_Main);
-			Shavit_StopTimer(param1);
-			Shavit_SetStageTimer(param1, true);
+			char sInfo[8];
+			menu.GetItem(param2, sInfo, 8);
 
-			DoTeleport(param1, param2);
+			for(int i = 0; i < gI_MapZones; i++)
+			{
+				if(gA_ZoneCache[i].bZoneInitialized
+					 && gA_ZoneCache[i].iZoneType == Zone_Stage
+					 && gA_ZoneCache[i].iZoneData == StringToInt(sInfo))
+				{
+					Shavit_StopTimer(param1);
+					Shavit_StartTimer(param1, Track_Main);
+					Shavit_StopTimer(param1);
+					Shavit_SetStageTimer(param1, true);
+					DoTeleport(param1, i);
+					
+					break;
+				}
+			}
 		}
 	}
 	else if(action == MenuAction_End)
