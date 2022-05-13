@@ -1762,7 +1762,7 @@ public Action Command_Stages(int client, int args)
 		Menu menu = new Menu(MenuHandler_SelectStage);
 		menu.SetTitle("%T\n", "ZoneMenuStage", client);
 
-		for(int i = 1; i <= gI_Bonuses; i++)
+		for(int i = 1; i <= gI_Stages; i++)
 		{
 			char sDisplay[64];
 			char sInfo[8];
