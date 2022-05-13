@@ -107,6 +107,13 @@ void ResumeTimer(int client)
 	gA_Timers[client].bClientPaused = false;
 }
 
+void RestartTimer(int client, int track)
+{
+	StopTimer(client);
+	
+	Call_OnRestart(client, track);
+}
+
 void BuildSnapshot(int client, timer_snapshot_t snapshot)
 {
 	snapshot = gA_Timers[client];

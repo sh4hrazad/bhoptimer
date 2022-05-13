@@ -3844,15 +3844,6 @@ public void SQL_CreateTable_Callback(Database db, DBResultSet results, const cha
 
 public void Shavit_OnRestart(int client, int track)
 {
-	char sArg[16];
-	GetCmdArg(0, sArg, sizeof(sArg));
-
-	if((StrEqual(sArg, "sm_b", false) || StrEqual(sArg, "sm_bonus", false)) && GetCmdArgs() == 0)
-	{
-		OpenBonusMenu(client);
-		return;
-	}
-
 	Shavit_SetStageTimer(client, false);
 	DoRestart(client, track);
 }
@@ -3887,56 +3878,6 @@ void DoRestart(int client, int track)
 
 		Shavit_StopTimer(client);
 	}
-}
-
-void OpenBonusMenu(int client)
-{
-	Menu menu = new Menu(OpenBonusMenu_Handler);
-	menu.SetTitle("Select a bonus\n ");
-
-	int lastbonus = Track_Bonus;
-
-	for(int i = Track_Bonus; i <= Track_Bonus_Last; i++)
-	{
-		if(GetZoneIndex(Zone_Start, i) != -1)
-		{
-			char sItem[4];
-			IntToString(i, sItem, 4);
-
-			char sDisplay[16];
-			FormatEx(sDisplay, 16, "Bonus %d", i);
-			menu.AddItem(sItem, sDisplay);
-
-			lastbonus = i;
-		}
-	}
-
-	if(menu.ItemCount <= 1)
-	{
-		delete menu;
-		DoRestart(client, lastbonus);
-	}
-	else
-	{
-		menu.Display(client, -1);
-	}
-}
-
-public int OpenBonusMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
-{
-	if(action == MenuAction_Select)
-	{
-		char sInfo[4];
-		menu.GetItem(param2, sInfo, 4);
-
-		DoRestart(param1, StringToInt(sInfo));
-	}
-	else if(action == MenuAction_End)
-	{
-		delete menu;
-	}
-
-	return 0;
 }
 
 public void Shavit_OnEnd(int client, int track)
@@ -4692,26 +4633,4 @@ int FindNumberInString(const char[] str)
 bool IsCurrentTrack(int client, int track)
 {
 	return gCV_EnforceTracks.BoolValue && track == Shavit_GetClientTrack(client);
-}
-
-stock void SendMessageToSpectator(int client, const char[] message, any ..., bool translate = false)
-{
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
-		{
-			if(!translate)
-			{
-				Shavit_PrintToChat(i, message);
-			}
-			else
-			{
-				SetGlobalTransTarget(i);
-
-				char sBuffer[256];
-				VFormat(sBuffer, sizeof(sBuffer), message, 3);
-				Shavit_PrintToChat(i, sBuffer);
-			}
-		}
-	}
 }

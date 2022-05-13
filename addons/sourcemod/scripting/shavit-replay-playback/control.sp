@@ -138,6 +138,8 @@ Action OnPlayerRunCmd_Replay(bot_info_t info, int &buttons, int &impulse, float 
 			{
 				TeleportEntity(info.iEnt, NULL_VECTOR, ang, vecVelocity);
 			}
+
+			Replay_PrestrafeMessage(info);
 		}
 	}
 

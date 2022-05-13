@@ -224,33 +224,7 @@ public int Native_GetReplayStatus(Handle handler, int numParams)
 
 public any Native_GetReplayTime(Handle handler, int numParams)
 {
-	int index = GetNativeCell(1);
-
-	if (gA_BotInfo[index].iTick > (gA_BotInfo[index].aCache.iFrameCount + gA_BotInfo[index].aCache.iPreFrames))
-	{
-		return gA_BotInfo[index].aCache.fTime;
-	}
-
-	if(gA_BotInfo[index].iStage != 0)
-	{
-		int preframes = RoundToFloor(FindConVar("shavit_stage_replay_preruntime").FloatValue * gF_Tickrate);
-
-		if (gA_BotInfo[index].iTick > (gA_BotInfo[index].aCache.iFrameCount - preframes))
-		{
-			return gA_BotInfo[index].aCache.fTime;
-		}
-
-		return float(gA_BotInfo[index].iTick - preframes) / gF_Tickrate * Shavit_GetStyleSettingFloat(gA_BotInfo[index].iStyle, "timescale");
-	}
-
-	if(gA_BotInfo[index].iTrack != 0)
-	{
-		return float(gA_BotInfo[index].iTick - gA_BotInfo[index].aCache.iPreFrames) / gF_Tickrate * Shavit_GetStyleSettingFloat(gA_BotInfo[index].iStyle, "timescale");
-	}
-	else
-	{
-		return float(gA_BotInfo[index].iRealTick - gA_BotInfo[index].aCache.iPreFrames) / gF_Tickrate * Shavit_GetStyleSettingFloat(gA_BotInfo[index].iStyle, "timescale") + gA_BotInfo[index].fRealTime;
-	}
+	return GetReplayTime(GetNativeCell(1));
 }
 
 public int Native_IsReplayDataLoaded(Handle handler, int numParams)

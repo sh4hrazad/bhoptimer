@@ -1,4 +1,4 @@
-void ShowStyleMenu(int client)
+void OpenStyleMenu(int client)
 {
 	Menu menu = new Menu(StyleMenu_Handler);
 	menu.SetTitle("%T", "StyleMenuTitle", client);
@@ -92,6 +92,56 @@ public int StyleMenu_Handler(Menu menu, MenuAction action, int param1, int param
 		ChangeClientStyle(param1, style, true);
 	}
 
+	else if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
+}
+
+void OpenBonusMenu(int client)
+{
+	Menu menu = new Menu(OpenBonusMenu_Handler);
+	menu.SetTitle("Select a bonus\n ");
+
+	int lastbonus = Track_Bonus;
+
+	for(int i = Track_Bonus; i <= Track_Bonus_Last; i++)
+	{
+		if(Shavit_ZoneExists(Zone_Start, i) && Shavit_ZoneExists(Zone_End, i))
+		{
+			char sItem[4];
+			IntToString(i, sItem, 4);
+
+			char sDisplay[16];
+			FormatEx(sDisplay, 16, "Bonus %d", i);
+			menu.AddItem(sItem, sDisplay);
+
+			lastbonus = i;
+		}
+	}
+
+	if(menu.ItemCount <= 1)
+	{
+		delete menu;
+		RestartTimer(client, lastbonus);
+	}
+	else
+	{
+		menu.Display(client, -1);
+	}
+}
+
+public int OpenBonusMenu_Handler(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		char sInfo[4];
+		menu.GetItem(param2, sInfo, 4);
+
+		RestartTimer(param1, StringToInt(sInfo));
+	}
 	else if(action == MenuAction_End)
 	{
 		delete menu;

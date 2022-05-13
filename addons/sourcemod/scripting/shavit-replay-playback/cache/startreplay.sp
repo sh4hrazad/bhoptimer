@@ -51,6 +51,7 @@ void StartReplay(bot_info_t info, int track, int style, int starter, float delay
 		CreateTimer(0.2, Timer_SpectateMyBot, GetClientSerial(info.iEnt), TIMER_FLAG_NO_MAPCHANGE);
 	}
 
+	OnReplayStart_ResetPrestrafeMsg(info.iEnt);
 	Call_OnReplayStart(info.iEnt, info.iType, false);
 }
 

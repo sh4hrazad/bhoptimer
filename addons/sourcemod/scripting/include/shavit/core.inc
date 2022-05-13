@@ -142,375 +142,6 @@ enum struct timer_snapshot_t
 	bool bStageTimer;
 }
 
-/* -- Stocks -- */
-
-stock void Shavit_LogQuery(const char[] query)
-{
-	static File hLogFile;
-
-	if (hLogFile == null)
-	{
-		char sPlugin[PLATFORM_MAX_PATH];
-		GetPluginFilename(INVALID_HANDLE, sPlugin, sizeof(sPlugin));
-		ReplaceString(sPlugin, PLATFORM_MAX_PATH, ".smx", "");
-		ReplaceString(sPlugin, PLATFORM_MAX_PATH, "\\", "/");
-
-		int start = FindCharInString(sPlugin, '/', true);
-
-		char sFilename[PLATFORM_MAX_PATH];
-		BuildPath(Path_SM, sFilename, sizeof(sFilename), "logs/%s_sql.log", sPlugin[start+1]);
-
-		hLogFile = OpenFile(sFilename, "a");
-	}
-
-	if (hLogFile)
-	{
-		LogToOpenFileEx(hLogFile, "%s", query);
-	}
-}
-
-methodmap Database2 < Database
-{
-	public void Query(SQLQueryCallback callback, const char[] query, any data = 0, DBPriority prio = DBPrio_Normal)
-	{
-#if SHAVIT_LOG_QUERIES
-		Shavit_LogQuery(query);
-#endif
-		this.Query(callback, query, data, prio);
-	}
-}
-
-methodmap Transaction2 < Transaction
-{
-	public Transaction2()
-	{
-		return view_as<Transaction2>(new Transaction());
-	}
-
-	public int AddQuery(const char[] query, any data = 0)
-	{
-#if SHAVIT_LOG_QUERIES
-		Shavit_LogQuery(query);
-#endif
-		return this.AddQuery(query, data);
-	}
-}
-
-// connects synchronously to the bhoptimer database
-// calls errors if needed
-stock Database GetTimerDatabaseHandle(bool reuse_persistent_connection=true)
-{
-	Database db = null;
-	char sError[255];
-
-	if(SQL_CheckConfig("shavit"))
-	{
-		if((db = SQL_Connect("shavit", reuse_persistent_connection, sError, 255)) == null)
-		{
-			SetFailState("Timer startup failed. Reason: %s", sError);
-		}
-	}
-	else
-	{
-		db = SQLite_UseDatabase("shavit", sError, 255);
-	}
-
-	// support unicode names
-	if (!db.SetCharset("utf8mb4"))
-	{
-		db.SetCharset("utf8");
-	}
-
-	return db;
-}
-
-stock Database2 GetTimerDatabaseHandle2(bool reuse_persistent_connection=true)
-{
-	return view_as<Database2>(GetTimerDatabaseHandle(reuse_persistent_connection));
-}
-
-// figures out if the database is a mysql database
-stock bool IsMySQLDatabase(Database db)
-{
-	char sDriver[8];
-	db.Driver.GetIdentifier(sDriver, 8);
-
-	return StrEqual(sDriver, "mysql", false);
-}
-
-stock void LowercaseString(char[] str)
-{
-	static char to_lowercase_table[256+1] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x20\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2A\x2B\x2C\x2D\x2E\x2F\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x3A\x3B\x3C\x3D\x3E\x3F\x40\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6A\x6B\x6C\x6D\x6E\x6F\x70\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7A\x5B\x5C\x5D\x5E\x5F\x60\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6A\x6B\x6C\x6D\x6E\x6F\x70\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7A\x7B\x7C\x7D\x7E\x7F\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8A\x8B\x8C\x8D\x8E\x8F\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9A\x9B\x9C\x9D\x9E\x9F\xA0\xA1\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xAA\xAB\xAC\xAD\xAE\xAF\xB0\xB1\xB2\xB3\xB4\xB5\xB6\xB7\xB8\xB9\xBA\xBB\xBC\xBD\xBE\xBF\xC0\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xCA\xCB\xCC\xCD\xCE\xCF\xD0\xD1\xD2\xD3\xD4\xD5\xD6\xD7\xD8\xD9\xDA\xDB\xDC\xDD\xDE\xDF\xE0\xE1\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xEA\xEB\xEC\xED\xEE\xEF\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\xFA\xFB\xFC\xFD\xFE\xFF";
-
-	for (int i = 0; str[i] != 0; i++)
-	{
-		int x = str[i];
-		str[i] = to_lowercase_table[x];
-	}
-}
-
-// GetMapDisplayName ends up opening every single fucking file to verify it's valid.
-// I don't care about that. I just want the stupid fucking mapname string.
-// Also this lowercases the string.
-stock void LessStupidGetMapDisplayName(const char[] map, char[] displayName, int maxlen)
-{
-	char temp[PLATFORM_MAX_PATH];
-	char temp2[PLATFORM_MAX_PATH];
-
-	strcopy(temp, sizeof(temp), map);
-	ReplaceString(temp, sizeof(temp), "\\", "/", true);
-
-	int slashpos = FindCharInString(map, '/', true);
-	strcopy(temp2, sizeof(temp2), map[slashpos+1]);
-
-	int ugcpos = StrContains(temp2, ".ugc", true);
-
-	if (ugcpos != -1)
-	{
-		temp2[ugcpos] = 0;
-	}
-
-	LowercaseString(temp2);
-	strcopy(displayName, maxlen, temp2);
-}
-
-stock void GetLowercaseMapName(char sMap[PLATFORM_MAX_PATH])
-{
-	GetCurrentMap(sMap, sizeof(sMap));
-	LessStupidGetMapDisplayName(sMap, sMap, sizeof(sMap));
-}
-
-// retrieves the table prefix defined in configs/shavit-prefix.txt
-stock void GetTimerSQLPrefix(char[] buffer, int maxlen)
-{
-	char sFile[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, sFile, PLATFORM_MAX_PATH, "configs/shavit-prefix.txt");
-
-	File fFile = OpenFile(sFile, "r");
-
-	if(fFile == null)
-	{
-		SetFailState("Cannot open \"configs/shavit-prefix.txt\". Make sure this file exists and that the server has read permissions to it.");
-	}
-	
-	char sLine[PLATFORM_MAX_PATH * 2];
-
-	if(fFile.ReadLine(sLine, PLATFORM_MAX_PATH * 2))
-	{
-		TrimString(sLine);
-		strcopy(buffer, maxlen, sLine);
-	}
-
-	delete fFile;
-}
-
-stock bool IsValidClient(int client, bool bAlive = false)
-{
-	return (client >= 1 && client <= MaxClients && IsClientConnected(client) && IsClientInGame(client) && !IsClientSourceTV(client) && (!bAlive || IsPlayerAlive(client)));
-}
-
-stock bool IsSource2013(EngineVersion ev)
-{
-	return (ev == Engine_CSS || ev == Engine_TF2);
-}
-
-stock void IPAddressToString(int ip, char[] buffer, int maxlen)
-{
-	FormatEx(buffer, maxlen, "%d.%d.%d.%d", ((ip >> 24) & 0xFF), ((ip >> 16) & 0xFF), ((ip >> 8) & 0xFF), (ip & 0xFF));
-}
-
-stock int IPStringToAddress(const char[] ip)
-{
-	char sExplodedAddress[4][4];
-	ExplodeString(ip, ".", sExplodedAddress, 4, 4, false);
-
-	int iIPAddress =
-			(StringToInt(sExplodedAddress[0]) << 24) |
-			(StringToInt(sExplodedAddress[1]) << 16) |
-			(StringToInt(sExplodedAddress[2]) << 8) |
-			StringToInt(sExplodedAddress[3]);
-
-	return iIPAddress;
-}
-
-// time formatting!
-stock void FormatSeconds(float time, char[] newtime, int newtimesize, bool precise = true, bool nodecimal = false, bool full_hms = false)
-{
-	float fTempTime = time;
-
-	if(fTempTime < 0.0)
-	{
-		fTempTime = -fTempTime;
-	}
-
-	int iRounded = RoundToFloor(fTempTime);
-	int iSeconds = (iRounded % 60);
-	float fSeconds = iSeconds + fTempTime - iRounded;
-
-	char sSeconds[8];
-
-	if (nodecimal)
-	{
-		FormatEx(sSeconds, 8, "%d", iSeconds);
-	}
-	else
-	{
-		FormatEx(sSeconds, 8, precise? "%.3f":"%.1f", fSeconds);
-	}
-
-	if (!full_hms && fTempTime < 60.0)
-	{
-		strcopy(newtime, newtimesize, sSeconds);
-		FormatEx(newtime, newtimesize, "%s%s", (time < 0.0) ? "-":"", sSeconds);
-	}
-	else
-	{
-		int iMinutes = (iRounded / 60);
-
-		if (!full_hms && fTempTime < 3600.0)
-		{
-			FormatEx(newtime, newtimesize, "%s%d:%s%s", (time < 0.0)? "-":"", iMinutes, (fSeconds < 10)? "0":"", sSeconds);
-		}
-		else
-		{
-			int iHours = (iMinutes / 60);
-			iMinutes %= 60;
-
-			FormatEx(newtime, newtimesize, "%s%d:%s%d:%s%s", (time < 0.0)? "-":"", iHours, (iMinutes < 10)? "0":"", iMinutes, (fSeconds < 10)? "0":"", sSeconds);
-		}
-	}
-}
-
-stock void FormatHUDSeconds(float time, char[] newtime, int newtimesize)
-{
-	float fTempTime = time;
-
-	if(fTempTime < 0.0)
-	{
-		fTempTime = -fTempTime;
-	}
-	
-	int iRounded = RoundToFloor(fTempTime);
-	float fSeconds = (iRounded % 60) + fTempTime - iRounded;
-
-	char sSeconds[8];
-	FormatEx(sSeconds, 8, "%.02f", fSeconds);
-
-	if(fTempTime < 60.0)
-	{
-		strcopy(newtime, newtimesize, sSeconds);
-		FormatEx(newtime, newtimesize, "%s00:%s%s", (time < 0.0) ? "-":"", (fSeconds < 10) ? "0":"", sSeconds);
-	}
-
-	else
-	{
-		int iMinutes = (iRounded / 60);
-
-		if(fTempTime < 3600.0)
-		{
-			FormatEx(newtime, newtimesize, "%s%s%d:%s%s", (time < 0.0)? "-":"", (fTempTime < 600)? "0":"", iMinutes, (fSeconds < 10)? "0":"", sSeconds);
-		}
-
-		else
-		{
-			iMinutes %= 60;
-			int iHours = (iRounded / 3600);
-
-			FormatEx(newtime, newtimesize, "%s%d:%s%d:%s%s", (time < 0.0)? "-":"", iHours, (iMinutes < 10)? "0":"", iMinutes, (fSeconds < 10)? "0":"", sSeconds);
-		}
-	}
-}
-
-stock bool GuessBestMapName(ArrayList maps, const char input[PLATFORM_MAX_PATH], char output[PLATFORM_MAX_PATH])
-{
-	if(maps.FindString(input) != -1)
-	{
-		output = input;
-		return true;
-	}
-
-	char sCache[PLATFORM_MAX_PATH];
-
-	for(int i = 0; i < maps.Length; i++)
-	{
-		maps.GetString(i, sCache, PLATFORM_MAX_PATH);
-
-		if(StrContains(sCache, input) != -1)
-		{
-			output = sCache;
-			return true;
-		}
-	}
-
-	return false;
-}
-
-stock void GetTrackName(int client, int track, char[] output, int size)
-{
-	if (track == Track_Main)
-	{
-		FormatEx(output, size, "%T", "Track_Main", client);
-	}
-	else if (track >= Track_Bonus)
-	{
-		FormatEx(output, size, "%T", "Track_Bonus", client, track);
-	}
-	else //if (track < Track_Main)
-	{
-		FormatEx(output, size, "%T", "Track_Unknown", client);
-	}
-}
-
-stock int GetSpectatorTarget(int client, int fallback = -1)
-{
-	int target = fallback;
-
-	if(IsClientObserver(client))
-	{
-		int iObserverMode = GetEntProp(client, Prop_Send, "m_iObserverMode");
-
-		if (iObserverMode >= 3 && iObserverMode <= 7)
-		{
-			int iTarget = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
-
-			if (IsValidEntity(iTarget))
-			{
-				target = iTarget;
-			}
-		}
-	}
-
-	return target;
-}
-
-stock float GetAngleDiff(float current, float previous)
-{
-	float diff = current - previous;
-	return diff - 360.0 * RoundToFloor((diff + 180.0) / 360.0);
-}
-
-// https://forums.alliedmods.net/showthread.php?t=216841
-// Trims display string to specified max possible length, and appends "..." if initial string exceeds that length
-stock void TrimDisplayString(const char[] str, char[] outstr, int outstrlen, int max_allowed_length)
-{
-	int count, finallen;
-	for(int i = 0; str[i]; i++)
-	{
-		count += ((str[i] & 0xc0) != 0x80) ? 1 : 0;
-		
-		if(count <= max_allowed_length)
-		{
-			outstr[i] = str[i];
-			finallen = i;
-		}
-	}
-	
-	outstr[finallen + 1] = '\0';
-	
-	if(count > max_allowed_length)
-		Format(outstr, outstrlen, "%s...", outstr);
-}
-
 /* -- Forwards -- */
 
 /**
@@ -1391,6 +1022,397 @@ native void Shavit_SetLeaveStageTime(int client, float time);
  * @return							True if teleporting.
  */
 native bool Shavit_IsTeleporting(int client);
+
+/* -- Stocks -- */
+
+stock void Shavit_LogQuery(const char[] query)
+{
+	static File hLogFile;
+
+	if (hLogFile == null)
+	{
+		char sPlugin[PLATFORM_MAX_PATH];
+		GetPluginFilename(INVALID_HANDLE, sPlugin, sizeof(sPlugin));
+		ReplaceString(sPlugin, PLATFORM_MAX_PATH, ".smx", "");
+		ReplaceString(sPlugin, PLATFORM_MAX_PATH, "\\", "/");
+
+		int start = FindCharInString(sPlugin, '/', true);
+
+		char sFilename[PLATFORM_MAX_PATH];
+		BuildPath(Path_SM, sFilename, sizeof(sFilename), "logs/%s_sql.log", sPlugin[start+1]);
+
+		hLogFile = OpenFile(sFilename, "a");
+	}
+
+	if (hLogFile)
+	{
+		LogToOpenFileEx(hLogFile, "%s", query);
+	}
+}
+
+methodmap Database2 < Database
+{
+	public void Query(SQLQueryCallback callback, const char[] query, any data = 0, DBPriority prio = DBPrio_Normal)
+	{
+#if SHAVIT_LOG_QUERIES
+		Shavit_LogQuery(query);
+#endif
+		this.Query(callback, query, data, prio);
+	}
+}
+
+methodmap Transaction2 < Transaction
+{
+	public Transaction2()
+	{
+		return view_as<Transaction2>(new Transaction());
+	}
+
+	public int AddQuery(const char[] query, any data = 0)
+	{
+#if SHAVIT_LOG_QUERIES
+		Shavit_LogQuery(query);
+#endif
+		return this.AddQuery(query, data);
+	}
+}
+
+// connects synchronously to the bhoptimer database
+// calls errors if needed
+stock Database GetTimerDatabaseHandle(bool reuse_persistent_connection=true)
+{
+	Database db = null;
+	char sError[255];
+
+	if(SQL_CheckConfig("shavit"))
+	{
+		if((db = SQL_Connect("shavit", reuse_persistent_connection, sError, 255)) == null)
+		{
+			SetFailState("Timer startup failed. Reason: %s", sError);
+		}
+	}
+	else
+	{
+		db = SQLite_UseDatabase("shavit", sError, 255);
+	}
+
+	// support unicode names
+	if (!db.SetCharset("utf8mb4"))
+	{
+		db.SetCharset("utf8");
+	}
+
+	return db;
+}
+
+stock Database2 GetTimerDatabaseHandle2(bool reuse_persistent_connection=true)
+{
+	return view_as<Database2>(GetTimerDatabaseHandle(reuse_persistent_connection));
+}
+
+// figures out if the database is a mysql database
+stock bool IsMySQLDatabase(Database db)
+{
+	char sDriver[8];
+	db.Driver.GetIdentifier(sDriver, 8);
+
+	return StrEqual(sDriver, "mysql", false);
+}
+
+stock void LowercaseString(char[] str)
+{
+	static char to_lowercase_table[256+1] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x20\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2A\x2B\x2C\x2D\x2E\x2F\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x3A\x3B\x3C\x3D\x3E\x3F\x40\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6A\x6B\x6C\x6D\x6E\x6F\x70\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7A\x5B\x5C\x5D\x5E\x5F\x60\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6A\x6B\x6C\x6D\x6E\x6F\x70\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7A\x7B\x7C\x7D\x7E\x7F\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8A\x8B\x8C\x8D\x8E\x8F\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9A\x9B\x9C\x9D\x9E\x9F\xA0\xA1\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xAA\xAB\xAC\xAD\xAE\xAF\xB0\xB1\xB2\xB3\xB4\xB5\xB6\xB7\xB8\xB9\xBA\xBB\xBC\xBD\xBE\xBF\xC0\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xCA\xCB\xCC\xCD\xCE\xCF\xD0\xD1\xD2\xD3\xD4\xD5\xD6\xD7\xD8\xD9\xDA\xDB\xDC\xDD\xDE\xDF\xE0\xE1\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xEA\xEB\xEC\xED\xEE\xEF\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\xFA\xFB\xFC\xFD\xFE\xFF";
+
+	for (int i = 0; str[i] != 0; i++)
+	{
+		int x = str[i];
+		str[i] = to_lowercase_table[x];
+	}
+}
+
+// GetMapDisplayName ends up opening every single fucking file to verify it's valid.
+// I don't care about that. I just want the stupid fucking mapname string.
+// Also this lowercases the string.
+stock void LessStupidGetMapDisplayName(const char[] map, char[] displayName, int maxlen)
+{
+	char temp[PLATFORM_MAX_PATH];
+	char temp2[PLATFORM_MAX_PATH];
+
+	strcopy(temp, sizeof(temp), map);
+	ReplaceString(temp, sizeof(temp), "\\", "/", true);
+
+	int slashpos = FindCharInString(map, '/', true);
+	strcopy(temp2, sizeof(temp2), map[slashpos+1]);
+
+	int ugcpos = StrContains(temp2, ".ugc", true);
+
+	if (ugcpos != -1)
+	{
+		temp2[ugcpos] = 0;
+	}
+
+	LowercaseString(temp2);
+	strcopy(displayName, maxlen, temp2);
+}
+
+stock void GetLowercaseMapName(char sMap[PLATFORM_MAX_PATH])
+{
+	GetCurrentMap(sMap, sizeof(sMap));
+	LessStupidGetMapDisplayName(sMap, sMap, sizeof(sMap));
+}
+
+// retrieves the table prefix defined in configs/shavit-prefix.txt
+stock void GetTimerSQLPrefix(char[] buffer, int maxlen)
+{
+	char sFile[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, sFile, PLATFORM_MAX_PATH, "configs/shavit-prefix.txt");
+
+	File fFile = OpenFile(sFile, "r");
+
+	if(fFile == null)
+	{
+		SetFailState("Cannot open \"configs/shavit-prefix.txt\". Make sure this file exists and that the server has read permissions to it.");
+	}
+	
+	char sLine[PLATFORM_MAX_PATH * 2];
+
+	if(fFile.ReadLine(sLine, PLATFORM_MAX_PATH * 2))
+	{
+		TrimString(sLine);
+		strcopy(buffer, maxlen, sLine);
+	}
+
+	delete fFile;
+}
+
+stock bool IsValidClient(int client, bool bAlive = false)
+{
+	return (client >= 1 && client <= MaxClients && IsClientConnected(client) && IsClientInGame(client) && !IsClientSourceTV(client) && (!bAlive || IsPlayerAlive(client)));
+}
+
+stock bool IsSource2013(EngineVersion ev)
+{
+	return (ev == Engine_CSS || ev == Engine_TF2);
+}
+
+stock void IPAddressToString(int ip, char[] buffer, int maxlen)
+{
+	FormatEx(buffer, maxlen, "%d.%d.%d.%d", ((ip >> 24) & 0xFF), ((ip >> 16) & 0xFF), ((ip >> 8) & 0xFF), (ip & 0xFF));
+}
+
+stock int IPStringToAddress(const char[] ip)
+{
+	char sExplodedAddress[4][4];
+	ExplodeString(ip, ".", sExplodedAddress, 4, 4, false);
+
+	int iIPAddress =
+			(StringToInt(sExplodedAddress[0]) << 24) |
+			(StringToInt(sExplodedAddress[1]) << 16) |
+			(StringToInt(sExplodedAddress[2]) << 8) |
+			StringToInt(sExplodedAddress[3]);
+
+	return iIPAddress;
+}
+
+// time formatting!
+stock void FormatSeconds(float time, char[] newtime, int newtimesize, bool precise = true, bool nodecimal = false, bool full_hms = false)
+{
+	float fTempTime = time;
+
+	if(fTempTime < 0.0)
+	{
+		fTempTime = -fTempTime;
+	}
+
+	int iRounded = RoundToFloor(fTempTime);
+	int iSeconds = (iRounded % 60);
+	float fSeconds = iSeconds + fTempTime - iRounded;
+
+	char sSeconds[8];
+
+	if (nodecimal)
+	{
+		FormatEx(sSeconds, 8, "%d", iSeconds);
+	}
+	else
+	{
+		FormatEx(sSeconds, 8, precise? "%.3f":"%.1f", fSeconds);
+	}
+
+	if (!full_hms && fTempTime < 60.0)
+	{
+		strcopy(newtime, newtimesize, sSeconds);
+		FormatEx(newtime, newtimesize, "%s%s", (time < 0.0) ? "-":"", sSeconds);
+	}
+	else
+	{
+		int iMinutes = (iRounded / 60);
+
+		if (!full_hms && fTempTime < 3600.0)
+		{
+			FormatEx(newtime, newtimesize, "%s%d:%s%s", (time < 0.0)? "-":"", iMinutes, (fSeconds < 10)? "0":"", sSeconds);
+		}
+		else
+		{
+			int iHours = (iMinutes / 60);
+			iMinutes %= 60;
+
+			FormatEx(newtime, newtimesize, "%s%d:%s%d:%s%s", (time < 0.0)? "-":"", iHours, (iMinutes < 10)? "0":"", iMinutes, (fSeconds < 10)? "0":"", sSeconds);
+		}
+	}
+}
+
+stock void FormatHUDSeconds(float time, char[] newtime, int newtimesize)
+{
+	float fTempTime = time;
+
+	if(fTempTime < 0.0)
+	{
+		fTempTime = -fTempTime;
+	}
+	
+	int iRounded = RoundToFloor(fTempTime);
+	float fSeconds = (iRounded % 60) + fTempTime - iRounded;
+
+	char sSeconds[8];
+	FormatEx(sSeconds, 8, "%.02f", fSeconds);
+
+	if(fTempTime < 60.0)
+	{
+		strcopy(newtime, newtimesize, sSeconds);
+		FormatEx(newtime, newtimesize, "%s00:%s%s", (time < 0.0) ? "-":"", (fSeconds < 10) ? "0":"", sSeconds);
+	}
+
+	else
+	{
+		int iMinutes = (iRounded / 60);
+
+		if(fTempTime < 3600.0)
+		{
+			FormatEx(newtime, newtimesize, "%s%s%d:%s%s", (time < 0.0)? "-":"", (fTempTime < 600)? "0":"", iMinutes, (fSeconds < 10)? "0":"", sSeconds);
+		}
+
+		else
+		{
+			iMinutes %= 60;
+			int iHours = (iRounded / 3600);
+
+			FormatEx(newtime, newtimesize, "%s%d:%s%d:%s%s", (time < 0.0)? "-":"", iHours, (iMinutes < 10)? "0":"", iMinutes, (fSeconds < 10)? "0":"", sSeconds);
+		}
+	}
+}
+
+stock bool GuessBestMapName(ArrayList maps, const char input[PLATFORM_MAX_PATH], char output[PLATFORM_MAX_PATH])
+{
+	if(maps.FindString(input) != -1)
+	{
+		output = input;
+		return true;
+	}
+
+	char sCache[PLATFORM_MAX_PATH];
+
+	for(int i = 0; i < maps.Length; i++)
+	{
+		maps.GetString(i, sCache, PLATFORM_MAX_PATH);
+
+		if(StrContains(sCache, input) != -1)
+		{
+			output = sCache;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+stock void GetTrackName(int client, int track, char[] output, int size)
+{
+	if (track == Track_Main)
+	{
+		FormatEx(output, size, "%T", "Track_Main", client);
+	}
+	else if (track >= Track_Bonus)
+	{
+		FormatEx(output, size, "%T", "Track_Bonus", client, track);
+	}
+	else //if (track < Track_Main)
+	{
+		FormatEx(output, size, "%T", "Track_Unknown", client);
+	}
+}
+
+stock int GetSpectatorTarget(int client, int fallback = -1)
+{
+	int target = fallback;
+
+	if(IsClientObserver(client))
+	{
+		int iObserverMode = GetEntProp(client, Prop_Send, "m_iObserverMode");
+
+		if (iObserverMode >= 3 && iObserverMode <= 7)
+		{
+			int iTarget = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
+
+			if (IsValidEntity(iTarget))
+			{
+				target = iTarget;
+			}
+		}
+	}
+
+	return target;
+}
+
+stock float GetAngleDiff(float current, float previous)
+{
+	float diff = current - previous;
+	return diff - 360.0 * RoundToFloor((diff + 180.0) / 360.0);
+}
+
+// https://forums.alliedmods.net/showthread.php?t=216841
+// Trims display string to specified max possible length, and appends "..." if initial string exceeds that length
+stock void TrimDisplayString(const char[] str, char[] outstr, int outstrlen, int max_allowed_length)
+{
+	int count, finallen;
+	for(int i = 0; str[i]; i++)
+	{
+		count += ((str[i] & 0xc0) != 0x80) ? 1 : 0;
+		
+		if(count <= max_allowed_length)
+		{
+			outstr[i] = str[i];
+			finallen = i;
+		}
+	}
+	
+	outstr[finallen + 1] = '\0';
+	
+	if(count > max_allowed_length)
+		Format(outstr, outstrlen, "%s...", outstr);
+}
+
+stock void SendMessageToSpectator(int client, const char[] message, any ..., bool translate = false)
+{
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
+		{
+			if(!translate)
+			{
+				Shavit_PrintToChat(i, message);
+			}
+			else
+			{
+				SetGlobalTransTarget(i);
+
+				char sBuffer[256];
+				VFormat(sBuffer, sizeof(sBuffer), message, 3);
+				Shavit_PrintToChat(i, sBuffer);
+			}
+		}
+	}
+}
 
 public SharedPlugin __pl_shavit_core =
 {

@@ -572,9 +572,7 @@ public int Native_RestartTimer(Handle handler, int numParams)
 	int client = GetNativeCell(1);
 	int track = GetNativeCell(2);
 
-	Shavit_StopTimer(client, true);
-
-	Call_OnRestart(client, track);
+	RestartTimer(client, track);
 
 	return 0;
 }

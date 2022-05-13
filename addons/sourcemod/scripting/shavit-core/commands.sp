@@ -55,7 +55,7 @@ public Action Command_Style(int client, int args)
 		return Plugin_Handled;
 	}
 
-        ShowStyleMenu(client);
+        OpenStyleMenu(client);
 
 	return Plugin_Handled;
 }
@@ -91,7 +91,16 @@ public Action Command_StartTimer(int client, int args)
 		}
 		else if (args < 1)
 		{
-			track = Track_Bonus;
+			if (Shavit_GetMapBonuses() == 1)
+			{
+				track = Track_Bonus;
+			}
+			else
+			{
+				OpenBonusMenu(client);
+
+				return Plugin_Handled;
+			}
 		}
 		else
 		{

@@ -180,6 +180,7 @@ ClosestPos gH_ClosestPos[TRACKS_SIZE][STYLE_LIMIT];
 #include "shavit-replay-playback/closestpos.sp"
 #include "shavit-replay-playback/db.sp"
 #include "shavit-replay-playback/nav.sp"
+#include "shavit-replay-playback/messages.sp"
 #include "shavit-replay-playback/stocks.sp"
 
 

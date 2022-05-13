@@ -85,7 +85,7 @@ public int MenuHandler_Replay(Menu menu, MenuAction action, int param1, int para
 			{
 				if(gA_BotInfo[index].iTrack == 0 && gA_BotInfo[index].iStage == 0)
 				{
-					Shavit_PrintToChat(param1, "{darkred}无法对主线电脑进行跳帧操作{white}");
+					Shavit_PrintToChat(param1, "{red}!!! {white}无法对主线电脑进行跳帧操作.");
 					OpenReplayMenu(param1);
 					return 0;
 				}

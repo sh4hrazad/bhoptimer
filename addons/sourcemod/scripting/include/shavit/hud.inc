@@ -104,29 +104,6 @@ native int Shavit_GetHUDSettings(int client);
 
 
 
-// =====[ STOCK ]=====
-
-stock void SendMessageToSpectator(int client, const char[] message, any ..., bool translate = false)
-{
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(i != client && (IsValidClient(i) && GetSpectatorTarget(i, i) == client))
-		{
-			if(!translate)
-			{
-				Shavit_PrintToChat(i, message);
-			}
-			else
-			{
-				SetGlobalTransTarget(i);
-
-				char sBuffer[256];
-				VFormat(sBuffer, sizeof(sBuffer), message, 3);
-				Shavit_PrintToChat(i, sBuffer);
-			}
-		}
-	}
-}
 
 // =====[ DEPENDENCY ]=====
 
