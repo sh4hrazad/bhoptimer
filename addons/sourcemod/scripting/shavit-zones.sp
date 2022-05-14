@@ -30,6 +30,7 @@
 #undef REQUIRE_PLUGIN
 #include <adminmenu>
 #include <shavit/stage>
+#include <fuckZones>
 
 #undef REQUIRE_EXTENSIONS
 #include <cstrike>
@@ -185,6 +186,8 @@ bool gB_DrawEditZone[MAXPLAYERS+1];
 // antijump zone
 int gI_LastButtons[MAXPLAYERS+1];
 
+bool gB_fuckZones;
+
 public Plugin myinfo =
 {
 	name = "[shavit] Map Zones",
@@ -240,6 +243,7 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_findtele", Command_FindTeleDestination, "Show teleport_destination entities menu");
 	RegConsoleCmd("sm_findteles", Command_FindTeleDestination, "Show teleport_destination entities menu. Alias of sm_findtele");
 	RegConsoleCmd("sm_telefinder", Command_FindTeleDestination, "Show teleport_destination entities menu. Alias of sm_findtele");
+	RegConsoleCmd("sm_refindtriggers", Command_RefindTriggers, "Reload triggers arraylist.");
 
 	// menu
 	RegAdminCmd("sm_zone", Command_Zones, ADMFLAG_RCON, "Opens the mapzones menu.");
@@ -333,6 +337,11 @@ public void OnAllPluginsLoaded()
 	{
 		OnAdminMenuReady(gH_AdminMenu);
 	}
+
+	if (LibraryExists("fuckZones"))
+	{
+		gB_fuckZones = true;
+	}
 }
 
 public void OnLibraryAdded(const char[] name)
@@ -344,6 +353,10 @@ public void OnLibraryAdded(const char[] name)
 			OnAdminMenuReady(gH_AdminMenu);
 		}
 	}
+	else if (strcmp(name, "fuckZones") == 0)
+	{
+		gB_fuckZones = true;
+	}
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -352,6 +365,10 @@ public void OnLibraryRemoved(const char[] name)
 	{
 		gH_AdminMenu = null;
 		gH_TimerCommands = INVALID_TOPMENUOBJECT;
+	}
+	else if (strcmp(name, "fuckZones") == 0)
+	{
+		gB_fuckZones = false;
 	}
 }
 
@@ -856,6 +873,7 @@ void FindTeles()
 
 	while ((iEnt = FindEntityByClassname(iEnt, "info_target")) != -1)
 	{
+		// TODO: 移去fuckzones
 		gA_TeleDestination.Push(iEnt);
 	}
 }
@@ -1160,12 +1178,12 @@ public void SQL_RefreshZones_Callback(Database db, DBResultSet results, const ch
 
 	if(!mainHasStart)
 	{
-		Shavit_PrintToChatAll("主线缺少{lightgreen}起点{white}区域，请联系管理员添加.");
+		Shavit_PrintToChatAll("{red}!!!{white} 主线缺少{lightgreen}起点{white}区域，请联系管理员添加.");
 	}
 
 	if(!mainHasEnd)
 	{
-		Shavit_PrintToChatAll("主线缺少{darkred}终点{white}区域，请联系管理员添加.");
+		Shavit_PrintToChatAll("{red}!!!{white} 主线缺少{red}终点{white}区域，请联系管理员添加.");
 	}
 
 	CreateZoneEntities();
@@ -1173,7 +1191,7 @@ public void SQL_RefreshZones_Callback(Database db, DBResultSet results, const ch
 
 bool PreBuildZones()
 {
-	Shavit_PrintToChatAll("该地图没有区域，系统将自动设置区域中...");
+	Shavit_PrintToChatAll("自动设置区域中...");
 
 	bool bHaveZones = false;
 
@@ -1244,7 +1262,7 @@ bool PreBuildZones()
 		return true;
 	}
 
-	Shavit_PrintToChatAll("无法预设地图，请管理员手动添加区域...");
+	Shavit_PrintToChatAll("{red}!!! {white}无法预设地图，请联系管理员手动添加区域...");
 
 	return false;
 }
@@ -1828,11 +1846,11 @@ public Action Command_ShowTriggers(int client, int args)
 
 	if(gB_ShowTriggers[client])
 	{
-		Shavit_PrintToChat(client, "[显示区域] {green}已打开{white}.");
+		Shavit_PrintToChat(client, "[显示区域] {lightgreen}已打开{white}.");
 	}
 	else
 	{
-		Shavit_PrintToChat(client, "[显示区域] {darkred}已关闭{white}.");
+		Shavit_PrintToChat(client, "[显示区域] {red}已关闭{white}.");
 	}
 
 	char sArgs[32];
@@ -1914,6 +1932,17 @@ public int FindTeleDestination_MenuHandler(Menu menu, MenuAction action, int par
 	return 0;
 }
 
+public Action Command_RefindTriggers(int client, int args)
+{
+	FindTriggers();
+	PrintToServer("Refound all existing triggers.");
+
+	if(client != 0)
+	{
+		Shavit_PrintToChat(client, "已重新寻找所有{lightgreen}触发块{white}.");
+	}
+}
+
 public Action Command_HookZones(int client, int args)
 {
 	if(!IsValidClient(client))
@@ -1921,84 +1950,46 @@ public Action Command_HookZones(int client, int args)
 		return Plugin_Handled;
 	}
 
-	OpenHookZonesMenu_SelectMethod(client);
+	OpenHookZonesMenu_SelectTrigger(client);
 
 	return Plugin_Handled;
 }
 
-void OpenHookZonesMenu_SelectMethod(int client)
+void OpenHookZonesMenu_SelectTrigger(int client)
 {
 	Reset(client);
 
-	Menu menu = new Menu(HookZoneMenuHandler_SelectMethod);
-	menu.SetTitle("%T", "HookZoneSelectMethod", client);
+	Menu menu = new Menu(MenuHandler_SelectTrigger);
+	menu.SetTitle("%T", "HookZoneMenuTrigger", client);
 
-	menu.AddItem("", "Name");
-	menu.AddItem("", "Origin");
+	for(int i = 0; i < gA_Triggers.Length; i++)
+	{
+		int iEnt = gA_Triggers.Get(i);
+
+		if(!IsValidEntity(iEnt))
+		{
+			continue;
+		}
+
+		char sTriggerName[128];
+		GetEntPropString(iEnt, Prop_Data, "m_iName", sTriggerName, 128, 0);
+
+		float origin[3];
+		GetEntPropVector(iEnt, Prop_Send, "m_vecOrigin", origin);
+
+		char sOrigin[128];
+		FormatEx(sOrigin, 128, "Origin: %.2f %.2f %.2f", origin[0], origin[1], origin[2]);
+
+		char sDisplay[256];
+		FormatEx(sDisplay, 256, "%s\n%s\n ", sTriggerName, sOrigin);
+
+		menu.AddItem(sTriggerName, sDisplay);
+	}
 
 	menu.Display(client, -1);
 }
 
-public int HookZoneMenuHandler_SelectMethod(Menu a, MenuAction action, int param1, int param2)
-{
-	if(action == MenuAction_Select)
-	{
-		Menu menu = new Menu(MenuHandler_BeforeSelectHookZone);
-		menu.SetTitle("%T", "HookZoneMenuTrigger", param1);
-
-		switch(param2)
-		{
-			case 0:
-			{
-				for(int i = 0; i < gA_Triggers.Length; i++)
-				{
-					int iEnt = gA_Triggers.Get(i);
-
-					if(!IsValidEntity(iEnt))
-					{
-						continue;
-					}
-
-					char sTriggerName[128];
-					GetEntPropString(iEnt, Prop_Data, "m_iName", sTriggerName, 128, 0);
-					menu.AddItem(sTriggerName, sTriggerName);
-				}
-			}
-
-			case 1:
-			{
-				for(int i = 0; i < gA_Triggers.Length; i++)
-				{
-					int iEnt = gA_Triggers.Get(i);
-
-					if(!IsValidEntity(iEnt))
-					{
-						continue;
-					}
-
-					float origin[3];
-					GetEntPropVector(iEnt, Prop_Send, "m_vecOrigin", origin);
-
-					char sBuffer[128];
-					FormatEx(sBuffer, 128, "%.2f %.2f %.2f", origin[0], origin[1], origin[2]);
-					menu.AddItem("", sBuffer);
-				}
-			}
-		}
-
-		menu.ExitBackButton = true;
-		menu.Display(param1, -1);
-	}
-
-	else if(action == MenuAction_End)
-	{
-		delete a;
-	}
-
-	return 0;
-}
-
-public int MenuHandler_BeforeSelectHookZone(Menu menu, MenuAction action, int param1, int param2)
+public int MenuHandler_SelectTrigger(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_Select)
 	{
@@ -2013,12 +2004,6 @@ public int MenuHandler_BeforeSelectHookZone(Menu menu, MenuAction action, int pa
 		submenu.ExitBackButton = true;
 		submenu.Display(param1, -1);
 	}
-
-	else if(action == MenuAction_Cancel)
-	{
-		OpenHookZonesMenu_SelectMethod(param1);
-	}
-
 	else if(action == MenuAction_End)
 	{
 		delete menu;
@@ -2082,7 +2067,7 @@ public int MenuHandler_SelectHookZone(Menu menu, MenuAction action, int param1, 
 	}
 	else if(action == MenuAction_Cancel)
 	{
-		OpenHookZonesMenu_SelectMethod(param1);
+		OpenHookZonesMenu_SelectTrigger(param1);
 	}
 
 	return 0;
@@ -2146,7 +2131,7 @@ public int MenuHandler_SelectHookZone_Track(Menu menu, MenuAction action, int pa
 
 	else if(action == MenuAction_Cancel)
 	{
-		OpenHookZonesMenu_SelectMethod(param1);
+		OpenHookZonesMenu_SelectTrigger(param1);
 	}
 
 	else if(action == MenuAction_End)
@@ -2232,7 +2217,7 @@ public int HookZoneConfirm_Handler(Menu menu, MenuAction action, int param1, int
 
 		else if(StrEqual(sInfo, "no"))
 		{
-			OpenHookZonesMenu_SelectMethod(param1);
+			OpenHookZonesMenu_SelectTrigger(param1);
 
 			return 0;
 		}
