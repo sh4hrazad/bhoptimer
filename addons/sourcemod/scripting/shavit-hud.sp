@@ -1241,9 +1241,21 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 		char sTrack[32];
 		GetTrackName(client, data.iTrack, sTrack, 32);
 
-		if(gB_Rankings && (gI_HUD2Settings[client] & HUD2_MAPTIER) == 0)
+		if((gI_HUD2Settings[client] & HUD2_STYLE) == 0 || (gB_Rankings && (gI_HUD2Settings[client] & HUD2_MAPTIER) == 0))
 		{
-			FormatEx(sLine, 128, "%T", "HudZoneTier", client, data.iMapTier);
+			if(!((gI_HUD2Settings[client] & HUD2_STYLE) == 0))
+			{
+				FormatEx(sLine, 128, "%T", "HudZoneTier", client, data.iMapTier);
+			}
+			else if(!(gB_Rankings && (gI_HUD2Settings[client] & HUD2_MAPTIER) == 0))
+			{
+				FormatEx(sLine, 128, "%s", gS_StyleStrings[data.iStyle].sStyleName);
+			}
+			else
+			{
+				FormatEx(sLine, 128, "%s | %T", gS_StyleStrings[data.iStyle].sStyleName, "HudZoneTier", client, data.iMapTier);
+			}
+
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 		}
 
@@ -1279,16 +1291,15 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 			char sTime[32];
 			FormatSeconds(data.fTime, sTime, 32, false);
 
-			char sTimeDiff[32];
-
 			char sTrack[32];
-			GetTrackName(client, data.iTrack, sTrack, 32);
-
 			if(gI_HUD2Settings[client] & HUD2_TRACK == 0 && data.iTrack != 0)
 			{
-				ReplaceString(sTrack, sizeof(sTrack), "onus ", "");
-				ReplaceString(sTrack, sizeof(sTrack), "1", "");
+				char sNum[3];
+				IntToString(data.iTrack, sNum, sizeof(sNum));
+				FormatEx(sTrack, sizeof(sTrack), "B%s", data.iTrack > 1 ? sNum : "");
 			}
+
+			char sTimeDiff[32];
 
 			if((gI_HUD2Settings[client] & HUD2_TIMEDIFFERENCE) == 0 && data.fClosestReplayTime != -1.0)
 			{
@@ -1313,33 +1324,6 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 			}
 
 			AddHUDLine(buffer, maxlen, sLine, iLines);
-		}
-
-		if((gI_HUD2Settings[client] & HUD2_JUMPS) == 0)
-		{
-			FormatEx(sLine, 128, "J: %d", data.iJumps);
-			AddHUDLine(buffer, maxlen, sLine, iLines);
-		}
-
-		if((gI_HUD2Settings[client] & HUD2_STRAFE) == 0)
-		{
-			if((gI_HUD2Settings[client] & HUD2_SYNC) == 0)
-			{
-				FormatEx(sLine, 128, "Strf: %d (%.1f％)", data.iStrafes, data.fSync);
-			}
-			else
-			{
-				FormatEx(sLine, 128, "Strf: %d", data.iStrafes);
-			}
-			AddHUDLine(buffer, maxlen, sLine, iLines);
-		}
-		else
-		{
-			if((gI_HUD2Settings[client] & HUD2_SYNC ==0))
-			{
-				FormatEx(sLine, 128, "Snc: %.1f", data.fSync);
-				AddHUDLine(buffer, maxlen, sLine, iLines);
-			}
 		}
 	}
 
@@ -1378,6 +1362,54 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 			}
 
 			AddHUDLine(buffer, maxlen, sLine, iLines);
+		}
+	}
+
+	if(data.iTimerStatus != Timer_Stopped)
+	{
+		if((gI_HUD2Settings[client] & HUD2_STRAFE) == 0)
+		{
+			if((gI_HUD2Settings[client] & HUD2_SYNC) == 0)
+			{
+				FormatEx(sLine, 128, "Strf: %d (%.1f％)", data.iStrafes, data.fSync);
+			}
+			else
+			{
+				FormatEx(sLine, 128, "Strf: %d", data.iStrafes);
+			}
+			AddHUDLine(buffer, maxlen, sLine, iLines);
+		}
+		else
+		{
+			if((gI_HUD2Settings[client] & HUD2_SYNC == 0))
+			{
+				FormatEx(sLine, 128, "Snc: %.1f", data.fSync);
+				
+				AddHUDLine(buffer, maxlen, sLine, iLines);
+			}
+		}
+
+		if((gI_HUD2Settings[client] & HUD2_JUMPS) == 0)
+		{
+			if(!Shavit_GetStyleSettingBool(data.iStyle, "autobhop") && (gI_HUD2Settings[client] & HUD2_PERFS) == 0)
+			{
+				FormatEx(sLine, 128, "J: %d (%.1f％)", data.iJumps, Shavit_GetPerfectJumps(data.iTarget));
+			}
+			else
+			{
+				FormatEx(sLine, 128, "J: %d", data.iJumps);
+			}
+
+			AddHUDLine(buffer, maxlen, sLine, iLines);
+		}
+		else
+		{
+			if(!Shavit_GetStyleSettingBool(data.iStyle, "autobhop") && (gI_HUD2Settings[client] & HUD2_PERFS) == 0)
+			{
+				FormatEx(sLine, 128, "Perf: %.1f", Shavit_GetPerfectJumps(data.iTarget));
+
+				AddHUDLine(buffer, maxlen, sLine, iLines);
+			}
 		}
 	}
 
@@ -1757,7 +1789,7 @@ void UpdateTopLeftHUD(int client, bool wait)
 
 void UpdateKeyHint(int client)
 {
-	if ((gI_Cycle % 10) == 0 && ((gI_HUDSettings[client] & HUD_TIMELEFT) > 0 || !(gI_HUD2Settings[client] & HUD2_PERFS)))
+	if ((gI_Cycle % 10) == 0 && ((gI_HUDSettings[client] & HUD_TIMELEFT) > 0))
 	{
 		char sMessage[256];
 		int iTimeLeft = -1;
@@ -1783,16 +1815,6 @@ void UpdateKeyHint(int client)
 			if(!(0 <= style < gI_Styles))
 			{
 				style = 0;
-			}
-
-			if (!bReplay && Shavit_GetTimerStatus(target) != Timer_Stopped)
-			{
-				bool perf_double_newline = true;
-
-				if (!Shavit_GetStyleSettingBool(style, "autobhop") && (gI_HUD2Settings[client] & HUD2_PERFS) == 0)
-				{
-					Format(sMessage, 256, "%s%s\nPerfs: %.1f", sMessage, perf_double_newline ? "\n":"", Shavit_GetPerfectJumps(target));
-				}
 			}
 
 			if ((gI_HUDSettings[client] & HUD_SPECTATORS) > 0 && (!(gI_HUDSettings[client] & HUD_SPECTATORSDEAD) || !IsPlayerAlive(client)))

@@ -21,6 +21,7 @@
 	"Track_Bonus_NoNum"
 	{
 		"chi"		"Bonus"
+	}
 	// ---------- Commands ---------- //
 	"NoCommandAccess"
 	{
