@@ -503,10 +503,6 @@ void LoadDHooks()
 	gH_TeleportDhook.AddParam(HookParamType_VectorPtr);
 	gH_TeleportDhook.AddParam(HookParamType_VectorPtr);
 	gH_TeleportDhook.AddParam(HookParamType_VectorPtr);
-	if (gEV_Type) == Engine_CSGO)
-	{
-		gH_TeleportDhook.AddParam(HookParamType_Bool);
-	}
 
 	delete gamedataConf;
 }
