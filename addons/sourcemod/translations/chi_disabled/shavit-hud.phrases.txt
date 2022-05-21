@@ -119,6 +119,10 @@
 	{
 		"chi"		"观察者列表"
 	}
+	"HudSpectatorsDead"
+	{
+		"chi"		"观察者列表 (仅死后)"
+	}
 	"HudKeyOverlay"
 	{
 		"chi"		"显示按键"

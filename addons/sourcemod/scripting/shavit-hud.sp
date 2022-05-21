@@ -198,6 +198,7 @@ public void OnPluginStart()
 		..."HUD_NOPRACALERT			4096\n"
 		..."HUD_USP                  8192\n"
 		..."HUD_GLOCK                16384\n"
+		..."HUD_SPECTATORSDEAD       65536\n"
 	);
 
 	IntToString(HUD_DEFAULT2, defaultHUD, 8);
@@ -218,6 +219,7 @@ public void OnPluginStart()
 		..."HUD2_VELOCITYDIFFERENCE	8192\n"
 		..."HUD2_USPSILENCER         16384\n"
 		..."HUD2_GLOCKBURST          32768\n"
+		..."HUD2_UNUSED          65536\n" // used to be "HUD2_CENTERKEYS"
 	);
 
 	Convar.AutoExecConfig();
@@ -678,6 +680,10 @@ Action ShowHUDMenu(int client, int item)
 
 	FormatEx(sInfo, 16, "!%d", HUD_SPECTATORS);
 	FormatEx(sHudItem, 64, "%T", "HudSpectators", client);
+	menu.AddItem(sInfo, sHudItem);
+
+	FormatEx(sInfo, 16, "!%d", HUD_SPECTATORSDEAD);
+	FormatEx(sHudItem, 64, "%T", "HudSpectatorsDead", client);
 	menu.AddItem(sInfo, sHudItem);
 
 	FormatEx(sInfo, 16, "!%d", HUD_KEYOVERLAY);
@@ -1732,7 +1738,7 @@ void UpdateKeyHint(int client)
 
 		if((gI_HUDSettings[client] & HUD_TIMELEFT) > 0 && GetMapTimeLeft(iTimeLeft) && iTimeLeft > 0)
 		{
-			FormatEx(sMessage, 256, (iTimeLeft > 60)? "%T: %d minutes":"%T: %d seconds", "HudTimeLeft", client, (iTimeLeft > 60) ? (iTimeLeft / 60)+1 : iTimeLeft);
+			FormatEx(sMessage, 256, (iTimeLeft > 60)? "Timeleft: %d min":"Timeleft: %d sec", (iTimeLeft > 60) ? (iTimeLeft / 60)+1 : iTimeLeft);
 		}
 
 		int target = GetSpectatorTarget(client, client);
@@ -1763,7 +1769,7 @@ void UpdateKeyHint(int client)
 				}
 			}
 
-			if((gI_HUDSettings[client] & HUD_SPECTATORS) > 0)
+			if ((gI_HUDSettings[client] & HUD_SPECTATORS) > 0 && (!(gI_HUDSettings[client] & HUD_SPECTATORSDEAD) || !IsPlayerAlive(client)))
 			{
 				int iSpectatorClients[MAXPLAYERS+1];
 				int iSpectators = 0;
