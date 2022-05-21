@@ -64,6 +64,8 @@ Handle gH_Forwards_OnTopLeftHUD = null;
 Handle gH_Forwards_PreOnTopLeftHUD = null;
 Handle gH_Forwards_PreOnDrawCenterHUD = null;
 Handle gH_Forwards_PreOnDrawKeysHUD = null;
+Handle gH_Forwards_OnHUDMenuMade = null;
+Handle gH_Forwards_OnHUDMenuSelect = null;
 
 // modules
 bool gB_ReplayPlayback = false;
@@ -130,13 +132,13 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	gH_Forwards_PreOnTopLeftHUD = CreateGlobalForward("Shavit_PreOnTopLeftHUD", ET_Event, Param_Cell, Param_Cell, Param_String, Param_Cell, Param_Cell, Param_Cell);
 	gH_Forwards_PreOnDrawCenterHUD = CreateGlobalForward("Shavit_PreOnDrawCenterHUD", ET_Event, Param_Cell, Param_Cell, Param_String, Param_Cell, Param_Array);
 	gH_Forwards_PreOnDrawKeysHUD = CreateGlobalForward("Shavit_PreOnDrawKeysHUD", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_String, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
+	gH_Forwards_OnHUDMenuMade = CreateGlobalForward("sFork_OnHUDMenuMade", ET_Ignore, Param_Cell, Param_Cell);
+	gH_Forwards_OnHUDMenuSelect = CreateGlobalForward("sFork_OnHUDMenuSelect", ET_Event, Param_Cell, Param_Cell, Param_String, Param_Cell);
 
 	// natives
 	CreateNative("Shavit_ForceHUDUpdate", Native_ForceHUDUpdate);
 	CreateNative("Shavit_GetHUDSettings", Native_GetHUDSettings);
 	CreateNative("Shavit_GetHUD2Settings", Native_GetHUD2Settings);
-	
-	// sfork natives
 	CreateNative("sFork_ToggleBlockSidebarHUD", Native_ToggleBlockSidebarHUD);
 
 	// registers library, check "bool LibraryExists(const char[] name)" in order to use with other plugins
@@ -650,7 +652,7 @@ public Action Command_HUD(int client, int args)
 	return ShowHUDMenu(client, 0);
 }
 
-Action ShowHUDMenu(int client, int item)
+public Action ShowHUDMenu(int client, int item)
 {
 	if(!IsValidClient(client))
 	{
@@ -800,6 +802,12 @@ Action ShowHUDMenu(int client, int item)
 	menu.AddItem(sInfo, sHudItem);
 
 	menu.ExitButton = true;
+
+	Call_StartForward(gH_Forwards_OnHUDMenuMade);
+	Call_PushCell(client);
+	Call_PushCell(menu);
+	Call_Finish();
+
 	menu.DisplayAt(client, item, MENU_TIME_FOREVER);
 
 	return Plugin_Handled;
@@ -850,6 +858,24 @@ public int MenuHandler_HUD(Menu menu, MenuAction action, int param1, int param2)
 
 			IntToString(gI_HUDSettings[param1], sCookie, 16);
 			SetClientCookie(param1, gH_HUDCookie, sCookie);
+		}
+		else			// other settings made by sFork_OnHUDMenuMade()
+		{
+			char sInfo[16];
+
+			Call_StartForward(gH_Forwards_OnHUDMenuSelect);
+			Call_PushCell(param1);
+			Call_PushCell(param2);
+			Call_PushStringEx(sInfo, 16, SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+			Call_PushCell(16);
+
+			Action result = Plugin_Continue;
+			Call_Finish(result);
+
+			if (result == Plugin_Stop)
+			{
+				return 0;
+			}
 		}
 
 		ShowHUDMenu(param1, GetMenuSelectionPosition());

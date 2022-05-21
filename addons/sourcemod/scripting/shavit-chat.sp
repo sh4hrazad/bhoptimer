@@ -989,6 +989,7 @@ void PreviewChat(int client, int rank)
 	EndMessage();
 }
 
+// TODO: 玩家达到某个排名时也可以使用 customchat
 bool HasCustomChat(int client)
 {
 	return (gCV_CustomChat.IntValue > 0 && (CheckCommandAccess(client, "shavit_chat", ADMFLAG_CHAT) || gCV_CustomChat.IntValue == 2 || gB_CCAccess[client]));

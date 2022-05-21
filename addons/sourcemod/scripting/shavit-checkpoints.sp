@@ -1017,7 +1017,7 @@ public Action OpenCheckpointsMenu(int client)
 	return Plugin_Handled;
 }
 
-void OpenCPMenu(int client)
+public void OpenCPMenu(int client)
 {
 	bool bSegmented = CanSegment(client);
 	bool bKzcheckpoints = Shavit_GetStyleSettingBool(gI_Style[client], "kzcheckpoints");
@@ -1568,7 +1568,8 @@ bool SaveCheckpoint(int client, bool duplicate = false)
 	return true;
 }
 
-void SaveCheckpointCache(int saver, int target, cp_cache_t cpcache, int index, Handle plugin)
+// 'public' here because of handle error for other plugins when using handles that contains in cpcache
+public void SaveCheckpointCache(int saver, int target, cp_cache_t cpcache, int index, Handle plugin)
 {
 	GetClientAbsOrigin(target, cpcache.fPosition);
 	GetClientEyeAngles(target, cpcache.fAngles);
@@ -1811,7 +1812,8 @@ void TeleportToCheckpoint(int client, int index, bool suppressMessage, int targe
 }
 
 // index = -1 when persistent data. index = 0 when Shavit_LoadCheckpointCache() usually. index > 0 when "actually a checkpoint"
-bool LoadCheckpointCache(int client, cp_cache_t cpcache, int index, bool force = false)
+// 'public' here because of handle error for other plugins when using handles that contains in cpcache
+public bool LoadCheckpointCache(int client, cp_cache_t cpcache, int index, bool force)
 {
 	// ripped this out and put it here since Shavit_LoadSnapshot() checks this and we want to bail early if LoadSnapShot would fail
 	if (!force && !Shavit_HasStyleAccess(client, cpcache.aSnapshot.bsStyle))

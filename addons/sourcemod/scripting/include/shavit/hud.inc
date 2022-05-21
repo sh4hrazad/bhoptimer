@@ -169,6 +169,26 @@ forward Action Shavit_PreOnDrawCenterHUD(int client, int target, char[] buffer, 
 forward Action Shavit_PreOnDrawKeysHUD(int client, int target, int style, int buttons, float anglediff, char[] buffer, int buflen, int scrolls, int prevscrolls, bool alternate_center_keys);
 
 /**
+ * Called before HUD menu displayed for a player.
+ *
+ * @param client                    Client index.
+ * @param menu                      Handle to the menu so you can .AddItem().
+ * @noreturn
+ */
+forward void sFork_OnHUDMenuMade(int client, Menu menu);
+
+/**
+ * Called before a selection is processed in the HUD menu.
+ *
+ * @param client                    Client index.
+ * @param param2                    Second parameter in the callback, usually the item selected.
+ * @param info                      Reference copy of the info string used in the callback.
+ * @param maxlength                 Length of the info buffer. (16)
+ * @return                          Plugin_Stop to block the menu from keeping appearing after selected.
+ */
+forward Action sFork_OnHUDMenuSelect(int client, int param2, char[] info, int maxlength);
+
+/**
  * Force an HUD update for a player. Requires shavit-hud.
  *
  * @param client                    Client index.
