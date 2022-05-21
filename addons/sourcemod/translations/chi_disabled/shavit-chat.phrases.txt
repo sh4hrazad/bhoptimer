@@ -25,7 +25,7 @@
 	"CCAccessGrantedToPlayer"
 	{
 		"#format"   "{1:s},{2:s}"
-		"chi"        "自定义聊天样式可用! 输入{1}!cchelp{2}查看更多讯息."
+		"chi"        "自定义聊天样式可用! 输入 {1}!cchelp{2} 查看更多讯息."
 	}
 	"CCHelp_Intro"
 	{
@@ -70,7 +70,7 @@
 	}
 	"CustomChat"
 	{
-		"chi"		"自定义\n使用自定义聊天样式. 输入!cchelp查看帮助"
+		"chi"		"自定义\n使用自定义聊天样式. 输入 !cchelp 查看帮助"
 	}
 	"ChatRanksMenu"
 	{
@@ -78,6 +78,6 @@
 	}
 	"ChatRanksMenu_SampleText"
 	{
-		"chi"		"Lorem ipsum是指一篇常用于排版设计领域的拉丁文文章，主要的目的为测试文章或文字在不同字型、版型下看起来的效果。"
+		"chi"		"Lorem ipsum 是指一篇常用于排版设计领域的拉丁文文章，主要的目的为测试文章或文字在不同字型、版型下看起来的效果。"
 	}
 }

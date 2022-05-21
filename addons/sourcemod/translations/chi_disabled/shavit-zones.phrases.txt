@@ -118,7 +118,7 @@
 	}
 	"ZoneAdjustPosition"
 	{
-		"chi"		"调整区域位置.\n输入'!modifier <数值>'来修改微调数值."
+		"chi"		"调整区域位置.\n输入 '!modifier <数值>' 来修改微调数值."
 	}
 	"ZoneAxis"
 	{
@@ -159,7 +159,7 @@
 	}
 	"ZoneMenuDeleteALLTitle"
 	{
-		"chi"		"删除该地图中所有的区域?(包括Bonus的区域)\n此操作不可恢复!"
+		"chi"		"删除该地图中所有的区域? (包括 Bonus 区域)\n此操作不可恢复!"
 	}
 	"ZoneMenuNo"
 	{
@@ -407,12 +407,12 @@
 	"ZoneSlayEnter"
 	{
 		"#format"	"{1:s},{2:s},{3:s}"
-		"chi"		"{1}你因进入{2}BUG区域{3}而被处死."
+		"chi"		"{1}你因进入 {2}BUG 区域{3}而被处死."
 	}
 	"ZoneStopEnter"
 	{
 		"#format"	"{1:s},{2:s},{3:s}"
-		"chi"		"{1}你的计时因进入{2}BUG区域{3}而被中止."
+		"chi"		"{1}你的计时因进入 {2}BUG 区域{3}而被中止."
 	}
 	"ZoneStageEnter"
 	{

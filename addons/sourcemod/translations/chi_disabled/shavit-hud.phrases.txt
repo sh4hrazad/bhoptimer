@@ -71,11 +71,11 @@
 	}
 	"HudUSPSilencer"
 	{
-		"chi"		"USP自带消音器"
+		"chi"		"USP 默认带消音器"
 	}
 	"HudGlockBurst"
 	{
-		"chi"		"Glock自带三连发模式"
+		"chi"		"Glock 默认开启三连发"
 	} // 我寻思这三样不应该在Menu一栏吗
 	"HudPracticeMode"
 	{
@@ -109,11 +109,11 @@
 	}
 	"HudZoneHud"
 	{
-		"chi"		"起/终区域内HUD"
+		"chi"		"起/终区域内 HUD"
 	}
 	"HudObserve"
 	{
-		"chi"		"观察者HUD"
+		"chi"		"观察者 HUD"
 	}
 	"HudSpectators"
 	{
@@ -133,7 +133,7 @@
 	}
 	"HudTopLeft"
 	{
-		"chi"		"左上角HUD (WR/PB)"
+		"chi"		"左上角 HUD (WR/PB)"
 	}
 	"Hud2dVel"
 	{
@@ -157,7 +157,7 @@
 	}
 	"HudSplitPbText"
 	{
-		"chi"		"区分PB"
+		"chi"		"区分 PB"
 	}
 	"HudMapTierText"
 	{
@@ -201,11 +201,11 @@
 	"HudEnabledComponent"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s}"
-		"chi"		"HUD设置项[{1}{2}{3}]已{4}启用{5}."
+		"chi"		"HUD 设置项 [{1}{2}{3}] 已{4}启用{5}."
 	}
 	"HudDisabledComponent"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s}"
-		"chi"		"HUD设置项[{1}{2}{3}]已{4}禁用{5}."
+		"chi"		"HUD 设置项 [{1}{2}{3}] 已{4}禁用{5}."
 	}
 }

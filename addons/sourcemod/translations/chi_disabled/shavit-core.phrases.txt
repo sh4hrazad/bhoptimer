@@ -33,12 +33,12 @@
 	// ---------- Errors ---------- //
 	"VerificationFailed"
 	{
-		"chi"		"无法验证你或服务器与Steam的连接."
+		"chi"		"无法验证你或服务器与 Steam 的连接"
 	}
 	"TimeUnderMinimumTime"
 	{
 		"#format"   "{1:f},{2:f},{3:s}"
-		"chi"        "你的通关时间 ({2}) 快于{3}最快通关时间设置 ({1}), 纪录不作数."
+		"chi"        "你的通关时间 ({2}) 快于{3}最快通关时间设置 ({1}), 本次通关将不会被记录."
 	}
 	// ---------- Menus ---------- //
 	"StyleMenuTitle"
@@ -57,11 +57,11 @@
 	// ---------- Misc ---------- //
 	"LeftRightCheat"
 	{
-		"chi"		"该模式下+left/right禁用."
+		"chi"		"该模式下不得使用 +left/right."
 	}
 	"Inconsistencies"
 	{
-		"chi"		"检测到非法按键."
+		"chi"		"检测到非法按键 (+strafe)."
 	}
 	"UnrankedWarning"
 	{
@@ -86,7 +86,7 @@
 	"NewAiraccelerate"
 	{
 		"#format"	"{1:d},{2:s},{3:d},{4:s}"
-		"chi"		"当前空速: {1} -> {2}{3}{4}."
+		"chi"		"空速已变更. ({1} -> {2}{3}{4})"
 	}
 	// ---------- Pauses ---------- //
 	"MessagePause"
@@ -153,6 +153,6 @@
 	"TrackChangeFromMain"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s},{5:s},{6:s}"
-		"chi"		"使用{1}!m{2}/{3}!main{4}以回到Main. 或输入{5}!ihate!main{6}."
+		"chi"		"输入 {1}!m{2}/{3}!main{4} 以回到 Main. (or {5}!ihate!main{6})"
 	}
 }

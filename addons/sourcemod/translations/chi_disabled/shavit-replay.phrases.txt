@@ -20,7 +20,7 @@
 	"ReplayDeletionConfirmation"
 	{
 		"#format"	"{1:s}"
-		"chi"		"删除{1}的纪录回放?"
+		"chi"		"删除 {1} 的纪录回放?"
 	}
 	"ReplaysUnavailable"
 	{
@@ -44,11 +44,11 @@
 	}
 	"CentralReplayPlaying"
 	{
-		"chi"		"回放Bot暂忙, 请稍后再试."
+		"chi"		"回放 Bot 暂忙, 请稍后再试."
 	}
 	"CentralReplayStop"
 	{
-		"chi"		"中止回放."
+		"chi"		"中止回放"
 	}
 	"CentralReplayStopped"
 	{
@@ -76,11 +76,11 @@
 	}
 	"Menu_Replay_Central"
 	{
-		"chi"		"主回放Bot(!replay)"
+		"chi"		"主回放 Bot (!replay)"
 	}
 	"Menu_Replay_Dynamic"
 	{
-		"chi"		"动态添加回放Bot"
+		"chi"		"动态添加回放 Bot"
 	}
 	"Menu_Replay_Prop"
 	{
@@ -88,11 +88,11 @@
 	}
 	"TooManyDynamicBots"
 	{
-		"chi"		"当前已存在过多的动态回放Bot, 暂时无法添加."
+		"chi"		"当前已存在过多的动态回放 Bot, 暂时无法添加."
 	}
 	"FailedToCreateReplay"
 	{
-		"chi"		"无法启用回放Bot."
+		"chi"		"无法启用回放 Bot."
 	}
 	"Menu_Replay"
 	{
@@ -105,12 +105,12 @@
 	"Menu_Replay2X"
 	{
 		"#format"	"{1:s}"
-		"chi"		"[{1}] 2倍速播放"
+		"chi"		"[{1}] 2 倍速播放"
 	}
 	"Menu_PlaybackSpeed"
 	{
 		"#format"   "{1:.1f}"
-		"chi"        "回放速率: {1}x"
+		"chi"        "倍速: {1}x"
 	}
 	"Menu_RefreshReplay"
 	{

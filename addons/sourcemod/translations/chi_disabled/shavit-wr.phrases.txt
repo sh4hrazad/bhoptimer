@@ -12,12 +12,12 @@
 	"DeletedRecordsMap"
 	{
 		"#format"	"{1:s},{2:s},{3:s}"
-		"chi"		"已删除所有{1}{2}{3}的纪录."
+		"chi"		"已删除所有 {1}{2}{3} 的纪录."
 	}
 	"DeletedRecordsStyle"
 	{
 		"#format"	"{1:s},{2:s},{3:s}"
-		"chi"		"已删除所有{1}{2}{3}的纪录."
+		"chi"		"已删除所有 {1}{2}{3} 的纪录."
 	}
 	// ---------- Client Menus ---------- //
 	"ListClientRecords"
@@ -98,7 +98,7 @@
 	}
 	"MenuResponseYes"
 	{
-		"chi"		"是(该操作不可撤销!)"
+		"chi"		"是 (该操作不可撤销!)"
 	}
 	"DeleteStyleRecordsRecordsMenuTitle"
 	{
@@ -160,7 +160,7 @@
 	"WRJump"
 	{
 		"chi"		"jump"
-	} // 插件暂时没用该条, 故不翻译(虽然就一个单词)
+	} // 插件暂时没用该条, 故不翻译
 	"WRJumps"
 	{
 		"chi"		"起跳次数"
@@ -181,7 +181,7 @@
 	"WRPoints"
 	{
 		"chi"		"points"
-	} // 插件暂时没用该条, 故不翻译(虽然就一个单词)
+	} // 插件暂时没用该条, 故不翻译
 	"WRPlayerStats"
 	{
 		"chi"		"玩家信息"
