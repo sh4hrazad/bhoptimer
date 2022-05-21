@@ -57,6 +57,7 @@ enum struct persistent_data_t
 	ArrayList aCheckpoints;
 	int iCurrentCheckpoint;
 	cp_cache_t cpcache;
+	cp_cache_t undoCheckpoint;
 }
 
 char gS_Map[PLATFORM_MAX_PATH];
@@ -88,6 +89,7 @@ chatstrings_t gS_ChatStrings;
 int gI_Style[MAXPLAYERS+1];
 
 ArrayList gA_Checkpoints[MAXPLAYERS+1];
+cp_cache_t gA_UndoCheckpoints[MAXPLAYERS + 1];
 int gI_CurrentCheckpoint[MAXPLAYERS+1];
 int gI_TimesTeleported[MAXPLAYERS+1];
 bool gB_InCheckpointMenu[MAXPLAYERS+1];
@@ -190,6 +192,7 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_checkpoints", Command_Checkpoints, "Opens the checkpoints menu. Alias for sm_cpmenu.");
 	RegConsoleCmd("sm_save", Command_Save, "Saves a checkpoint.");
 	RegConsoleCmd("sm_tele", Command_Tele, "Teleports to a checkpoint. Usage: sm_tele [number]");
+	RegConsoleCmd("sm_undocp", Command_UndoCheckpoint, "Undoes the checkpoint previously teleported.");
 	RegConsoleCmd("sm_prevcp", Command_PrevCheckpoint, "Selects the previous checkpoint.");
 	RegConsoleCmd("sm_nextcp", Command_NextCheckpoint, "Selects the next checkpoint.");
 	RegConsoleCmd("sm_deletecp", Command_DeleteCheckpoint, "Deletes the current checkpoint.");
@@ -579,6 +582,11 @@ public void Shavit_OnStyleChanged(int client, int oldstyle, int newstyle, int tr
 			Shavit_PrintToChat(client, "%T", "MiscSegmentedCommand", client, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
 		}
 	}
+
+	if (Shavit_GetStyleSettingBool(oldstyle, "kzcheckpoints") && !bKzcheckpoints)
+	{
+		ResetCheckpoints(client);
+	}
 }
 
 public Action Shavit_OnStart(int client)
@@ -589,6 +597,7 @@ public Action Shavit_OnStart(int client)
 	if(Shavit_GetStyleSettingBool(gI_Style[client], "kzcheckpoints"))
 	{
 		ResetCheckpoints(client);
+
 		UpdateKZStyle(client, TimerAction_OnStart);
 	}
 
@@ -716,6 +725,7 @@ void PersistData(int client, bool disconnected)
 		aData.iCurrentCheckpoint = gI_CurrentCheckpoint[client] > gA_Checkpoints[client].Length ? gA_Checkpoints[client].Length : gI_CurrentCheckpoint[client];
 		aData.aCheckpoints = gA_Checkpoints[client];
 		gA_Checkpoints[client] = null;
+		aData.undoCheckpoint = gA_UndoCheckpoints[client];
 
 		if (gB_ReplayRecorder && aData.cpcache.aFrames == null)
 		{
@@ -749,6 +759,7 @@ void DeletePersistentData(int index, persistent_data_t data)
 {
 	gA_PersistentData.Erase(index);
 	DeleteCheckpointCache(data.cpcache);
+	DeleteCheckpointCache(data.undoCheckpoint);
 	DeleteCheckpointCacheList(data.aCheckpoints);
 	delete data.aCheckpoints;
 }
@@ -787,6 +798,7 @@ void LoadPersistentData(int serial)
 			delete gA_Checkpoints[client];
 			gI_CurrentCheckpoint[client] = aData.iCurrentCheckpoint;
 			gA_Checkpoints[client] = aData.aCheckpoints;
+			gA_UndoCheckpoints[client] = aData.undoCheckpoint;
 			aData.aCheckpoints = null;
 
 			if (gA_Checkpoints[client].Length > 0)
@@ -835,6 +847,7 @@ void ResetCheckpoints(int client)
 {
 	gI_CurrentCheckpoint[client] = 0;
 	DeleteCheckpointCacheList(gA_Checkpoints[client], client);
+	DeleteCheckpointCache(gA_UndoCheckpoints[client]);
 }
 
 bool ShouldReopenCheckpointMenu(int client)
@@ -922,6 +935,25 @@ public Action Command_Tele(int client, int args)
 	}
 
 	TeleportToCheckpoint(client, index, true, client);
+
+	return Plugin_Handled;
+}
+
+public Action Command_UndoCheckpoint(int client, int args)
+{
+	if (client == 0)
+	{
+		ReplyToCommand(client, "This command may be only performed in-game.");
+		return Plugin_Handled;
+	}
+
+	if (!gCV_Checkpoints.BoolValue)
+	{
+		Shavit_PrintToChat(client, "%T", "FeatureDisabled", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+		return Plugin_Handled;
+	}
+
+	TeleportToCheckpoint(client, -2, true);
 
 	return Plugin_Handled;
 }
@@ -1074,12 +1106,12 @@ public void OpenCPMenu(int client)
 
 	if (gA_Checkpoints[iUsingOwner].Length > 0)
 	{
-		FormatEx(sDisplay, 64, "%T", "MiscCheckpointTeleport", client, gI_CurrentCheckpoint[client]);
+		FormatEx(sDisplay, 64, "%T", "MiscCheckpointTeleport", client, bKzcheckpoints ? gI_TimesTeleported[client] : gI_CurrentCheckpoint[client]);
 		menu.AddItem("tele", sDisplay, ITEMDRAW_DEFAULT);
 	}
 	else
 	{
-		FormatEx(sDisplay, 64, "%T", "MiscCheckpointTeleport", client, 1);
+		FormatEx(sDisplay, 64, "%T", "MiscCheckpointTeleport", client, view_as<int>(!bKzcheckpoints));
 		menu.AddItem("tele", sDisplay, ITEMDRAW_DISABLED);
 	}
 
@@ -1090,10 +1122,16 @@ public void OpenCPMenu(int client)
 	menu.AddItem("next", sDisplay, (gI_CurrentCheckpoint[client] < gA_Checkpoints[iUsingOwner].Length) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 
 
-	if((Shavit_CanPause(client) & CPR_ByConVar) == 0 && bKzcheckpoints)
+	if(bKzcheckpoints)
 	{
-		FormatEx(sDisplay, 64, "%T", "MiscCheckpointPause", client);
-		menu.AddItem("pause", sDisplay);
+		FormatEx(sDisplay, 64, "%T", "MiscCheckpointUndo", client);
+		menu.AddItem("undo", sDisplay, gI_TimesTeleported[client] == 0 ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+
+		if((Shavit_CanPause(client) & CPR_ByConVar) == 0)
+		{
+			FormatEx(sDisplay, 64, "%T", "MiscCheckpointPause", client);
+			menu.AddItem("pause", sDisplay);
+		}
 	}
 
 	// apparently this is the fix
@@ -1189,6 +1227,8 @@ public int MenuHandler_Checkpoints(Menu menu, MenuAction action, int param1, int
 		Action result = Plugin_Continue;
 		Call_Finish(result);
 
+		bool bKzcheckpoints = Shavit_GetStyleSettingBool(gI_Style[param1], "kzcheckpoints");
+
 		if (result == Plugin_Stop)
 		{
 			gB_InCheckpointMenu[param1] = false;
@@ -1211,15 +1251,29 @@ public int MenuHandler_Checkpoints(Menu menu, MenuAction action, int param1, int
 		{
 			if (gI_CurrentCheckpoint[param1] > 1)
 			{
-				gI_CurrentCheckpoint[param1]--;
+				iCurrent = --gI_CurrentCheckpoint[param1];
+
+				if (bKzcheckpoints)
+				{
+					TeleportToCheckpoint(param1, iCurrent, true, param1);
+				}
 			}
 		}
 		else if(StrEqual(sInfo, "next"))
 		{
 			if (gI_CurrentCheckpoint[param1] < gA_Checkpoints[iUsingOwner].Length)
 			{
-				gI_CurrentCheckpoint[param1]++;
+				iCurrent = ++gI_CurrentCheckpoint[param1];
+
+				if (bKzcheckpoints)
+				{
+					TeleportToCheckpoint(param1, iCurrent, true, param1);
+				}
 			}
+		}
+		else if(StrEqual(sInfo, "undo"))
+		{
+			TeleportToCheckpoint(param1, -2, true);
 		}
 		else if(StrEqual(sInfo, "pause"))
 		{
@@ -1727,9 +1781,9 @@ public void SaveCheckpointCache(int saver, int target, cp_cache_t cpcache, int i
 	Call_Finish();
 }
 
-void TeleportToCheckpoint(int client, int index, bool suppressMessage, int target=0)
+void TeleportToCheckpoint(int client, int index, bool suppressMessage, int target = 0)
 {
-	if(index < 1 || index > gCV_MaxCP.IntValue || (!gCV_Checkpoints.BoolValue && !CanSegment(client)))
+	if((index < 1 && index != -2) || index > gCV_MaxCP.IntValue || (!gCV_Checkpoints.BoolValue && !CanSegment(client)))
 	{
 		return;
 	}
@@ -1741,6 +1795,23 @@ void TeleportToCheckpoint(int client, int index, bool suppressMessage, int targe
 		return;
 	}
 
+	if(index == -2)
+	{
+		if(gI_TimesTeleported[client] <= 0)
+		{
+			Shavit_PrintToChat(client, "%T", "MiscCheckpointUndoWithNoTP", client);
+
+			return;
+		}
+
+		if(!(gA_UndoCheckpoints[client].iFlags & FL_ONGROUND))
+		{
+			Shavit_PrintToChat(client, "%T", "MiscCheckpointUndoOnAir", client);
+
+			return;
+		}
+	}
+
 	target = target ? target : client;
 
 	if (index > gA_Checkpoints[target].Length)
@@ -1750,13 +1821,17 @@ void TeleportToCheckpoint(int client, int index, bool suppressMessage, int targe
 	}
 
 	cp_cache_t cpcache;
-	gA_Checkpoints[target].GetArray(index - 1, cpcache, sizeof(cp_cache_t));
 
-	if(Shavit_GetStyleSettingInt(gI_Style[client], "kzcheckpoints") != Shavit_GetStyleSettingInt(cpcache.aSnapshot.bsStyle, "kzcheckpoints"))
+	if(index != -2)
 	{
-		Shavit_PrintToChat(client, "%T", "CommandTeleCPInvalid", client);
+		gA_Checkpoints[target].GetArray(index - 1, cpcache, sizeof(cp_cache_t));
 
-		return;
+		if(Shavit_GetStyleSettingInt(gI_Style[client], "kzcheckpoints") != Shavit_GetStyleSettingInt(cpcache.aSnapshot.bsStyle, "kzcheckpoints"))
+		{
+			Shavit_PrintToChat(client, "%T", "CommandTeleCPInvalid", client);
+
+			return;
+		}
 	}
 
 	if(!IsPlayerAlive(client))
@@ -1787,7 +1862,7 @@ void TeleportToCheckpoint(int client, int index, bool suppressMessage, int targe
 
 	bool bKzcheckpoints = Shavit_GetStyleSettingBool(gI_Style[client], "kzcheckpoints");
 
-	if (!LoadCheckpointCache(client, cpcache, index, bKzcheckpoints))
+	if (!LoadCheckpointCache(client, index == -2 ? gA_UndoCheckpoints[client] : cpcache, index, bKzcheckpoints))
 	{
 		return;
 	}
@@ -1811,7 +1886,7 @@ void TeleportToCheckpoint(int client, int index, bool suppressMessage, int targe
 	}
 }
 
-// index = -1 when persistent data. index = 0 when Shavit_LoadCheckpointCache() usually. index > 0 when "actually a checkpoint"
+// index = -2 when undo checkpoint, index = -1 when persistent data. index = 0 when Shavit_LoadCheckpointCache() usually. index > 0 when "actually a checkpoint"
 // 'public' here because of handle error for other plugins when using handles that contains in cpcache
 public bool LoadCheckpointCache(int client, cp_cache_t cpcache, int index, bool force)
 {
@@ -1822,6 +1897,14 @@ public bool LoadCheckpointCache(int client, cp_cache_t cpcache, int index, bool 
 	}
 
 	bool isPersistentData = (index == -1);
+	bool bKzcheckpoints = Shavit_GetStyleSettingBool(gI_Style[client], "kzcheckpoints");
+
+	cp_cache_t undoCheckpoint;
+
+	if(!isPersistentData && bKzcheckpoints)
+	{
+		SaveCheckpointCache(client, client, undoCheckpoint, -2, INVALID_HANDLE);
+	}
 
 	SetEntityMoveType(client, cpcache.iMoveType);
 	SetEntityFlags(client, cpcache.iFlags);
@@ -1844,9 +1927,11 @@ public bool LoadCheckpointCache(int client, cp_cache_t cpcache, int index, bool 
 	SetEntPropFloat(client, Prop_Send, "m_flDucktime", cpcache.fDucktime);
 
 	// this is basically the same as normal checkpoints except much less data is used
-	if(!isPersistentData && Shavit_GetStyleSettingInt(gI_Style[client], "kzcheckpoints"))
+	if(!isPersistentData && bKzcheckpoints)
 	{
 		TeleportEntity(client, cpcache.fPosition, cpcache.fAngles, view_as<float>({ 0.0, 0.0, 0.0 }));
+
+		gA_UndoCheckpoints[client] = undoCheckpoint;
 
 		Call_StartForward(gH_Forwards_OnCheckpointCacheLoaded);
 		Call_PushCell(client);

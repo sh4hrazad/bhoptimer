@@ -103,6 +103,14 @@
 	{
 		"en"		"The checkpoint's owner is invalid or has disconnected."
 	}
+	"MiscCheckpointUndoWithNoTP"
+	{
+		"en"		"You can't undo teleporting because you haven't teleported to a checkpoint."
+	}
+	"MiscCheckpointUndoOnAir"
+	{
+		"en"		"You can't undo teleporting because you were on air before teleporting."
+	}
 	"MiscSegmentedCommand"
 	{
 		"#format"	"{1:s},{2:s}"
@@ -180,6 +188,10 @@
 	"MiscCheckpointNext"
 	{
 		"en"		"Next"
+	}
+	"MiscCheckpointUndo"
+	{
+		"en"		"Undo"
 	}
 	"MiscCheckpointUseOthers"
 	{

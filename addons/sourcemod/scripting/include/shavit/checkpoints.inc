@@ -277,7 +277,7 @@ native bool Shavit_HasSavestate(int client);
  *
  * @param client                    Client index
  * @param cache                     Input cp_cache_t
- * @param index                     -1 if you want the cp_cache_t to be loaded as "persistent data". 0 if not. greater-than-zero if you know what you're doing and intentionally want to spoof the cp_cache_t as a checkpoint index for some reason... I recommend looking at shavit-checkpoints.sp to see how "index" and "isPersistentData" are used to see what kind of difference there is.
+ * @param index                     -2 if you want the cp_cache_t to be loaded as "undo checkpoint", -1 if you want the cp_cache_t to be loaded as "persistent data". 0 if others. greater-than-zero if you know what you're doing and intentionally want to spoof the cp_cache_t as a checkpoint index for some reason... I recommend looking at shavit-checkpoints.sp to see how "index" and "isPersistentData" are used to see what kind of difference there is.
  * @param size                      sizeof(cp_cache_t) to mostly ensure the calling plugin has a matching cp_cache_t.
  * @param force                     Forcibly load the cp_cache_t without checking the style access for a player.
  *
@@ -291,7 +291,7 @@ native bool Shavit_LoadCheckpointCache(int client, any[] cache, int index, int s
  * @param saver                     The client saving the checkpoint.
  * @param target                    The target the checkpoint cache is being saved from.
  * @param cache                     Output cp_cache_t
- * @param index                     -1 if you want the cp_cache_t to be saved as "persistent data". 0 if not. greater-than-zero if you what you're doing and intentionally want to spoof the cp_cache_t creation as a checkpoint index for some reason... I recommend looking at shavit-checkpoints.sp to see how "index" and "isPersistentData" are used to see what kind of difference there is.
+ * @param index                     -2 if you want the cp_cache_t to be saved as "undo checkpoint", -1 if you want the cp_cache_t to be saved as "persistent data". 0 if not. greater-than-zero if you what you're doing and intentionally want to spoof the cp_cache_t creation as a checkpoint index for some reason... I recommend looking at shavit-checkpoints.sp to see how "index" and "isPersistentData" are used to see what kind of difference there is.
  * @param size                      sizeof(cp_cache_t) to mostly ensure the calling plugin has a matching cp_cache_t.
  *
  * @noreturn

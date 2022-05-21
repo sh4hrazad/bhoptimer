@@ -103,6 +103,14 @@
 	{
 		"chi"		"该存点拥有者已下线或不存在."
 	}
+	"MiscCheckpointUndoWithNoTP"
+	{
+		"chi"		"没有读点时无法撤销读点."
+	}
+	"MiscCheckpointUndoOnAir"
+	{
+		"chi"		"读点前在空中, 无法撤销读点."
+	}
 	"MiscSegmentedCommand"
 	{
 		"#format"	"{1:s},{2:s}"
@@ -180,6 +188,10 @@
 	"MiscCheckpointNext"
 	{
 		"chi"		"下一存点"
+	}
+	"MiscCheckpointUndo"
+	{
+		"chi"		"撤销读点"
 	}
 	"MiscCheckpointUseOthers"
 	{
