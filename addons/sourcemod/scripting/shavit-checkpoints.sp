@@ -192,7 +192,7 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_checkpoints", Command_Checkpoints, "Opens the checkpoints menu. Alias for sm_cpmenu.");
 	RegConsoleCmd("sm_save", Command_Save, "Saves a checkpoint.");
 	RegConsoleCmd("sm_tele", Command_Tele, "Teleports to a checkpoint. Usage: sm_tele [number]");
-	RegConsoleCmd("sm_undocp", Command_UndoCheckpoint, "Undoes the checkpoint previously teleported.");
+	RegConsoleCmd("sm_undocp", Command_UndoCheckpoint, "Undoes the checkpoint previously teleported. (kz styles feature)");
 	RegConsoleCmd("sm_prevcp", Command_PrevCheckpoint, "Selects the previous checkpoint.");
 	RegConsoleCmd("sm_nextcp", Command_NextCheckpoint, "Selects the next checkpoint.");
 	RegConsoleCmd("sm_deletecp", Command_DeleteCheckpoint, "Deletes the current checkpoint.");
@@ -947,7 +947,7 @@ public Action Command_UndoCheckpoint(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if (!gCV_Checkpoints.BoolValue)
+	if (!gCV_Checkpoints.BoolValue || !Shavit_GetStyleSettingBool(gI_Style[client], "kzcheckpoints"))
 	{
 		Shavit_PrintToChat(client, "%T", "FeatureDisabled", client, gS_ChatStrings.sWarning, gS_ChatStrings.sText);
 		return Plugin_Handled;
@@ -1111,7 +1111,7 @@ public void OpenCPMenu(int client)
 	}
 	else
 	{
-		FormatEx(sDisplay, 64, "%T", "MiscCheckpointTeleport", client, view_as<int>(!bKzcheckpoints));
+		FormatEx(sDisplay, 64, "%T", "MiscCheckpointTeleport", client, (bKzcheckpoints && Shavit_GetTimerStatus(client) == Timer_Running) ? 0 : 1);
 		menu.AddItem("tele", sDisplay, ITEMDRAW_DISABLED);
 	}
 

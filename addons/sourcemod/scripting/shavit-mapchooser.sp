@@ -705,7 +705,7 @@ void InitiateMapVote(MapChange when)
 			int tier = 0;
 			tiersMap.GetValue(mapdisplay, tier);
 
-			Format(mapdisplay, sizeof(mapdisplay), "[T%i] %s", tier, mapdisplay);
+			Format(mapdisplay, sizeof(mapdisplay), "T%d | %s", tier, mapdisplay);
 		}
 
 		mapsAdded += 1;
@@ -1525,7 +1525,7 @@ void CreateNominateMenu()
 				continue;
 			}
 
-			Format(mapdisplay, sizeof(mapdisplay), "%s | T%d", mapdisplay, tier);
+			Format(mapdisplay, sizeof(mapdisplay), "T%d | %s", tier, mapdisplay);
 		}
 
 		g_hNominateMenu.AddItem(mapname, mapdisplay, style);
@@ -2054,7 +2054,7 @@ public Action BaseCommands_Command_Map_Menu(int client, int args)
 			{
 				int tier = 0;
 				tiersMap.GetValue(mapdisplay, tier);
-				Format(mapdisplay, sizeof(mapdisplay), "%s | T%i", mapdisplay, tier);
+				Format(mapdisplay, sizeof(mapdisplay), "T%d | %s", tier, mapdisplay);
 			}
 
 			menu.AddItem(entry, mapdisplay);
