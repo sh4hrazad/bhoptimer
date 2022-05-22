@@ -270,10 +270,8 @@ void LoadDHooks()
 #endif
 
 	delete hGameData;
-
+	hGameData = LoadGameConfigFile("sdktools.games");
 	int iOffset;
-
-	hGameData = LoadGameConfigFile("sdktools.games/game.cstrike");
 
 	if ((iOffset = GameConfGetOffset(hGameData, "CommitSuicide")) == -1)
 	{

@@ -237,6 +237,10 @@
 	{
 		"chi"        "边缘自动起跳"
 	}
+	"AutogainBasicStrafer"
+	{
+		"en"        "Autogain 仅基本加速"
+	}
 	"AutoPrestrafe"
 	{
 		"chi"        "自动起步加速"
@@ -251,15 +255,15 @@
 	}
 	"Autostrafer_autogain"
 	{
-		"chi"        "AutoGain (无明显抖动)"
+		"chi"        "Autogain (无明显抖动)"
 	}
 	"Autostrafer_autogain_nsl"
 	{
-		"chi"        "AutoGain (无速度丢失, 无明显抖动)"
+		"chi"        "Autogain (无速度丢失, 无明显抖动)"
 	}
 	"Autostrafer_basic"
 	{
-		"chi"		"Opti"
+		"chi"		"基本"
 	}
 	"TASEnabled"
 	{
