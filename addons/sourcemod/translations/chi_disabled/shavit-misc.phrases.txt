@@ -255,11 +255,11 @@
 	}
 	"Autostrafer_autogain"
 	{
-		"chi"        "Autogain (无明显抖动)"
+		"chi"        "Velocity/autogain (oblivious)"
 	}
 	"Autostrafer_autogain_nsl"
 	{
-		"chi"        "Autogain (无速度丢失, 无明显抖动)"
+		"chi"        "Velocity/autogain (无速度丢失) (oblivious)"
 	}
 	"Autostrafer_basic"
 	{
