@@ -1901,6 +1901,7 @@ public bool LoadCheckpointCache(int client, cp_cache_t cpcache, int index, bool 
 
 	if(!isPersistentData && bKzcheckpoints)
 	{
+		DeleteCheckpointCache(gA_UndoCheckpoints[client]);
 		SaveCheckpointCache(client, client, undoCheckpoint, -2, INVALID_HANDLE);
 	}
 
