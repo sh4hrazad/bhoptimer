@@ -4,7 +4,12 @@
 	"StatsMenuFailure"
 	{
 		"#format"	"{1:s},{2:s}"
-		"chi"		"{1}错误: {2}无法打开统计菜单."
+		"chi"		"{1}!!! {2}无法打开统计菜单."
+	}
+	"StatsMenuUnknownPlayer"
+	{
+		"#format"   "{1:s},{2:s},{3:s},{4:d}"
+		"chi"        "{1}!!! {2}未知玩家: {3}[U:1:{4}]"
 	}
 	// ---------- Map Completions ---------- //
 	"SelectTrack"

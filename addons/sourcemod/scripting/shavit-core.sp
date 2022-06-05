@@ -1639,7 +1639,7 @@ public void Player_Death(Event event, const char[] name, bool dontBroadcast)
 
 public int Native_GetDatabase(Handle handler, int numParams)
 {
-	return view_as<int>(CloneHandle(gH_SQL, handler));
+	return gH_SQL ? view_as<int>(CloneHandle(gH_SQL, handler)) : 0;
 }
 
 public int Native_GetClientTime(Handle handler, int numParams)
@@ -2422,7 +2422,7 @@ void StartTimer(int client, int track)
 			// TODO: Look into when this should be reset (since resetting it here disables timescale while in startzone).
 			//gA_Timers[client].fNextFrameTime = 0.0;
 
-			//gA_Timers[client].fplayer_speedmod = 1.0;
+			gA_Timers[client].fplayer_speedmod = 1.0;
 			UpdateLaggedMovement(client, true);
 
 			SetEntityGravity(client, GetStyleSettingFloat(gA_Timers[client].bsStyle, "gravity"));

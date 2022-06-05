@@ -270,6 +270,8 @@ public void OnPluginStart()
 
 	RegAdminCmd("sm_reloadzonesettings", Command_ReloadZoneSettings, ADMFLAG_ROOT, "Reloads the zone settings.");
 
+	RegConsoleCmd("sm_beamer", Command_Beamer, "Draw cool beams");
+
 	RegConsoleCmd("sm_stages", Command_Stages, "Opens the stage menu. Usage: sm_stages [stage #]");
 	RegConsoleCmd("sm_stage", Command_Stages, "Opens the stage menu. Usage: sm_stage [stage #]");
 	RegConsoleCmd("sm_s", Command_Stages, "Opens the stage menu. Usage: sm_s [stage #]");
@@ -1311,10 +1313,10 @@ public void Shavit_OnChatConfigLoaded()
 
 void ClearZone(int index)
 {
-	gV_MapZones[index][0] = NULL_VECTOR;
-	gV_MapZones[index][1] = NULL_VECTOR;
-	gV_Destinations[index] = NULL_VECTOR;
-	gV_ZoneCenter[index] = NULL_VECTOR;
+	gV_MapZones[index][0] = ZERO_VECTOR;
+	gV_MapZones[index][1] = ZERO_VECTOR;
+	gV_Destinations[index] = ZERO_VECTOR;
+	gV_ZoneCenter[index] = ZERO_VECTOR;
 
 	gA_ZoneCache[index].bZoneInitialized = false;
 	gA_ZoneCache[index].bPrebuilt = false;
@@ -1599,8 +1601,8 @@ public void OnClientConnected(int client)
 
 	for (int i = 0; i < TRACKS_SIZE; i++)
 	{
-		gF_ClimbButtonCache[client][i][0] = NULL_VECTOR;
-		gF_ClimbButtonCache[client][i][1] = NULL_VECTOR;
+		gF_ClimbButtonCache[client][i][0] = ZERO_VECTOR;
+		gF_ClimbButtonCache[client][i][1] = ZERO_VECTOR;
 	}
 
 	bool empty_HasSetStart[TRACKS_SIZE];
@@ -1750,7 +1752,7 @@ void SetStart(int client, int track, bool anglesonly)
 
 	if (anglesonly)
 	{
-		gF_StartPos[client][track] = NULL_VECTOR;
+		gF_StartPos[client][track] = ZERO_VECTOR;
 	}
 	else
 	{
@@ -1797,8 +1799,8 @@ public Action Command_DeleteSetStart(int client, int args)
 void DeleteSetStart(int client, int track)
 {
 	gB_HasSetStart[client][track] = false;
-	gF_StartPos[client][track] = view_as<float>({0.0, 0.0, 0.0});
-	gF_StartAng[client][track] = view_as<float>({0.0, 0.0, 0.0});
+	gF_StartPos[client][track] = ZERO_VECTOR;
+	gF_StartAng[client][track] = ZERO_VECTOR;
 
 	char query[512];
 
@@ -2036,14 +2038,13 @@ void ClearCustomSpawn(int track)
 {
 	if(track != -1)
 	{
-		gF_CustomSpawn[track] = NULL_VECTOR;
-
+		gF_CustomSpawn[track] = ZERO_VECTOR;
 		return;
 	}
 
 	for(int i = 0; i < TRACKS_SIZE; i++)
 	{
-		gF_CustomSpawn[i] = NULL_VECTOR;
+		gF_CustomSpawn[i] = ZERO_VECTOR;
 	}
 }
 
@@ -2102,6 +2103,99 @@ public Action Command_ReloadZoneSettings(int client, int args)
 	LoadZoneSettings();
 
 	ReplyToCommand(client, "Reloaded zone settings.");
+
+	return Plugin_Handled;
+}
+
+stock void RotateAroundAxis(float v[3], const float in_k[3], float theta)
+{
+	// https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula#Statement
+	// vrot = (v * cos(theta)) + ((k x v) * sin(theta)) + (k * (k . v) * (1 - cos(theta)))
+
+	float k[3];
+	k[0] = DegToRad(in_k[1]); k[1] = DegToRad(in_k[2]); k[2] = DegToRad(in_k[0]); // right-hand rule related ordering?
+	NormalizeVector(k, k);
+
+	theta = DegToRad(theta);
+	float theta_cos = Cosine(theta);
+	float theta_sin = Sine(theta);
+	float one_minus_theta_cos = 1.0 - theta_cos;
+	float kv_dot = GetVectorDotProduct(k, v);
+
+	float kv_cross[3];
+	GetVectorCrossProduct(k, v, kv_cross);
+
+	for (int i = 0; i < 3; i++)
+	{
+		v[i] = (v[i] * theta_cos)
+		     + (kv_cross[i] * theta_sin)
+		     + (k[i] * kv_dot * one_minus_theta_cos);
+	}
+}
+
+public Action Command_Beamer(int client, int args)
+{
+	static float rate_limit[MAXPLAYERS+1];
+	float now = GetEngineTime();
+
+	if (rate_limit[client] > now)
+		return Plugin_Handled;
+
+	rate_limit[client] = now + 0.2;
+
+	float startpos[3], endpos[3], direction[3];
+	GetClientEyePosition(client, startpos);
+	startpos[2] -= 3.0;
+	GetClientEyeAngles(client, direction);
+
+	float delay = 0.0;
+
+	for (int C = 20; C >= 0; --C)
+	{
+		/*
+		My code from tracegun.lua that I based this off of:
+			local ang = tr.Normal:Angle() // ( traceRes.HitPos - traceRes.StartPos ):Normalize()
+			ang:RotateAroundAxis(tr.HitNormal, 180)
+			local dir = ang:Forward()*-1
+
+			tr = util.TraceLine({start=tr.HitPos, endpos=tr.HitPos+(dir*100000), filter=players})
+		*/
+
+		TR_TraceRayFilter(startpos, direction, MASK_ALL, RayType_Infinite, TRFilter_NoPlayers, client);
+		TR_GetEndPosition(endpos);
+
+		TE_SetupBeamPoints(
+			startpos,
+			endpos,
+			gI_BeamSpriteIgnoreZ,
+			gA_ZoneSettings[Zone_Start][Track_Main].iHalo,
+			0,    // StartFrame
+			0,    // FrameRate
+			10.0, // Life
+			1.0,  // Width
+			1.0,  // EndWidth
+			0,    // FadeLength
+			0.0,  // Amplitude
+			{255, 255, 0, 192}, // Colour
+			20    // Speed
+		);
+
+		TE_SendToClient(client, delay);
+		delay += 0.11;
+
+		if (!C) break;
+
+		SubtractVectors(endpos, startpos, direction);
+		NormalizeVector(direction, direction);
+		GetVectorAngles(direction, direction);
+
+		startpos = endpos;
+
+		float hitnormal[3];
+		TR_GetPlaneNormal(INVALID_HANDLE, hitnormal);
+
+		RotateAroundAxis(direction, hitnormal, 180.0);
+	}
 
 	return Plugin_Handled;
 }
@@ -2978,10 +3072,10 @@ void Reset(int client)
 	gB_WaitingForChatInput[client] = false;
 	gI_ZoneID[client] = -1;
 
-	gV_Point1[client] = NULL_VECTOR;
-	gV_Point2[client] = NULL_VECTOR;
-	gV_Teleport[client] = NULL_VECTOR;
-	gV_WallSnap[client] = NULL_VECTOR;
+	gV_Point1[client] = ZERO_VECTOR;
+	gV_Point2[client] = ZERO_VECTOR;
+	gV_Teleport[client] = ZERO_VECTOR;
+	gV_WallSnap[client] = ZERO_VECTOR;
 }
 
 void ShowPanel(int client, int step)
@@ -3328,7 +3422,8 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 
 public bool TRFilter_NoPlayers(int entity, int mask, any data)
 {
-	return (entity != view_as<int>(data) || (entity < 1 || entity > MaxClients));
+	//return (entity != view_as<int>(data) || (entity < 1 || entity > MaxClients));
+	return !(1 <= entity <= MaxClients);
 }
 
 public int CreateZoneConfirm_Handler(Menu menu, MenuAction action, int param1, int param2)
@@ -3995,7 +4090,7 @@ public Action Timer_Draw(Handle Timer, any data)
 
 		if(gI_ZoneType[client] == Zone_Teleport && !EmptyVector(gV_Teleport[client]))
 		{
-			TE_SetupEnergySplash(gV_Teleport[client], NULL_VECTOR, false);
+			TE_SetupEnergySplash(gV_Teleport[client], ZERO_VECTOR, false);
 			TE_SendToAll(0.0);
 		}
 	}
