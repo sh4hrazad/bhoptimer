@@ -21,10 +21,14 @@ jobs:
           version: '1.10.x'
 
       - name: Setup Dependency for Compiling shavit-zones-http.sp
-      - run: |
+        run: |
           git clone https://github.com/clugg/sm-json.git;
           cp -r sm-json/addons $GITHUB_WORKSPACE;
           rm -rf ./sm-json;
+
+          git clone https://github.com/ErikMinekus/sm-ripext.git;
+          cp -r sm-ripext/pawn/scripting $GITHUB_WORKSPACE/addons/sourcemod;
+          rm -rf ./sm-ripext;
 
       - name: Compile
         run: |
