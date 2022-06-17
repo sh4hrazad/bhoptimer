@@ -17,6 +17,13 @@
 				"windows"   "@CreateInterface"
 				"linux"     "@CreateInterface"
 			}
+
+			"CreateInterface_Engine"
+			{
+				"library"   "engine"
+				"windows"   "@CreateInterface"
+				"linux"     "@CreateInterface"
+			}
 		}
 
 		"Offsets"
@@ -39,6 +46,12 @@
 	{
 		"Offsets"
 		{
+			// https://asherkin.github.io/vtable/
+			"CBaseTrigger::PassesTriggerFilters"
+			{
+				"windows"   "197"
+				"linux"     "198"
+			}
 			// https://asherkin.github.io/vtable/
 			"CCSPlayer::GetPlayerMaxSpeed"
 			{
@@ -96,6 +109,18 @@
 				"windows"   "5724"
 				"linux"     "5744" // +20 wow that's easy!
 			}
+			// TODO
+			"GetClusterForOrigin"
+			{
+				"windows"   "11"
+				"linux"     "11"
+			}
+			// TODO
+			"GetArea"
+			{
+				"windows"   "64"
+				"linux"     "64"
+			}
 		}
 
 		"Signatures"
@@ -145,6 +170,12 @@
 	{
 		"Offsets"
 		{
+			// https://asherkin.github.io/vtable/
+			"CBaseTrigger::PassesTriggerFilters"
+			{
+				"windows"   "201"
+				"linux"     "202"
+			}
 			// https://asherkin.github.io/vtable/
 			"CGameRules::IsSpawnPointValid"
 			{

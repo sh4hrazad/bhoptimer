@@ -1495,6 +1495,20 @@ void UpdateMainHUD(int client)
 	huddata.iPreviousSpeed = gI_PreviousSpeed[client];
 	huddata.iMapTier = gB_Rankings ? Shavit_GetMapTier() : 0;
 
+	if (IsValidClient(target))
+	{
+		huddata.fAngleDiff = gF_AngleDiff[target];
+		huddata.iButtons = gI_Buttons[target];
+		huddata.iScrolls = gI_ScrollCount[target];
+		huddata.iScrollsPrev = gI_LastScrollCount[target];
+	}
+	else
+	{
+		huddata.iButtons = Shavit_GetReplayButtons(target, huddata.fAngleDiff);
+		huddata.iScrolls = -1;
+		huddata.iScrollsPrev = -1;
+	}
+
 	huddata.fClosestReplayTime = -1.0;
 	huddata.fClosestVelocityDifference = 0.0;
 	huddata.fClosestReplayLength = 0.0;
@@ -1606,7 +1620,8 @@ void UpdateCenterKeys(int client)
 		style = 0;
 	}
 
-	char sCenterText[254];
+	char sCenterText[512];
+	int usable_size = (gEV_Type == Engine_CSGO) ? 512 : 254;
 
 	Action preresult = Plugin_Continue;
 	Call_StartForward(gH_Forwards_PreOnDrawKeysHUD);
@@ -1615,8 +1630,8 @@ void UpdateCenterKeys(int client)
 	Call_PushCell(style);
 	Call_PushCell(buttons);
 	Call_PushCell(fAngleDiff);
-	Call_PushStringEx(sCenterText, sizeof(sCenterText), SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
-	Call_PushCell(sizeof(sCenterText));
+	Call_PushStringEx(sCenterText, usable_size, SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_PushCell(usable_size);
 	Call_PushCell(scrolls);
 	Call_PushCell(prevscrolls);
 	Call_PushCell(gB_AlternateCenterKeys[client]);
@@ -1629,7 +1644,7 @@ void UpdateCenterKeys(int client)
 
 	if (preresult == Plugin_Continue)
 	{
-		FillCenterKeys(client, target, style, buttons, fAngleDiff, sCenterText, sizeof(sCenterText));
+		FillCenterKeys(client, target, style, buttons, fAngleDiff, sCenterText, usable_size);
 	}
 
 	UnreliablePrintCenterText(client, sCenterText);

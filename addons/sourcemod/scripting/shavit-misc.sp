@@ -245,7 +245,7 @@ public void OnPluginStart()
 	LoadTranslations("shavit-core.phrases");
 
 	// advertisements
-	gA_Advertisements = new ArrayList(300);
+	gA_Advertisements = new ArrayList(ByteCountToCells(300));
 	hostname = FindConVar("hostname");
 	hostport = FindConVar("hostport");
 	RegConsoleCmd("sm_toggleadverts", Command_ToggleAdverts, "Toggles visibility of advertisements");
@@ -430,7 +430,7 @@ void LoadMapFixes()
 			kv.GetSectionName(key, sizeof(key));
 			kv.GetString(NULL_STRING, value, sizeof(value));
 
-			PrintToServer(">>>> mapfixes: %s \"%s\"", key, value);
+			PrintToServer(">>>> shavit-misc/mapfixes: %s \"%s\"", key, value);
 
 			ConVar cvar = FindConVar(key);
 
@@ -570,6 +570,8 @@ bool LoadAdvertisementsConfig()
 	while(kv.GotoNextKey(false));
 
 	delete kv;
+
+	gI_AdvertisementsCycle = gA_Advertisements.Length ? (gI_AdvertisementsCycle % gA_Advertisements.Length) : 0;
 
 	return true;
 }
@@ -943,6 +945,11 @@ void FillAdvertisementBuffer(char[] buf, int buflen, int index)
 
 public Action Timer_Advertisement(Handle timer)
 {
+	if (!gA_Advertisements.Length)
+	{
+		return Plugin_Continue;
+	}
+
 	char sTempMessage[256];
 	FillAdvertisementBuffer(sTempMessage, sizeof(sTempMessage), gI_AdvertisementsCycle);
 

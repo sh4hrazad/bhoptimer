@@ -24,15 +24,37 @@
 		"#format"	"{1:s},{2:s}"
 		"chi"		"你必须{1}活着{2}才能设置自定义起始区域."
 	}
-	"SetStartNotInStartZone"
-	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"chi"		"你必须在{3}起点{4}内才能设置自定义起始区域."
-	}
 	"DeleteSetStart"
 	{
 		"#format"	"{1:s},{2:s}"
 		"chi"		"自定义起始区域已{1}删除{2}."
+	}
+	// ---------- ZoneHook ---------- //
+	"ZoneHook_Crosshair"
+	{
+		"chi"        "使用准星选定实体"
+	}
+	"ZoneHook_Tpto"
+	{
+		"chi"        "中止计时并传送至..."
+	}
+	"ZoneHook_Draw"
+	{
+		"chi"        "实体周围绘制描边"
+	}
+	"ZoneHook_Zonetype"
+	{
+		"#format"   "{1:s}"
+		"chi"        "区域类型: {1}"
+	}
+	"ZoneHook_Hooktype"
+	{
+		"#format"   "{1:s},{2:s}"
+		"chi"        "钩子类型: {1} ({2})"
+	}
+	"ZoneHook_Confirm"
+	{
+		"chi"        "确认"
 	}
 	// ---------- Commands ---------- //
 	"StageCommandAlive"
@@ -56,6 +78,11 @@
 	{
 		"#format"	"{1:s},{2:s}"
 		"chi"		"你必须{1}活着{2}才能设置区域."
+	}
+	"ZonesNotSQL"
+	{
+		"#format"   "{1:s},{2:s}"
+		"chi"        "你{1}不能{2}添加, 删除或修改非数据库中的区域."
 	}
 	"ZoneCustomSpawnMenuTitle"
 	{
@@ -294,6 +321,15 @@
 	{
 		"chi"		"编辑区域"
 	}
+	"HookZone"
+	{
+		"chi"        "链接至触发块, 传送块或按钮."
+	}
+	"HookZone2"
+	{
+		"#format"   "{1:s}"
+		"chi"        "钩子 {1}"
+	}
 	"ZoneEditTitle"
 	{
 		"chi"		"选择要编辑的区域:"
@@ -441,7 +477,7 @@
 	}
 	"Zone_Freestyle"
 	{
-		"chi"		"无限制/标记区域"
+		"chi"		"无按键限制/标记区域"
 	}
 	"Zone_CustomSpeedLimit"
 	{

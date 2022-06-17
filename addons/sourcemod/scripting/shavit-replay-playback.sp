@@ -143,6 +143,7 @@ float gF_VelocityDifference2D[MAXPLAYERS+1];
 float gF_VelocityDifference3D[MAXPLAYERS+1];
 
 bool gB_Late = false;
+bool gB_AdminMenu = false;
 
 // forwards
 Handle gH_OnReplayStart = null;
@@ -217,7 +218,7 @@ TopMenu gH_AdminMenu = null;
 TopMenuObject gH_TimerCommands = INVALID_TOPMENUOBJECT;
 
 // database related things
-Database2 gH_SQL = null;
+Database gH_SQL = null;
 char gS_MySQLPrefix[32];
 
 bool gB_ClosestPos;
@@ -303,12 +304,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnAllPluginsLoaded()
 {
-	// admin menu
-	if(LibraryExists("adminmenu") && ((gH_AdminMenu = GetAdminTopMenu()) != null))
-	{
-		OnAdminMenuReady(gH_AdminMenu);
-	}
-
 	if (LibraryExists("closestpos"))
 	{
 		gB_ClosestPos = true;
@@ -422,16 +417,23 @@ public void OnPluginStart()
 
 	// database
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
-	gH_SQL = GetTimerDatabaseHandle2();
+	gH_SQL = GetTimerDatabaseHandle();
 
 	LoadDHooks();
 
 	CreateAllNavFiles();
 
+	gB_AdminMenu = LibraryExists("adminmenu");
+
 	if(gB_Late)
 	{
 		Shavit_OnStyleConfigLoaded(Shavit_GetStyleCount());
 		Shavit_OnChatConfigLoaded();
+
+		if (gB_AdminMenu && (gH_AdminMenu = GetAdminTopMenu()) != null)
+		{
+			OnAdminMenuReady(gH_AdminMenu);
+		}
 	}
 
 	for(int i = 1; i < sizeof(gA_BotInfo); i++)
@@ -576,10 +578,7 @@ public void OnLibraryAdded(const char[] name)
 {
 	if (strcmp(name, "adminmenu") == 0)
 	{
-		if ((gH_AdminMenu = GetAdminTopMenu()) != null)
-		{
-			OnAdminMenuReady(gH_AdminMenu);
-		}
+		gB_AdminMenu = true;
 	}
 	else if (strcmp(name, "closestpos") == 0)
 	{
@@ -591,6 +590,7 @@ public void OnLibraryRemoved(const char[] name)
 {
 	if (strcmp(name, "adminmenu") == 0)
 	{
+		gB_AdminMenu = false;
 		gH_AdminMenu = null;
 		gH_TimerCommands = INVALID_TOPMENUOBJECT;
 	}
@@ -630,47 +630,12 @@ public void OnForcedConVarChanged(ConVar convar, const char[] oldValue, const ch
 	}
 }
 
-public void OnAdminMenuCreated(Handle topmenu)
+public void OnAdminMenuReady(Handle topmenu)
 {
-	if(gH_AdminMenu == null || (topmenu == gH_AdminMenu && gH_TimerCommands != INVALID_TOPMENUOBJECT))
-	{
-		return;
-	}
+	gH_AdminMenu = TopMenu.FromHandle(topmenu);
 
 	if ((gH_TimerCommands = gH_AdminMenu.FindCategory("Timer Commands")) != INVALID_TOPMENUOBJECT)
 	{
-		return;
-	}
-
-	gH_TimerCommands = gH_AdminMenu.AddCategory("Timer Commands", CategoryHandler, "shavit_admin", ADMFLAG_RCON);
-}
-
-public void CategoryHandler(Handle topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
-{
-	if(action == TopMenuAction_DisplayTitle)
-	{
-		FormatEx(buffer, maxlength, "%T:", "TimerCommands", param);
-	}
-	else if(action == TopMenuAction_DisplayOption)
-	{
-		FormatEx(buffer, maxlength, "%T", "TimerCommands", param);
-	}
-}
-
-public void OnAdminMenuReady(Handle topmenu)
-{
-	if((gH_AdminMenu = GetAdminTopMenu()) != null)
-	{
-		if(gH_TimerCommands == INVALID_TOPMENUOBJECT)
-		{
-			gH_TimerCommands = gH_AdminMenu.FindCategory("Timer Commands");
-
-			if(gH_TimerCommands == INVALID_TOPMENUOBJECT)
-			{
-				OnAdminMenuCreated(topmenu);
-			}
-		}
-
 		gH_AdminMenu.AddItem("sm_deletereplay", AdminMenu_DeleteReplay, gH_TimerCommands, "sm_deletereplay", ADMFLAG_RCON);
 	}
 }
@@ -774,7 +739,7 @@ bool LoadReplay(frame_cache_t cache, int style, int track, const char[] path, co
 		hPack.WriteCell(style);
 		hPack.WriteCell(track);
 
-		gH_SQL.Query2(SQL_GetUserName_Callback, sQuery, hPack, DBPrio_High);
+		QueryLog(gH_SQL, SQL_GetUserName_Callback, sQuery, hPack, DBPrio_High);
 	}
 
 	return ret;
@@ -1089,7 +1054,7 @@ public int Native_StartReplayFromFile(Handle handler, int numParams)
 	{
 		char sQuery[192];
 		FormatEx(sQuery, sizeof(sQuery), "SELECT name FROM %susers WHERE auth = %d;", gS_MySQLPrefix, cache.iSteamID);
-		gH_SQL.Query2(SQL_GetUserName_Botref_Callback, sQuery, EntIndexToEntRef(bot), DBPrio_High);
+		QueryLog(gH_SQL, SQL_GetUserName_Botref_Callback, sQuery, EntIndexToEntRef(bot), DBPrio_High);
 	}
 
 	return bot;
@@ -1372,7 +1337,7 @@ public int Native_GetLoopingBotByName(Handle plugin, int numParams)
 		return -1;
 	}
 
-	for (int i = 1; i <= MAXPLAYERS; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (gA_BotInfo[i].iType == Replay_Looping && gA_BotInfo[i].iLoopingConfig == configid)
 		{
@@ -2721,7 +2686,7 @@ public Action Command_DeleteReplay(int client, int args)
 		menu.AddItem("-1", sMenuItem);
 	}
 
-	menu.ExitButton = true;
+	menu.ExitBackButton = true;
 	menu.Display(client, MENU_TIME_FOREVER);
 
 	return Plugin_Handled;
@@ -2768,6 +2733,10 @@ public int DeleteReplay_Callback(Menu menu, MenuAction action, int param1, int p
 
 		submenu.ExitButton = true;
 		submenu.Display(param1, MENU_TIME_FOREVER);
+	}
+	else if (action == MenuAction_Cancel && param2 == MenuCancel_ExitBack)
+	{
+		gH_AdminMenu.DisplayCategory(gH_TimerCommands, param1);
 	}
 	else if(action == MenuAction_End)
 	{
