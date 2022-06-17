@@ -421,6 +421,7 @@ native int Shavit_GetStageCount(int track);
  */
 native int sFork_GetBonusCount();
 
+/*
  * Removes all zones from memory and then reloads zones from the database & any plugins.
  * @noreturn
  */

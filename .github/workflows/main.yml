@@ -22,5 +22,13 @@ jobs:
 
       - name: Compile
         run: |
-          cd $GITHUB_WORKSPACE/addons/sourcemod/scripting
-          for file in s*.sp; do spcomp -i./include $file; done;
+          cd $GITHUB_WORKSPACE/addons/sourcemod/scripting;
+          for file in sfork-.sp; do spcomp -i./include $file; done;
+          for file in shavit-c*.sp; do spcomp -i./include $file; done;
+          for file in shavit-h*.sp; do spcomp -i./include $file; done;
+          for file in shavit-m*.sp; do spcomp -i./include $file; done;
+          for file in shavit-r*.sp; do spcomp -i./include $file; done;
+          for file in shavit-s*.sp; do spcomp -i./include $file; done;
+          for file in shavit-t*.sp; do spcomp -i./include $file; done;
+          for file in shavit-w*.sp; do spcomp -i./include $file; done;
+          spcomp -i./include shavit-zones.sp;

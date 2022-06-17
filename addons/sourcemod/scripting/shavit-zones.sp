@@ -105,9 +105,7 @@ zone_settings_t gA_ZoneSettings[ZONETYPES_SIZE][TRACKS_SIZE];
 zone_cache_t gA_ZoneCache[MAX_ZONES]; // Vectors will not be inside this array.
 int gI_MapZones = 0;
 
-// !!!
 int gI_Bonuses;
-float gV_MapZones[MAX_ZONES][2][3];
 
 float gV_MapZones_Visual[MAX_ZONES][8][3];
 float gV_ZoneCenter[MAX_ZONES][3];
@@ -1683,6 +1681,20 @@ void GetBonusCount()
 	char sQuery[256];
 	FormatEx(sQuery, 256, "SELECT track FROM mapzones WHERE map = '%s' ORDER BY track DESC LIMIT 1;", gS_Map);
 	gH_SQL.Query(SQL_GetBonusCount_Callback, sQuery, 0, DBPrio_High);
+}
+
+public void SQL_GetBonusCount_Callback(Database db, DBResultSet results, const char[] error, any data)
+{
+	if(results == null)
+	{
+		LogError("Timer (zones GetBonusCount) SQL query failed. Reason: %s", error);
+		return;
+	}
+
+	if(results.FetchRow())
+	{
+		gI_Bonuses = results.FetchInt(0);
+	}
 }
 
 public void OnClientConnected(int client)
@@ -4224,7 +4236,7 @@ void CreateEditMenu(int client, bool autostage=false)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-// ❀ Teleport to info_teleport_destination ❀
+// Teleport to info_teleport_destination
 void CreateUpdateTeleportZoneMenu(int client, int page)
 {
 	char sInfo[128];
@@ -4280,7 +4292,7 @@ public int UpdateTeleportZoneMenu_Handler(Menu menu, MenuAction action, int para
 		if (gI_ZoneID[param1] != -1)
 		{
 			// reenable original zone
-			gA_ZoneCache[gI_ZoneID[param1]].bZoneInitialized = true;
+			// gA_ZoneCache[gI_ZoneID[param1]].bZoneInitialized = true;
 		}
 
 		Reset(param1);
