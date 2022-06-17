@@ -21,7 +21,7 @@ jobs:
           version: '1.10.x'
 
       - name: Setup Dependency for Compiling shavit-zones-http.sp
-      - run: |
+        run: |
           git clone https://github.com/clugg/sm-json.git;
           cp -r sm-json/addons $GITHUB_WORKSPACE;
           rm -rf ./sm-json;
