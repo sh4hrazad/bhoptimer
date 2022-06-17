@@ -20,15 +20,13 @@ jobs:
         with:
           version: '1.10.x'
 
+      - name: Setup Dependency for Compiling shavit-zones-http.sp
+      - run: |
+          git clone https://github.com/clugg/sm-json.git;
+          cp -r sm-json/addons $GITHUB_WORKSPACE;
+          rm -rf ./sm-json;
+
       - name: Compile
         run: |
           cd $GITHUB_WORKSPACE/addons/sourcemod/scripting;
-          for file in sfork-.sp; do spcomp -i./include $file; done;
-          for file in shavit-c*.sp; do spcomp -i./include $file; done;
-          for file in shavit-h*.sp; do spcomp -i./include $file; done;
-          for file in shavit-m*.sp; do spcomp -i./include $file; done;
-          for file in shavit-r*.sp; do spcomp -i./include $file; done;
-          for file in shavit-s*.sp; do spcomp -i./include $file; done;
-          for file in shavit-t*.sp; do spcomp -i./include $file; done;
-          for file in shavit-w*.sp; do spcomp -i./include $file; done;
-          spcomp -i./include shavit-zones.sp;
+          for file in s*.sp; do spcomp -i./include $file; done;
