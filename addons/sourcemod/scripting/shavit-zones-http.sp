@@ -73,7 +73,7 @@ Convar gCV_Source = null;
 public Plugin myinfo =
 {
 	name = "[shavit] Map Zones (HTTP API)",
-	author = "rtldg, KiD Fearless",
+	author = "rtldg",
 	description = "Retrieves map zones for bhoptimer from an HTTP API.",
 	version = SHAVIT_VERSION,
 	url = "https://github.com/shavitush/bhoptimer"
@@ -172,6 +172,8 @@ void RetrieveZones(const char[] mapname)
 	if (!(request = SteamWorks_CreateHTTPRequest(k_EHTTPMethodGET, apiurl))
 	  || (apikey[0] && !SteamWorks_SetHTTPRequestHeaderValue(request, "api-key", apikey))
 	  || !SteamWorks_SetHTTPRequestHeaderValue(request, "accept", "application/json")
+	  || !(!apikey[0] || SteamWorks_SetHTTPRequestHeaderValue(request, "api-key", apikey))
+	  || !SteamWorks_SetHTTPRequestHeaderValue(request, "map", mapname)
 	  || !SteamWorks_SetHTTPRequestContextValue(request, pack)
 	  || !SteamWorks_SetHTTPRequestAbsoluteTimeoutMS(request, 4000)
 	//|| !SteamWorks_SetHTTPRequestRequiresVerifiedCertificate(request, true)

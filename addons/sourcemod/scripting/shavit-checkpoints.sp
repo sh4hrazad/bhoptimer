@@ -1691,7 +1691,7 @@ public void SaveCheckpointCache(int saver, int target, cp_cache_t cpcache, int i
 		snapshot.iTotalMeasures = 0;
 		snapshot.iGoodGains = 0;
 		snapshot.fServerTime = GetEngineTime();
-		snapshot.iSHSWCombination = -1;
+		snapshot.iKeyCombo = -1;
 		snapshot.iTimerTrack = Shavit_GetReplayBotTrack(target);
 		snapshot.fTimescale = 1.0;
 		snapshot.fplayer_speedmod = 1.0;

@@ -187,6 +187,7 @@ public SMCResult OnStyleEnterSection(SMCParser smc, const char[] name, bool opt_
 	SetStyleSettingInt  (gI_CurrentParserIndex, "block_s", 0);
 	SetStyleSettingInt  (gI_CurrentParserIndex, "block_d", 0);
 	SetStyleSettingInt  (gI_CurrentParserIndex, "block_use", 0);
+	SetStyleSettingBool (gI_CurrentParserIndex, "a_or_d_only", false);
 	SetStyleSettingInt  (gI_CurrentParserIndex, "force_hsw", 0);
 	SetStyleSettingInt  (gI_CurrentParserIndex, "block_pleft", 0);
 	SetStyleSettingInt  (gI_CurrentParserIndex, "block_pright", 0);
@@ -316,7 +317,7 @@ public SMCResult OnStyleLeaveSection(SMCParser smc)
 	}
 
 	char sPermission[64];
-	GetStyleSetting(gI_CurrentParserIndex, "name", sPermission, sizeof(sPermission));
+	GetStyleSetting(gI_CurrentParserIndex, "permission", sPermission, sizeof(sPermission));
 
 	if (StrContains(sPermission, ";") != -1)
 	{

@@ -72,6 +72,7 @@ enum struct ranking_t
 char gS_MySQLPrefix[32];
 Database gH_SQL = null;
 bool gB_HasSQLRANK = false; // whether the sql driver supports RANK()
+int gI_Driver = Driver_unknown;
 
 bool gB_Stats = false;
 bool gB_Late = false;
@@ -171,7 +172,7 @@ public void OnPluginStart()
 
 	gCV_PointsPerTier = new Convar("shavit_rankings_pointspertier", "50.0", "Base points to use for per-tier scaling.\nRead the design idea to see how it works: https://github.com/shavitush/bhoptimer/issues/465", 0, true, 1.0);
 	gCV_WeightingMultiplier = new Convar("shavit_rankings_weighting", "0.975", "Weighting multiplier. 1.0 to disable weighting.\nFormula: p[0] * this^0 + p[1] * this^1 + p[2] * this^2 + ... + p[n] * this^n\nRestart server to apply.", 0, true, 0.01, true, 1.0);
-	gCV_WeightingLimit = new Convar("shavit_rankings_weighting_limit", "0", "Limit the number of times retreived for calculating a player's weighted points to this number.\n0 = no limit\nFor reference, a weighting of 0.975 to the power of 300 is 0.00050278777 and results in pretty much nil points for any further weighted times.\nUnused when shavit_rankings_weighting is 1.0.\nYou probably won't need to change this unless you have hundreds of thousands of player times in your database.", 0, true, 0.0, false);
+	gCV_WeightingLimit = new Convar("shavit_rankings_weighting_limit", "0", "Limit the number of times retrieved for calculating a player's weighted points to this number.\n0 = no limit\nFor reference, a weighting of 0.975 to the power of 300 is 0.00050278777 and results in pretty much nil points for any further weighted times.\nUnused when shavit_rankings_weighting is 1.0.\nYou probably won't need to change this unless you have hundreds of thousands of player times in your database.", 0, true, 0.0, false);
 	gCV_LastLoginRecalculate = new Convar("shavit_rankings_llrecalc", "0", "Maximum amount of time (in minutes) since last login to recalculate points for a player.\nsm_recalcall does not respect this setting.\n0 - disabled, don't filter anyone", 0, true, 0.0);
 	gCV_MVPRankOnes_Slow = new Convar("shavit_rankings_mvprankones_slow", "1", "Uses a slower but more featureful MVP counting system.\nEnables the WR Holder ranks & counts for every style & track.\nYou probably won't need to change this unless you have hundreds of thousands of player times in your database.", 0, true, 0.0, true, 1.0);
 	gCV_MVPRankOnes = new Convar("shavit_rankings_mvprankones", "2", "Set the players' amount of MVPs to the amount of #1 times they have.\n0 - Disabled\n1 - Enabled, for all styles.\n2 - Enabled, for default style only.\n(CS:S/CS:GO only)", 0, true, 0.0, true, 2.0);
@@ -226,9 +227,9 @@ public void OnLibraryRemoved(const char[] name)
 public void Shavit_OnDatabaseLoaded()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
-	gH_SQL = Shavit_GetDatabase();
+	gH_SQL = Shavit_GetDatabase(gI_Driver);
 
-	if(!IsMySQLDatabase(gH_SQL))
+	if (gI_Driver != Driver_mysql)
 	{
 		SetFailState("MySQL is the only supported database engine for shavit-rankings.");
 	}
@@ -241,9 +242,10 @@ public void Shavit_OnDatabaseLoaded()
 		}
 	}
 
-	QueryLog(gH_SQL, SQL_Version_Callback, "SELECT VERSION();");
+	QueryLog(gH_SQL, SQL_Version_Callback,
+		gI_Driver == Driver_sqlite ? "SELECT sqlite_version();" : "SELECT VERSION();");
 
-	if (gCV_WeightingMultiplier.FloatValue == 1.0)
+	if (gI_Driver == Driver_sqlite || gCV_WeightingMultiplier.FloatValue == 1.0)
 	{
 		OnMapStart();
 		return;
@@ -727,6 +729,7 @@ public Action Command_SetTier(int client, int args)
 	Call_Finish();
 
 	Shavit_PrintToChat(client, "%T", "SetTier", client, gS_ChatStrings.sVariable2, tier, gS_ChatStrings.sText);
+	Shavit_LogMessage("%L - set tier of `%s` to %d", client, gS_Map, tier);
 
 	char sQuery[512];
 	FormatEx(sQuery, sizeof(sQuery), "REPLACE INTO %smaptiers (map, tier) VALUES ('%s', %d);", gS_MySQLPrefix, map, tier);
@@ -817,7 +820,7 @@ void FormatRecalculate(bool bUseCurrentMap, int track, int style, char[] sQuery,
 			float fWR = Shavit_GetWorldRecord(style, track);
 
 			FormatEx(sQuery, sQueryLen,
-				"UPDATE %splayertimes PT " ...
+				"UPDATE %splayertimes AS PT " ...
 				"SET PT.points = %f * (%f / PT.time) " ...
 				"WHERE PT.style = %d AND PT.track = 0 AND PT.map = '%s';",
 				gS_MySQLPrefix,
@@ -830,7 +833,7 @@ void FormatRecalculate(bool bUseCurrentMap, int track, int style, char[] sQuery,
 		else
 		{
 			FormatEx(sQuery, sQueryLen,
-				"UPDATE %splayertimes PT " ...
+				"UPDATE %splayertimes AS PT " ...
 				"INNER JOIN %swrs WR ON " ...
 				"   PT.track = WR.track AND PT.style = WR.style AND PT.map = WR.map " ...
 				"SET " ...
@@ -858,10 +861,10 @@ void FormatRecalculate(bool bUseCurrentMap, int track, int style, char[] sQuery,
 		}
 
 		FormatEx(sQuery, sQueryLen,
-			"UPDATE %splayertimes PT " ...
-			"INNER JOIN %swrs WR ON " ...
+			"UPDATE %splayertimes AS PT " ...
+			"INNER JOIN %swrs AS WR ON " ...
 			"  PT.track %c 0 AND PT.track = WR.track AND PT.style = %d AND PT.style = WR.style %s AND PT.map = WR.map " ...
-			"INNER JOIN %smaptiers MT ON " ...
+			"INNER JOIN %smaptiers AS MT ON " ...
 			"  PT.map = MT.map " ...
 			"SET " ...
 			" PT.points = "...
@@ -1033,7 +1036,7 @@ void UpdatePointsForSinglePlayer(int client)
 
 	char sQuery[1024];
 
-	if (gCV_WeightingMultiplier.FloatValue == 1.0)
+	if (gI_Driver == Driver_sqlite || gCV_WeightingMultiplier.FloatValue == 1.0)
 	{
 		FormatEx(sQuery, sizeof(sQuery),
 			"UPDATE %susers SET points = (SELECT SUM(points) FROM %splayertimes WHERE auth = %d) WHERE auth = %d;",
@@ -1063,7 +1066,7 @@ void UpdateAllPoints(bool recalcall=false, char[] map="", int track=-1)
 		FormatEx(sLastLogin, sizeof(sLastLogin), "lastlogin > %d", (GetTime() - gCV_LastLoginRecalculate.IntValue * 60));
 	}
 
-	if (gCV_WeightingMultiplier.FloatValue == 1.0)
+	if (gI_Driver == Driver_sqlite || gCV_WeightingMultiplier.FloatValue == 1.0)
 	{
 		FormatEx(sQuery, sizeof(sQuery),
 			"UPDATE %susers AS U INNER JOIN (SELECT auth, SUM(points) as total FROM %splayertimes GROUP BY auth) P ON U.auth = P.auth SET U.points = P.total %s %s;",
@@ -1183,7 +1186,7 @@ void UpdateTop100()
 	FormatEx(sQuery, sizeof(sQuery),
 		"SELECT * FROM (SELECT COUNT(*) as c, 0 as auth, '' as name, '' as p FROM %susers WHERE points > 0) a \
 		UNION ALL \
-		SELECT * FROM (SELECT -1 as c, auth, name, points FROM %susers WHERE points > 0 ORDER BY points DESC LIMIT 100) b;",
+		SELECT * FROM (SELECT -1 as c, auth, name, FORMAT(points, 2) FROM %susers WHERE points > 0 ORDER BY points DESC LIMIT 100) b;",
 		gS_MySQLPrefix, gS_MySQLPrefix);
 
 	QueryLog(gH_SQL, SQL_UpdateTop100_Callback, sQuery, 0, DBPrio_High);
@@ -1219,10 +1222,11 @@ public void SQL_UpdateTop100_Callback(Database db, DBResultSet results, const ch
 		char sName[32+1];
 		results.FetchString(2, sName, sizeof(sName));
 
-		float fPoints = results.FetchFloat(3);
+		char sPoints[16];
+		results.FetchString(3, sPoints, 16);
 
 		char sDisplay[96];
-		FormatEx(sDisplay, 96, "#%d - %s (%.2f)", (++row), sName, fPoints);
+		FormatEx(sDisplay, 96, "#%d - %s (%s)", (++row), sName, sPoints);
 		gH_Top100Menu.AddItem(sSteamID, sDisplay);
 	}
 
@@ -1240,14 +1244,27 @@ bool DoWeHaveRANK(const char[] sVersion)
 {
 	float fVersion = StringToFloat(sVersion);
 
-	if (StrContains(sVersion, "MariaDB") != -1)
+	if (gI_Driver == Driver_sqlite)
 	{
-		return fVersion >= 10.2;
+		return fVersion >= 3.25;
 	}
-	else // mysql then...
+	else if (gI_Driver == Driver_pgsql)
 	{
-		return fVersion >= 8.0;
+		return fVersion >= 10.0;
 	}
+	else if (gI_Driver == Driver_mysql)
+	{
+		if (StrContains(sVersion, "MariaDB") != -1)
+		{
+			return fVersion >= 10.2;
+		}
+		else // mysql then...
+		{
+			return fVersion >= 8.0;
+		}
+	}
+
+	return false;
 }
 
 public void SQL_Version_Callback(Database db, DBResultSet results, const char[] error, any data)
@@ -1264,14 +1281,14 @@ public void SQL_Version_Callback(Database db, DBResultSet results, const char[] 
 	}
 
 	char sWRHolderRankTrackQueryYuck[] =
-		"CREATE OR REPLACE VIEW %s%s AS \
+		"%s %s%s AS \
 			SELECT \
 			0 as wrrank, \
 			style, auth, COUNT(auth) as wrcount \
 			FROM %swrs WHERE track %c 0 GROUP BY style, auth;";
 
 	char sWRHolderRankTrackQueryRANK[] =
-		"CREATE OR REPLACE VIEW %s%s AS \
+		"%s %s%s AS \
 			SELECT \
 				RANK() OVER(PARTITION BY style ORDER BY COUNT(auth) DESC, auth ASC) \
 			as wrrank, \
@@ -1279,14 +1296,14 @@ public void SQL_Version_Callback(Database db, DBResultSet results, const char[] 
 			FROM %swrs WHERE track %c 0 GROUP BY style, auth;";
 
 	char sWRHolderRankOtherQueryYuck[] =
-		"CREATE OR REPLACE VIEW %s%s AS \
+		"%s %s%s AS \
 			SELECT \
 			0 as wrrank, \
 			-1 as style, auth, COUNT(*) \
 			FROM %swrs %s %s %s %s GROUP BY auth;";
 
 	char sWRHolderRankOtherQueryRANK[] =
-		"CREATE OR REPLACE VIEW %s%s AS \
+		"%s %s%s AS \
 			SELECT \
 				RANK() OVER(ORDER BY COUNT(auth) DESC, auth ASC) \
 			as wrrank, \
@@ -1296,23 +1313,39 @@ public void SQL_Version_Callback(Database db, DBResultSet results, const char[] 
 	char sQuery[800];
 	Transaction trans = new Transaction();
 
+	if (gI_Driver == Driver_sqlite)
+	{
+		FormatEx(sQuery, sizeof(sQuery), "DROP VIEW IF EXISTS %swrhrankmain;", gS_MySQLPrefix);
+		AddQueryLog(trans, sQuery);
+		FormatEx(sQuery, sizeof(sQuery), "DROP VIEW IF EXISTS %swrhrankbonus;", gS_MySQLPrefix);
+		AddQueryLog(trans, sQuery);
+		FormatEx(sQuery, sizeof(sQuery), "DROP VIEW IF EXISTS %swrhrankall;", gS_MySQLPrefix);
+		AddQueryLog(trans, sQuery);
+		FormatEx(sQuery, sizeof(sQuery), "DROP VIEW IF EXISTS %swrhrankcvar;", gS_MySQLPrefix);
+		AddQueryLog(trans, sQuery);
+	}
+
 	FormatEx(sQuery, sizeof(sQuery),
 		!gB_HasSQLRANK ? sWRHolderRankTrackQueryYuck : sWRHolderRankTrackQueryRANK,
+		gI_Driver == Driver_sqlite ? "CREATE VIEW IF NOT EXISTS" : "CREATE OR REPLACE VIEW",
 		gS_MySQLPrefix, "wrhrankmain", gS_MySQLPrefix, '=');
 	AddQueryLog(trans, sQuery);
 
 	FormatEx(sQuery, sizeof(sQuery),
 		!gB_HasSQLRANK ? sWRHolderRankTrackQueryYuck : sWRHolderRankTrackQueryRANK,
+		gI_Driver == Driver_sqlite ? "CREATE VIEW IF NOT EXISTS" : "CREATE OR REPLACE VIEW",
 		gS_MySQLPrefix, "wrhrankbonus", gS_MySQLPrefix, '>');
 	AddQueryLog(trans, sQuery);
 
 	FormatEx(sQuery, sizeof(sQuery),
 		!gB_HasSQLRANK ? sWRHolderRankOtherQueryYuck : sWRHolderRankOtherQueryRANK,
+		gI_Driver == Driver_sqlite ? "CREATE VIEW IF NOT EXISTS" : "CREATE OR REPLACE VIEW",
 		gS_MySQLPrefix, "wrhrankall", gS_MySQLPrefix, "", "", "", "");
 	AddQueryLog(trans, sQuery);
 
 	FormatEx(sQuery, sizeof(sQuery),
 		!gB_HasSQLRANK ? sWRHolderRankOtherQueryYuck : sWRHolderRankOtherQueryRANK,
+		gI_Driver == Driver_sqlite ? "CREATE VIEW IF NOT EXISTS" : "CREATE OR REPLACE VIEW",
 		gS_MySQLPrefix, "wrhrankcvar", gS_MySQLPrefix,
 		(gCV_MVPRankOnes.IntValue == 2 || gCV_MVPRankOnes_Main.BoolValue) ? "WHERE" : "",
 		(gCV_MVPRankOnes.IntValue == 2)  ? "style = 0" : "",

@@ -29,6 +29,10 @@
 		"#format"	"{1:s},{2:s}"
 		"chi"		"自定义起始区域已{1}删除{2}."
 	}
+	"DeleteSetStartMenuTitle"
+	{
+		"chi"        "选择要删除的自定义起点:"
+	}
 	// ---------- ZoneHook ---------- //
 	"ZoneHook_Crosshair"
 	{

@@ -64,4 +64,8 @@
 	{
 		"chi"        "当前时延"
 	}
+	"OpenSteamProfile"
+	{
+		"chi"        "打开 Steam 个人资料"
+	}
 }

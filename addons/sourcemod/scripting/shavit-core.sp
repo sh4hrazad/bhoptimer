@@ -61,7 +61,7 @@ DynamicHook gH_TeleportDhook = null;
 
 // database handle
 Database gH_SQL = null;
-bool gB_MySQL = false;
+int gI_Driver = Driver_unknown;
 
 // forwards
 Handle gH_Forwards_Start = null;
@@ -1058,6 +1058,7 @@ public Action Command_DeleteMap(int client, int args)
 			ReplyToCommand(client, "Deleted all rankings for %s.", gS_DeleteMap[client]);
 		}
 
+		Shavit_LogMessage("%L - deleted all map data for `%s`", client, gS_DeleteMap[client]);
 		ReplyToCommand(client, "Finished deleting data for %s.", gS_DeleteMap[client]);
 		gS_DeleteMap[client] = "";
 	}
@@ -1152,6 +1153,7 @@ public Action Command_WipePlayer(int client, int args)
 		Shavit_PrintToChat(client, "Deleting data for SteamID %s[U:1:%u]%s...",
 			gS_ChatStrings.sVariable, gI_WipePlayerID[client], gS_ChatStrings.sText);
 
+		Shavit_LogMessage("%L - wiped [U:1:%u]'s player data", client, gI_WipePlayerID[client]);
 		DeleteUserData(client, gI_WipePlayerID[client]);
 
 		strcopy(gS_Verification[client], 8, "");
@@ -1691,6 +1693,8 @@ public void Player_Death(Event event, const char[] name, bool dontBroadcast)
 
 public int Native_GetDatabase(Handle handler, int numParams)
 {
+	if (numParams > 0)
+		SetNativeCellRef(1, gI_Driver);
 	return gH_SQL ? view_as<int>(CloneHandle(gH_SQL, handler)) : 0;
 }
 
@@ -2458,7 +2462,7 @@ void StartTimer(int client, int track)
 
 			gA_Timers[client].iTimerTrack = track;
 			gA_Timers[client].bTimerEnabled = true;
-			gA_Timers[client].iSHSWCombination = -1;
+			gA_Timers[client].iKeyCombo = -1;
 			gA_Timers[client].fCurrentTime = 0.0;
 			gA_Timers[client].bPracticeMode = false;
 			gA_Timers[client].iMeasuredJumps = 0;
@@ -2600,7 +2604,7 @@ public void OnClientPutInServer(int client)
 	gB_Auto[client] = true;
 	gA_Timers[client].fStrafeWarning = 0.0;
 	gA_Timers[client].bPracticeMode = false;
-	gA_Timers[client].iSHSWCombination = -1;
+	gA_Timers[client].iKeyCombo = -1;
 	gA_Timers[client].iTimerTrack = 0;
 	gA_Timers[client].bsStyle = 0;
 	gA_Timers[client].fTimescale = 1.0;
@@ -2661,10 +2665,16 @@ public void OnClientPutInServer(int client)
 
 	char sQuery[512];
 
-	if(gB_MySQL)
+	if (gI_Driver == Driver_mysql)
 	{
 		FormatEx(sQuery, 512,
 			"INSERT INTO %susers (auth, name, ip, lastlogin) VALUES (%d, '%s', %d, %d) ON DUPLICATE KEY UPDATE name = '%s', ip = %d, lastlogin = %d;",
+			gS_MySQLPrefix, iSteamID, sEscapedName, iIPAddress, iTime, sEscapedName, iIPAddress, iTime);
+	}
+	else if (gI_Driver == Driver_pgsql)
+	{
+		FormatEx(sQuery, 512,
+			"INSERT INTO %susers (auth, name, ip, lastlogin) VALUES (%d, '%s', %d, %d) ON CONFLICT(auth) DO UPDATE SET name = '%s', ip = %d, lastlogin = %d;",
 			gS_MySQLPrefix, iSteamID, sEscapedName, iIPAddress, iTime, sEscapedName, iIPAddress, iTime);
 	}
 	else
@@ -2771,9 +2781,9 @@ void SQL_DBConnect()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
 	gH_SQL = GetTimerDatabaseHandle();
-	gB_MySQL = IsMySQLDatabase(gH_SQL);
+	gI_Driver = GetDatabaseDriver(gH_SQL);
 
-	SQL_CreateTables(gH_SQL, gS_MySQLPrefix, gB_MySQL);
+	SQL_CreateTables(gH_SQL, gS_MySQLPrefix, gI_Driver);
 }
 
 public void Shavit_OnEnterZone(int client, int type, int track, int id, int entity)
@@ -3290,6 +3300,36 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 				buttons &= ~IN_MOVERIGHT;
 			}
 
+			if (GetStyleSettingBool(gA_Timers[client].bsStyle, "a_or_d_only"))
+			{
+				int iCombination = -1;
+				bool bMoveLeft = ((buttons & IN_MOVELEFT) > 0 && vel[1] < 0.0);
+				bool bMoveRight = ((buttons & IN_MOVERIGHT) > 0 && vel[1] > 0.0);
+
+				if (bMoveLeft)
+				{
+					iCombination = 0;
+				}
+				else if (bMoveRight)
+				{
+					iCombination = 1;
+				}
+
+				if (iCombination != -1)
+				{
+					if (gA_Timers[client].iKeyCombo == -1)
+					{
+						gA_Timers[client].iKeyCombo = iCombination;
+					}
+
+					if (iCombination != gA_Timers[client].iKeyCombo)
+					{
+						vel[1] = 0.0;
+						buttons &= ~(IN_MOVELEFT|IN_MOVERIGHT);
+					}
+				}
+			}
+
 			// HSW
 			// Theory about blocking non-HSW strafes while playing HSW:
 			// Block S and W without A or D.
@@ -3316,18 +3356,18 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					}
 
 					// int gI_SHSW_FirstCombination[MAXPLAYERS+1]; // 0 - W/A S/D | 1 - W/D S/A
-					if(gA_Timers[client].iSHSWCombination == -1 && iCombination != -1)
+					if(gA_Timers[client].iKeyCombo == -1 && iCombination != -1)
 					{
 						Shavit_PrintToChat(client, "%T", (iCombination == 0)? "SHSWCombination0":"SHSWCombination1", client, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
-						gA_Timers[client].iSHSWCombination = iCombination;
+						gA_Timers[client].iKeyCombo = iCombination;
 					}
 
 					// W/A S/D
-					if((gA_Timers[client].iSHSWCombination == 0 && iCombination != 0) ||
+					if((gA_Timers[client].iKeyCombo == 0 && iCombination != 0) ||
 					// W/D S/A
-						(gA_Timers[client].iSHSWCombination == 1 && iCombination != 1) ||
+						(gA_Timers[client].iKeyCombo == 1 && iCombination != 1) ||
 					// no valid combination & no valid input
-						(gA_Timers[client].iSHSWCombination == -1 && iCombination == -1))
+						(gA_Timers[client].iKeyCombo == -1 && iCombination == -1))
 					{
 						vel[0] = 0.0;
 						vel[1] = 0.0;
