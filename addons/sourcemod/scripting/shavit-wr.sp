@@ -56,7 +56,7 @@ bool gB_Stats = false;
 
 
 // database handle
-Database2 gH_SQL = null;
+Database gH_SQL = null;
 bool gB_Connected = false;
 
 // cache

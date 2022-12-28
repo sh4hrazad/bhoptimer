@@ -68,7 +68,7 @@ public void SQL_UpdateAllPoints_Callback(Database db, DBResultSet results, const
 
 void DB_RecalcAllRankings(int client)
 {
-	Transaction2 trans = new Transaction2();
+	Transaction trans = new Transaction();
 	char sQuery[1024];
 
 	FormatEx(sQuery, sizeof(sQuery), "UPDATE playertimes SET points = 0;");

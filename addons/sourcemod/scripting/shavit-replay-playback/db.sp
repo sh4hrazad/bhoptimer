@@ -1,6 +1,6 @@
 void SQL_DBConnect()
 {
-	gH_SQL = GetTimerDatabaseHandle2();
+	gH_SQL = GetTimerDatabaseHandle();
 }
 
 void DB_GetUserName(int style, int track, int steamid)

@@ -6,8 +6,8 @@
 
 void SQL_DBConnect()
 {
-	gH_SQL = GetTimerDatabaseHandle2(false);
-	gH_SQL_b = GetTimerDatabaseHandle2(false);
+	gH_SQL = GetTimerDatabaseHandle(false);
+	gH_SQL_b = GetTimerDatabaseHandle(false);
 
 	if(!IsMySQLDatabase(gH_SQL))
 	{

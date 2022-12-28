@@ -23,7 +23,7 @@ static char mysql_start_calculating[] =
 
 void SQL_DBConnect()
 {
-	gH_SQL = GetTimerDatabaseHandle2();
+	gH_SQL = GetTimerDatabaseHandle();
 }
 
 void StartCalculating()

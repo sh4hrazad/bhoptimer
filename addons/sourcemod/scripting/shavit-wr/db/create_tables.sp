@@ -6,7 +6,7 @@
 
 void DB_CreateTables(bool mysql)
 {
-	Transaction2 hTransaction = new Transaction2();
+	Transaction hTransaction = new Transaction();
 
 	if(mysql)
 	{

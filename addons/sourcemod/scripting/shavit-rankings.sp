@@ -69,8 +69,8 @@ public Plugin myinfo =
 	url = "https://github.com/shavitush/bhoptimer"
 }
 
-Database2 gH_SQL = null;
-Database2 gH_SQL_b = null;
+Database gH_SQL = null;
+Database gH_SQL_b = null;
 bool gB_HasSQLRANK = false; // whether the sql driver supports RANK()
 
 bool gB_Stats = false;

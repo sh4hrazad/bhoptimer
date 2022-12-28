@@ -512,7 +512,7 @@ public Action Shavit_OnStart(int client)
 
 public Action Shavit_OnEnterZone(int client, int type, int track, int id, int entity, int data)
 {
-	OnEnterZone_LimitPrestrafe(client, type);
+	OnEnterZone_LimitPrestrafe(client, type, track);
 }
 
 public void Shavit_OnWorldRecord(int client, int style, float time, int jumps, int strafes, float sync, int track)

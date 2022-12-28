@@ -9,6 +9,8 @@
 #endif
 #define _shavit_surftimer_included
 
+#include <sdktools>
+
 // unused
 #define MAX_CPZONES 16
 

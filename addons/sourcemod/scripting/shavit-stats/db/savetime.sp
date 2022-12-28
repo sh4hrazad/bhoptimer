@@ -7,7 +7,7 @@ void OnClientDisconnect_SavePlayTime(int client)
 		return;
 	}
 
-	Transaction2 trans = null;
+	Transaction trans = null;
 	SavePlaytime(client, GetEngineTime(), trans);
 
 	if (trans != null)
@@ -23,7 +23,7 @@ public Action Timer_SavePlaytime(Handle timer, any data)
 		return Plugin_Continue;
 	}
 
-	Transaction2 trans = null;
+	Transaction trans = null;
 	float now = GetEngineTime();
 
 	for (int i = 1; i <= MaxClients; i++)
@@ -51,7 +51,7 @@ public Action Timer_SavePlaytime(Handle timer, any data)
 	return Plugin_Continue;
 }
 
-void SavePlaytime(int client, float now, Transaction2 &trans)
+void SavePlaytime(int client, float now, Transaction &trans)
 {
 	if (GetSteamAccountID(client) == 0)
 	{
@@ -70,7 +70,7 @@ void SavePlaytime(int client, float now, Transaction2 &trans)
 	}
 }
 
-void SavePlaytime222(int client, float now, Transaction2 &trans, int style, int iSteamID)
+void SavePlaytime222(int client, float now, Transaction &trans, int style, int iSteamID)
 {
 	char sQuery[512];
 
@@ -121,7 +121,7 @@ void SavePlaytime222(int client, float now, Transaction2 &trans, int style, int 
 
 	if (trans == null)
 	{
-		trans = view_as<Transaction2>(new Transaction());
+		trans = view_as<Transaction>(new Transaction());
 	}
 
 	trans.AddQuery(sQuery);

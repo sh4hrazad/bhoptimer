@@ -17,7 +17,7 @@
 bool gB_Late = false;
 
 char gS_SQLPrefix[32];
-Database2 gH_SQL = null;
+Database gH_SQL = null;
 
 float gF_LastRtvTime[MAXPLAYERS+1];
 float gF_LastNominateTime[MAXPLAYERS+1];
@@ -980,7 +980,7 @@ void ExtendMap(int client, int time)
 void SQL_DBConnect()
 {
 	GetTimerSQLPrefix(gS_SQLPrefix, sizeof(gS_SQLPrefix));
-	gH_SQL = GetTimerDatabaseHandle2(false);
+	gH_SQL = GetTimerDatabaseHandle(false);
 }
 
 void RemoveExcludesFromArrayList(ArrayList list, bool lowercase, char[][] exclude_prefixes, int exclude_count)
@@ -1021,7 +1021,7 @@ void LoadMapList()
 		{
 			if (gH_SQL == null)
 			{
-				gH_SQL = GetTimerDatabaseHandle2();
+				gH_SQL = GetTimerDatabaseHandle();
 			}
 
 			char buffer[512];
@@ -1044,7 +1044,7 @@ void LoadMapList()
 		{
 			if (gH_SQL == null)
 			{
-				gH_SQL = GetTimerDatabaseHandle2();
+				gH_SQL = GetTimerDatabaseHandle();
 			}
 
 			if (gCV_MapListType.IntValue == MapListMixed)

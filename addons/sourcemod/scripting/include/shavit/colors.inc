@@ -485,8 +485,8 @@ stock void RemoveColors(char[] string, int size)
 		ReplaceString(string, size, gS_GlobalColorNames[x], "");
 	}
 
-	for(int x = 0; x < sizeof(gS_CSGOColorNames); x++)
+	for(int x = 0; x < sizeof(gS_CustomColorNames); x++)
 	{
-		ReplaceString(string, size, gS_CSGOColorNames[x], "");
+		ReplaceString(string, size, gS_CustomColorNames[x], "");
 	}
 }

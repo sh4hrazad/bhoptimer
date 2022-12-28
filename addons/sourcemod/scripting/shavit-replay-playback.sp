@@ -157,7 +157,7 @@ TopMenu gH_AdminMenu = null;
 TopMenuObject gH_TimerCommands = INVALID_TOPMENUOBJECT;
 
 // database related things
-Database2 gH_SQL = null;
+Database gH_SQL = null;
 
 bool gB_ClosestPos;
 ClosestPos gH_ClosestPos[TRACKS_SIZE][STYLE_LIMIT];

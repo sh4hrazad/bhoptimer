@@ -6,7 +6,7 @@
 
 void SQL_DBConnect()
 {
-	gH_SQL = GetTimerDatabaseHandle2(false);
+	gH_SQL = GetTimerDatabaseHandle(false);
 	gH_SQL.Query(SQL_CreateStylePlaytimeTable_Callback, mysql_table_create);
 }
 

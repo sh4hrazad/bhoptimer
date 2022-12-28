@@ -49,7 +49,7 @@ public Plugin myinfo =
 
 
 // database handle
-Database2 gH_SQL = null;
+Database gH_SQL = null;
 
 // base cvars
 ConVar mp_do_warmup_period = null;

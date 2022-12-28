@@ -28,7 +28,7 @@ public Plugin myinfo =
 
 
 // plugin cache
-Database2 gH_SQL = null;
+Database gH_SQL = null;
 bool gB_Connected = false;
 
 // timer settings

@@ -61,8 +61,13 @@ void OnUserCmdPre_PreStrafe(int client, int buttons)
 }
 
 // limit those one that enter zone by outsiding zone
-void OnEnterZone_LimitPrestrafe(int client, int type)
+void OnEnterZone_LimitPrestrafe(int client, int type, int track)
 {
+	if(track != Shavit_GetClientTrack(client))
+	{
+		return;
+	}
+	
 	if(Shavit_GetTimerStatus(client) == Timer_Running
 		 && shavit_zones_entryzonespeedlimit.FloatValue > 0.0
 		 && (type == Zone_Start || (Shavit_GetMapLimitspeed() && type == Zone_Stage)))
@@ -81,6 +86,11 @@ public void Player_Jump(Event event, const char[] name, bool dontBroadcast)
 
 public Action Shavit_OnLeaveZone(int client, int type, int track, int id, int entity, int data)
 {
+	if(track != Shavit_GetClientTrack(client))
+	{
+		return;
+	}
+
 	if(Shavit_GetTimerStatus(client) == Timer_Running
 		 && gCV_LimitPrestrafe.BoolValue
 		 && (type == Zone_Start || (Shavit_GetMapLimitspeed() && type == Zone_Stage)))

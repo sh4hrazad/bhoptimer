@@ -9,7 +9,7 @@ void DB_CreateTables()
 	gH_SQL.Query(SQL_Version_Callback, "SELECT VERSION();");
 
 	char sQuery[2048];
-	Transaction2 hTrans = new Transaction2();
+	Transaction hTrans = new Transaction();
 
 	FormatEx(sQuery, sizeof(sQuery), mysql_maptiers_create, gCV_DefaultTier.IntValue, gCV_DefaultMaxvelocity.FloatValue);
 	hTrans.AddQuery(sQuery);
@@ -79,7 +79,7 @@ public void SQL_Version_Callback(Database db, DBResultSet results, const char[] 
 			FROM `wrs` %s %s %s %s GROUP BY auth;";
 
 	char sQuery[800];
-	Transaction2 hTransaction = new Transaction2();
+	Transaction hTransaction = new Transaction();
 
 	FormatEx(sQuery, sizeof(sQuery),
 		!gB_HasSQLRANK ? sWRHolderRankTrackQueryYuck : sWRHolderRankTrackQueryRANK,

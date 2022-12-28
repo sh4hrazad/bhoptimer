@@ -1050,33 +1050,6 @@ stock void Shavit_LogQuery(const char[] query)
 	}
 }
 
-methodmap Database2 < Database
-{
-	public void Query(SQLQueryCallback callback, const char[] query, any data = 0, DBPriority prio = DBPrio_Normal)
-	{
-#if SHAVIT_LOG_QUERIES
-		Shavit_LogQuery(query);
-#endif
-		this.Query(callback, query, data, prio);
-	}
-}
-
-methodmap Transaction2 < Transaction
-{
-	public Transaction2()
-	{
-		return view_as<Transaction2>(new Transaction());
-	}
-
-	public int AddQuery(const char[] query, any data = 0)
-	{
-#if SHAVIT_LOG_QUERIES
-		Shavit_LogQuery(query);
-#endif
-		return this.AddQuery(query, data);
-	}
-}
-
 // connects synchronously to the bhoptimer database
 // calls errors if needed
 stock Database GetTimerDatabaseHandle(bool reuse_persistent_connection=true)
@@ -1103,11 +1076,6 @@ stock Database GetTimerDatabaseHandle(bool reuse_persistent_connection=true)
 	}
 
 	return db;
-}
-
-stock Database2 GetTimerDatabaseHandle2(bool reuse_persistent_connection=true)
-{
-	return view_as<Database2>(GetTimerDatabaseHandle(reuse_persistent_connection));
 }
 
 // figures out if the database is a mysql database

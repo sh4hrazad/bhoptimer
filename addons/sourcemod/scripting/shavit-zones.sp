@@ -42,7 +42,7 @@
 #define EF_NODRAW 32
 #define MAX(%1,%2) (%1>%2?%1:%2)
 
-Database2 gH_SQL = null;
+Database gH_SQL = null;
 bool gB_Connected = false;
 bool gB_MySQL = false;
 
@@ -3796,7 +3796,7 @@ void CreateZonePoints(float point[8][3], float offset = 0.0)
 void SQL_DBConnect()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
-	gH_SQL = GetTimerDatabaseHandle2(false);
+	gH_SQL = GetTimerDatabaseHandle(false);
 	gB_MySQL = IsMySQLDatabase(gH_SQL);
 
 	char sQuery[1024];

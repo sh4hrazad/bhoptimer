@@ -1,4 +1,4 @@
-Database2 gH_SQL = null;
+Database gH_SQL = null;
 static bool gB_MySQL = false;
 static int gI_MigrationsRequired;
 static int gI_MigrationsFinished;
@@ -9,7 +9,7 @@ static char gS_MySQLPrefix[32];
 void SQL_DBConnect()
 {
 	GetTimerSQLPrefix(gS_MySQLPrefix, 32);
-	gH_SQL = GetTimerDatabaseHandle2();
+	gH_SQL = GetTimerDatabaseHandle();
 	gB_MySQL = IsMySQLDatabase(gH_SQL);
 
 	CreateUsersTable();
@@ -293,7 +293,7 @@ public void SQL_TableMigrationIPAddresses_Callback(Database db, DBResultSet resu
 		return;
 	}
 
-	Transaction2 hTransaction = new Transaction2();
+	Transaction hTransaction = new Transaction();
 	int iQueries = 0;
 
 	while(results.FetchRow())
@@ -417,7 +417,7 @@ public void SQL_TableMigrationWorkshop_Callback(Database db, DBResultSet results
 		return;
 	}
 
-	Transaction2 hTransaction = new Transaction2();
+	Transaction hTransaction = new Transaction();
 
 	while(results.FetchRow())
 	{
@@ -526,7 +526,7 @@ void DeleteUserData(int client, const int iSteamID)
 
 static void DeleteRestOfUser(int iSteamID, DataPack hPack)
 {
-	Transaction2 hTransaction = new Transaction2();
+	Transaction hTransaction = new Transaction();
 	char sQuery[256];
 
 	FormatEx(sQuery, 256, "DELETE FROM %splayertimes WHERE auth = %d;", gS_MySQLPrefix, iSteamID);

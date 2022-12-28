@@ -52,7 +52,7 @@ public Plugin myinfo =
 bool gB_Rankings = false;
 
 // database handle
-Database2 gH_SQL = null;
+Database gH_SQL = null;
 
 // cache
 bool gB_CanOpenMenu[MAXPLAYERS+1];
