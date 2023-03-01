@@ -160,6 +160,7 @@ ConVar sv_friction = null;
 chatstrings_t gS_ChatStrings;
 
 // misc cache
+int gI_ClientProcessingMovement = 0;
 bool gB_StopChatSound = false;
 bool gB_HookedJump = false;
 char gS_LogPath[PLATFORM_MAX_PATH];
@@ -189,6 +190,12 @@ public Plugin myinfo =
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
+#if SOURCEMOD_V_MAJOR == 1 && SOURCEMOD_V_MINOR >= 11
+#else
+	MarkNativeAsOptional("Int64ToString");
+	MarkNativeAsOptional("StringToInt64");
+#endif
+
 	new Convar("shavit_core_log_sql", "0", "Whether to log SQL queries from the timer.", 0, true, 0.0, true, 1.0);
 
 	Bhopstats_CreateNatives();
@@ -380,7 +387,7 @@ public void OnPluginStart()
 	gCV_UseOffsets = new Convar("shavit_core_useoffsets", "1", "Calculates more accurate times by subtracting/adding tick offsets from the time the server uses to register that a player has left or entered a trigger", 0, true, 0.0, true, 1.0);
 	gCV_TimeInMessages = new Convar("shavit_core_timeinmessages", "0", "Whether to prefix SayText2 messages with the time.", 0, true, 0.0, true, 1.0);
 	gCV_DebugOffsets = new Convar("shavit_core_debugoffsets", "0", "Print offset upon leaving or entering a zone?", 0, true, 0.0, true, 1.0);
-	gCV_SaveIps = new Convar("shavit_core_save_ips", "1", "Whether to save player IPs in the 'users' database table. IPs are used to show player location on the !profile menu.\nTurning this on will not wipe existing IPs from the 'users' table.", 0, true, 0.0, true, 1.0);
+	gCV_SaveIps = new Convar("shavit_core_save_ips", "1", "Whether to save player IPs in the 'users' database table. IPs are used to show player location on the !profile menu.\nTurning this off will not wipe existing IPs from the 'users' table.", 0, true, 0.0, true, 1.0);
 	gCV_HijackTeleportAngles = new Convar("shavit_core_hijack_teleport_angles", "0", "Whether to hijack player angles on teleport so their latency doesn't fuck up their shit.", 0, true, 0.0, true, 1.0);
 	gCV_DefaultStyle.AddChangeHook(OnConVarChanged);
 
@@ -428,6 +435,13 @@ public void OnPluginStart()
 			}
 		}
 	}
+}
+
+public void OnPluginEnd()
+{
+	if (sv_enablebunnyhopping != null)
+		sv_enablebunnyhopping.Flags |= (FCVAR_REPLICATED | FCVAR_NOTIFY);
+	sv_airaccelerate.Flags |= (FCVAR_REPLICATED | FCVAR_NOTIFY);
 }
 
 public void OnAdminMenuCreated(Handle topmenu)
@@ -517,25 +531,15 @@ void LoadDHooks()
 	delete CreateInterface;
 	delete gamedataConf;
 
-	GameData AcceptInputGameData;
+	gamedataConf = LoadGameConfigFile("sdktools.games");
 
-	AcceptInputGameData = new GameData("sdktools.games/game.cstrike");
-
-	// Stolen from dhooks-test.sp
-	offset = AcceptInputGameData.GetOffset("AcceptInput");
-	delete AcceptInputGameData;
+	offset = GameConfGetOffset(gamedataConf, "AcceptInput");
 	gH_AcceptInput = new DynamicHook(offset, HookType_Entity, ReturnType_Bool, ThisPointer_CBaseEntity);
 	gH_AcceptInput.AddParam(HookParamType_CharPtr);
 	gH_AcceptInput.AddParam(HookParamType_CBaseEntity);
 	gH_AcceptInput.AddParam(HookParamType_CBaseEntity);
 	gH_AcceptInput.AddParam(HookParamType_Object, 20, DHookPass_ByVal|DHookPass_ODTOR|DHookPass_OCTOR|DHookPass_OASSIGNOP); //variant_t is a union of 12 (float[3]) plus two int type params 12 + 8 = 20
 	gH_AcceptInput.AddParam(HookParamType_Int);
-
-	gamedataConf = LoadGameConfigFile("sdktools.games");
-	if (gamedataConf == null)
-	{
-		SetFailState("Failed to load sdktools gamedata");
-	}
 
 	offset = GameConfGetOffset(gamedataConf, "Teleport");
 	if (offset == -1)
@@ -1574,17 +1578,6 @@ void ChangeClientStyle(int client, int style, bool manual)
 	SetClientCookie(client, gH_StyleCookie, sStyle);
 }
 
-// used as an alternative for games where player_jump isn't a thing, such as TF2
-public void Shavit_Bhopstats_OnLeaveGround(int client, bool jumped, bool ladder)
-{
-	if(gB_HookedJump || !jumped || ladder)
-	{
-		return;
-	}
-
-	DoJump(client);
-}
-
 public void Player_Jump(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
@@ -1627,8 +1620,9 @@ void VelocityChanges(int data)
 	}
 #endif
 
-	float fAbsVelocity[3];
+	float fAbsVelocity[3], fAbsOrig[3];
 	GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fAbsVelocity);
+	fAbsOrig = fAbsVelocity;
 
 	float fSpeed = (SquareRoot(Pow(fAbsVelocity[0], 2.0) + Pow(fAbsVelocity[1], 2.0)));
 
@@ -1672,6 +1666,31 @@ void VelocityChanges(int data)
 		fAbsVelocity[2] += fJumpBonus;
 	}
 
+	float fSpeedLimit = GetStyleSettingFloat(gA_Timers[client].bsStyle, "velocity_limit");
+
+	if (fSpeedLimit > 0.0)
+	{
+		if (gB_Zones && Shavit_InsideZone(client, Zone_CustomSpeedLimit, -1))
+		{
+			fSpeedLimit = gF_ZoneSpeedLimit[client];
+		}
+
+		float fSpeed_New = (SquareRoot(Pow(fAbsVelocity[0], 2.0) + Pow(fAbsVelocity[1], 2.0)));
+
+		if (fSpeedLimit != 0.0 && fSpeed_New > 0.0)
+		{
+			float fScale = fSpeedLimit / fSpeed_New;
+
+			if (fScale < 1.0)
+			{
+				fAbsVelocity[0] *= fScale;
+				fAbsVelocity[1] *= fScale;
+			}
+		}
+	}
+
+	if (fAbsOrig[0] == fAbsVelocity[0] && fAbsOrig[1] == fAbsVelocity[1] && fAbsOrig[2] == fAbsVelocity[2])
+		return;
 
 	if(!gCV_VelocityTeleport.BoolValue)
 	{
@@ -1844,20 +1863,6 @@ public int Native_ChangeClientStyle(Handle handler, int numParams)
 	return false;
 }
 
-public Action Shavit_OnFinishPre(int client, timer_snapshot_t snapshot)
-{
-	float minimum_time = GetStyleSettingFloat(snapshot.bsStyle, snapshot.iTimerTrack == Track_Main ? "minimum_time" : "minimum_time_bonus");
-
-	if (snapshot.fCurrentTime < minimum_time)
-	{
-		Shavit_PrintToChat(client, "%T", "TimeUnderMinimumTime", client, minimum_time, snapshot.fCurrentTime, snapshot.iTimerTrack == Track_Main ? "minimum_time" : "minimum_time_bonus");
-		Shavit_StopTimer(client);
-		return Plugin_Stop;
-	}
-
-	return Plugin_Continue;
-}
-
 void CalculateRunTime(timer_snapshot_t s, bool include_end_offset)
 {
 	float ticks = float(s.iFullTicks) + (s.iFractionalTicks / 10000.0);
@@ -1903,8 +1908,13 @@ public int Native_FinishMap(Handle handler, int numParams)
 
 	CalculateRunTime(gA_Timers[client], true);
 
-	if (gA_Timers[client].fCurrentTime <= 0.11)
+	float minimum_time = GetStyleSettingFloat(gA_Timers[client].bsStyle, gA_Timers[client].iTimerTrack == Track_Main ? "minimum_time" : "minimum_time_bonus");
+	float current_time = gA_Timers[client].fCurrentTime;
+
+	if (current_time <= 0.11 || current_time < minimum_time)
 	{
+		Shavit_PrintToChat(client, "%T", (current_time <= 0.11) ? "TimeUnderMinimumTime2" : "TimeUnderMinimumTime", client, (current_time <= 0.11) ? 0.11 : minimum_time, current_time,
+		gA_Timers[client].iTimerTrack == Track_Main ? "minimum_time" : "minimum_time_bonus");
 		Shavit_StopTimer(client);
 		return 0;
 	}
@@ -2145,7 +2155,7 @@ public int Native_RestartTimer(Handle handler, int numParams)
 
 float CalcPerfs(timer_snapshot_t s)
 {
-	return (s.iMeasuredJumps == 0) ? 100.0 : (s.iPerfectJumps / float(s.iMeasuredJumps) * 100.0);
+	return (s.iMeasuredJumps == 0) ? 0.0 : (s.iPerfectJumps / float(s.iMeasuredJumps) * 100.0);
 }
 
 public int Native_GetPerfectJumps(Handle handler, int numParams)
@@ -2634,13 +2644,14 @@ public void OnClientPutInServer(int client)
 
 	SDKHook(client, SDKHook_PreThinkPost, PreThinkPost);
 	SDKHook(client, SDKHook_PostThinkPost, PostThinkPost);
+}
 
+public void OnClientAuthorized(int client, const char[] auth)
+{
 	int iSteamID = GetSteamAccountID(client);
 
 	if(iSteamID == 0)
 	{
-		KickClient(client, "%T", "VerificationFailed", client);
-
 		return;
 	}
 
@@ -2671,17 +2682,11 @@ public void OnClientPutInServer(int client)
 			"INSERT INTO %susers (auth, name, ip, lastlogin) VALUES (%d, '%s', %d, %d) ON DUPLICATE KEY UPDATE name = '%s', ip = %d, lastlogin = %d;",
 			gS_MySQLPrefix, iSteamID, sEscapedName, iIPAddress, iTime, sEscapedName, iIPAddress, iTime);
 	}
-	else if (gI_Driver == Driver_pgsql)
+	else // postgresql & sqlite
 	{
 		FormatEx(sQuery, 512,
 			"INSERT INTO %susers (auth, name, ip, lastlogin) VALUES (%d, '%s', %d, %d) ON CONFLICT(auth) DO UPDATE SET name = '%s', ip = %d, lastlogin = %d;",
 			gS_MySQLPrefix, iSteamID, sEscapedName, iIPAddress, iTime, sEscapedName, iIPAddress, iTime);
-	}
-	else
-	{
-		FormatEx(sQuery, 512,
-			"REPLACE INTO %susers (auth, name, ip, lastlogin) VALUES (%d, '%s', %d, %d);",
-			gS_MySQLPrefix, iSteamID, sEscapedName, iIPAddress, iTime);
 	}
 
 	QueryLog(gH_SQL, SQL_InsertUser_Callback, sQuery, GetClientSerial(client));
@@ -2958,9 +2963,18 @@ public MRESReturn DHook_AcceptInput_player_speedmod_Post(int pThis, DHookReturn 
 	return MRES_Ignored;
 }
 
+public MRESReturn DHook_PreventBunnyJumpingPre()
+{
+	if (GetStyleSettingBool(gA_Timers[gI_ClientProcessingMovement].bsStyle, "bunnyhopping"))
+		return MRES_Supercede;
+	else
+		return MRES_Ignored;
+}
+
 public MRESReturn DHook_ProcessMovement(Handle hParams)
 {
 	int client = DHookGetParam(hParams, 1);
+	gI_ClientProcessingMovement = client;
 
 	// Causes client to do zone touching in movement instead of server frames.
 	// From https://github.com/rumourA/End-Touch-Fix
@@ -3409,11 +3423,24 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	}
 
 	bool bInWater = (GetEntProp(client, Prop_Send, "m_nWaterLevel") >= 2);
+	int iOldButtons = GetEntProp(client, Prop_Data, "m_nOldButtons");
 
 	if (GetStyleSettingBool(gA_Timers[client].bsStyle, "autobhop") && gB_Auto[client] && (buttons & IN_JUMP) > 0 && mtMoveType == MOVETYPE_WALK && !bInWater)
 	{
-		int iOldButtons = GetEntProp(client, Prop_Data, "m_nOldButtons");
-		SetEntProp(client, Prop_Data, "m_nOldButtons", (iOldButtons & ~IN_JUMP));
+		SetEntProp(client, Prop_Data, "m_nOldButtons", (iOldButtons &= ~IN_JUMP));
+	}
+
+	int blockprejump = GetStyleSettingInt(gA_Timers[client].bsStyle, "blockprejump");
+
+	if (blockprejump < 0)
+	{
+		blockprejump = gCV_BlockPreJump.BoolValue;
+	}
+
+	if (bInStart && blockprejump && GetStyleSettingInt(gA_Timers[client].bsStyle, "prespeed") == 0 && (vel[2] > 0 || (buttons & IN_JUMP) > 0))
+	{
+		vel[2] = 0.0;
+		buttons &= ~IN_JUMP;
 	}
 
 	// perf jump measuring
@@ -3446,19 +3473,14 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		}
 	}
 
-	int blockprejump = GetStyleSettingInt(gA_Timers[client].bsStyle, "blockprejump");
-
-	if (blockprejump < 0)
-	{
-		blockprejump = gCV_BlockPreJump.BoolValue;
-	}
-
-	if (bInStart && blockprejump && GetStyleSettingInt(gA_Timers[client].bsStyle, "prespeed") == 0 && (vel[2] > 0 || (buttons & IN_JUMP) > 0))
-	{
-		vel[2] = 0.0;
-		buttons &= ~IN_JUMP;
-	}
-
+	// This can be bypassed by spamming +duck on CSS which causes `iGroundEntity` to be `-1` here...
+	//   (e.g. an autobhop + velocity_limit style...)
+	// m_hGroundEntity changes from 0 -> -1 same tick which causes problems and I'm not sure what the best way / place to handle that is...
+	// There's not really many things using m_hGroundEntity that "matter" in this function
+	// so I'm just going to move this `velocity_limit` logic somewhere else instead of trying to "fix" it.
+	// Now happens in `VelocityChanges()` which comes from `player_jump->RequestFrame(VelocityChanges)`.
+	//   (that is also the same thing btimes does)
+#if 0
 	// velocity limit
 	if (iGroundEntity != -1 && GetStyleSettingFloat(gA_Timers[client].bsStyle, "velocity_limit") > 0.0)
 	{
@@ -3480,11 +3502,13 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 			if(fScale < 1.0)
 			{
-				ScaleVector(fSpeed, fScale);
+				fSpeed[0] *= fScale;
+				fSpeed[1] *= fScale;
 				TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fSpeed); // maybe change this to SetEntPropVector some time?
 			}
 		}
 	}
+#endif
 
 	gA_Timers[client].bJumped = false;
 	gA_Timers[client].bOnGround = bOnGround;
@@ -3504,7 +3528,10 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 		return;
 	}
 
-	if (GetStyleSettingBool(gA_Timers[client].bsStyle, "strafe_count_w")
+	int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
+
+	if (iGroundEntity == -1
+	&& GetStyleSettingBool(gA_Timers[client].bsStyle, "strafe_count_w")
 	&& !GetStyleSettingBool(gA_Timers[client].bsStyle, "block_w")
 	&& (gA_Timers[client].fLastInputVel[0] <= 0.0) && (vel[0] > 0.0)
 	&& GetStyleSettingInt(gA_Timers[client].bsStyle, "force_hsw") != 1
@@ -3513,7 +3540,8 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 		gA_Timers[client].iStrafes++;
 	}
 
-	if (GetStyleSettingBool(gA_Timers[client].bsStyle, "strafe_count_s")
+	if (iGroundEntity == -1
+	&& GetStyleSettingBool(gA_Timers[client].bsStyle, "strafe_count_s")
 	&& !GetStyleSettingBool(gA_Timers[client].bsStyle, "block_s")
 	&& (gA_Timers[client].fLastInputVel[0] >= 0.0) && (vel[0] < 0.0)
 	)
@@ -3521,7 +3549,8 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 		gA_Timers[client].iStrafes++;
 	}
 
-	if (GetStyleSettingBool(gA_Timers[client].bsStyle, "strafe_count_a")
+	if (iGroundEntity == -1
+	&& GetStyleSettingBool(gA_Timers[client].bsStyle, "strafe_count_a")
 	&& !GetStyleSettingBool(gA_Timers[client].bsStyle, "block_a")
 	&& (gA_Timers[client].fLastInputVel[1] >= 0.0) && (vel[1] < 0.0)
 	&& (GetStyleSettingInt(gA_Timers[client].bsStyle, "force_hsw") > 0 || vel[0] == 0.0)
@@ -3530,7 +3559,8 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 		gA_Timers[client].iStrafes++;
 	}
 
-	if (GetStyleSettingBool(gA_Timers[client].bsStyle, "strafe_count_d")
+	if (iGroundEntity == -1
+	&& GetStyleSettingBool(gA_Timers[client].bsStyle, "strafe_count_d")
 	&& !GetStyleSettingBool(gA_Timers[client].bsStyle, "block_d")
 	&& (gA_Timers[client].fLastInputVel[1] <= 0.0) && (vel[1] > 0.0)
 	&& (GetStyleSettingInt(gA_Timers[client].bsStyle, "force_hsw") > 0 || vel[0] == 0.0)
@@ -3538,8 +3568,6 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 	{
 		gA_Timers[client].iStrafes++;
 	}
-
-	int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
 
 	float fAngle = GetAngleDiff(angles[1], gA_Timers[client].fLastAngle);
 

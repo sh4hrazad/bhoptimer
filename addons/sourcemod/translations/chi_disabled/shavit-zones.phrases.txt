@@ -153,7 +153,7 @@
 	}
 	"ZoneAxis"
 	{
-		"chi"		"轴"
+		"chi"		"切换坐标轴"
 	}
 	"ZoneCustomSpawnSuccess"
 	{

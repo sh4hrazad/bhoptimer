@@ -48,6 +48,26 @@
 		"#format"	"{1:s},{2:s}"
 		"chi"		"已{1}不再隐藏{2}其他玩家."
 	}
+	"AutoRestartEnabled"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"自动重开已{1}启用{2}, 计时超过个人最佳时将自动传送回起点."
+	}
+	"AutoRestartDisabled"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"自动重开已{1}禁用{2}."
+	}
+	"AutoRestartTriggered1"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"你的计时已超过个人最佳, 已自动将你{1}传送{2}回起点."
+	}
+	"AutoRestartTriggered2"
+	{
+		"#format"	"{1:s},{2:s}"
+		"chi"		"输入 {1}!autorestart{2} 来禁用此功能."
+	}
 	"LackingAccess"
 	{
 		"#format"	"{1:s},{2:s}"
@@ -239,7 +259,7 @@
 	}
 	"AutogainBasicStrafer"
 	{
-		"en"        "Autogain 仅基本加速"
+		"chi"        "Autogain 仅基本加速"
 	}
 	"AutoPrestrafe"
 	{

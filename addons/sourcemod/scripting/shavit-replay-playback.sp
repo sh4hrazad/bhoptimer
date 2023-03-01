@@ -41,7 +41,18 @@
 
 #undef REQUIRE_EXTENSIONS
 #include <cstrike>
+
+#define USE_CLOSESTPOS 1
+#define USE_BHOPTIMER_HELPER 0
+// you might enable both if you're testing stuff & doing comparisons like me, mr dev man
+
+#if USE_CLOSESTPOS
 #include <closestpos>
+#endif
+
+#if USE_BHOPTIMER_HELPER
+#include <bhoptimer_helper>
+#endif
 
 //#include <TickRateControl>
 forward void TickRate_OnTickRateChanged(float fOld, float fNew);
@@ -179,6 +190,7 @@ bot_info_t gA_BotInfo_Temp; // cached when creating a bot so we can use an accur
 int gI_LastReplayFlags[MAXPLAYERS + 1];
 float gF_EyeOffset;
 float gF_EyeOffsetDuck;
+float gF_MaxMove = 400.0;
 
 // how do i call this
 bool gB_HideNameChange = false;
@@ -224,8 +236,13 @@ TopMenuObject gH_TimerCommands = INVALID_TOPMENUOBJECT;
 Database gH_SQL = null;
 char gS_MySQLPrefix[32];
 
+#if USE_BHOPTIMER_HELPER
+bool gB_BhoptimerHelper;
+#endif
+#if USE_CLOSESTPOS
 bool gB_ClosestPos;
 ClosestPos gH_ClosestPos[TRACKS_SIZE][STYLE_LIMIT];
+#endif
 
 public Plugin myinfo =
 {
@@ -307,10 +324,13 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnAllPluginsLoaded()
 {
-	if (LibraryExists("closestpos"))
-	{
-		gB_ClosestPos = true;
-	}
+#if USE_CLOSESTPOS
+	gB_ClosestPos = LibraryExists("closestpos");
+#endif
+
+#if USE_BHOPTIMER_HELPER
+	gB_BhoptimerHelper = LibraryExists("bhoptimer_helper");
+#endif
 
 	gCV_PauseMovement = FindConVar("shavit_core_pause_movement");
 }
@@ -383,12 +403,8 @@ public void OnPluginStart()
 	gCV_DynamicTimeCheap = new Convar("shavit_replay_timedifference_cheap", "1", "0 - Disabled\n1 - only clip the search ahead to shavit_replay_timedifference_search\n2 - only clip the search behind to players current frame\n3 - clip the search to +/- shavit_replay_timedifference_search seconds to the players current frame", 0, true, 0.0, true, 3.0);
 	gCV_DynamicTimeSearch = new Convar("shavit_replay_timedifference_search", "60.0", "Time in seconds to search the players current frame for dynamic time differences\n0 - Full Scan\nNote: Higher values will result in worse performance", 0, true, 0.0);
 	gCV_EnableDynamicTimeDifference = new Convar("shavit_replay_timedifference", "1", "Enabled dynamic time/velocity differences for the hud", 0, true, 0.0, true, 1.0);
-
-	if (gEV_Type == Engine_CSS)
-	{
-		gCV_DisableHibernation = new Convar("shavit_replay_disable_hibernation", "0", "Whether to disable server hibernation...", 0, true, 0.0, true, 1.0);
-		gCV_DisableHibernation.AddChangeHook(OnConVarChanged);
-	}
+	gCV_DisableHibernation = new Convar("shavit_replay_disable_hibernation", "0", "Whether to disable server hibernation...", 0, true, 0.0, true, 1.0);
+	gCV_DisableHibernation.AddChangeHook(OnConVarChanged);
 
 	char tenth[6];
 	IntToString(RoundToFloor(1.0 / GetTickInterval() / 10), tenth, sizeof(tenth));
@@ -606,10 +622,18 @@ public void OnLibraryAdded(const char[] name)
 	{
 		gB_AdminMenu = true;
 	}
+#if USE_CLOSESTPOS
 	else if (strcmp(name, "closestpos") == 0)
 	{
 		gB_ClosestPos = true;
 	}
+#endif
+#if USE_BHOPTIMER_HELPER
+	else if (StrEqual(name, "bhoptimer_helper"))
+	{
+		gB_BhoptimerHelper = true;
+	}
+#endif
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -620,10 +644,18 @@ public void OnLibraryRemoved(const char[] name)
 		gH_AdminMenu = null;
 		gH_TimerCommands = INVALID_TOPMENUOBJECT;
 	}
+#if USE_CLOSESTPOS
 	else if (strcmp(name, "closestpos") == 0)
 	{
 		gB_ClosestPos = false;
 	}
+#endif
+#if USE_BHOPTIMER_HELPER
+	else if (StrEqual(name, "bhoptimer_helper"))
+	{
+		gB_BhoptimerHelper = false;
+	}
+#endif
 }
 
 public Action CommandListener_changelevel(int client, const char[] command, int args)
@@ -767,7 +799,20 @@ void StopOrRestartBots(int style, int track, bool restart)
 
 bool LoadReplay(frame_cache_t cache, int style, int track, const char[] path, const char[] mapname)
 {
-	bool ret = LoadReplayCache(cache, style, track, path, mapname);
+	bool ret = false;
+
+#if 0 && USE_BHOPTIMER_HELPER
+	if (gB_BhoptimerHelper)
+	{
+		cache.aFrames = new ArrayList(10);
+		ret = BH_LoadReplayCache(cache, style, track, path, mapname);
+		if (!ret) delete cache.aFrames;
+	}
+	else
+#endif
+	{
+		ret = LoadReplayCache(cache, style, track, path, mapname);
+	}
 
 	if (ret && cache.iSteamID != 0)
 	{
@@ -787,7 +832,12 @@ bool LoadReplay(frame_cache_t cache, int style, int track, const char[] path, co
 bool UnloadReplay(int style, int track, bool reload, bool restart, const char[] path = "")
 {
 	ClearFrameCache(gA_FrameCache[style][track]);
+#if USE_CLOSESTPOS
 	delete gH_ClosestPos[track][style];
+#endif
+#if USE_BHOPTIMER_HELPER
+	BH_ClosestPos_Remove((track << 8) | style);
+#endif
 
 	bool loaded = false;
 
@@ -1564,7 +1614,9 @@ void LoadDefaultReplays()
 		for (int j = 0; j < TRACKS_SIZE; j++)
 		{
 			ClearFrameCache(gA_FrameCache[i][j]);
+#if USE_CLOSESTPOS
 			delete gH_ClosestPos[j][i];
+#endif
 			DefaultLoadReplay(gA_FrameCache[i][j], i, j);
 		}
 	}
@@ -1631,6 +1683,7 @@ public void Shavit_OnReplaySaved(int client, int style, float time, int jumps, i
 
 	StopOrRestartBots(style, track, false);
 
+#if USE_CLOSESTPOS
 	if (gB_ClosestPos)
 	{
 #if DEBUG
@@ -1645,6 +1698,23 @@ public void Shavit_OnReplaySaved(int client, int style, float time, int jumps, i
 		delete p;
 #endif
 	}
+#endif
+
+#if USE_BHOPTIMER_HELPER
+	if (gB_BhoptimerHelper)
+	{
+#if DEBUG
+		Profiler p = new Profiler();
+		p.Start();
+#endif
+		BH_ClosestPos_Register((track << 8) | style, time, gA_FrameCache[style][track].aFrames, 0, gA_FrameCache[style][track].iPreFrames, gA_FrameCache[style][track].iFrameCount);
+#if DEBUG
+		p.Stop();
+		PrintToServer(">>> bhoptimer_helper @ Shavit_OnReplaySaved(style=%d, track=%d) = %f", style, track, p.Time);
+		delete p;
+#endif
+	}
+#endif
 }
 
 int InternalCreateReplayBot()
@@ -1760,6 +1830,9 @@ void AddReplayBots()
 		UpdateReplayClient(bot);
 	}
 
+	// try not to spawn all the bots on the same tick... maybe it'll help with the occasional script execution timeout
+	bool do_request_frame = false;
+
 	// Load all bots from looping config...
 	for (int i = 0; i < MAX_LOOPING_BOT_CONFIGS; i++)
 	{
@@ -1776,6 +1849,14 @@ void AddReplayBots()
 		{
 			continue;
 		}
+
+		if (do_request_frame)
+		{
+			RequestFrame(AddReplayBots);
+			return;
+		}
+
+		do_request_frame = true;
 
 		int bot = CreateReplayEntity(track, style, -1.0, 0, -1, Replay_Looping, false, cache, i);
 
@@ -1797,14 +1878,17 @@ bool DefaultLoadReplay(frame_cache_t cache, int style, int track)
 		return false;
 	}
 
+#if USE_CLOSESTPOS
 	if (gB_ClosestPos)
 	{
 #if DEBUG
+#if 1
 		PrintToServer("about to create closestpos handle with %d %d %d %d",
 			gA_FrameCache[style][track].aFrames,
 			0,
 			gA_FrameCache[style][track].iPreFrames,
 			gA_FrameCache[style][track].iFrameCount);
+#endif
 		Profiler p = new Profiler();
 		p.Start();
 #endif
@@ -1816,6 +1900,30 @@ bool DefaultLoadReplay(frame_cache_t cache, int style, int track)
 		delete p;
 #endif
 	}
+#endif
+
+#if USE_BHOPTIMER_HELPER
+	if (gB_BhoptimerHelper)
+	{
+#if DEBUG
+#if 1
+		PrintToServer("about to create bhoptimer_helper handle with %d %d %d %d",
+			gA_FrameCache[style][track].aFrames,
+			0,
+			gA_FrameCache[style][track].iPreFrames,
+			gA_FrameCache[style][track].iFrameCount);
+#endif
+		Profiler p = new Profiler();
+		p.Start();
+#endif
+		BH_ClosestPos_Register((track << 8) | style, 0.0, cache.aFrames, 0, cache.iPreFrames, cache.iFrameCount);
+#if DEBUG
+		p.Stop();
+		PrintToServer(">>> bhoptimer_helper / DefaultLoadReplay(style=%d, track=%d) = %f", style, track, p.Time);
+		delete p;
+#endif
+	}
+#endif
 
 	return true;
 }
@@ -2420,6 +2528,21 @@ Action ReplayOnPlayerRunCmd(bot_info_t info, int &buttons, int &impulse, float v
 				{
 					bWalk = true;
 				}
+			}
+
+			if (info.aCache.iReplayVersion >= 0x06)
+			{
+				int ivel[2];
+				UnpackSignedShorts(aFrame.vel, ivel);
+				vel[0] = float(ivel[0]);
+				vel[1] = float(ivel[1]);
+			}
+			else
+			{
+				if (buttons & IN_FORWARD)   vel[0] += gF_MaxMove;
+				if (buttons & IN_BACK)      vel[0] -= gF_MaxMove;
+				if (buttons & IN_MOVELEFT)  vel[1] -= gF_MaxMove;
+				if (buttons & IN_MOVERIGHT) vel[1] += gF_MaxMove;
 			}
 
 			if (isClient)
@@ -3082,7 +3205,7 @@ void OpenReplayTrackMenu(int client)
 			{
 				records = true;
 
-				continue;
+				break;
 			}
 		}
 
@@ -3579,6 +3702,25 @@ float GetClosestReplayTime(int client)
 	profiler.Start();
 #endif
 
+#if USE_BHOPTIMER_HELPER
+	if (gB_BhoptimerHelper)
+	{
+		if (-1 == (iClosestFrame = BH_ClosestPos_Get(client)))
+		{
+			return -1.0;
+		}
+
+		iEndFrame = iLength - 1;
+		if (iClosestFrame > iEndFrame) return -1.0;
+		iSearch = 0;
+	}
+#endif
+#if DEBUG
+	profiler.Stop();
+	float helpertime = profiler.Time;
+	profiler.Start();
+#endif
+#if USE_CLOSESTPOS
 	if (gB_ClosestPos)
 	{
 		if (!gH_ClosestPos[track][style])
@@ -3590,6 +3732,12 @@ float GetClosestReplayTime(int client)
 		iEndFrame = iLength - 1;
 		iSearch = 0;
 	}
+#endif
+#if !USE_CLOSESTPOS
+	if (true)
+	{
+	}
+#endif
 	else
 	{
 		int iPlayerFrames = Shavit_GetClientFrameCount(client) - Shavit_GetPlayerPreFrames(client);
@@ -3640,7 +3788,7 @@ float GetClosestReplayTime(int client)
 
 #if DEBUG
 	profiler.Stop();
-	PrintToConsole(client, "iClosestFrame(%fs) = %d", profiler.Time, iClosestFrame);
+	PrintToConsole(client, "%d / %fs | %fs", iClosestFrame, helpertime, profiler.Time);
 	delete profiler;
 #endif
 

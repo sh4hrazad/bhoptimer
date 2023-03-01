@@ -59,6 +59,7 @@ char gS_RadioCommands[][] = { "coverme", "takepoint", "holdpos", "regroup", "fol
 	"getout", "negative", "enemydown", "compliment", "thanks", "cheer", "go_a", "go_b", "sorry", "needrop", "playerradio", "playerchatwheel", "player_ping", "chatwheel_ping" };
 
 bool gB_Hide[MAXPLAYERS+1];
+bool gB_AutoRestart[MAXPLAYERS+1];
 bool gB_Late = false;
 int gI_GroundEntity[MAXPLAYERS+1];
 int gI_LastShot[MAXPLAYERS+1];
@@ -73,6 +74,7 @@ int gI_LastStopInfo[MAXPLAYERS+1];
 
 // cookies
 Handle gH_HideCookie = null;
+Handle gH_AutoRestartCookie = null;
 Cookie gH_BlockAdvertsCookie = null;
 
 // cvars
@@ -110,6 +112,7 @@ Convar gCV_RestrictNoclip = null;
 Convar gCV_SpecScoreboardOrder = null;
 Convar gCV_BadSetLocalAnglesFix = null;
 ConVar gCV_PauseMovement = null;
+Convar gCV_RestartWithFullHP = null;
 
 // external cvars
 ConVar sv_cheats = null;
@@ -118,6 +121,7 @@ ConVar mp_humanteam = null;
 ConVar hostname = null;
 ConVar hostport = null;
 ConVar sv_disable_radar = null;
+ConVar tf_dropped_weapon_lifetime = null;
 
 // forwards
 Handle gH_Forwards_OnClanTagChangePre = null;
@@ -185,6 +189,7 @@ public void OnPluginStart()
 	// spec
 	RegConsoleCmd("sm_spec", Command_Spec, "Moves you to the spectators' team. Usage: sm_spec [target]");
 	RegConsoleCmd("sm_spectate", Command_Spec, "Moves you to the spectators' team. Usage: sm_spectate [target]");
+	RegConsoleCmd("sm_specbot", Command_SpecBot, "Spectates the replay bot (usually)");
 
 	// hide
 	RegConsoleCmd("sm_hide", Command_Hide, "Toggle players' hiding.");
@@ -205,6 +210,12 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_practice", Command_Noclip, "Toggles noclip. (sm_nc alias)");
 	RegConsoleCmd("sm_nc", Command_Noclip, "Toggles noclip.");
 	RegConsoleCmd("sm_noclipme", Command_Noclip, "Toggles noclip. (sm_nc alias)");
+
+	// qol
+	RegConsoleCmd("sm_autorestart", Command_AutoRestart, "Toggles auto-restart.");
+	RegConsoleCmd("sm_autoreset", Command_AutoRestart, "Toggles auto-restart.");
+	gH_AutoRestartCookie = RegClientCookie("shavit_autorestart", "Auto-restart settings", CookieAccess_Protected);
+
 	AddCommandListener(CommandListener_Noclip, "+noclip");
 	AddCommandListener(CommandListener_Noclip, "-noclip");
 	// Hijack sourcemod's sm_noclip from funcommands to work when no args are specified.
@@ -285,17 +296,16 @@ public void OnPluginStart()
 	gCV_BhopSounds = new Convar("shavit_misc_bhopsounds", "1", "Should bhop (landing and jumping) sounds be muted?\n1 - Blocked while !hide is enabled\n2 - Always blocked", 0,  true, 1.0, true, 2.0);
 	gCV_RestrictNoclip = new Convar("shavit_misc_restrictnoclip", "0", "Should noclip be be restricted\n0 - Disabled\n1 - No vertical velocity while in noclip in start zone\n2 - No noclip in start zone", 0, true, 0.0, true, 2.0);
 	gCV_SpecScoreboardOrder = new Convar("shavit_misc_spec_scoreboard_order", "1", "Use scoreboard ordering for players when changing target when spectating.", 0, true, 0.0, true, 1.0);
-
-	if (gEV_Type != Engine_CSGO)
-	{
-		gCV_BadSetLocalAnglesFix = new Convar("shavit_misc_bad_setlocalangles_fix", "1", "Fix 'Bad SetLocalAngles' on func_rotating entities.", 0, true, 0.0, true, 1.0);
-	}
+	gCV_RestartWithFullHP = new Convar("shavit_misc_restart_with_full_hp", "1", "Reset hp on restart?", 0, true, 0.0, true, 1.0);
+	gCV_BadSetLocalAnglesFix = new Convar("shavit_misc_bad_setlocalangles_fix", "1", "Fix 'Bad SetLocalAngles' on func_rotating entities.", 0, true, 0.0, true, 1.0);
 
 	gCV_HideRadar.AddChangeHook(OnConVarChanged);
+	gCV_NoWeaponDrops.AddChangeHook(OnConVarChanged);
 	Convar.AutoExecConfig();
 
 	mp_humanteam = FindConVar("mp_humanteam");
 	sv_disable_radar = FindConVar("sv_disable_radar");
+	tf_dropped_weapon_lifetime = FindConVar("tf_dropped_weapon_lifetime");
 
 	// crons
 	CreateTimer(10.0, Timer_Cron, 0, TIMER_REPEAT);
@@ -352,7 +362,7 @@ void LoadDHooks()
 
 public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	if (sv_disable_radar != null)
+	if (convar == gCV_HideRadar && sv_disable_radar != null)
 	{
 		sv_disable_radar.BoolValue = gCV_HideRadar.BoolValue;
 	}
@@ -377,17 +387,10 @@ public void OnClientCookiesCached(int client)
 	}
 
 	char sSetting[8];
-	GetClientCookie(client, gH_HideCookie, sSetting, 8);
-
-	if(strlen(sSetting) == 0)
-	{
-		SetClientCookie(client, gH_HideCookie, "0");
-		gB_Hide[client] = false;
-	}
-	else
-	{
-		gB_Hide[client] = view_as<bool>(StringToInt(sSetting));
-	}
+	GetClientCookie(client, gH_HideCookie, sSetting, sizeof(sSetting));
+	gB_Hide[client] = StringToInt(sSetting) != 0;
+	GetClientCookie(client, gH_AutoRestartCookie, sSetting, sizeof(sSetting));
+	gB_AutoRestart[client] = StringToInt(sSetting) != 0;
 
 	gI_Style[client] = Shavit_GetBhopStyle(client);
 }
@@ -498,6 +501,11 @@ public void OnConfigsExecuted()
 	if (sv_disable_radar != null && gCV_HideRadar.BoolValue)
 	{
 		sv_disable_radar.BoolValue = true;
+	}
+
+	if (tf_dropped_weapon_lifetime != null && gCV_NoWeaponDrops.BoolValue)
+	{
+		tf_dropped_weapon_lifetime.IntValue = 0;
 	}
 
 	if(gCV_CreateSpawnPoints.IntValue > 0)
@@ -768,8 +776,8 @@ public Action Command_Jointeam(int client, const char[] command, int args)
 		return Plugin_Continue;
 	}
 
-	char arg1[8];
-	GetCmdArg(1, arg1, 8);
+	char arg1[16];
+	GetCmdArg(1, arg1, sizeof(arg1));
 
 	int iTeam = StringToInt(arg1);
 	int iHumanTeam = GetHumanTeam();
@@ -869,7 +877,7 @@ public Action Timer_Cron(Handle timer)
 		}
 	}
 
-	if (gEV_Type != Engine_CSGO && gCV_BadSetLocalAnglesFix.BoolValue)
+	if (gCV_BadSetLocalAnglesFix.BoolValue)
 	{
 		int ent = -1;
 
@@ -878,7 +886,7 @@ public Action Timer_Cron(Handle timer)
 			float ang[3], newang[3];
 			GetEntPropVector(ent, Prop_Send, "m_angRotation", ang);
 			newang[0] = normalize_ang(ang[0]);
-			newang[2] = normalize_ang(ang[1]);
+			newang[1] = normalize_ang(ang[1]);
 			newang[2] = normalize_ang(ang[2]);
 
 			if (newang[0] != ang[0] || newang[1] != ang[1] || newang[2] != ang[2])
@@ -1157,6 +1165,19 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 		}
 	}
 
+	if (gB_AutoRestart[client])
+	{
+		float bestTime = Shavit_GetClientPB(client, style, track);
+		float current = Shavit_GetClientTime(client);
+
+		if (bestTime != 0 && current > bestTime)
+		{
+			Shavit_RestartTimer(client, track);
+			Shavit_PrintToChat(client, "%T", "AutoRestartTriggered1", client, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
+			Shavit_PrintToChat(client, "%T", "AutoRestartTriggered2", client, gS_ChatStrings.sVariable, gS_ChatStrings.sText);
+		}
+	}
+
 	int iGroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
 
 	// prespeed
@@ -1251,8 +1272,8 @@ public Action Shavit_OnUserCmdPre(int client, int &buttons, int &impulse, float 
 public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_SetTransmit, OnSetTransmit);
-	SDKHook(client, SDKHook_WeaponDrop, OnWeaponDrop);
 	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
+	SDKHook(client, SDKHook_WeaponDrop, OnWeaponDrop);
 
 	gI_LastWeaponTick[client] = 0;
 	gI_LastNoclipTick[client] = 0;
@@ -1415,7 +1436,21 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 		}
 	}
 
+	if (StrEqual(sArgs, "1r") || StrEqual(sArgs, "1b"))
+	{
+		if (gCV_HideChatCommands.BoolValue)
+			return Plugin_Handled; // block chat but still do _Post
+	}
+
 	return Plugin_Continue;
+}
+
+public void OnClientSayCommand_Post(int client, const char[] command, const char[] sArgs)
+{
+	if (StrEqual(sArgs, "1r") || StrEqual(sArgs, "1b"))
+	{
+		FakeClientCommandEx(client, "sm_%c", sArgs[1]);
+	}
 }
 
 public Action Command_Hide(int client, int args)
@@ -1438,6 +1473,11 @@ public Action Command_Hide(int client, int args)
 	}
 
 	return Plugin_Handled;
+}
+
+public Action Command_SpecBot(int client, int args)
+{
+	return Command_Spec(client, 0);
 }
 
 public Action Command_Spec(int client, int args)
@@ -2082,6 +2122,13 @@ public void Shavit_OnWorldRecord(int client, int style, float time, int jumps, i
 public void Shavit_OnRestart(int client, int track)
 {
 	SetEntPropFloat(client, Prop_Send, "m_flStamina", 0.0);
+
+	if (gCV_RestartWithFullHP.BoolValue)
+	{
+		SetEntityHealth(client, 100);
+		SetEntProp(client, Prop_Send, "m_ArmorValue", 100);
+		SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
+	}
 }
 
 public Action Shavit_OnStyleCommandPre(int client, int oldstyle, int newstyle, int track)
@@ -2474,6 +2521,15 @@ public Action Command_Drop(int client, const char[] command, int argc)
 	}
 
 	return Plugin_Stop;
+}
+
+public Action Command_AutoRestart(int client, int args)
+{
+	gB_AutoRestart[client] = !gB_AutoRestart[client];
+	SetClientCookie(client, gH_AutoRestartCookie, gB_AutoRestart[client] ? "1" : "0");
+
+	Shavit_PrintToChat(client, "%T", gB_AutoRestart[client] ? "AutoRestartEnabled" : "AutoRestartDisabled", client, gB_AutoRestart[client] ?  gS_ChatStrings.sVariable : gS_ChatStrings.sWarning, gS_ChatStrings.sText);
+	return Plugin_Handled;
 }
 
 public int Native_IsClientUsingHide(Handle plugin, int numParams)

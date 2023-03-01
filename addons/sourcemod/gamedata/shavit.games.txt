@@ -44,6 +44,15 @@
 
 	"cstrike"
 	{
+		"Addresses"
+		{
+			"m_surfaceFriction"
+			{
+				"signature" "CBasePlayer->m_surfaceFriction"
+				"read"      "2" // skip the first 2 bytes
+			}
+		}
+
 		"Offsets"
 		{
 			// https://asherkin.github.io/vtable/
@@ -78,12 +87,6 @@
 			{
 				"windows"   "358"
 				"linux"     "359"
-			}
-			// TODO
-			"m_surfaceFriction"
-			{
-				"windows"   "104"
-				"linux"     "104"
 			}
 			// find in CCSGameMovement::CheckForLadders which references CCSPlayer::CanGrabLadder
 			"CCSPlayer::m_lastStandingPos"
@@ -170,72 +173,13 @@
 				"windows"   "\x55\x8B\xEC\x83\xEC\x08\x57\x8B\x7D\x08\x8B\x87\x2A\x2A\x2A\x2A\xD1\xE8\xA8\x01\x0F\x84"
 				"linux"     "@_ZN11CBaseEntity24PhysicsRemoveTouchedListEPS_"
 			}
-		}
-	}
-
-	"tf"
-	{
-		"Offsets"
-		{
-			// https://asherkin.github.io/vtable/
-			"CBaseTrigger::PassesTriggerFilters"
+			// look for function CGameMovement::CategorizePosition
+			// and you will see something something *(_DWORD*)(a1[1] + some_offset) = 0x3F800000
+			// make a signature at "mov dword ptr[eax+some_offset], 3F800000h"
+			"CBasePlayer->m_surfaceFriction"
 			{
-				"windows"   "204"
-				"linux"     "205"
-			}
-			// https://asherkin.github.io/vtable/
-			"CGameRules::IsSpawnPointValid"
-			{
-				"windows"   "76"
-				"linux"     "77"
-			}
-			// https://asherkin.github.io/vtable/
-			"CBasePlayer::UpdateStepSound"
-			{
-				"windows"   "365"
-				"linux"     "366"
-			}
-		}
-
-		"Signatures"
-		{
-			// search string: "Usage:  setang_exact pitch yaw" to find setang_exact's handler. Then the last function call in the handler is DoAnimationEvent.
-			"Player::DoAnimationEvent"
-			{
-				"windows"   "\x55\x8B\xEC\x51\x53\x56\x8B\x35\x2A\x2A\x2A\x2A\x8B\xD9\x8B\xCE"
-				"linux"     "@_ZN9CTFPlayer16DoAnimationEventE17PlayerAnimEvent_ti"
-			}
-			// search string: "match"
-			"BotManager::MaintainBotQuota"
-			{
-				"windows"   "\x55\x8B\xEC\x81\xEC\x14\x01\x00\x00\xA1"
-				"linux"     "@_ZN13CTFBotManager16MaintainBotQuotaEv"
-			}
-			// search string: "CreatePlayerBot: Unable to create bot"
-			"NextBotCreatePlayerBot<CTFBot>"
-			{
-				"windows"   "\x55\x8B\xEC\x56\x57\x68\x2A\x2A\x2A\x2A\xE8"
-				"linux"     "@_Z22NextBotCreatePlayerBotI6CTFBotEPT_PKcb"
-			}
-			// search string: "remove 0x%p: %s-%s" to find PhysicsRemoveToucher.
-			// Find PhysicsCheckForEntityUntouch by checking the functions that call PhysicsRemoveToucher.
-			"PhysicsCheckForEntityUntouch"
-			{
-				"windows"   "\x55\x8B\xEC\x83\xEC\x08\x56\x8B\xF1\x8B\x86\x2A\x2A\x2A\x2A\xD1\xE8"
-				"linux"     "@_ZN11CBaseEntity28PhysicsCheckForEntityUntouchEv"
-			}
-			// search string: "scoreboard_minigame"
-			"CTFGameRules::CalcPlayerScore"
-			{
-				"windows"   "\x55\x8B\xEC\x56\x8B\x75\x2A\x85\xF6\x75\x2A\x33\xC0\x5E\x5D\xC3\x8B\x56"
-				"linux"     "@_ZN12CTFGameRules15CalcPlayerScoreEP12RoundStats_tP9CTFPlayer"
-			}
-			// search string: "remove 0x%p: %s-%s (%d-%d) [%d in play, %d max]\n".
-			// function with one argument is PhysicsRemoveTouchedList
-			"PhysicsRemoveTouchedList"
-			{
-				"windows"   "\x55\x8B\xEC\x83\xEC\x08\x57\x8B\x7D\x08\x8B\x87\x2A\x2A\x2A\x2A\xD1\xE8\xA8\x01\x0F\x84"
-				"linux"     "@_ZN11CBaseEntity24PhysicsRemoveTouchedListEPS_"
+				"windows"	"\xC7\x80\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x8B\x07\xFF\x90"
+				"linux"	    "\xC7\x80\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x8B\x03\x89\x1C\x24\xFF\x90\x2A\x2A\x2A\x2A\x8B\x53\x04"
 			}
 		}
 	}
