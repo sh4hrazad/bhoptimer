@@ -194,7 +194,7 @@ public void OnPluginStart()
 		..."HUD_KEYOVERLAY			32\n"
 		..."HUD_HIDEWEAPON			64\n"
 		..."HUD_TOPLEFT				128\n"
-		..."HUD_UNUSED					256\n" // used to be "HUD_SYNC"
+		..."HUD_WRPB					256\n" // used to be "HUD_SYNC"
 		..."HUD_TIMELEFT				512\n"
 		..."HUD_2DVEL				1024\n"
 		..."HUD_NOSOUNDS				2048\n"
