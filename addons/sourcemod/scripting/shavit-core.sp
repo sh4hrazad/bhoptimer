@@ -147,7 +147,7 @@ int gI_DefaultStyle = 0;
 bool gB_StyleCookies = true;
 
 // table prefix
-char gS_MySQLPrefix[32];
+char gS_MySQLPrefix[MYSQL_PREFIX_LENGTH];
 
 // server side
 ConVar sv_accelerate = null;

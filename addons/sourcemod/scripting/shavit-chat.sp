@@ -74,7 +74,7 @@ enum
 
 // database
 Database gH_SQL = null;
-char gS_MySQLPrefix[32];
+char gS_MySQLPrefix[MYSQL_PREFIX_LENGTH];
 int gI_Driver = Driver_unknown;
 
 // modules

@@ -234,7 +234,7 @@ TopMenuObject gH_TimerCommands = INVALID_TOPMENUOBJECT;
 
 // database related things
 Database gH_SQL = null;
-char gS_MySQLPrefix[32];
+char gS_MySQLPrefix[MYSQL_PREFIX_LENGTH];
 
 #if USE_BHOPTIMER_HELPER
 bool gB_BhoptimerHelper;

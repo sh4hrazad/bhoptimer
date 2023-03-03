@@ -1076,7 +1076,7 @@ public void OpenCPMenu(int client)
 
 	if (!bSegmented || iUsingOwner != client)
 	{
-		char sInfo[64];
+		char sInfo[72];
 
 		FormatEx(sInfo, sizeof(sInfo), "%T\n", "MiscCheckpointMenu", client);
 

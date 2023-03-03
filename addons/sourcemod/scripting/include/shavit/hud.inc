@@ -33,7 +33,7 @@
 #define HUD_KEYOVERLAY          (1 << 5) // show a key overlay
 #define HUD_HIDEWEAPON          (1 << 6) // hide the player's weapon
 #define HUD_TOPLEFT             (1 << 7) // show top left white HUD with WR/PB times
-#define HUD_UNUSED              (1 << 8) // HUD_SYNC
+#define HUD_WRPB                (1 << 8) // HUD_SYNC
 #define HUD_TIMELEFT            (1 << 9) // shows time left at right tside of the screen (css only)
 #define HUD_2DVEL               (1 << 10) // shows 2d velocity
 #define HUD_NOSOUNDS            (1 << 11) // disables sounds on personal best, world record etc

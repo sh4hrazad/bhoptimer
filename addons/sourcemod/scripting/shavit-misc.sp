@@ -2100,8 +2100,11 @@ public void Shavit_OnWorldRecord(int client, int style, float time, int jumps, i
 	GetClientName(client, sName, sizeof(sName));
 
 	int iRecords = Shavit_GetRecordAmount(style, track);
+	
 	if(Shavit_GetClientPB(client, style, track) == 0.0)
+	{
 		iRecords++;
+	}
 
 	for(int i = 1; i <= gCV_WRMessages.IntValue; i++)
 	{	

@@ -48,7 +48,7 @@ bool gB_Rankings = false;
 
 // database handle
 Database gH_SQL = null;
-char gS_MySQLPrefix[32];
+char gS_MySQLPrefix[MYSQL_PREFIX_LENGTH];
 
 // cache
 bool gB_CanOpenMenu[MAXPLAYERS+1];

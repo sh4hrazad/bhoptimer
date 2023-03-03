@@ -134,14 +134,6 @@ public void OnPluginStart()
 
 	delete gamedata;
 
-	if (g_iSurfaceFrictionOffset != -1)
-	{
-		g_fMaxMove = 450.0;
-		ConVar sv_air_max_wishspeed = FindConVar("sv_air_max_wishspeed");
-		sv_air_max_wishspeed.AddChangeHook(OnWishSpeedChanged);
-		g_flAirSpeedCap = sv_air_max_wishspeed.FloatValue;
-	}
-
 	AddCommandListener(CommandListener_Toggler, "+autostrafer");
 	AddCommandListener(CommandListener_Toggler, "-autostrafer");
 	AddCommandListener(CommandListener_Toggler, "+autostrafe");

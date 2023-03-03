@@ -74,7 +74,7 @@ chatstrings_t gS_ChatStrings;
 Handle gH_Forwards_OnCountdownStart = null;
 
 // table prefix
-char gS_MySQLPrefix[32];
+char gS_MySQLPrefix[MYSQL_PREFIX_LENGTH];
 
 bool gB_Late = false;
 

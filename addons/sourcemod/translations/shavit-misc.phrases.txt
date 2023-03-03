@@ -176,7 +176,7 @@
 	}
 	"MiscCheckpointMenu"
 	{
-		"en"		"Checkpoints"
+		"en"		"Checkpoints Menu"
 	}
 	"MiscCheckpointMenuSegmented"
 	{
@@ -184,7 +184,7 @@
 	}
 	"MiscCheckpointWarning"
 	{
-		"en"		"*TIMER STOP WARNING!!*"
+		"en"		"WARNING: Timer will be stopped on teleporting!"
 	}
 	"MiscCheckpointSave"
 	{
@@ -194,12 +194,12 @@
 	"MiscCheckpointDuplicate"
 	{
 		"#format"	"{1:d},{2:d}"
-		"en"		"Duplicate checkpoint ({1}/{2})"
+		"en"		"Duplicate ({1}/{2})"
 	}
 	"MiscCheckpointTeleport"
 	{
 		"#format"	"{1:d}"
-		"en"		"Gocheck #{1}"
+		"en"		"Teleport #{1}"
 	}
 	"MiscCheckpointPrevious"
 	{
@@ -215,11 +215,11 @@
 	}
 	"MiscCheckpointUseOthers"
 	{
-		"en"		"Use another player's checkpoints"
+		"en"		"Steal"
 	}
 	"MiscCheckpointBack"
 	{
-		"en"		"Back to your checkpoints"
+		"en"		"Back"
 	}
 	"MiscCheckpointReset"
 	{

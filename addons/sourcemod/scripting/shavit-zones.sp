@@ -34,6 +34,7 @@
 #undef REQUIRE_PLUGIN
 #include <adminmenu>
 #include <shavit/replay-recorder>
+#include <shavit/trikz>
 
 #undef REQUIRE_EXTENSIONS
 #include <cstrike>
@@ -157,7 +158,7 @@ bool gB_DrawAllZones[MAXPLAYERS+1];
 Cookie gH_DrawAllZonesCookie = null;
 
 // table prefix
-char gS_MySQLPrefix[32];
+char gS_MySQLPrefix[MYSQL_PREFIX_LENGTH];
 
 // chat settings
 chatstrings_t gS_ChatStrings;
@@ -192,6 +193,7 @@ float gF_StartAng[MAXPLAYERS+1][TRACKS_SIZE][3];
 bool gB_Eventqueuefix = false;
 bool gB_ReplayRecorder = false;
 bool gB_AdminMenu = false;
+bool gB_Trikz = false;
 
 #define CZONE_VER 'c'
 // custom zone stuff
@@ -379,6 +381,7 @@ public void OnPluginStart()
 	gB_ReplayRecorder = LibraryExists("shavit-replay-recorder");
 	gB_Eventqueuefix = LibraryExists("eventqueuefix");
 	gB_AdminMenu = LibraryExists("adminmenu");
+	gB_Trikz = LibraryExists("sfork-trikz");
 
 	if (gB_Late)
 	{
@@ -517,6 +520,10 @@ public void OnLibraryAdded(const char[] name)
 	{
 		gB_Eventqueuefix = true;
 	}
+	else if (StrEqual(name, "sfork-trikz"))
+	{
+		gB_Trikz = true;
+	}
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -534,6 +541,10 @@ public void OnLibraryRemoved(const char[] name)
 	else if (StrEqual(name, "eventqueuefix"))
 	{
 		gB_Eventqueuefix = false;
+	}
+	else if (StrEqual(name, "sfork-trikz"))
+	{
+		gB_Trikz = false;
 	}
 }
 
@@ -5320,7 +5331,7 @@ public void StartTouchPost(int entity, int other)
 
 		case Zone_End:
 		{
-			if (status == Timer_Running && Shavit_GetClientTrack(other) == track)
+			if (status == Timer_Running && Shavit_GetClientTrack(other) == track && (!gB_Trikz || sFork_IsWaitingInEnd(other, track) == No_Waiting))
 			{
 				Shavit_FinishMap(other, track);
 			}

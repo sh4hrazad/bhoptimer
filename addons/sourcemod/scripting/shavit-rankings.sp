@@ -69,7 +69,7 @@ enum struct ranking_t
 	int iWRHolderRank[STYLE_LIMIT*2];
 }
 
-char gS_MySQLPrefix[32];
+char gS_MySQLPrefix[MYSQL_PREFIX_LENGTH];
 Database gH_SQL = null;
 bool gB_HasSQLRANK = false; // whether the sql driver supports RANK()
 int gI_Driver = Driver_unknown;

@@ -94,7 +94,7 @@ TopMenu gH_AdminMenu = null;
 TopMenuObject gH_TimerCommands = INVALID_TOPMENUOBJECT;
 
 // table prefix
-char gS_MySQLPrefix[32];
+char gS_MySQLPrefix[MYSQL_PREFIX_LENGTH];
 
 // cvars
 Convar gCV_RecordsLimit = null;

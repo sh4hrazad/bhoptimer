@@ -693,6 +693,11 @@ public Action ShowHUDMenu(int client, int item)
 	FormatEx(sHudItem, 64, "%T", "HudTopLeft", client);
 	menu.AddItem(sInfo, sHudItem);
 
+	FormatEx(sInfo, 16, "!%d", HUD_WRPB);
+	// FormatEx(sHudItem, 64, "%T", "HudTopLeft", client);
+	FormatEx(sHudItem, 64, "个人/服务器纪录");
+	menu.AddItem(sInfo, sHudItem);
+
 	FormatEx(sInfo, 16, "!%d", HUD_TIMELEFT);
 	FormatEx(sHudItem, 64, "%T", "HudTimeLeft", client);
 	menu.AddItem(sInfo, sHudItem);
@@ -1684,7 +1689,7 @@ void UpdateTopLeftHUD(int client, bool wait)
 		{
 			style = Shavit_GetBhopStyle(target);
 			track = Shavit_GetClientTrack(target);
-			fTargetPB = Shavit_GetClientPB(target, style, track);
+			// fTargetPB = Shavit_GetClientPB(target, style, track);
 		}
 		else
 		{
@@ -1712,58 +1717,58 @@ void UpdateTopLeftHUD(int client, bool wait)
 				return;
 			}
 
-			float fWRTime = Shavit_GetWorldRecord(style, track);
+			// float fWRTime = Shavit_GetWorldRecord(style, track);
 
-			if (fWRTime != 0.0)
-			{
-				char sWRTime[16];
-				FormatSeconds(fWRTime, sWRTime, 16);
+			// if (fWRTime != 0.0)
+			// {
+			// 	char sWRTime[16];
+			// 	FormatSeconds(fWRTime, sWRTime, 16);
 
-				char sWRName[MAX_NAME_LENGTH];
-				Shavit_GetWRName(style, sWRName, MAX_NAME_LENGTH, track);
+			// 	char sWRName[MAX_NAME_LENGTH];
+			// 	Shavit_GetWRName(style, sWRName, MAX_NAME_LENGTH, track);
 
-				FormatEx(sTopLeft, sizeof(sTopLeft), "WR: %s (%s)", sWRTime, sWRName);
-			}
+			// 	FormatEx(sTopLeft, sizeof(sTopLeft), "WR: %s (%s)", sWRTime, sWRName);
+			// }
 
-			char sTargetPB[64];
-			FormatSeconds(fTargetPB, sTargetPB, sizeof(sTargetPB));
-			Format(sTargetPB, sizeof(sTargetPB), "%T: %s", "HudBestText", client, sTargetPB);
+			// char sTargetPB[64];
+			// FormatSeconds(fTargetPB, sTargetPB, sizeof(sTargetPB));
+			// Format(sTargetPB, sizeof(sTargetPB), "%T: %s", "HudBestText", client, sTargetPB);
 
-			float fSelfPB = Shavit_GetClientPB(client, style, track);
-			char sSelfPB[64];
-			FormatSeconds(fSelfPB, sSelfPB, sizeof(sSelfPB));
-			Format(sSelfPB, sizeof(sSelfPB), "%T: %s", "HudBestText", client, sSelfPB);
+			// float fSelfPB = Shavit_GetClientPB(client, style, track);
+			// char sSelfPB[64];
+			// FormatSeconds(fSelfPB, sSelfPB, sizeof(sSelfPB));
+			// Format(sSelfPB, sizeof(sSelfPB), "%T: %s", "HudBestText", client, sSelfPB);
 
-			if((gI_HUD2Settings[client] & HUD2_SPLITPB) == 0 && target != client)
-			{
-				if(fTargetPB != 0.0)
-				{
-					if((gI_HUD2Settings[client]& HUD2_TOPLEFT_RANK) == 0)
-					{
-						Format(sTopLeft, sizeof(sTopLeft), "%s\n%s (#%d) (%N)", sTopLeft, sTargetPB, Shavit_GetRankForTime(style, fTargetPB, track), target);
-					}
-					else
-					{
-						Format(sTopLeft, sizeof(sTopLeft), "%s\n%s (%N)", sTopLeft, sTargetPB, target);
-					}
-				}
+			// if((gI_HUD2Settings[client] & HUD2_SPLITPB) == 0 && target != client)
+			// {
+			// 	if(fTargetPB != 0.0)
+			// 	{
+			// 		if((gI_HUD2Settings[client]& HUD2_TOPLEFT_RANK) == 0)
+			// 		{
+			// 			Format(sTopLeft, sizeof(sTopLeft), "%s\n%s (#%d) (%N)", sTopLeft, sTargetPB, Shavit_GetRankForTime(style, fTargetPB, track), target);
+			// 		}
+			// 		else
+			// 		{
+			// 			Format(sTopLeft, sizeof(sTopLeft), "%s\n%s (%N)", sTopLeft, sTargetPB, target);
+			// 		}
+			// 	}
 
-				if(fSelfPB != 0.0)
-				{
-					if((gI_HUD2Settings[client]& HUD2_TOPLEFT_RANK) == 0)
-					{
-						Format(sTopLeft, sizeof(sTopLeft), "%s\n%s (#%d) (%N)", sTopLeft, sSelfPB, Shavit_GetRankForTime(style, fSelfPB, track), client);
-					}
-					else
-					{
-						Format(sTopLeft, sizeof(sTopLeft), "%s\n%s (%N)", sTopLeft, sSelfPB, client);
-					}
-				}
-			}
-			else if(fSelfPB != 0.0)
-			{
-				Format(sTopLeft, sizeof(sTopLeft), "%s\n%s (#%d)", sTopLeft, sSelfPB, Shavit_GetRankForTime(style, fSelfPB, track));
-			}
+			// 	if(fSelfPB != 0.0)
+			// 	{
+			// 		if((gI_HUD2Settings[client]& HUD2_TOPLEFT_RANK) == 0)
+			// 		{
+			// 			Format(sTopLeft, sizeof(sTopLeft), "%s\n%s (#%d) (%N)", sTopLeft, sSelfPB, Shavit_GetRankForTime(style, fSelfPB, track), client);
+			// 		}
+			// 		else
+			// 		{
+			// 			Format(sTopLeft, sizeof(sTopLeft), "%s\n%s (%N)", sTopLeft, sSelfPB, client);
+			// 		}
+			// 	}
+			// }
+			// else if(fSelfPB != 0.0)
+			// {
+			// 	Format(sTopLeft, sizeof(sTopLeft), "%s\n%s (#%d)", sTopLeft, sSelfPB, Shavit_GetRankForTime(style, fSelfPB, track));
+			// }
 
 			Action postresult = Plugin_Continue;
 			Call_StartForward(gH_Forwards_OnTopLeftHUD);
@@ -1773,7 +1778,7 @@ void UpdateTopLeftHUD(int client, bool wait)
 			Call_PushCell(sizeof(sTopLeft));
 			Call_Finish(postresult);
 
-			if (postresult != Plugin_Continue && postresult != Plugin_Changed)
+			if ((postresult != Plugin_Continue && postresult != Plugin_Changed) || strlen(sTopLeft) == 0)
 			{
 				return;
 			}
@@ -1815,11 +1820,84 @@ void UpdateKeyHint(int client)
 				return;
 			}
 
-			int style = bReplay ? Shavit_GetReplayBotStyle(target) : Shavit_GetBhopStyle(target);
-
-			if(!(0 <= style < gI_Styles))
+			if((gI_HUDSettings[client] & HUD_WRPB) > 0)
 			{
-				style = 0;
+				int track = 0;
+				int style = 0;
+				float fTargetPB = 0.0;
+
+				if(!bReplay)
+				{
+					style = Shavit_GetBhopStyle(target);
+					track = Shavit_GetClientTrack(target);
+					fTargetPB = Shavit_GetClientPB(target, style, track);
+				}
+				else
+				{
+					style = Shavit_GetReplayBotStyle(target);
+					track = Shavit_GetReplayBotTrack(target);
+				}
+
+				style = (style == -1) ? 0 : style; // central replay bot probably
+				track = (track == -1) ? 0 : track; // central replay bot probably
+
+				if ((0 <= style < gI_Styles) && (0 <= track <= TRACKS_SIZE))
+				{
+					float fWRTime = Shavit_GetWorldRecord(style, track);
+
+					if (fWRTime != 0.0)
+					{
+						char sWRTime[16];
+						FormatSeconds(fWRTime, sWRTime, 16);
+
+						char sWRName[MAX_NAME_LENGTH];
+						Shavit_GetWRName(style, sWRName, MAX_NAME_LENGTH, track);
+
+						FormatEx(sMessage, sizeof(sMessage), "%s%sWR: %s (%s)", sMessage, (strlen(sMessage) > 0)? "\n\n":"", sWRTime, sWRName);
+					}
+
+					char sTargetPB[64];
+					FormatSeconds(fTargetPB, sTargetPB, sizeof(sTargetPB));
+					Format(sTargetPB, sizeof(sTargetPB), "%T: %s", "HudBestText", client, sTargetPB);
+
+					float fSelfPB = Shavit_GetClientPB(client, style, track);
+					char sSelfPB[64];
+					FormatSeconds(fSelfPB, sSelfPB, sizeof(sSelfPB));
+					Format(sSelfPB, sizeof(sSelfPB), "%T: %s", "HudBestText", client, sSelfPB);
+
+					if((gI_HUD2Settings[client] & HUD2_SPLITPB) == 0 && target != client)
+					{
+						if(fTargetPB != 0.0)
+						{
+							if((gI_HUD2Settings[client]& HUD2_TOPLEFT_RANK) == 0)
+							{
+								Format(sMessage, sizeof(sMessage), "%s\n%s (#%d) (%N)", sMessage, sTargetPB, Shavit_GetRankForTime(style, fTargetPB, track), target);
+							}
+							else
+							{
+								Format(sMessage, sizeof(sMessage), "%s\n%s (%N)", sMessage, sTargetPB, target);
+							}
+						}
+
+						if(fSelfPB != 0.0)
+						{
+							if((gI_HUD2Settings[client]& HUD2_TOPLEFT_RANK) == 0)
+							{
+								Format(sMessage, sizeof(sMessage), "%s\n%s (#%d) (%N)", sMessage, sSelfPB, Shavit_GetRankForTime(style, fSelfPB, track), client);
+							}
+							else
+							{
+								Format(sMessage, sizeof(sMessage), "%s\n%s (%N)", sMessage, sSelfPB, client);
+							}
+						}
+					}
+					else if(fSelfPB != 0.0)
+					{
+						Format(sMessage, sizeof(sMessage), "%s\n%s (#%d)", sMessage, sSelfPB, Shavit_GetRankForTime(style, fSelfPB, track));
+					}
+				}
+
+				StrCat(sMessage, sizeof(sMessage), "\n");
 			}
 
 			if ((gI_HUDSettings[client] & HUD_SPECTATORS) > 0 && (!(gI_HUDSettings[client] & HUD_SPECTATORSDEAD) || !IsPlayerAlive(client)))

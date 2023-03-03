@@ -27,6 +27,11 @@
 #define SHAVIT_VERSION "3.4.2"
 #define STYLE_LIMIT 256
 
+#define MAX_MESSAGE_LENGTH 254
+#define MENU_ITEM_NEW_LINE "\n    "
+
+#define MYSQL_PREFIX_LENGTH 32
+
 // god i fucking hate sourcemod. NULL_VECTOR isn't const so it's not guaranteed to be 0,0,0
 #define ZERO_VECTOR view_as<float>({0,0,0})
 
