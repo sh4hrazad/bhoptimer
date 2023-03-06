@@ -783,7 +783,7 @@ public Action ShowHUDMenu(int client, int item)
 	FormatEx(sHudItem, 64, "%T", "HudSplitPbText", client);
 	menu.AddItem(sInfo, sHudItem);
 
-	FormatEx(sInfo, 16, "!%d", HUD2_WRPB);
+	FormatEx(sInfo, 16, "@%d", HUD2_WRPB);
 	FormatEx(sHudItem, 64, "%T", "HudWrPb", client);
 	menu.AddItem(sInfo, sHudItem);
 
@@ -1799,7 +1799,7 @@ void UpdateKeyHint(int client)
 
 		if(gI_HUD2Settings[client] & HUD2_MAPNAME == 0)
 		{
-			FormatEx(sMessage, 256, "Map: %s [T%d]", gS_Map, Shavit_GetMapTier(gS_Map));
+			FormatEx(sMessage, 256, "Map: %s [T%d]\n", gS_Map, Shavit_GetMapTier(gS_Map));
 		}
 
 		int iTimeLeft = -1;
@@ -1815,7 +1815,7 @@ void UpdateKeyHint(int client)
 		{
 			int bReplay = gB_ReplayPlayback && Shavit_IsReplayEntity(target);
 
-			if(!(!bReplay && !IsValidClient(target)) && (gI_HUDSettings[client] & HUD2_WRPB) > 0)
+			if(!(!bReplay && !IsValidClient(target)) && (gI_HUD2Settings[client] & HUD2_WRPB) == 0)
 			{
 				int track = 0;
 				int style = 0;
