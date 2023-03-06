@@ -33,7 +33,7 @@
 #define HUD_KEYOVERLAY          (1 << 5) // show a key overlay
 #define HUD_HIDEWEAPON          (1 << 6) // hide the player's weapon
 #define HUD_TOPLEFT             (1 << 7) // show top left white HUD with WR/PB times
-#define HUD_WRPB                (1 << 8) // HUD_SYNC
+#define HUD_SIDEBAR             (1 << 8) // HUD_SYNC
 #define HUD_TIMELEFT            (1 << 9) // shows time left at right tside of the screen (css only)
 #define HUD_2DVEL               (1 << 10) // shows 2d velocity
 #define HUD_NOSOUNDS            (1 << 11) // disables sounds on personal best, world record etc
@@ -53,17 +53,17 @@
 #define HUD2_RANK               (1 << 6)
 #define HUD2_TRACK              (1 << 7)
 #define HUD2_SPLITPB            (1 << 8)
-#define HUD2_MAPTIER            (1 << 9)
+#define HUD2_WRPB               (1 << 9) // HUD2_MAPTIER
 #define HUD2_TIMEDIFFERENCE     (1 << 10)
 #define HUD2_PERFS              (1 << 11)
-#define HUD2_TOPLEFT_RANK       (1 << 12)
+#define HUD2_UNUSED2            (1 << 12) // HUD2_TOPLEFT_RANK
 #define HUD2_VELOCITYDIFFERENCE (1 << 13)
 #define HUD2_USPSILENCER        (1 << 14) // spawns usps with a silencer on
 #define HUD2_GLOCKBURST         (1 << 15) // spawns glocks with burst
-#define HUD2_UNUSED              (1 << 16) // HUD2_CENTERKEYS
+#define HUD2_MAPNAME            (1 << 16) // HUD2_CENTERKEYS
 
-#define HUD_DEFAULT             (HUD_MASTER|HUD_CENTER|HUD_ZONEHUD|HUD_OBSERVE|HUD_TOPLEFT|HUD_WRPB|HUD_TIMELEFT|HUD_2DVEL|HUD_SPECTATORS)
-#define HUD_DEFAULT2            (HUD2_PERFS)
+#define HUD_DEFAULT             (HUD_MASTER|HUD_CENTER|HUD_SIDEBAR|HUD_ZONEHUD|HUD_OBSERVE|HUD_TOPLEFT|HUD_TIMELEFT|HUD_2DVEL|HUD_SPECTATORS)
+#define HUD_DEFAULT2            (0)
 
 stock bool HUD1Enabled(int hudbits, int flag)
 {

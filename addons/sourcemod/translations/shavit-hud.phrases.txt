@@ -107,6 +107,10 @@
 	{
 		"en"		"Center text"
 	}
+	"HudSidebar"
+	{
+		"en"		"Sidebar HUD"
+	}
 	"HudZoneHud"
 	{
 		"en"		"Zone HUD"
@@ -133,7 +137,15 @@
 	}
 	"HudTopLeft"
 	{
-		"en"		"Top left HUD (WR/PB)"
+		"en"		"Top left HUD"
+	}
+	"HudWrPb"
+	{
+		"en"		"WR/PB"
+	}
+	"HudMapName"
+	{
+		"en"		"Map name"
 	}
 	"Hud2dVel"
 	{

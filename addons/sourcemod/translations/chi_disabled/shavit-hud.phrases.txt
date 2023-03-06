@@ -107,6 +107,10 @@
 	{
 		"chi"		"提示框内容"
 	}
+	"HudSidebar"
+	{
+		"en"		"侧栏 HUD"
+	}
 	"HudZoneHud"
 	{
 		"chi"		"起/终区域内 HUD"
@@ -133,7 +137,15 @@
 	}
 	"HudTopLeft"
 	{
-		"chi"		"左上角 HUD (WR/PB)"
+		"chi"		"左上角 HUD"
+	}
+	"HudWrPb"
+	{
+		"chi"		"服务器/个人纪录"
+	}
+	"HudMapName"
+	{
+		"chi"		"地图名称"
 	}
 	"Hud2dVel"
 	{

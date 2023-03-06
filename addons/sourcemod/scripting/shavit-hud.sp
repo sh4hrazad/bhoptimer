@@ -80,6 +80,7 @@ int gI_Cycle = 0;
 color_t gI_Gradient;
 int gI_GradientDirection = -1;
 int gI_Styles = 0;
+char gS_Map[PLATFORM_MAX_PATH];
 
 Handle gH_HUDCookie = null;
 Handle gH_HUDCookieMain = null;
@@ -215,14 +216,14 @@ public void OnPluginStart()
 		..."HUD2_RANK				64\n"
 		..."HUD2_TRACK				128\n"
 		..."HUD2_SPLITPB				256\n"
-		..."HUD2_MAPTIER				512\n"
+		..."HUD2_SIDEBAR				512\n"
 		..."HUD2_TIMEDIFFERENCE		1024\n"
 		..."HUD2_PERFS				2048\n"
-		..."HUD2_TOPLEFT_RANK		4096\n"
+		..."HUD2_UNUSED2		4096\n"
 		..."HUD2_VELOCITYDIFFERENCE	8192\n"
 		..."HUD2_USPSILENCER         16384\n"
 		..."HUD2_GLOCKBURST          32768\n"
-		..."HUD2_UNUSED          65536\n" // used to be "HUD2_CENTERKEYS"
+		..."HUD2_MAPNAME          65536\n" // used to be "HUD2_CENTERKEYS"
 	);
 
 	Convar.AutoExecConfig();
@@ -270,6 +271,7 @@ public void OnPluginStart()
 
 	if(gB_Late)
 	{
+		GetLowercaseMapName(gS_Map);
 		Shavit_OnStyleConfigLoaded(Shavit_GetStyleCount());
 		Shavit_OnChatConfigLoaded();
 
@@ -286,6 +288,11 @@ public void OnPluginStart()
 			}
 		}
 	}
+}
+
+public void OnMapStart()
+{
+	GetLowercaseMapName(gS_Map);
 }
 
 public void OnLibraryAdded(const char[] name)
@@ -665,6 +672,10 @@ public Action ShowHUDMenu(int client, int item)
 	FormatEx(sHudItem, 64, "%T", "HudCenter", client);
 	menu.AddItem(sInfo, sHudItem);
 
+	FormatEx(sInfo, 16, "!%d", HUD_SIDEBAR);
+	FormatEx(sHudItem, 64, "%T", "HudSidebar", client);
+	menu.AddItem(sInfo, sHudItem);
+
 	FormatEx(sInfo, 16, "!%d", HUD_ZONEHUD);
 	FormatEx(sHudItem, 64, "%T", "HudZoneHud", client);
 	menu.AddItem(sInfo, sHudItem);
@@ -691,11 +702,6 @@ public Action ShowHUDMenu(int client, int item)
 
 	FormatEx(sInfo, 16, "!%d", HUD_TOPLEFT);
 	FormatEx(sHudItem, 64, "%T", "HudTopLeft", client);
-	menu.AddItem(sInfo, sHudItem);
-
-	FormatEx(sInfo, 16, "!%d", HUD_WRPB);
-	// FormatEx(sHudItem, 64, "%T", "HudTopLeft", client);
-	FormatEx(sHudItem, 64, "个人/服务器纪录");
 	menu.AddItem(sInfo, sHudItem);
 
 	FormatEx(sInfo, 16, "!%d", HUD_TIMELEFT);
@@ -777,16 +783,9 @@ public Action ShowHUDMenu(int client, int item)
 	FormatEx(sHudItem, 64, "%T", "HudSplitPbText", client);
 	menu.AddItem(sInfo, sHudItem);
 
-	FormatEx(sInfo, 16, "@%d", HUD2_TOPLEFT_RANK);
-	FormatEx(sHudItem, 64, "%T", "HudTopLeftRankText", client);
+	FormatEx(sInfo, 16, "!%d", HUD2_WRPB);
+	FormatEx(sHudItem, 64, "%T", "HudWrPb", client);
 	menu.AddItem(sInfo, sHudItem);
-
-	if(gB_Rankings)
-	{
-		FormatEx(sInfo, 16, "@%d", HUD2_MAPTIER);
-		FormatEx(sHudItem, 64, "%T", "HudMapTierText", client);
-		menu.AddItem(sInfo, sHudItem);
-	}
 
 	FormatEx(sInfo, 16, "@%d", HUD2_GLOCKBURST);
 	FormatEx(sHudItem, 64, "%T", "HudGlockBurst", client);
@@ -1236,24 +1235,6 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 		char sTrack[32];
 		GetTrackName(client, data.iTrack, sTrack, 32);
 
-		if((gI_HUD2Settings[client] & HUD2_STYLE) == 0 || (gB_Rankings && (gI_HUD2Settings[client] & HUD2_MAPTIER) == 0))
-		{
-			if(!((gI_HUD2Settings[client] & HUD2_STYLE) == 0))
-			{
-				FormatEx(sLine, 128, "%T", "HudZoneTier", client, data.iMapTier);
-			}
-			else if(!(gB_Rankings && (gI_HUD2Settings[client] & HUD2_MAPTIER) == 0))
-			{
-				FormatEx(sLine, 128, "%s", gS_StyleStrings[data.iStyle].sStyleName);
-			}
-			else
-			{
-				FormatEx(sLine, 128, "%s | %T", gS_StyleStrings[data.iStyle].sStyleName, "HudZoneTier", client, data.iMapTier);
-			}
-
-			AddHUDLine(buffer, maxlen, sLine, iLines);
-		}
-
 		if(data.iZoneHUD == ZoneHUD_Start)
 		{
 			FormatEx(sLine, 128, "%T", "HudInStartZone", client, sTrack);
@@ -1262,11 +1243,24 @@ int AddHUDToBuffer_Source2013(int client, huddata_t data, char[] buffer, int max
 		{
 			FormatEx(sLine, 128, "%T", "HudInEndZone", client, sTrack);
 		}
+
 		AddHUDLine(buffer, maxlen, sLine, iLines);
 
-		if((gI_HUD2Settings[client] & HUD2_SPEED) == 0)
+		if((gI_HUD2Settings[client] & HUD2_STYLE) == 0 || (gI_HUD2Settings[client] & HUD2_SPEED) == 0)
 		{
-			FormatEx(sLine, 128, "Spd: %d", data.iSpeed);
+			if(!((gI_HUD2Settings[client] & HUD2_STYLE) == 0))
+			{
+				FormatEx(sLine, 128, "Spd: %d", data.iSpeed);
+			}
+			else if(!((gI_HUD2Settings[client] & HUD2_SPEED) == 0))
+			{
+				FormatEx(sLine, 128, "%s", gS_StyleStrings[data.iStyle].sStyleName);
+			}
+			else
+			{
+				FormatEx(sLine, 128, "%s | Spd: %d", gS_StyleStrings[data.iStyle].sStyleName, data.iSpeed, client, data.iMapTier);
+			}
+
 			AddHUDLine(buffer, maxlen, sLine, iLines);
 		}
 
@@ -1683,7 +1677,7 @@ void UpdateTopLeftHUD(int client, bool wait)
 
 		int track = 0;
 		int style = 0;
-		float fTargetPB = 0.0;
+		// float fTargetPB = 0.0;
 
 		if(!bReplay)
 		{
@@ -1799,14 +1793,20 @@ void UpdateTopLeftHUD(int client, bool wait)
 
 void UpdateKeyHint(int client)
 {
-	if ((gI_Cycle % 10) == 0 && ((gI_HUDSettings[client] & HUD_TIMELEFT) > 0))
+	if ((gI_Cycle % 10) == 0 && ((gI_HUDSettings[client] & HUD_SIDEBAR) > 0))
 	{
 		char sMessage[256];
+
+		if(gI_HUD2Settings[client] & HUD2_MAPNAME == 0)
+		{
+			FormatEx(sMessage, 256, "Map: %s [T%d]", gS_Map, Shavit_GetMapTier(gS_Map));
+		}
+
 		int iTimeLeft = -1;
 
 		if((gI_HUDSettings[client] & HUD_TIMELEFT) > 0 && GetMapTimeLeft(iTimeLeft) && iTimeLeft > 0)
 		{
-			FormatEx(sMessage, 256, (iTimeLeft > 60)? "Timeleft: %d min":"Timeleft: %d sec", (iTimeLeft > 60) ? (iTimeLeft / 60)+1 : iTimeLeft);
+			FormatEx(sMessage, 256, (iTimeLeft > 60)? "%sTimeleft: %d min":"%sTimeleft: %d sec", sMessage, (iTimeLeft > 60) ? (iTimeLeft / 60)+1 : iTimeLeft);
 		}
 
 		int target = GetSpectatorTarget(client, client);
@@ -1815,12 +1815,7 @@ void UpdateKeyHint(int client)
 		{
 			int bReplay = gB_ReplayPlayback && Shavit_IsReplayEntity(target);
 
-			if (!bReplay && !IsValidClient(target))
-			{
-				return;
-			}
-
-			if((gI_HUDSettings[client] & HUD_WRPB) > 0)
+			if(!(!bReplay && !IsValidClient(target)) && (gI_HUDSettings[client] & HUD2_WRPB) > 0)
 			{
 				int track = 0;
 				int style = 0;
@@ -1853,51 +1848,37 @@ void UpdateKeyHint(int client)
 						char sWRName[MAX_NAME_LENGTH];
 						Shavit_GetWRName(style, sWRName, MAX_NAME_LENGTH, track);
 
-						FormatEx(sMessage, sizeof(sMessage), "%s%sWR: %s (%s)", sMessage, (strlen(sMessage) > 0)? "\n\n":"", sWRTime, sWRName);
+						FormatEx(sMessage, sizeof(sMessage), "%s%sSR: %s (%s)", sMessage, (strlen(sMessage) > 0)? "\n\n":"", sWRTime, sWRName);
 					}
-
-					char sTargetPB[64];
-					FormatSeconds(fTargetPB, sTargetPB, sizeof(sTargetPB));
-					Format(sTargetPB, sizeof(sTargetPB), "%T: %s", "HudBestText", client, sTargetPB);
 
 					float fSelfPB = Shavit_GetClientPB(client, style, track);
 					char sSelfPB[64];
 					FormatSeconds(fSelfPB, sSelfPB, sizeof(sSelfPB));
-					Format(sSelfPB, sizeof(sSelfPB), "%T: %s", "HudBestText", client, sSelfPB);
+					Format(sSelfPB, sizeof(sSelfPB), "PB: %s", sSelfPB);
 
 					if((gI_HUD2Settings[client] & HUD2_SPLITPB) == 0 && target != client)
 					{
 						if(fTargetPB != 0.0)
 						{
-							if((gI_HUD2Settings[client]& HUD2_TOPLEFT_RANK) == 0)
-							{
-								Format(sMessage, sizeof(sMessage), "%s\n%s (#%d) (%N)", sMessage, sTargetPB, Shavit_GetRankForTime(style, fTargetPB, track), target);
-							}
-							else
-							{
-								Format(sMessage, sizeof(sMessage), "%s\n%s (%N)", sMessage, sTargetPB, target);
-							}
+							char sTargetPB[64];
+							FormatSeconds(fTargetPB, sTargetPB, sizeof(sTargetPB));
+							Format(sTargetPB, sizeof(sTargetPB), "PB: %s", sTargetPB);
+
+							Format(sMessage, sizeof(sMessage), "%s\n%s (#%d) (%N)", sMessage, sTargetPB, Shavit_GetRankForTime(style, fTargetPB, track), target);
 						}
 
 						if(fSelfPB != 0.0)
 						{
-							if((gI_HUD2Settings[client]& HUD2_TOPLEFT_RANK) == 0)
-							{
-								Format(sMessage, sizeof(sMessage), "%s\n%s (#%d) (%N)", sMessage, sSelfPB, Shavit_GetRankForTime(style, fSelfPB, track), client);
-							}
-							else
-							{
-								Format(sMessage, sizeof(sMessage), "%s\n%s (%N)", sMessage, sSelfPB, client);
-							}
+							Format(sMessage, sizeof(sMessage), "%s\n%s (#%d) (%N)", sMessage, sSelfPB, Shavit_GetRankForTime(style, fSelfPB, track), client);
 						}
 					}
 					else if(fSelfPB != 0.0)
 					{
 						Format(sMessage, sizeof(sMessage), "%s\n%s (#%d)", sMessage, sSelfPB, Shavit_GetRankForTime(style, fSelfPB, track));
 					}
-				}
 
-				StrCat(sMessage, sizeof(sMessage), "\n");
+					StrCat(sMessage, sizeof(sMessage), "\n");
+				}
 			}
 
 			if ((gI_HUDSettings[client] & HUD_SPECTATORS) > 0 && (!(gI_HUDSettings[client] & HUD_SPECTATORSDEAD) || !IsPlayerAlive(client)))
