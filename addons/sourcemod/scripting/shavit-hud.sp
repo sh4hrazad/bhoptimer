@@ -36,6 +36,7 @@
 #include <shavit/replay-playback>
 #include <shavit/wr>
 #include <shavit/zones>
+#include <wrsj>
 #include <DynamicChannels>
 
 #undef REQUIRE_EXTENSIONS
@@ -74,6 +75,7 @@ bool gB_Zones = false;
 bool gB_Sounds = false;
 bool gB_Rankings = false;
 bool gB_DynamicChannels = false;
+bool gB_Wrsj = false;
 
 // cache
 int gI_Cycle = 0;
@@ -317,6 +319,10 @@ public void OnLibraryAdded(const char[] name)
 	{
 		gB_DynamicChannels = true;
 	}
+	else if(StrEqual(name, "wrsj"))
+	{
+		gB_Wrsj = true;
+	}
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -340,6 +346,10 @@ public void OnLibraryRemoved(const char[] name)
 	else if(StrEqual(name, "DynamicChannels"))
 	{
 		gB_DynamicChannels = false;
+	}
+	else if(StrEqual(name, "wrsj"))
+	{
+		gB_Wrsj = false;
 	}
 }
 
@@ -777,6 +787,10 @@ public Action ShowHUDMenu(int client, int item)
 
 	FormatEx(sInfo, 16, "@%d", HUD2_TRACK);
 	FormatEx(sHudItem, 64, "%T", "HudTrackText", client);
+	menu.AddItem(sInfo, sHudItem);
+
+	FormatEx(sInfo, 16, "@%d", HUD2_MAPNAME);
+	FormatEx(sHudItem, 64, "%T", "HudMapName", client);
 	menu.AddItem(sInfo, sHudItem);
 
 	FormatEx(sInfo, 16, "@%d", HUD2_SPLITPB);
@@ -1805,7 +1819,7 @@ void UpdateKeyHint(int client)
 	{
 		char sMessage[256];
 
-		if(gI_HUD2Settings[client] & HUD2_MAPNAME == 0)
+		if(HUD2Enabled(gI_HUD2Settings[client], HUD2_MAPNAME))
 		{
 			FormatEx(sMessage, 256, "Map: %s [T%d]\n", gS_Map, Shavit_GetMapTier(gS_Map));
 		}
@@ -1814,7 +1828,7 @@ void UpdateKeyHint(int client)
 
 		if((gI_HUDSettings[client] & HUD_TIMELEFT) > 0 && GetMapTimeLeft(iTimeLeft) && iTimeLeft > 0)
 		{
-			FormatEx(sMessage, 256, (iTimeLeft > 150)? "Timeleft: %d minutes":"Timeleft: %d seconds", (iTimeLeft > 150) ? (iTimeLeft / 60)+1 : iTimeLeft);
+			FormatEx(sMessage, 256, (iTimeLeft > 150)? "%sTimeleft: %d minutes":"Timeleft: %d seconds", sMessage, (iTimeLeft > 150) ? (iTimeLeft / 60)+1 : iTimeLeft);
 		}
 
 		int target = GetSpectatorTarget(client, client);
@@ -1848,15 +1862,35 @@ void UpdateKeyHint(int client)
 				{
 					float fWRTime = Shavit_GetWorldRecord(style, track);
 
-					if (fWRTime != 0.0)
+					bool retrievedWrsj = false;
+
+					// optimize this?
+					WRSJ_RecordInfo info;
+
+					if (gB_Wrsj && track == Track_Main && style == 0)
 					{
+						retrievedWrsj = WRSJ_Fork_GetSjInfo(info);
+					}
+
+					if (fWRTime != 0.0 || retrievedWrsj)
+					{
+						FormatEx(sMessage, sizeof(sMessage), "%s%s", sMessage, (strlen(sMessage) > 0)? "\n\n":"");
+					}
+
+					if (retrievedWrsj)
+					{
+						FormatEx(sMessage, sizeof(sMessage), "%sWR: %s (%s)\n", sMessage, info.time, info.name);
+					}
+
+					if (fWRTime != 0.0)
+					{	
 						char sWRTime[16];
 						FormatSeconds(fWRTime, sWRTime, 16);
 
 						char sWRName[MAX_NAME_LENGTH];
 						Shavit_GetWRName(style, sWRName, MAX_NAME_LENGTH, track);
 
-						FormatEx(sMessage, sizeof(sMessage), "%s%sSR: %s (%s)", sMessage, (strlen(sMessage) > 0)? "\n\n":"", sWRTime, sWRName);
+						FormatEx(sMessage, sizeof(sMessage), "%sSR: %s (%s)", sMessage, sWRTime, sWRName);
 					}
 
 					float fSelfPB = Shavit_GetClientPB(client, style, track);
@@ -1913,7 +1947,7 @@ void UpdateKeyHint(int client)
 
 				if(iSpectators > 0)
 				{
-					Format(sMessage, 256, "%s%s%spectators (%d):", sMessage, (strlen(sMessage) > 0)? "\n\n":"", (client == target)? "S":"Other S", iSpectators);
+					Format(sMessage, 256, "%s%s%spectators (%d):", sMessage, (strlen(sMessage) > 0)? "\n":"", (client == target)? "S":"Other S", iSpectators);
 					char sName[MAX_NAME_LENGTH];
 
 					for(int i = 0; i < iSpectators; i++)

@@ -539,7 +539,7 @@ public Action Command_MapInfo(int client, int args)
 	int bonuses = sFork_GetBonusCount();
 
 	// usually it's only in main track that has stage zones
-	int stages = Shavit_GetStageCount(Track_Main);
+	int stages = Shavit_GetHighestStage(Track_Main);
 
 	char sMap[PLATFORM_MAX_PATH];
 
