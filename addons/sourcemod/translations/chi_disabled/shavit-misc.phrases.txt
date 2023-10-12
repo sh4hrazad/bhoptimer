@@ -215,11 +215,11 @@
 	}
 	"MiscCheckpointUseOthers"
 	{
-		"chi"		"使用他人存点"
+		"chi"		"偷存点"
 	}
 	"MiscCheckpointBack"
 	{
-		"chi"		"返回自己存点"
+		"chi"		"返回"
 	}
 	"MiscCheckpointReset"
 	{
@@ -283,7 +283,7 @@
 	}
 	"Autostrafer_basic"
 	{
-		"chi"		"基本"
+		"chi"        "基本"
 	}
 	"TASEnabled"
 	{
