@@ -115,6 +115,8 @@ ConVar gCV_PauseMovement = null;
 Convar gCV_RestartWithFullHP = null;
 
 // external cvars
+ConVar sv_accelerate = null;
+ConVar sv_friction = null;
 ConVar sv_cheats = null;
 ConVar sv_disable_immunity_alpha = null;
 ConVar mp_humanteam = null;
@@ -264,7 +266,7 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_adverts", Command_PrintAdverts, "Prints all the adverts to your chat");
 
 	// cvars and stuff
-	gCV_GodMode = new Convar("shavit_misc_godmode", "3", "Enable godmode for players?\n0 - Disabled\n1 - Only prevent fall/world damage.\n2 - Only prevent damage from other players.\n3 - Full godmode.", 0, true, 0.0, true, 3.0);
+	gCV_GodMode = new Convar("shavit_misc_godmode", "3", "Enable godmode for players?\n0 - Disabled\n1 - Only prevent fall/world damage.\n2 - Only prevent damage from other players.\n3 - Full godmode.\n4 - Prevent fall/world/entity damage (all except damage from other players).", 0, true, 0.0, true, 4.0);
 	gCV_PreSpeed = new Convar("shavit_misc_prespeed", "2", "Stop prespeeding in the start zone?\n0 - Disabled, fully allow prespeeding.\n1 - Limit relatively to prestrafelimit.\n2 - Block bunnyhopping in startzone.\n3 - Limit to prestrafelimit and block bunnyhopping.\n4 - Limit to prestrafelimit but allow prespeeding. Combine with shavit_core_nozaxisspeed 1 for SourceCode timer's behavior.\n5 - Limit horizontal speed to prestrafe but allow prespeeding.", 0, true, 0.0, true, 5.0);
 	gCV_HideTeamChanges = new Convar("shavit_misc_hideteamchanges", "1", "Hide team changes in chat?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
 	gCV_RespawnOnTeam = new Convar("shavit_misc_respawnonteam", "1", "Respawn whenever a player joins a team?\n0 - Disabled\n1 - Enabled", 0, true, 0.0, true, 1.0);
@@ -306,6 +308,9 @@ public void OnPluginStart()
 	mp_humanteam = FindConVar("mp_humanteam");
 	sv_disable_radar = FindConVar("sv_disable_radar");
 	tf_dropped_weapon_lifetime = FindConVar("tf_dropped_weapon_lifetime");
+
+	sv_accelerate = FindConVar("sv_accelerate");
+	sv_friction = FindConVar("sv_friction");
 
 	// crons
 	CreateTimer(10.0, Timer_Cron, 0, TIMER_REPEAT);
@@ -1315,34 +1320,53 @@ void ClearViewPunch(int victim)
 	}
 }
 
-public Action OnTakeDamage(int victim, int& attacker)
+public Action OnTakeDamage(int victim, int& attacker, int& inflictor, float& damage, int& damagetype, int& weapon, float damageForce[3], float damagePosition[3])
 {
 	bool bBlockDamage;
 
 	switch(gCV_GodMode.IntValue)
 	{
-		case 0:
+		case 0: // don't block damage
 		{
 			bBlockDamage = false;
 		}
-		case 1:
+		case 1: // block world/fall damage
 		{
 			// 0 - world/fall damage
-			if(attacker == 0)
+			if (attacker == 0)
 			{
 				bBlockDamage = true;
 			}
 		}
-		case 2:
+		case 2: // block player-dealt damage
 		{
-			if(IsValidClient(attacker))
+			char sClassname[12];
+			if (IsValidClient(attacker) &&
+				( !IsValidEntity(inflictor) || !GetEntityClassname(inflictor, sClassname, sizeof(sClassname)) || !StrEqual(sClassname, "point_hurt") ) // This line ignores damage dealt by point_hurt (see https://developer.valvesoftware.com/wiki/Point_hurt)
+			   )
 			{
 				bBlockDamage = true;
 			}
 		}
-		default:
+		case 3: // full godmode, blocks all damage
 		{
 			bBlockDamage = true;
+		}
+		case 4: // block world/fall/entity damage (all damage except damage from other players)
+		{
+			// 0 - world/fall damage
+			if (attacker == 0 || attacker > MaxClients) // (attacker > MaxClients) for DMG_CRUSH, by moving/falling objects for example (with cs_enable_player_physics_box 1)
+			{
+				bBlockDamage = true;
+			}
+			else if (inflictor != attacker && IsValidEntity(inflictor)) // handles damage dealt by point_hurt (see https://developer.valvesoftware.com/wiki/Point_hurt)
+			{
+				char sClassname[12];
+				if (GetEntityClassname(inflictor, sClassname, sizeof(sClassname)) && StrEqual(sClassname, "point_hurt"))
+				{
+					bBlockDamage = true;
+				}
+			}
 		}
 	}
 
@@ -2071,11 +2095,67 @@ public Action Command_Specs(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action Shavit_OnStartPre(int client)
+float StyleMaxPrestrafe(int style)
 {
-	if (Shavit_GetStyleSettingInt(gI_Style[client], "prespeed") == 0 && GetEntityMoveType(client) == MOVETYPE_NOCLIP)
+	float runspeed = Shavit_GetStyleSettingFloat(style, "runspeed");
+	return MaxPrestrafe(runspeed, sv_accelerate.FloatValue, sv_friction.FloatValue, GetTickInterval());
+}
+
+public Action Shavit_OnStartPre(int client, int track, bool& skipGroundTimer)
+{
+	if (GetEntityMoveType(client) == MOVETYPE_NOCLIP)
 	{
 		return Plugin_Stop;
+	}
+
+	if (Shavit_GetStyleSettingInt(gI_Style[client], "prespeed") == 0)
+	{
+		int prespeed_type = Shavit_GetStyleSettingInt(gI_Style[client], "prespeed_type");
+
+		if (prespeed_type == -1)
+		{
+			prespeed_type = gCV_PreSpeed.IntValue;
+		}
+
+		if (prespeed_type == 1 || prespeed_type >= 3)
+		{
+			float fSpeed[3];
+			GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fSpeed);
+
+			float fLimit = (Shavit_GetStyleSettingFloat(gI_Style[client], "runspeed") + gCV_PrestrafeLimit.FloatValue);
+			float maxPrestrafe = StyleMaxPrestrafe(gI_Style[client]);
+			if (fLimit > maxPrestrafe) fLimit = maxPrestrafe;
+
+			// if trying to jump, add a very low limit to stop prespeeding in an elegant way
+			// otherwise, make sure nothing weird is happening (such as sliding at ridiculous speeds, at zone enter)
+			if (prespeed_type < 4 && fSpeed[2] > 0.0)
+			{
+				fLimit /= 3.0;
+			}
+
+			float fSpeedXY = (SquareRoot(Pow(fSpeed[0], 2.0) + Pow(fSpeed[1], 2.0)));
+			float fScale = (fLimit / fSpeedXY);
+
+			if(fScale < 1.0)
+			{
+				if (prespeed_type == 5)
+				{
+					float zSpeed = fSpeed[2];
+					fSpeed[2] = 0.0;
+
+					ScaleVector(fSpeed, fScale);
+					fSpeed[2] = zSpeed;
+				}
+				else
+				{
+					ScaleVector(fSpeed, fScale);
+				}
+
+				DumbSetVelocity(client, fSpeed);
+			}
+
+			skipGroundTimer = true;
+		}
 	}
 
 	return Plugin_Continue;

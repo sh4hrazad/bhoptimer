@@ -33,6 +33,7 @@
 
 #undef REQUIRE_PLUGIN
 #include <shavit/replay-recorder>
+#include <shavit/tas> // for the `IsSurfing` stock
 #include <adminmenu>
 
 #include <shavit/maps-folder-stocks>
@@ -186,6 +187,7 @@ DynamicDetour gH_TeamFull = null;
 bool gB_TeamFullDetoured = false;
 int gI_WEAPONTYPE_UNKNOWN = 123123123;
 int gI_LatestClient = -1;
+bool gB_ExpectingBot = false;
 bot_info_t gA_BotInfo_Temp; // cached when creating a bot so we can use an accurate name in player_connect
 int gI_LastReplayFlags[MAXPLAYERS + 1];
 float gF_EyeOffset;
@@ -1720,6 +1722,7 @@ public void Shavit_OnReplaySaved(int client, int style, float time, int jumps, i
 int InternalCreateReplayBot()
 {
 	gI_LatestClient = -1;
+	gB_ExpectingBot = true;
 
 	int mp_randomspawn_orig;
 
@@ -1760,6 +1763,7 @@ int InternalCreateReplayBot()
 
 	//bool success = (0xFF & ret) != 0;
 
+	gB_ExpectingBot = false;
 	return gI_LatestClient;
 }
 
@@ -2033,7 +2037,7 @@ public void OnClientPutInServer(int client)
 
 		SDKHook(client, SDKHook_PostThink, ForceObserveProp);
 	}
-	else
+	else if (gB_ExpectingBot)
 	{
 		char sName[MAX_NAME_LENGTH];
 		FillBotName(gA_BotInfo_Temp, sName);
@@ -2588,6 +2592,14 @@ Action ReplayOnPlayerRunCmd(bot_info_t info, int &buttons, int &impulse, float v
 			{
 				TeleportEntity(info.iEnt, NULL_VECTOR, ang, vecVelocity);
 			}
+
+			if (isClient && gEV_Type == Engine_TF2 && (buttons & IN_DUCK))
+			{
+				if (IsSurfing(info.iEnt))
+				{
+					buttons &= ~IN_DUCK;
+				}
+			}
 		}
 	}
 
@@ -2699,7 +2711,7 @@ public Action BotEvents(Event event, const char[] name, bool dontBroadcast)
 	{
 		event.BroadcastDisabled = true;
 
-		if (StrContains(name, "player_connect") != -1)
+		if (StrContains(name, "player_connect") != -1 && gB_ExpectingBot)
 		{
 			char sName[MAX_NAME_LENGTH];
 			FillBotName(gA_BotInfo_Temp, sName);

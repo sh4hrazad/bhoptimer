@@ -216,7 +216,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	// zone natives
 	CreateNative("Shavit_GetZoneData", Native_GetZoneData);
 	CreateNative("Shavit_GetZoneFlags", Native_GetZoneFlags);
-	CreateNative("Shavit_GetStageCount", Native_GetStageCount);
+	CreateNative("Shavit_GetHighestStage", Native_GetHighestStage);
 	CreateNative("Shavit_InsideZone", Native_InsideZone);
 	CreateNative("Shavit_InsideZoneGetID", Native_InsideZoneGetID);
 	CreateNative("Shavit_IsClientCreatingZone", Native_IsClientCreatingZone);
@@ -740,7 +740,7 @@ public int Native_InsideZoneGetID(Handle handler, int numParams)
 	return false;
 }
 
-public int Native_GetStageCount(Handle handler, int numParas)
+public int Native_GetHighestStage(Handle handler, int numParas)
 {
 	return gI_HighestStage[GetNativeCell(1)];
 }
@@ -5077,7 +5077,8 @@ public void Shavit_OnRestart(int client, int track)
 			{
 				ResetClientTargetNameAndClassName(client, track);
 				// normally StartTimer will happen on zone-touch BUT we have this here for zones that are in the air
-				Shavit_StartTimer(client, track);
+				bool skipGroundCheck = true;
+				Shavit_StartTimer(client, track, skipGroundCheck);
 			}
 		}
 		// kz buttons
@@ -5489,10 +5490,12 @@ public void TouchPost(int entity, int other)
 				}
 			}
 
+#if 0
 			if (GetEntPropEnt(other, Prop_Send, "m_hGroundEntity") == -1 && !Shavit_GetStyleSettingBool(Shavit_GetBhopStyle(other), "startinair"))
 			{
 				return;
 			}
+#endif
 
 			// start timer instantly for main track, but require bonuses to have the current timer stopped
 			// so you don't accidentally step on those while running

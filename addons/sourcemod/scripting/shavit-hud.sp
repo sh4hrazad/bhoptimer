@@ -1591,8 +1591,16 @@ void UpdateCenterKeys(int client)
 
 	if (IsValidClient(target))
 	{
-		fAngleDiff = gF_AngleDiff[target];
-		buttons = gI_Buttons[target];
+		if (IsFakeClient(target))
+		{
+			buttons = Shavit_GetReplayButtons(target, fAngleDiff);
+		}
+		else
+		{
+			fAngleDiff = gF_AngleDiff[target];
+			buttons = gI_Buttons[target];
+		}
+
 		scrolls = gI_ScrollCount[target];
 		prevscrolls = gI_LastScrollCount[target];
 	}
@@ -1806,7 +1814,7 @@ void UpdateKeyHint(int client)
 
 		if((gI_HUDSettings[client] & HUD_TIMELEFT) > 0 && GetMapTimeLeft(iTimeLeft) && iTimeLeft > 0)
 		{
-			FormatEx(sMessage, 256, (iTimeLeft > 60)? "%sTimeleft: %d min":"%sTimeleft: %d sec", sMessage, (iTimeLeft > 60) ? (iTimeLeft / 60)+1 : iTimeLeft);
+			FormatEx(sMessage, 256, (iTimeLeft > 150)? "Timeleft: %d minutes":"Timeleft: %d seconds", (iTimeLeft > 150) ? (iTimeLeft / 60)+1 : iTimeLeft);
 		}
 
 		int target = GetSpectatorTarget(client, client);
